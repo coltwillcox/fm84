@@ -336,10 +336,19 @@ fn handle_rename(app_state: &mut AppState) {
             return;
         }
 
+        let new_name = app_state.rename_input.text.clone();
         let mut original_path = parent_path.clone();
         original_path.push(item.name_full.clone());
         let mut new_path = parent_path.clone();
-        new_path.push(app_state.rename_input.text.clone());
+        new_path.push(&new_name);
+
+        // rename() replaces the destination without a word. Equal paths mean the
+        // name was left alone, which is a no-op rather than a collision.
+        if new_path != original_path && path_exists(&new_path) {
+            app_state.display_error(format!("Already exists: {}", new_name));
+            app_state.reset_rename();
+            return;
+        }
 
         match rename_path(original_path, new_path) {
             Ok(_) => {
