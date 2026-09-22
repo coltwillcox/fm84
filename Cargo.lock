@@ -369,6 +369,7 @@ dependencies = [
  "crossterm 0.29.0",
  "ratatui",
  "syntect",
+ "unicode-width 0.2.0",
 ]
 
 [[package]]

@@ -1,6 +1,13 @@
 use crate::constants::*;
 use ratatui::style::Color;
 use std::path::Path;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+
+/// Width in terminal columns, which is what the layout needs. Not the byte
+/// length, and not the character count either: CJK characters take two columns.
+pub fn display_width(text: &str) -> usize {
+    UnicodeWidthStr::width(text)
+}
 
 // Converts bytes to human-readable format with binary prefixes (KiB, MiB, etc.)
 pub fn format_size(bytes: u64) -> String {
@@ -44,7 +51,25 @@ pub fn color_for_extension(ext: &str) -> Color {
     )
 }
 
+/// Shorten a path to the last `n` columns, marking the cut with "...". Walks
+/// back a character at a time: slicing to a byte offset splits multi-byte
+/// characters and panics.
 pub fn limit_path_string(path: &Path, n: usize) -> String {
     let path_string = path.display().to_string();
-    if path_string.len() <= n { path_string } else { format!("...{}", &path_string[(path_string.len() - n)..]) }
+    if display_width(&path_string) <= n {
+        return path_string;
+    }
+
+    let mut width = 0;
+    let mut start = path_string.len();
+    for (index, character) in path_string.char_indices().rev() {
+        let character_width = UnicodeWidthChar::width(character).unwrap_or(0);
+        if width + character_width > n {
+            break;
+        }
+        width += character_width;
+        start = index;
+    }
+
+    format!("...{}", &path_string[start..])
 }

@@ -110,9 +110,9 @@ fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &PathBuf, d
     let border_line = vec![
         Span::styled("├──", STYLE_BORDER),
         Span::styled(format!(" {} ", path_left), color_left),
-        Span::styled(format!("{}─┬──", "─".repeat(length_left.saturating_sub(path_left.len().saturating_add(5)))), STYLE_BORDER),
+        Span::styled(format!("{}─┬──", "─".repeat(length_left.saturating_sub(display_width(&path_left).saturating_add(5)))), STYLE_BORDER),
         Span::styled(format!(" {} ", path_right), color_right),
-        Span::styled(format!("{}─┤", "─".repeat(length_right.saturating_sub(path_right.len().saturating_add(5)))), STYLE_BORDER),
+        Span::styled(format!("{}─┤", "─".repeat(length_right.saturating_sub(display_width(&path_right).saturating_add(5)))), STYLE_BORDER),
     ];
 
     f.render_widget(Paragraph::new(Line::from(border_line)), area);
@@ -470,7 +470,7 @@ fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments:
             used += 1;
         }
         let padded = format!(" {} ", seg);
-        used += padded.len();
+        used += display_width(&padded);
         spans.push(Span::styled(padded, STYLE_TITLE));
     }
 
@@ -481,7 +481,7 @@ fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments:
 }
 
 fn render_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, text: String, style: Style) {
-    let text_len = text.len();
+    let text_len = display_width(&text);
     let status_line = vec![
         Span::styled("├─", STYLE_BORDER),
         Span::styled(text, style),
