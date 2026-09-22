@@ -14,6 +14,24 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
             // release too would run each action twice, and toggles would cancel
             // themselves out. Repeat is kept so held keys still work.
             Event::Key(key) if key.kind != KeyEventKind::Release => {
+                // A character carrying Ctrl or Alt is a chord, not text. Only
+                // Ctrl+S is bound, so drop the rest instead of letting them fall
+                // through as typed characters - they would otherwise land in the
+                // file being edited, in a filename, or on a yes/no prompt.
+                // AltGr reports as Ctrl+Alt on Windows and does produce text
+                // (@, EUR, ...), so a chord is a lone Ctrl or a lone Alt.
+                let control = key.modifiers.contains(KeyModifiers::CONTROL);
+                let alt = key.modifiers.contains(KeyModifiers::ALT);
+                if let KeyCode::Char(c) = key.code
+                    && control != alt
+                {
+                    let is_save = control && c == 's' && app_state.is_f4_displayed && !app_state.is_editor_save_prompt;
+                    if is_save && let Err(e) = app_state.editor_save() {
+                        app_state.display_error(e);
+                    }
+                    return Ok(true);
+                }
+
                 if app_state.is_f2_displayed {
                     match key.code {
                         KeyCode::Esc => handle_esc(app_state),
@@ -128,16 +146,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::Backspace => app_state.editor_backspace(),
                         KeyCode::Delete => app_state.editor_delete(),
                         KeyCode::Tab => app_state.editor_insert_char('\t'),
-                        KeyCode::Char(c) => {
-                            if key.modifiers.contains(KeyModifiers::CONTROL) && c == 's' {
-                                // Ctrl+S to save
-                                if let Err(e) = app_state.editor_save() {
-                                    app_state.display_error(e);
-                                }
-                            } else {
-                                app_state.editor_insert_char(c);
-                            }
-                        }
+                        KeyCode::Char(c) => app_state.editor_insert_char(c),
                         _ => {}
                     }
                 } else if app_state.is_f5_displayed {
