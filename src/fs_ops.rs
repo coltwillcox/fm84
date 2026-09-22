@@ -90,6 +90,12 @@ pub fn delete_path(path: PathBuf, is_dir: bool) -> Result<(), Error> {
     Ok(())
 }
 
+/// True if anything occupies this path, including a dangling symlink - which
+/// Path::exists() reports as absent because it follows the link.
+pub fn path_exists(path: &Path) -> bool {
+    path.symlink_metadata().is_ok()
+}
+
 pub fn create_directory(path: PathBuf) -> Result<(), Error> {
     create_dir(path)?;
     Ok(())

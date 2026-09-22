@@ -1,5 +1,5 @@
 use crate::app::{AppState, Item};
-use crate::fs_ops::{copy_path, create_directory, delete_path, load_directory_rows, move_path, rename_path};
+use crate::fs_ops::{copy_path, create_directory, delete_path, load_directory_rows, move_path, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use ratatui::widgets::TableState;
 use std::io::Result;
@@ -847,12 +847,15 @@ fn toggle_copy(app_state: &mut AppState) {
 fn handle_copy_confirm(app_state: &mut AppState) {
     let items = std::mem::take(&mut app_state.copy_items);
 
+    // Check every destination before writing anything: bailing out partway
+    // through would leave some items copied and the rest not.
+    if let Some((_, dest, _)) = items.iter().find(|(_, dest, _)| path_exists(dest)) {
+        app_state.display_error(format!("Destination already exists: {}", dest.display()));
+        app_state.reset_copy();
+        return;
+    }
+
     for (source, dest, is_dir) in &items {
-        if dest.exists() {
-            app_state.display_error(format!("Destination already exists: {}", dest.display()));
-            app_state.reset_copy();
-            return;
-        }
         if let Err(e) = copy_path(source.clone(), dest.clone(), *is_dir) {
             app_state.display_error(e.to_string());
             app_state.reset_copy();
@@ -926,12 +929,15 @@ fn handle_move_confirm(app_state: &mut AppState) {
     let source_dir = if app_state.is_left_active { app_state.dir_left.clone() } else { app_state.dir_right.clone() };
     let dest_dir = if app_state.is_left_active { app_state.dir_right.clone() } else { app_state.dir_left.clone() };
 
+    // Check every destination before writing anything: bailing out partway
+    // through would leave some items moved and the rest not.
+    if let Some((_, dest, _)) = items.iter().find(|(_, dest, _)| path_exists(dest)) {
+        app_state.display_error(format!("Destination already exists: {}", dest.display()));
+        app_state.reset_move();
+        return;
+    }
+
     for (source, dest, is_dir) in &items {
-        if dest.exists() {
-            app_state.display_error(format!("Destination already exists: {}", dest.display()));
-            app_state.reset_move();
-            return;
-        }
         if let Err(e) = move_path(source.clone(), dest.clone(), *is_dir) {
             app_state.display_error(e.to_string());
             app_state.reset_move();
