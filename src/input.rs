@@ -1,6 +1,8 @@
 use crate::app::{AppState, Item};
 use crate::fs_ops::{copy_path, create_directory, delete_path, load_directory_rows, move_path, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
+use crate::constants::TAB_SPACES;
+use ratatui::layout::Position;
 use ratatui::widgets::TableState;
 use std::io::Result;
 use std::path::PathBuf;
@@ -1060,65 +1062,31 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // Clear all selections on mouse click
     app_state.clear_all_selections();
 
-    // Get terminal size
-    let (term_width, term_height) = crossterm::terminal::size().unwrap_or((80, 24));
-
-    // Layout: top panel (3) + path bar (1) + file tables + bottom panel (1) + f-key bar (3)
-    // File tables start at row 4, with header row at 4, data starts at row 5
-    let table_start_row = 4u16;
-    let table_end_row = term_height.saturating_sub(4); // Bottom panel (1) + f-key bar (3)
-
-    // Check if click is within file table area
-    if row < table_start_row || row >= table_end_row {
+    // Hit-test the panels the last frame actually drew, rather than deriving
+    // their position from the layout constants a second time.
+    let position = Position::new(column, row);
+    let clicked_left = app_state.table_area_left.contains(position);
+    if !clicked_left && !app_state.table_area_right.contains(position) {
         return;
     }
+    let area = if clicked_left { app_state.table_area_left } else { app_state.table_area_right };
 
-    // Calculate which row in the table was clicked (accounting for header)
-    let header_row = table_start_row;
-    if row <= header_row {
-        return; // Clicked on header
+    // The table draws its header on the first row of its area.
+    if row <= area.y {
+        return;
     }
+    let clicked_table_row = (row - area.y - 1) as usize;
 
-    let clicked_table_row = (row - header_row - 1) as usize;
-
-    // Determine which panel was clicked (left half or right half)
-    let panel_width = term_width / 2;
-    let clicked_left = column < panel_width;
-
-    // Set active panel
     app_state.is_left_active = clicked_left;
 
-    // Get the viewport offset for the clicked panel to calculate actual index
-    let children = if clicked_left {
-        &app_state.children_left
-    } else {
-        &app_state.children_right
-    };
-
+    let children = if clicked_left { &app_state.children_left } else { &app_state.children_right };
     let total = children.len();
     if total == 0 {
         return;
     }
 
-    // Calculate viewport offset (same logic as in ui.rs build_viewport_rows)
-    let viewport_height = (table_end_row - table_start_row - 1) as usize;
-    let state = if clicked_left {
-        &app_state.state_left
-    } else {
-        &app_state.state_right
-    };
-    let selected = state.selected().unwrap_or(0);
-    let half_view = viewport_height / 2;
-
-    let start = if selected <= half_view {
-        0
-    } else if selected + half_view >= total {
-        total.saturating_sub(viewport_height)
-    } else {
-        selected.saturating_sub(half_view)
-    };
-
-    // Calculate actual index from clicked row
+    // The offset the panel was rendered with, not a second guess at it.
+    let start = if clicked_left { app_state.viewport_start_left } else { app_state.viewport_start_right };
     let actual_index = start + clicked_table_row;
 
     // Select the row if within bounds
@@ -1153,40 +1121,28 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
 }
 
 fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16) {
-    let (term_width, term_height) = crossterm::terminal::size().unwrap_or((80, 24));
+    // The content area as drawn, so the border and gutter widths don't have to
+    // be worked out again here.
+    let area = app_state.editor_content_area;
+    if !area.contains(Position::new(column, row)) {
+        return;
+    }
 
     if let Some(state) = &mut app_state.editor_state {
-        // Editor area matches chunks_main[2] from render_ui layout:
-        // top panel (3) + path bar (1) = 4, plus 1 for border
-        let editor_top = 5u16;
-        // bottom panel (1) + fkey bar (3) = 4, plus 1 for border
-        let editor_bottom = term_height.saturating_sub(5);
+        let visual_row = (row - area.y) as usize;
+        let target_line = (state.scroll_offset + visual_row).min(state.lines.len().saturating_sub(1));
 
-        let total_lines = state.lines.len();
-        let line_num_width = (total_lines.to_string().len() as u16).max(3) + 2;
-        // left border (1) + gutter
-        let content_left = 1 + line_num_width;
-        // right border
-        let content_right = term_width.saturating_sub(1);
-
-        if row < editor_top || row >= editor_bottom || column < content_left || column >= content_right {
-            return;
-        }
-
-        // Map to line
-        let visual_row = (row - editor_top) as usize;
-        let target_line = (state.scroll_offset + visual_row).min(total_lines.saturating_sub(1));
-
-        // Map visual column to char column (accounting for horizontal scroll and tabs)
-        let visual_col = (column - content_left) as usize + state.horizontal_offset;
+        // Map the visual column back to a character index, past the horizontal
+        // scroll and any expanded tabs.
+        let visual_col = (column - area.x) as usize + state.horizontal_offset;
         let line = &state.lines[target_line];
         let mut char_col = 0;
         let mut current_visual = 0;
-        for ch in line.chars() {
+        for character in line.chars() {
             if current_visual >= visual_col {
                 break;
             }
-            current_visual += if ch == '\t' { 4 } else { 1 };
+            current_visual += if character == '\t' { TAB_SPACES.len() } else { 1 };
             char_col += 1;
         }
 

@@ -175,6 +175,12 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
         .column_spacing(1);
     f.render_stateful_widget(table_right, chunks[2], &mut state_right_view);
 
+    // Hand the real geometry to the mouse handlers.
+    app_state.table_area_left = chunks[0];
+    app_state.table_area_right = chunks[2];
+    app_state.viewport_start_left = offset_left;
+    app_state.viewport_start_right = offset_right;
+
     chunks[0].height
 }
 
@@ -352,7 +358,7 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
 }
 
 fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> usize {
-    if let Some(editor_state) = &mut app_state.editor_state {
+    let (viewport_height, content_area) = if let Some(editor_state) = &mut app_state.editor_state {
         let filename = editor_state.file_path.file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("Unknown");
@@ -455,10 +461,13 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
             .scroll((0, h_offset as u16));
         f.render_widget(content_para, chunks[1]);
 
-        viewport_height
+        (viewport_height, chunks[1])
     } else {
-        0
-    }
+        (0, Rect::default())
+    };
+
+    app_state.editor_content_area = content_area;
+    viewport_height
 }
 
 fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments: &[&str]) {

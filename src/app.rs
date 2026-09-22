@@ -1,5 +1,6 @@
 use crate::fs_ops::get_current_dir;
 use crate::viewer::ViewerState;
+use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::text::Span;
 use ratatui::widgets::TableState;
@@ -134,6 +135,13 @@ pub struct AppState {
     pub last_click_time: Option<Instant>,
     pub last_click_pos: (u16, u16),
     pub is_editor_save_prompt: bool,
+    // Where the last frame actually drew things. Mouse handling reads these
+    // instead of recomputing the layout from hardcoded row numbers.
+    pub table_area_left: Rect,
+    pub table_area_right: Rect,
+    pub viewport_start_left: usize,
+    pub viewport_start_right: usize,
+    pub editor_content_area: Rect,
     /// A file big enough to be worth asking about: (path, size, opening to edit).
     pub large_file: Option<(PathBuf, u64, bool)>,
 }
@@ -219,6 +227,11 @@ impl AppState {
             last_click_time: None,
             last_click_pos: (0, 0),
             is_editor_save_prompt: false,
+            table_area_left: Rect::default(),
+            table_area_right: Rect::default(),
+            viewport_start_left: 0,
+            viewport_start_right: 0,
+            editor_content_area: Rect::default(),
             large_file: None,
         }
     }
