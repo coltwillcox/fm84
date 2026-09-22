@@ -636,6 +636,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F9 - Open terminal",
         "F10 - Quit",
         "Space - Select/deselect file",
+        "Ctrl+R - Reload both panels",
         "Type to search, Esc to clear",
     ];
 

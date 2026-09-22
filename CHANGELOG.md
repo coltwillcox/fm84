@@ -6,6 +6,41 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.9.0] - 2026-09-22
+
+### ✨ Added
+- 🔄 **Automatic refresh** - panels reread themselves when their directory changes on disk, checked once a second and suppressed while a dialog, Viewer or Editor is open
+- ⌨️ **Ctrl+R** - reload both panels immediately
+- 🧭 **Vanished directories** - a panel whose directory is deleted climbs to the nearest surviving parent instead of stopping on an error
+- ❓ **Large file prompt** - F3/F4 on a file above 64 MiB asks before loading it rather than refusing or stalling
+- 🛡️ **Panic safety** - raw mode, the alternate screen and the cursor are restored before a panic report prints, so a crash no longer leaves an unusable terminal
+
+### 🛠️ Changed
+- ⚡ **Incremental syntax highlighting** - an edit re-parses from the changed line instead of the whole file, with cached per-line parser state: a keystroke in a 50,000-line file went from ~2.7s to ~60µs
+- 📏 **Highlighting skipped above 512 KiB** - large files open as plain text instead of pausing to parse
+- 🔗 **Symlinked directories behave as directories** - listed as `<DIR>`, sorted with directories and enterable, while copy and delete still act on the link itself
+- 📋 **Symlinks are copied as links**, matching `cp -r`, instead of having their targets copied
+- 🗂️ **Selections are tracked by filename** rather than row index, so they keep pointing at the file you picked
+- 🖱️ **Mouse hit-testing uses the rendered layout** instead of a second copy of the layout arithmetic
+
+### 🐛 Fixed
+- 💥 **Viewer crash on an empty file** - it claimed a line it did not hold
+- 💥 **Crash on non-ASCII paths** - the path bar truncated on a byte offset, splitting multi-byte characters
+- 💥 **Crash on F2 in an empty directory** - the cursor could point past the only row
+- 📐 **Border alignment** - the path bar and status bars measure text in display columns, so accented and CJK paths no longer draw short
+- 📝 **CRLF line endings are preserved** when saving; a one-character edit no longer rewrites every line
+- ✏️ **Rename no longer silently overwrites** an existing file, and no longer offers to rename `..`
+- 📦 **Copy and Move check every destination first** - a collision partway through no longer leaves half the items copied
+- ♾️ **Copying a directory containing a link to its own ancestor** no longer recurses until the path limit
+- 🪟 **Windows key handling** - each keypress registered twice, which made toggles cancel themselves out
+- 🎹 **Ctrl and Alt chords** no longer type their plain character into a file, a filename or a confirmation prompt
+- 🚪 **`q` no longer quits** - F10 does, and `q` works in quick search again
+- 🙈 **F2, F7 and F9 no longer act behind an error or help popup**, where their dialogs were invisible but still committed
+- ↔️ **Viewer horizontal scrolling stops** at the end of the longest line instead of scrolling into empty space
+- ␀ **An empty rename name is treated as a cancel**
+
+---
+
 ## [0.8.2] - 2026-02-13
 
 ### ✨ Added

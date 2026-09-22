@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.8.2** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.9.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -50,6 +50,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔀 **Tab** - switch between panels like flipping cassettes
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
+- 🔗 **Symlinked directories** - listed and entered like the real thing
 
 ### 🔍 Quick Search
 - 🔎 **Type-ahead search** - just start typing to find files
@@ -71,6 +72,12 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🖱️ **Double-click** - open directories or view files
 - 🖱️ **Mouse scroll** - scroll content in Viewer, Editor, and file panels
 
+### 🔄 Live Panels
+- 👀 **Automatic refresh** - panels notice when their directory changes on disk and reread themselves
+- ⌨️ **Ctrl+R** - force an immediate reload of both panels
+- 🧭 **Vanished directories** - if the open directory is deleted, the panel climbs to the nearest surviving parent
+- 🤫 **Stays out of the way** - never reloads while a dialog, Viewer or Editor is open
+
 ### 📊 Status Bar
 - 📈 **Panel stats** - selected/total file count and size shown per panel
 - 🎨 **Active/inactive styling** - active panel stats highlighted, inactive dimmed
@@ -80,11 +87,14 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📊 **Line numbers** in the gutter
 - 🔢 **Status bar** - filename, line count, file size, detected syntax
 - 🚫 **Binary detection** - won't melt your terminal with garbage
-- ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel
+- ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory
+- ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 
 ### ✍️ Editor (F4)
 - 🌈 **Syntax highlighting** for Rust, Python, JS, TS, JSON, TOML, YAML, Markdown, Shell, C/C++, HTML, CSS
+- ⚡ **Incremental highlighting** - typing re-parses from the edited line, so speed doesn't fall off in long files
+- ↩️ **Line endings preserved** - a CRLF file stays CRLF when saved
 - 🖼️ **Bordered frame** with filename and modified indicator in title bar
 - 📄 **Full text editing** - cursor navigation, insert, delete
 - 💾 **Save** - F2 or Ctrl+S
@@ -123,6 +133,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 | `F9` | Open terminal |
 | `F10` | Quit |
 | `Space` / `Insert` | Select/deselect file |
+| `Ctrl+R` | Reload both panels |
 | `Scroll` | Scroll content (panels, Viewer, Editor) |
 
 ---
@@ -215,5 +226,5 @@ The color palette channels pure 80s energy:
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.8.2 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.9.0 ▄▀▄▀▄▀</code>
 </p>
