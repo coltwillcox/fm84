@@ -125,8 +125,10 @@ pub struct AppState {
     pub copy_items: Vec<(PathBuf, PathBuf, bool)>,
     pub is_f6_displayed: bool,
     pub move_items: Vec<(PathBuf, PathBuf, bool)>,
-    pub selected_left: HashSet<usize>,
-    pub selected_right: HashSet<usize>,
+    // Keyed by file name, not row index: a reload can re-sort the rows, and an
+    // index would then point at a different file than the one the user picked.
+    pub selected_left: HashSet<String>,
+    pub selected_right: HashSet<String>,
     pub dir_sizes: HashMap<PathBuf, u64>,
     pub last_click_time: Option<Instant>,
     pub last_click_pos: (u16, u16),
@@ -668,8 +670,8 @@ impl AppState {
                 if index < children.len() && children[index].name != ".." {
                     let item = &children[index];
 
-                    if !selected_set.remove(&index) {
-                        selected_set.insert(index);
+                    if !selected_set.remove(&item.name_full) {
+                        selected_set.insert(item.name_full.clone());
 
                         if calculate_size && item.is_dir {
                             let full_path = current_dir.join(&item.name_full);
