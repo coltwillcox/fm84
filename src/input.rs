@@ -303,6 +303,10 @@ fn toggle_help(app_state: &mut AppState) {
 }
 
 fn toggle_rename(app_state: &mut AppState) {
+    if app_state.is_error_displayed || app_state.is_f1_displayed {
+        return;
+    }
+
     if app_state.is_f2_displayed {
         app_state.reset_rename();
         return;
@@ -324,6 +328,10 @@ fn toggle_rename(app_state: &mut AppState) {
 }
 
 fn toggle_create(app_state: &mut AppState) {
+    if app_state.is_error_displayed || app_state.is_f1_displayed {
+        return;
+    }
+
     app_state.is_f7_displayed = !app_state.is_f7_displayed;
     if app_state.is_f7_displayed {
         // Opening dialog - clear input fields only
@@ -761,6 +769,10 @@ fn handle_f4_edit(app_state: &mut AppState) {
 }
 
 fn open_terminal(app_state: &mut AppState) {
+    if app_state.is_error_displayed || app_state.is_f1_displayed {
+        return;
+    }
+
     let dir = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
     let result = spawn_detached_terminal(dir);
     if let Err(e) = result {
