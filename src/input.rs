@@ -179,7 +179,6 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(8) | KeyCode::Delete => toggle_delete(app_state),
                         KeyCode::F(9) => open_terminal(app_state),
                         KeyCode::F(10) => return Ok(false),
-                        KeyCode::Char('q') => return Ok(false), // Temp debug
                         KeyCode::Char(' ') => {
                             // Space toggles selection and moves to next item
                             app_state.toggle_selection();
