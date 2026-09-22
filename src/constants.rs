@@ -1,4 +1,8 @@
 use ratatui::style::Color;
+use std::time::Duration;
+
+// How often to check whether a panel's directory changed on disk.
+pub const REFRESH_INTERVAL: Duration = Duration::from_secs(1);
 
 pub const TITLE: &str = "File Manager '84";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

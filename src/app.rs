@@ -1,4 +1,4 @@
-use crate::fs_ops::get_current_dir;
+use crate::fs_ops::{get_current_dir, load_directory_rows};
 use crate::viewer::ViewerState;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -6,7 +6,7 @@ use ratatui::text::Span;
 use ratatui::widgets::TableState;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
 /// Reusable single-line text input with cursor.
 pub struct TextInput {
@@ -142,6 +142,11 @@ pub struct AppState {
     pub viewport_start_left: usize,
     pub viewport_start_right: usize,
     pub editor_content_area: Rect,
+    // Directory mtimes as of the last load, so an external change can be spotted
+    // without stat-ing every entry.
+    pub dir_stamp_left: Option<SystemTime>,
+    pub dir_stamp_right: Option<SystemTime>,
+    pub last_refresh_check: Instant,
     /// A file big enough to be worth asking about: (path, size, opening to edit).
     pub large_file: Option<(PathBuf, u64, bool)>,
 }
@@ -232,6 +237,9 @@ impl AppState {
             viewport_start_left: 0,
             viewport_start_right: 0,
             editor_content_area: Rect::default(),
+            dir_stamp_left: None,
+            dir_stamp_right: None,
+            last_refresh_check: Instant::now(),
             large_file: None,
         }
     }
@@ -788,6 +796,88 @@ impl AppState {
         }
         if let Some(msg) = error_msg {
             self.display_error(msg);
+        }
+    }
+
+    /// True while a dialog, prompt, viewer or editor owns the screen.
+    pub fn is_modal_open(&self) -> bool {
+        self.is_error_displayed
+            || self.is_f1_displayed
+            || self.is_f2_displayed
+            || self.is_f3_displayed
+            || self.is_f4_displayed
+            || self.is_f5_displayed
+            || self.is_f6_displayed
+            || self.is_f7_displayed
+            || self.is_f8_displayed
+            || self.is_editor_save_prompt
+            || self.large_file.is_some()
+    }
+
+    /// Remember a directory's mtime so a later change to it stands out.
+    pub fn record_dir_stamp(&mut self, is_left: bool) {
+        let dir = if is_left { &self.dir_left } else { &self.dir_right };
+        let stamp = std::fs::metadata(dir).and_then(|metadata| metadata.modified()).ok();
+        if is_left {
+            self.dir_stamp_left = stamp;
+        } else {
+            self.dir_stamp_right = stamp;
+        }
+    }
+
+    /// Reread one panel from disk. `prefer` names the entry to land on - the
+    /// file just renamed or created. Otherwise the cursor keeps the *file* it
+    /// was on rather than the row, since entries appearing or vanishing above
+    /// shift every index below them; if that file is gone, the row is kept.
+    pub fn reload_panel(&mut self, is_left: bool, prefer: Option<&str>) {
+        let dir = if is_left { self.dir_left.clone() } else { self.dir_right.clone() };
+
+        let (children, state) = if is_left {
+            (&self.children_left, &self.state_left)
+        } else {
+            (&self.children_right, &self.state_right)
+        };
+        let previous_index = state.selected().unwrap_or(0);
+        let wanted = prefer.map(str::to_string).or_else(|| {
+            children.get(previous_index).map(|item| item.name_full.clone())
+        });
+
+        match load_directory_rows(&dir) {
+            Ok(items) => {
+                let index = wanted
+                    .and_then(|name| items.iter().position(|item| item.name_full == name))
+                    .unwrap_or(previous_index)
+                    .min(items.len().saturating_sub(1));
+
+                if is_left {
+                    self.children_left = items;
+                    self.state_left.select(Some(index));
+                } else {
+                    self.children_right = items;
+                    self.state_right.select(Some(index));
+                }
+                self.record_dir_stamp(is_left);
+            }
+            Err(e) => self.display_error(e.to_string()),
+        }
+    }
+
+    /// Reread any panel whose directory changed underneath us. Called once per
+    /// frame; the interval keeps it to a couple of stat calls a second.
+    pub fn refresh_stale_panels(&mut self) {
+        // Reloading under an open dialog would move things out from under the user.
+        if self.is_modal_open() || self.last_refresh_check.elapsed() < crate::constants::REFRESH_INTERVAL {
+            return;
+        }
+        self.last_refresh_check = Instant::now();
+
+        for is_left in [true, false] {
+            let dir = if is_left { &self.dir_left } else { &self.dir_right };
+            let stamp = std::fs::metadata(dir).and_then(|metadata| metadata.modified()).ok();
+            let known = if is_left { self.dir_stamp_left } else { self.dir_stamp_right };
+            if stamp != known {
+                self.reload_panel(is_left, None);
+            }
         }
     }
 

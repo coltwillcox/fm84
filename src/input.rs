@@ -31,6 +31,11 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     if is_save && let Err(e) = app_state.editor_save() {
                         app_state.display_error(e);
                     }
+                    // Ctrl+R rereads both panels from disk.
+                    if control && c == 'r' && !app_state.is_modal_open() {
+                        app_state.reload_panel(true, None);
+                        app_state.reload_panel(false, None);
+                    }
                     return Ok(true);
                 }
 
@@ -376,20 +381,7 @@ fn handle_rename(app_state: &mut AppState) {
         }
 
         match rename_path(original_path, new_path) {
-            Ok(_) => {
-                // Only reload the active panel
-                let current_dir = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
-                match load_directory_rows( current_dir) {
-                    Ok(items) => {
-                        if app_state.is_left_active {
-                            app_state.children_left = items;
-                        } else {
-                            app_state.children_right = items;
-                        }
-                    }
-                    Err(e) => app_state.display_error(e.to_string()),
-                }
-            }
+            Ok(_) => app_state.reload_panel(app_state.is_left_active, Some(&new_name)),
             Err(e) => app_state.display_error(e.to_string()),
         }
 
@@ -469,6 +461,7 @@ fn navigate_up_panel(app_state: &mut AppState) {
             *children = children_new;
             let selected_new = children.iter().position(|item| item.name == name_current).unwrap_or(0);
             state.select(Some(selected_new));
+            app_state.record_dir_stamp(app_state.is_left_active);
             app_state.search_clear();
             app_state.clear_active_selections();
         }
@@ -517,6 +510,7 @@ fn enter_directory_panel(app_state: &mut AppState) {
                 *children_mut = children_new;
                 let selected_new = children_mut.iter().position(|item| Some(&item.name) == current_dir_name.as_ref()).unwrap_or(0);
                 state.select(Some(selected_new));
+                app_state.record_dir_stamp(app_state.is_left_active);
                 app_state.search_clear();
                 app_state.clear_active_selections();
             }
@@ -544,6 +538,7 @@ fn enter_directory_panel(app_state: &mut AppState) {
                 *dir = dir_new;
                 *children = children_new;
                 state.select(Some(0));
+                app_state.record_dir_stamp(app_state.is_left_active);
                 app_state.search_clear();
                 app_state.clear_active_selections();
             }
@@ -633,30 +628,7 @@ fn handle_delete_confirm(app_state: &mut AppState) {
         }
     }
 
-    // Reload the directory
-    match load_directory_rows(&parent_path) {
-        Ok(new_items) => {
-            if app_state.is_left_active {
-                app_state.children_left = new_items;
-                let len = app_state.children_left.len();
-                if let Some(selected) = app_state.state_left.selected() {
-                    if selected >= len {
-                        app_state.state_left.select(Some(len.saturating_sub(1)));
-                    }
-                }
-            } else {
-                app_state.children_right = new_items;
-                let len = app_state.children_right.len();
-                if let Some(selected) = app_state.state_right.selected() {
-                    if selected >= len {
-                        app_state.state_right.select(Some(len.saturating_sub(1)));
-                    }
-                }
-            }
-        }
-        Err(e) => app_state.display_error(e.to_string()),
-    }
-
+    app_state.reload_panel(app_state.is_left_active, None);
     app_state.clear_active_selections();
     app_state.reset_delete();
 }
@@ -672,29 +644,9 @@ fn handle_create_confirm(app_state: &mut AppState) {
     let mut new_dir_path = parent_path.clone();
     new_dir_path.push(&app_state.create_input.text);
 
+    let created = app_state.create_input.text.clone();
     match create_directory(new_dir_path) {
-        Ok(_) => {
-            // Reload the directory
-            let current_dir = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
-
-            match load_directory_rows(current_dir) {
-                Ok(items) => {
-                    if app_state.is_left_active {
-                        app_state.children_left = items;
-                        // Select the newly created directory
-                        if let Some(index) = app_state.children_left.iter().position(|item| item.name == app_state.create_input.text) {
-                            app_state.state_left.select(Some(index));
-                        }
-                    } else {
-                        app_state.children_right = items;
-                        if let Some(index) = app_state.children_right.iter().position(|item| item.name == app_state.create_input.text) {
-                            app_state.state_right.select(Some(index));
-                        }
-                    }
-                }
-                Err(e) => app_state.display_error(e.to_string()),
-            }
-        }
+        Ok(_) => app_state.reload_panel(app_state.is_left_active, Some(&created)),
         Err(e) => app_state.display_error(e.to_string()),
     }
 
@@ -906,17 +858,7 @@ fn handle_copy_confirm(app_state: &mut AppState) {
     }
 
     // Reload the destination panel (opposite of active)
-    let dest_dir = if app_state.is_left_active { app_state.dir_right.clone() } else { app_state.dir_left.clone() };
-    match load_directory_rows(&dest_dir) {
-        Ok(new_items) => {
-            if app_state.is_left_active {
-                app_state.children_right = new_items;
-            } else {
-                app_state.children_left = new_items;
-            }
-        }
-        Err(e) => app_state.display_error(e.to_string()),
-    }
+    app_state.reload_panel(!app_state.is_left_active, None);
 
     app_state.clear_active_selections();
     app_state.reset_copy();
@@ -968,8 +910,6 @@ fn toggle_move(app_state: &mut AppState) {
 
 fn handle_move_confirm(app_state: &mut AppState) {
     let items = std::mem::take(&mut app_state.move_items);
-    let source_dir = if app_state.is_left_active { app_state.dir_left.clone() } else { app_state.dir_right.clone() };
-    let dest_dir = if app_state.is_left_active { app_state.dir_right.clone() } else { app_state.dir_left.clone() };
 
     // Check every destination before writing anything: bailing out partway
     // through would leave some items moved and the rest not.
@@ -987,41 +927,8 @@ fn handle_move_confirm(app_state: &mut AppState) {
         }
     }
 
-    // Reload source panel
-    match load_directory_rows(&source_dir) {
-        Ok(new_items) => {
-            if app_state.is_left_active {
-                app_state.children_left = new_items;
-                let len = app_state.children_left.len();
-                if let Some(selected) = app_state.state_left.selected() {
-                    if selected >= len {
-                        app_state.state_left.select(Some(len.saturating_sub(1)));
-                    }
-                }
-            } else {
-                app_state.children_right = new_items;
-                let len = app_state.children_right.len();
-                if let Some(selected) = app_state.state_right.selected() {
-                    if selected >= len {
-                        app_state.state_right.select(Some(len.saturating_sub(1)));
-                    }
-                }
-            }
-        }
-        Err(e) => app_state.display_error(e.to_string()),
-    }
-
-    // Reload destination panel
-    match load_directory_rows(&dest_dir) {
-        Ok(new_items) => {
-            if app_state.is_left_active {
-                app_state.children_right = new_items;
-            } else {
-                app_state.children_left = new_items;
-            }
-        }
-        Err(e) => app_state.display_error(e.to_string()),
-    }
+    app_state.reload_panel(app_state.is_left_active, None);
+    app_state.reload_panel(!app_state.is_left_active, None);
 
     app_state.clear_active_selections();
     app_state.reset_move();

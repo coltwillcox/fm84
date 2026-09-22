@@ -14,7 +14,6 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use fs_ops::load_directory_rows;
 use input::handle_input;
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::{self, Stdout, stdout};
@@ -66,17 +65,12 @@ fn install_panic_hook() {
 fn run(terminal: &mut Tui) -> io::Result<()> {
     let mut app_state = AppState::new();
 
-    match load_directory_rows(&app_state.dir_left) {
-        Ok(items) => app_state.children_left = items,
-        Err(e) => app_state.display_error(e.to_string()),
-    }
-    match load_directory_rows(&app_state.dir_right) {
-        Ok(items) => app_state.children_right = items,
-        Err(e) => app_state.display_error(e.to_string()),
-    }
+    app_state.reload_panel(true, None);
+    app_state.reload_panel(false, None);
 
     loop {
         render_ui(terminal, &mut app_state);
+        app_state.refresh_stale_panels();
         if !handle_input(&mut app_state)? {
             break;
         }
