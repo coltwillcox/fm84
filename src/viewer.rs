@@ -80,7 +80,12 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
     if content.ends_with('\n') {
         lines.push(String::new());
     }
-    let total_lines = lines.len().max(1); // At least 1 line for empty files
+    // An empty file still gets one (blank) line, the way the editor does it.
+    // Claiming a line without holding one made the renderer slice past the end.
+    if lines.is_empty() {
+        lines.push(String::new());
+    }
+    let total_lines = lines.len();
     let syntax_name = detect_syntax(path);
 
     Ok(ViewerState {
