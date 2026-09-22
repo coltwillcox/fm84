@@ -146,6 +146,9 @@ pub struct EditorState {
     pub horizontal_offset: usize,
     pub modified: bool,
     pub auto_scroll: bool,
+    /// The terminator this file was written with, so saving doesn't rewrite
+    /// every line of a CRLF file just because one character changed.
+    pub line_ending: &'static str,
 }
 
 #[derive(Debug, Clone)]
@@ -388,6 +391,7 @@ impl AppState {
         }
 
         let content = std::fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
+        let line_ending = detect_line_ending(&content);
         let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
         if content.ends_with('\n') {
             lines.push(String::new());
@@ -408,6 +412,7 @@ impl AppState {
             horizontal_offset: 0,
             modified: false,
             auto_scroll: true,
+            line_ending,
         });
         self.is_f4_displayed = true;
         Ok(())
@@ -624,7 +629,7 @@ impl AppState {
 
     pub fn editor_save(&mut self) -> Result<(), String> {
         if let Some(state) = &mut self.editor_state {
-            let content = state.lines.join("\n");
+            let content = state.lines.join(state.line_ending);
             std::fs::write(&state.file_path, content).map_err(|e| e.to_string())?;
             state.modified = false;
         }
@@ -719,6 +724,14 @@ impl EditorState {
         let line_len = self.lines[self.cursor_line].chars().count();
         self.cursor_col = self.cursor_col.min(line_len);
     }
+}
+
+/// Pick the terminator to save a file with. A mixed file normalises to whichever
+/// style already dominates; a file with no newline at all gets "\n".
+fn detect_line_ending(content: &str) -> &'static str {
+    let crlf = content.matches("\r\n").count();
+    let lf = content.matches('\n').count() - crlf;
+    if crlf > lf { "\r\n" } else { "\n" }
 }
 
 /// Convert a char index to a byte index in a string.
