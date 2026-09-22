@@ -285,18 +285,24 @@ fn toggle_help(app_state: &mut AppState) {
 }
 
 fn toggle_rename(app_state: &mut AppState) {
-    app_state.is_f2_displayed = !app_state.is_f2_displayed;
     if app_state.is_f2_displayed {
-        let selected_index = if app_state.is_left_active { app_state.state_left.selected().unwrap() } else { app_state.state_right.selected().unwrap() };
-        let selected_item = if app_state.is_left_active {
-            &app_state.children_left[selected_index]
-        } else {
-            &app_state.children_right[selected_index]
-        };
-        app_state.rename_input.set(selected_item.name_full.clone());
-    } else {
         app_state.reset_rename();
+        return;
     }
+
+    let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };
+    let state = if app_state.is_left_active { &app_state.state_left } else { &app_state.state_right };
+    let Some(item) = state.selected().and_then(|index| children.get(index)) else {
+        return;
+    };
+
+    // Don't rename the parent entry - ".." resolves to the parent directory itself.
+    if item.name == ".." {
+        return;
+    }
+
+    app_state.rename_input.set(item.name_full.clone());
+    app_state.is_f2_displayed = true;
 }
 
 fn toggle_create(app_state: &mut AppState) {
@@ -314,6 +320,12 @@ fn handle_rename(app_state: &mut AppState) {
     let selected_item = state.selected().and_then(|index| children.get(index).cloned());
 
     if let Some(item) = &selected_item {
+        // ".." resolves to the parent directory - never rename through it.
+        if item.name == ".." {
+            app_state.reset_rename();
+            return;
+        }
+
         let mut original_path = parent_path.clone();
         original_path.push(item.name_full.clone());
         let mut new_path = parent_path.clone();
