@@ -27,10 +27,20 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
         });
     }
 
-    // Build Items with a single metadata() call per entry (one stat syscall)
+    // One metadata() call per entry (one stat syscall), two for a symlink
     for entry in &entries {
         let entry_path = entry.path();
-        let metadata = entry.metadata().ok();
+        // file_type() comes from readdir's d_type - no syscall on Linux.
+        let is_symlink = entry.file_type().map(|file_type| file_type.is_symlink()).unwrap_or(false);
+        // DirEntry::metadata() describes the link itself, which would list a link
+        // to a directory as a file: sorted among the files, sized in bytes and
+        // impossible to enter. Follow it, and fall back to the link when the
+        // target is missing so a broken link still lists as an ordinary entry.
+        let metadata = if is_symlink {
+            fs::metadata(&entry_path).or_else(|_| entry.metadata()).ok()
+        } else {
+            entry.metadata().ok()
+        };
         let is_dir = metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false);
         let name_full = entry_path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
         let name = if is_dir { name_full.clone() } else { entry_path.file_stem().and_then(|n| n.to_str()).unwrap_or("").to_string() };
@@ -82,7 +92,15 @@ pub fn rename_path(original_path: PathBuf, new_path: PathBuf) -> Result<(), Erro
 }
 
 pub fn delete_path(path: PathBuf, is_dir: bool) -> Result<(), Error> {
-    if is_dir {
+    // A symlink is removed as a link, never followed - including one pointing at
+    // a directory, which reaches here with is_dir set because the panel treats it
+    // as one. remove_dir_all on a link would be wrong.
+    let is_symlink = path
+        .symlink_metadata()
+        .map(|metadata| metadata.file_type().is_symlink())
+        .unwrap_or(false);
+
+    if is_dir && !is_symlink {
         remove_dir_all(path)?;
     } else {
         remove_file(path)?;
