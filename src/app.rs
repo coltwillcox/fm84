@@ -146,6 +146,9 @@ pub struct EditorState {
     pub horizontal_offset: usize,
     pub modified: bool,
     pub auto_scroll: bool,
+    /// Parser state entering each line, so an edit re-parses from that line
+    /// instead of the whole file. Empty when highlighting is off.
+    pub line_states: Vec<crate::viewer::LineState>,
     /// The terminator this file was written with, so saving doesn't rewrite
     /// every line of a CRLF file just because one character changed.
     pub line_ending: &'static str,
@@ -380,7 +383,13 @@ impl AppState {
     }
 
     pub fn open_editor(&mut self, file_path: PathBuf) -> Result<(), String> {
-        use crate::viewer::{highlight_content, is_binary_file};
+        use crate::constants::{MAX_FILE_SIZE, MAX_HIGHLIGHT_SIZE};
+        use crate::viewer::{highlight_all, is_binary_file};
+
+        let file_size = std::fs::metadata(&file_path).map_err(|e| e.to_string())?.len();
+        if file_size > MAX_FILE_SIZE {
+            return Err(format!("File too large to edit: {}", crate::utils::format_size(file_size)));
+        }
 
         if is_binary_file(&file_path).unwrap_or(false) {
             self.open_viewer(file_path)?;
@@ -400,7 +409,12 @@ impl AppState {
             lines.push(String::new());
         }
         let extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
-        let highlighted_lines = highlight_content(&lines, extension);
+        let (highlighted_lines, line_states) = if file_size <= MAX_HIGHLIGHT_SIZE {
+            highlight_all(&lines, extension)
+        } else {
+            // Rendering already falls back to plain text when these are empty.
+            (Vec::new(), Vec::new())
+        };
 
         self.editor_state = Some(EditorState {
             file_path,
@@ -413,6 +427,7 @@ impl AppState {
             modified: false,
             auto_scroll: true,
             line_ending,
+            line_states,
         });
         self.is_f4_displayed = true;
         Ok(())
@@ -423,10 +438,21 @@ impl AppState {
         self.editor_state = None;
     }
 
-    pub fn editor_rehighlight(&mut self) {
+    /// Re-highlight the file from `from` downward. Cheap: the cached state lets
+    /// it resume mid-file and stop again as soon as the parse converges.
+    pub fn editor_rehighlight_from(&mut self, from: usize) {
         if let Some(state) = &mut self.editor_state {
+            if state.line_states.is_empty() {
+                return; // highlighting disabled for this file
+            }
             let extension = state.file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
-            state.highlighted_lines = crate::viewer::highlight_content(&state.lines, extension);
+            crate::viewer::highlight_from(
+                &state.lines,
+                extension,
+                from,
+                &mut state.highlighted_lines,
+                &mut state.line_states,
+            );
         }
     }
 
@@ -549,18 +575,22 @@ impl AppState {
     }
 
     pub fn editor_insert_char(&mut self, c: char) {
+        let mut from = None;
         if let Some(state) = &mut self.editor_state {
             let line = &mut state.lines[state.cursor_line];
             let byte_idx = char_to_byte(line, state.cursor_col);
             line.insert(byte_idx, c);
             state.cursor_col += 1;
             state.modified = true;
+            from = Some(state.cursor_line);
         }
-        self.editor_rehighlight();
+        if let Some(from) = from {
+            self.editor_rehighlight_from(from);
+        }
     }
 
     pub fn editor_backspace(&mut self) {
-        let mut changed = false;
+        let mut from = None;
         if let Some(state) = &mut self.editor_state {
             if state.cursor_col > 0 {
                 let line = &mut state.lines[state.cursor_line];
@@ -569,26 +599,26 @@ impl AppState {
                 line.replace_range(byte_start..byte_end, "");
                 state.cursor_col -= 1;
                 state.modified = true;
-                changed = true;
+                from = Some(state.cursor_line);
             } else if state.cursor_line > 0 {
                 let current_line = state.lines.remove(state.cursor_line);
                 state.cursor_line -= 1;
                 state.cursor_col = state.lines[state.cursor_line].chars().count();
                 state.lines[state.cursor_line].push_str(&current_line);
                 state.modified = true;
-                changed = true;
+                from = Some(state.cursor_line);
                 if state.cursor_line < state.scroll_offset {
                     state.scroll_offset = state.cursor_line;
                 }
             }
         }
-        if changed {
-            self.editor_rehighlight();
+        if let Some(from) = from {
+            self.editor_rehighlight_from(from);
         }
     }
 
     pub fn editor_delete(&mut self) {
-        let mut changed = false;
+        let mut from = None;
         if let Some(state) = &mut self.editor_state {
             let line_len = state.lines[state.cursor_line].chars().count();
             if state.cursor_col < line_len {
@@ -597,21 +627,23 @@ impl AppState {
                 let byte_end = char_to_byte(line, state.cursor_col + 1);
                 line.replace_range(byte_start..byte_end, "");
                 state.modified = true;
-                changed = true;
+                from = Some(state.cursor_line);
             } else if state.cursor_line < state.lines.len().saturating_sub(1) {
                 let next_line = state.lines.remove(state.cursor_line + 1);
                 state.lines[state.cursor_line].push_str(&next_line);
                 state.modified = true;
-                changed = true;
+                from = Some(state.cursor_line);
             }
         }
-        if changed {
-            self.editor_rehighlight();
+        if let Some(from) = from {
+            self.editor_rehighlight_from(from);
         }
     }
 
     pub fn editor_enter(&mut self) {
+        let mut from = None;
         if let Some(state) = &mut self.editor_state {
+            from = Some(state.cursor_line);
             let line = &mut state.lines[state.cursor_line];
             let byte_idx = char_to_byte(line, state.cursor_col);
             let new_line = line[byte_idx..].to_string();
@@ -624,7 +656,9 @@ impl AppState {
                 state.scroll_offset = state.cursor_line - self.editor_viewport_height + 1;
             }
         }
-        self.editor_rehighlight();
+        if let Some(from) = from {
+            self.editor_rehighlight_from(from);
+        }
     }
 
     pub fn editor_save(&mut self) -> Result<(), String> {
