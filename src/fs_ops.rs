@@ -96,10 +96,34 @@ pub fn create_directory(path: PathBuf) -> Result<(), Error> {
 }
 
 pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool) -> Result<(), Error> {
-    if is_dir {
+    // A symlink is copied as the link itself, never as its target, matching
+    // cp -r. is_dir can't decide this: it comes from DirEntry::metadata(),
+    // which doesn't follow links, so a link to a directory arrives false here
+    // and would otherwise be handed to copy_file_content.
+    if fs::symlink_metadata(&source)?.file_type().is_symlink() {
+        copy_symlink(&source, &dest)
+    } else if is_dir {
         copy_dir_recursive(&source, &dest)
     } else {
         copy_file_content(&source, &dest)
+    }
+}
+
+/// Recreate a symlink at the destination, pointing where the original pointed.
+#[cfg(unix)]
+fn copy_symlink(source: &Path, dest: &Path) -> Result<(), Error> {
+    std::os::unix::fs::symlink(fs::read_link(source)?, dest)
+}
+
+#[cfg(windows)]
+fn copy_symlink(source: &Path, dest: &Path) -> Result<(), Error> {
+    let target = fs::read_link(source)?;
+    // Windows picks the call by link kind, and creating one needs Developer
+    // Mode or elevation - the error surfaces to the user either way.
+    if source.is_dir() {
+        std::os::windows::fs::symlink_dir(target, dest)
+    } else {
+        std::os::windows::fs::symlink_file(target, dest)
     }
 }
 
@@ -122,7 +146,14 @@ fn copy_dir_recursive(source: &Path, dest: &Path) -> Result<(), Error> {
         let entry_path = entry.path();
         let dest_path = dest.join(entry.file_name());
 
-        if entry_path.is_dir() {
+        // file_type() describes the entry itself; is_dir() would follow the
+        // link, copying the target's contents - and a link pointing at an
+        // ancestor recurses until the path outgrows PATH_MAX. cp -r recreates
+        // the link, so do the same.
+        let file_type = entry.file_type()?;
+        if file_type.is_symlink() {
+            copy_symlink(&entry_path, &dest_path)?;
+        } else if file_type.is_dir() {
             copy_dir_recursive(&entry_path, &dest_path)?;
         } else {
             copy_file_content(&entry_path, &dest_path)?;
