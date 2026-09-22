@@ -21,8 +21,8 @@ pub const COLOR_SELECTED_FOREGROUND: Color = Color::Rgb(0, 255, 255);        // 
 pub const COLOR_TITLE: Color = Color::Rgb(242, 34, 255);                     // Purple
 pub const COLOR_SELECTED_MARKER: Color = Color::Rgb(255, 215, 0);            // Gold/Yellow for selection marker
 
-// Largest file the viewer and editor will pull into memory.
-pub const MAX_FILE_SIZE: u64 = 64 * 1024 * 1024;
+// Past this the viewer and editor ask before pulling the file into memory.
+pub const LARGE_FILE_SIZE: u64 = 64 * 1024 * 1024;
 // Past this the editor opens the file without syntax highlighting. The initial
 // parse measures about 0.9s per megabyte, so this caps the wait at roughly half
 // a second; editing stays fast afterwards regardless of length.

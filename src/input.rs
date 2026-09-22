@@ -69,6 +69,13 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::End => app_state.viewer_end(),
                         _ => {}
                     }
+                } else if app_state.large_file.is_some() {
+                    match key.code {
+                        KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => app_state.reset_large_file(),
+                        KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => app_state.confirm_large_file(),
+                        KeyCode::F(10) => return Ok(false),
+                        _ => {}
+                    }
                 } else if app_state.is_editor_save_prompt {
                     match key.code {
                         KeyCode::Char('y') | KeyCode::Char('Y') => {
@@ -366,6 +373,7 @@ fn handle_esc(app_state: &mut AppState) {
     app_state.reset_move();
     app_state.close_viewer();
     app_state.close_editor();
+    app_state.reset_large_file();
 }
 
 fn handle_tab_switching(app_state: &mut AppState) {
@@ -693,9 +701,7 @@ fn handle_f3_view(app_state: &mut AppState) {
         file_path.push(&item.name_full);
 
         // Open viewer
-        if let Err(e) = app_state.open_viewer(file_path) {
-            app_state.display_error(e);
-        }
+        app_state.request_open(file_path, false);
     }
 }
 
@@ -733,9 +739,7 @@ fn handle_f4_edit(app_state: &mut AppState) {
         file_path.push(&item.name_full);
 
         // Open internal editor
-        if let Err(e) = app_state.open_editor(file_path) {
-            app_state.display_error(e);
-        }
+        app_state.request_open(file_path, true);
     }
 }
 

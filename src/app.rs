@@ -133,6 +133,8 @@ pub struct AppState {
     pub last_click_time: Option<Instant>,
     pub last_click_pos: (u16, u16),
     pub is_editor_save_prompt: bool,
+    /// A file big enough to be worth asking about: (path, size, opening to edit).
+    pub large_file: Option<(PathBuf, u64, bool)>,
 }
 
 #[derive(Clone)]
@@ -215,6 +217,7 @@ impl AppState {
             last_click_time: None,
             last_click_pos: (0, 0),
             is_editor_save_prompt: false,
+            large_file: None,
         }
     }
 
@@ -318,6 +321,42 @@ impl AppState {
         self.delete_items.clear();
     }
 
+    /// Open a file for viewing or editing, asking first when it is large enough
+    /// that loading it will stall for a noticeable while.
+    pub fn request_open(&mut self, file_path: PathBuf, is_edit: bool) {
+        let size = match std::fs::metadata(&file_path) {
+            Ok(metadata) => metadata.len(),
+            Err(e) => {
+                self.display_error(e.to_string());
+                return;
+            }
+        };
+
+        if size > crate::constants::LARGE_FILE_SIZE {
+            self.large_file = Some((file_path, size, is_edit));
+        } else {
+            self.open_file(file_path, is_edit);
+        }
+    }
+
+    /// Answer to the large-file prompt: load it after all.
+    pub fn confirm_large_file(&mut self) {
+        if let Some((file_path, _, is_edit)) = self.large_file.take() {
+            self.open_file(file_path, is_edit);
+        }
+    }
+
+    pub fn reset_large_file(&mut self) {
+        self.large_file = None;
+    }
+
+    fn open_file(&mut self, file_path: PathBuf, is_edit: bool) {
+        let result = if is_edit { self.open_editor(file_path) } else { self.open_viewer(file_path) };
+        if let Err(e) = result {
+            self.display_error(e);
+        }
+    }
+
     pub fn open_viewer(&mut self, file_path: PathBuf) -> Result<(), String> {
         use crate::viewer::load_file_content;
         let state = load_file_content(&file_path).map_err(|e| e.to_string())?;
@@ -383,13 +422,10 @@ impl AppState {
     }
 
     pub fn open_editor(&mut self, file_path: PathBuf) -> Result<(), String> {
-        use crate::constants::{MAX_FILE_SIZE, MAX_HIGHLIGHT_SIZE};
+        use crate::constants::MAX_HIGHLIGHT_SIZE;
         use crate::viewer::{highlight_all, is_binary_file};
 
         let file_size = std::fs::metadata(&file_path).map_err(|e| e.to_string())?.len();
-        if file_size > MAX_FILE_SIZE {
-            return Err(format!("File too large to edit: {}", crate::utils::format_size(file_size)));
-        }
 
         if is_binary_file(&file_path).unwrap_or(false) {
             self.open_viewer(file_path)?;

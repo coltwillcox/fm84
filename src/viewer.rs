@@ -59,13 +59,6 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
     // Get metadata once (single stat syscall)
     let file_size = std::fs::metadata(path)?.len();
 
-    if file_size > crate::constants::MAX_FILE_SIZE {
-        return Err(Error::other(format!(
-            "File too large to view: {}",
-            crate::utils::format_size(file_size)
-        )));
-    }
-
     // Check binary first
     if is_binary_file(path)? {
         return Ok(ViewerState {

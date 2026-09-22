@@ -61,6 +61,8 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
 
         if app_state.is_error_displayed {
             render_error_popup(f, area, app_state);
+        } else if app_state.large_file.is_some() {
+            render_large_file_popup(f, area, app_state);
         } else if app_state.is_editor_save_prompt {
             render_editor_save_popup(f, area);
         } else if app_state.is_f1_displayed {
@@ -762,6 +764,39 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
     );
 
     // Instructions
+    f.render_widget(
+        Paragraph::new("Y / Enter - Yes    N / Esc - No").alignment(Alignment::Center).style(STYLE_COLUMNS),
+        popup_area.inner(Margin { vertical: 6, horizontal: 2 }),
+    );
+}
+
+fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+    let Some((file_path, size, is_edit)) = &app_state.large_file else {
+        return;
+    };
+    let name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("Unknown");
+    let verb = if *is_edit { "Edit" } else { "View" };
+
+    let popup_area = centered_rect(60, 30, area);
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(" Large File ", STYLE_TITLE)).centered())
+        .borders(Borders::ALL)
+        .style(STYLE_BORDER);
+
+    f.render_widget(Clear::default(), popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let message = format!("{} \"{}\" ({})?", verb, name, format_size(*size));
+    f.render_widget(
+        Paragraph::new(message).alignment(Alignment::Center).style(STYLE_TITLE),
+        popup_area.inner(Margin { vertical: 2, horizontal: 2 }),
+    );
+
+    f.render_widget(
+        Paragraph::new("Reading a file this large may take a while.").alignment(Alignment::Center).style(STYLE_FILE),
+        popup_area.inner(Margin { vertical: 4, horizontal: 2 }),
+    );
+
     f.render_widget(
         Paragraph::new("Y / Enter - Yes    N / Esc - No").alignment(Alignment::Center).style(STYLE_COLUMNS),
         popup_area.inner(Margin { vertical: 6, horizontal: 2 }),
