@@ -22,6 +22,19 @@ pub fn format_size(bytes: u64) -> String {
     format!("{:.0} {}", size, UNITS[unit_index])
 }
 
+/// Width of a line as the viewer draws it: tabs expanded, columns not bytes.
+pub fn line_display_width(line: &str) -> usize {
+    line.chars()
+        .map(|character| {
+            if character == '\t' {
+                TAB_SPACES.len()
+            } else {
+                UnicodeWidthChar::width(character).unwrap_or(0)
+            }
+        })
+        .sum()
+}
+
 pub fn color_for_extension(ext: &str) -> Color {
     if ext.is_empty() {
         return COLOR_FILE;

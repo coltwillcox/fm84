@@ -50,7 +50,9 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         render_top_panel(f, chunks_main[0], &app_state.cached_clock);
         render_path_bar(f, chunks_main[1], &app_state.dir_left, &app_state.dir_right, area.width, app_state.is_left_active);
         if app_state.is_f3_displayed {
-            app_state.viewer_viewport_height = render_viewer(f, chunks_main[2], app_state);
+            let (height, width) = render_viewer(f, chunks_main[2], app_state);
+            app_state.viewer_viewport_height = height;
+            app_state.viewer_viewport_width = width;
         } else if app_state.is_f4_displayed {
             app_state.editor_viewport_height = render_editor(f, chunks_main[2], app_state);
         } else {
@@ -284,7 +286,7 @@ fn make_header_row() -> Row<'static> {
     ])
 }
 
-fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> usize {
+fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize) {
     if let Some(viewer_state) = &app_state.viewer_state {
         let filename = viewer_state.file_path.file_name()
             .and_then(|n| n.to_str())
@@ -343,9 +345,9 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
             f.render_widget(content_para, chunks[1]);
         }
 
-        viewport_height
+        (viewport_height, chunks[1].width as usize)
     } else {
-        0
+        (0, 0)
     }
 }
 

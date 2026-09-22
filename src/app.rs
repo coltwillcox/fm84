@@ -118,6 +118,7 @@ pub struct AppState {
     pub is_f3_displayed: bool,
     pub viewer_state: Option<ViewerState>,
     pub viewer_viewport_height: usize,
+    pub viewer_viewport_width: usize,
     pub is_f4_displayed: bool,
     pub editor_state: Option<EditorState>,
     pub editor_viewport_height: usize,
@@ -204,6 +205,7 @@ impl AppState {
             is_f3_displayed: false,
             viewer_state: None,
             viewer_viewport_height: 0,
+            viewer_viewport_width: 0,
             is_f4_displayed: false,
             editor_state: None,
             editor_viewport_height: 0,
@@ -411,7 +413,9 @@ impl AppState {
 
     pub fn viewer_scroll_right(&mut self) {
         if let Some(state) = &mut self.viewer_state {
-            state.horizontal_offset += 1;
+            // Stop once the longest line's end reaches the right edge.
+            let max = state.max_line_width.saturating_sub(self.viewer_viewport_width);
+            state.horizontal_offset = (state.horizontal_offset + 1).min(max);
         }
     }
 

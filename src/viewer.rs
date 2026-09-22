@@ -35,6 +35,9 @@ pub struct ViewerState {
     pub is_binary: bool,
     pub syntax_name: String,
     pub from_edit: bool,
+    /// Longest rendered line, so horizontal scrolling can stop at the end of
+    /// the content instead of running on into empty space.
+    pub max_line_width: usize,
 }
 
 pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
@@ -71,6 +74,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
             is_binary: true,
             syntax_name: "Binary".to_string(),
             from_edit: false,
+            max_line_width: 0,
         });
     }
 
@@ -86,6 +90,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         lines.push(String::new());
     }
     let total_lines = lines.len();
+    let max_line_width = lines.iter().map(|line| crate::utils::line_display_width(line)).max().unwrap_or(0);
     let syntax_name = detect_syntax(path);
 
     Ok(ViewerState {
@@ -98,6 +103,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         is_binary: false,
         from_edit: false,
         syntax_name,
+        max_line_width,
     })
 }
 
