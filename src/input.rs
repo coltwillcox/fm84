@@ -353,6 +353,13 @@ fn handle_rename(app_state: &mut AppState) {
         }
 
         let new_name = app_state.rename_input.text.clone();
+        // Nothing to rename to: treat it as a cancel, the way F7 treats an empty
+        // name. Composing it would point at the parent directory instead.
+        if new_name.is_empty() {
+            app_state.reset_rename();
+            return;
+        }
+
         let mut original_path = parent_path.clone();
         original_path.push(item.name_full.clone());
         let mut new_path = parent_path.clone();
