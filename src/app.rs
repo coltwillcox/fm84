@@ -1,4 +1,4 @@
-use crate::fs_ops::{get_current_dir, load_directory_rows};
+use crate::fs_ops::{get_current_dir, load_directory_rows, nearest_existing_dir};
 use crate::viewer::ViewerState;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -832,15 +832,44 @@ impl AppState {
     pub fn reload_panel(&mut self, is_left: bool, prefer: Option<&str>) {
         let dir = if is_left { self.dir_left.clone() } else { self.dir_right.clone() };
 
+        // The directory may have been removed underneath us; climb to the
+        // nearest ancestor that still exists rather than sitting on an error.
+        let (dir, relocated) = match nearest_existing_dir(&dir) {
+            Some(found) if found == dir => (dir, false),
+            Some(found) => (found, true),
+            None => {
+                self.display_error(format!("No such directory: {}", dir.display()));
+                return;
+            }
+        };
+
+        if relocated {
+            // Cursor, search and selection all referred to entries that are gone.
+            if is_left {
+                self.dir_left = dir.clone();
+                self.selected_left.clear();
+                self.state_left.select(Some(0));
+            } else {
+                self.dir_right = dir.clone();
+                self.selected_right.clear();
+                self.state_right.select(Some(0));
+            }
+            self.search_clear();
+        }
+
         let (children, state) = if is_left {
             (&self.children_left, &self.state_left)
         } else {
             (&self.children_right, &self.state_right)
         };
         let previous_index = state.selected().unwrap_or(0);
-        let wanted = prefer.map(str::to_string).or_else(|| {
-            children.get(previous_index).map(|item| item.name_full.clone())
-        });
+        let wanted = if relocated {
+            None
+        } else {
+            prefer.map(str::to_string).or_else(|| {
+                children.get(previous_index).map(|item| item.name_full.clone())
+            })
+        };
 
         match load_directory_rows(&dir) {
             Ok(items) => {

@@ -82,6 +82,21 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
     Ok(children)
 }
 
+/// Walk up from `path` until a directory that still exists is found. A panel's
+/// directory can be removed underneath it - and so can several of its parents,
+/// if something deleted a whole tree - so this climbs until it lands somewhere
+/// listable. None only if even the root is unreachable.
+pub fn nearest_existing_dir(path: &Path) -> Option<PathBuf> {
+    let mut candidate = Some(path);
+    while let Some(dir) = candidate {
+        if dir.is_dir() {
+            return Some(dir.to_path_buf());
+        }
+        candidate = dir.parent();
+    }
+    None
+}
+
 pub fn get_current_dir() -> Result<PathBuf, Error> {
     env::current_dir()
 }
