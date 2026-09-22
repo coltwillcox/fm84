@@ -1,6 +1,6 @@
 use crate::app::{AppState, Item};
 use crate::fs_ops::{copy_path, create_directory, delete_path, load_directory_rows, move_path, rename_path};
-use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use ratatui::widgets::TableState;
 use std::io::Result;
 use std::path::PathBuf;
@@ -10,7 +10,10 @@ use std::time::{Duration, Instant};
 pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
     if event::poll(Duration::from_millis(100))? {
         match event::read()? {
-            Event::Key(key) => {
+            // Windows reports a press and a release for every key. Acting on the
+            // release too would run each action twice, and toggles would cancel
+            // themselves out. Repeat is kept so held keys still work.
+            Event::Key(key) if key.kind != KeyEventKind::Release => {
                 if app_state.is_f2_displayed {
                     match key.code {
                         KeyCode::Esc => handle_esc(app_state),
