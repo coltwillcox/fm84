@@ -1,5 +1,6 @@
 use crate::app::AppState;
 use crate::constants::*;
+use crate::constants::HEX_BYTES_PER_LINE;
 use crate::utils::*;
 use chrono::Local;
 use ratatui::{
@@ -368,8 +369,12 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         let inner_area = border_block.inner(area);
         f.render_widget(border_block, area);
 
-        // Calculate line number gutter width
-        let line_num_width = (viewer_state.total_lines.to_string().len() as u16).max(3) + 2;
+        // Hex rows carry their own offset, so the gutter is not needed there.
+        let line_num_width = if viewer_state.hex {
+            0
+        } else {
+            (viewer_state.total_lines.to_string().len() as u16).max(3) + 2
+        };
 
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -379,29 +384,46 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         let viewport_height = inner_area.height as usize;
         let start = viewer_state.scroll_offset;
         let end = (start + viewport_height).min(viewer_state.total_lines);
-        let num_width = line_num_width as usize - 1;
-
-        // Render line numbers
-        let line_numbers: Vec<Line> = (start..end)
-            .map(|line_num| Line::from(Span::styled(
-                format!("{:>width$} ", line_num + 1, width = num_width),
-                STYLE_COLUMNS,
-            )))
-            .collect();
-        let line_number_para = Paragraph::new(line_numbers)
-            .style(Style::default().bg(ratatui::style::Color::Black));
-        f.render_widget(line_number_para, chunks[0]);
+        // Line numbers, unless hex rows are carrying their own offsets - the
+        // gutter is zero-width there and must not be formatted at all.
+        if !viewer_state.hex {
+            let num_width = (line_num_width as usize).saturating_sub(1);
+            let line_numbers: Vec<Line> = (start..end)
+                .map(|line_num| Line::from(Span::styled(
+                    format!("{:>width$} ", line_num + 1, width = num_width),
+                    STYLE_COLUMNS,
+                )))
+                .collect();
+            let line_number_para = Paragraph::new(line_numbers)
+                .style(Style::default().bg(ratatui::style::Color::Black));
+            f.render_widget(line_number_para, chunks[0]);
+        }
 
         // Render content
-        if viewer_state.is_binary {
+        if viewer_state.from_edit {
             let binary_msg = Paragraph::new("Binary file detected. Press Esc to return.")
                 .alignment(Alignment::Center)
                 .style(STYLE_TITLE);
             f.render_widget(binary_msg, chunks[1]);
+        } else if viewer_state.hex {
+            // Format only the rows on screen; a hexdump of the whole file would
+            // be far larger than the file itself.
+            let hex_lines: Vec<Line> = (start..end)
+                .map(|row| {
+                    let offset = row * HEX_BYTES_PER_LINE;
+                    let stop = (offset + HEX_BYTES_PER_LINE).min(viewer_state.bytes.len());
+                    let chunk = viewer_state.bytes.get(offset..stop).unwrap_or(&[]);
+                    Line::from(Span::raw(crate::viewer::hex_line(offset, chunk)))
+                })
+                .collect();
+            let hex_para = Paragraph::new(hex_lines)
+                .style(STYLE_FILE)
+                .scroll((0, viewer_state.horizontal_offset as u16));
+            f.render_widget(hex_para, chunks[1]);
         } else {
             let content_lines: Vec<Line> = viewer_state.content_lines[start..end]
                 .iter()
-                .map(|line| Line::from(Span::raw(line.replace('\t', TAB_SPACES))))
+                .map(|line| Line::from(Span::raw(printable_line(line))))
                 .collect();
 
             let content_para =
@@ -606,7 +628,8 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
                 .unwrap_or("Unknown");
             let line_seg = format!("Line {}/{}", viewer_state.scroll_offset + 1, viewer_state.total_lines);
             let size_seg = format_size(viewer_state.file_size);
-            render_segmented_status_bar(f, area, &[filename, &line_seg, &size_seg, &viewer_state.syntax_name]);
+            let mode = if viewer_state.hex { "HEX  X Text" } else { viewer_state.syntax_name.as_str() };
+            render_segmented_status_bar(f, area, &[filename, &line_seg, &size_seg, mode]);
         }
     } else if !app_state.search_input.is_empty() {
         // Show search string
@@ -746,7 +769,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     let help_lines = vec![
         "F1 - This help",
         "F2 - Rename folder/file",
-        "F3 - View file",
+        "F3 - View file (X for hex)",
         "F4 - Edit file (Ctrl+S/F2 save)",
         "F5 - Copy to other panel",
         "F6 - Move to other panel",

@@ -1,3 +1,4 @@
+use crate::constants::{HEX_BYTES_PER_LINE, HEX_LINE_WIDTH};
 use ratatui::style::Color;
 use ratatui::text::Span;
 use std::fs::File;
@@ -32,9 +33,11 @@ pub struct ViewerState {
     pub horizontal_offset: usize,
     pub total_lines: usize,
     pub file_size: u64,
-    pub is_binary: bool,
     pub syntax_name: String,
     pub from_edit: bool,
+    /// Raw contents, held only while hex mode needs them.
+    pub bytes: Vec<u8>,
+    pub hex: bool,
     /// Longest rendered line, so horizontal scrolling can stop at the end of
     /// the content instead of running on into empty space.
     pub max_line_width: usize,
@@ -64,16 +67,18 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
 
     // Check binary first
     if is_binary_file(path)? {
+        let bytes = std::fs::read(path)?;
         return Ok(ViewerState {
             file_path: path.to_path_buf(),
-            content_lines: vec!["Binary file detected.".to_string()],
+            content_lines: Vec::new(),
             scroll_offset: 0,
             horizontal_offset: 0,
-            total_lines: 1,
+            total_lines: hex_line_count(&bytes),
             file_size,
-            is_binary: true,
             syntax_name: "Binary".to_string(),
             from_edit: false,
+            bytes,
+            hex: true,
             max_line_width: 0,
         });
     }
@@ -100,9 +105,10 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         horizontal_offset: 0,
         total_lines,
         file_size,
-        is_binary: false,
         from_edit: false,
         syntax_name,
+        bytes: Vec::new(),
+        hex: false,
         max_line_width,
     })
 }
@@ -124,6 +130,36 @@ pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Vec<String
     }
 
     String::from_utf8_lossy(&buffer).lines().take(max_lines).map(|line| line.to_string()).collect()
+}
+
+/// Rows a hexdump of these bytes occupies; at least one, so an empty file still
+/// has a line to render.
+pub fn hex_line_count(bytes: &[u8]) -> usize {
+    bytes.len().div_ceil(HEX_BYTES_PER_LINE).max(1)
+}
+
+/// One `hexdump -C` row: offset, sixteen bytes split into two groups, then the
+/// printable characters. Short rows are padded so the gutter stays aligned.
+pub fn hex_line(offset: usize, bytes: &[u8]) -> String {
+    let mut text = String::with_capacity(HEX_LINE_WIDTH);
+    text.push_str(&format!("{offset:08x}  "));
+
+    for index in 0..HEX_BYTES_PER_LINE {
+        if index == HEX_BYTES_PER_LINE / 2 {
+            text.push(' ');
+        }
+        match bytes.get(index) {
+            Some(byte) => text.push_str(&format!("{byte:02x} ")),
+            None => text.push_str("   "),
+        }
+    }
+
+    text.push_str(" |");
+    for byte in bytes {
+        text.push(if byte.is_ascii_graphic() || *byte == b' ' { *byte as char } else { '.' });
+    }
+    text.push('|');
+    text
 }
 
 pub fn detect_syntax(path: &Path) -> String {

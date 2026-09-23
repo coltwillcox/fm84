@@ -453,10 +453,61 @@ impl AppState {
         }
     }
 
+    /// Switch the viewer between text and a hexdump. Reads the raw bytes the
+    /// first time they are needed, so a text file only pays for them on demand.
+    pub fn viewer_toggle_hex(&mut self) {
+        // Nothing to toggle on the refusal notice F4 puts up.
+        if self.viewer_state.as_ref().is_some_and(|state| state.from_edit) {
+            return;
+        }
+
+        let mut error = None;
+
+        if let Some(state) = &mut self.viewer_state {
+            if !state.hex && state.bytes.is_empty() && state.file_size > 0 {
+                match std::fs::read(&state.file_path) {
+                    Ok(bytes) => state.bytes = bytes,
+                    Err(e) => error = Some(e.to_string()),
+                }
+            }
+
+            if error.is_none() {
+                // Leaving hex on a file that was never decoded: build the text
+                // lossily rather than leave the pane blank.
+                if state.hex && state.content_lines.is_empty() {
+                    state.content_lines = String::from_utf8_lossy(&state.bytes).lines().map(str::to_string).collect();
+                    if state.content_lines.is_empty() {
+                        state.content_lines.push(String::new());
+                    }
+                    state.max_line_width = state
+                        .content_lines
+                        .iter()
+                        .map(|line| crate::utils::line_display_width(line))
+                        .max()
+                        .unwrap_or(0);
+                }
+
+                state.hex = !state.hex;
+                state.total_lines = if state.hex {
+                    crate::viewer::hex_line_count(&state.bytes)
+                } else {
+                    state.content_lines.len().max(1)
+                };
+                state.scroll_offset = state.scroll_offset.min(state.total_lines.saturating_sub(1));
+                state.horizontal_offset = 0;
+            }
+        }
+
+        if let Some(e) = error {
+            self.display_error(e);
+        }
+    }
+
     pub fn viewer_scroll_right(&mut self) {
         if let Some(state) = &mut self.viewer_state {
             // Stop once the longest line's end reaches the right edge.
-            let max = state.max_line_width.saturating_sub(self.viewer_viewport_width);
+            let longest = if state.hex { crate::constants::HEX_LINE_WIDTH } else { state.max_line_width };
+            let max = longest.saturating_sub(self.viewer_viewport_width);
             state.horizontal_offset = (state.horizontal_offset + 1).min(max);
         }
     }
@@ -476,7 +527,12 @@ impl AppState {
         if is_binary_file(&file_path).unwrap_or(false) {
             self.open_viewer(file_path)?;
             if let Some(state) = &mut self.viewer_state {
+                // Editing is refused outright; F3 is where a binary gets read.
                 state.from_edit = true;
+                state.hex = false;
+                state.bytes = Vec::new();
+                state.content_lines = Vec::new();
+                state.total_lines = 1;
             }
             return Ok(());
         }

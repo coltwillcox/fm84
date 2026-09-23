@@ -34,6 +34,10 @@ pub const MAX_HIGHLIGHT_SIZE: u64 = 512 * 1024;
 
 // A preview reloads every time the cursor moves, so it only ever reads the head
 // of a file - never the whole thing, and never with the large-file prompt.
+// A hexdump -C line: offset, sixteen bytes, then the ASCII gutter.
+pub const HEX_BYTES_PER_LINE: usize = 16;
+pub const HEX_LINE_WIDTH: usize = 78;
+
 pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;
 

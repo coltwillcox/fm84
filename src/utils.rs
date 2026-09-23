@@ -23,6 +23,23 @@ pub fn format_size(bytes: u64) -> String {
 }
 
 /// Width of a line as the viewer draws it: tabs expanded, columns not bytes.
+/// Expand tabs and neutralise control characters. Files can contain escape
+/// sequences - a lossy text view of a binary almost certainly does - and
+/// passing those through to the terminal would execute them.
+pub fn printable_line(line: &str) -> String {
+    let mut text = String::with_capacity(line.len());
+    for character in line.chars() {
+        if character == '\t' {
+            text.push_str(TAB_SPACES);
+        } else if character.is_control() {
+            text.push('.');
+        } else {
+            text.push(character);
+        }
+    }
+    text
+}
+
 pub fn line_display_width(line: &str) -> usize {
     line.chars()
         .map(|character| {
