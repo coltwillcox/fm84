@@ -158,8 +158,11 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
 pub enum MountKind {
     Home,
     Disk,
+    /// Detected on Linux and Windows; other platforms have no cheap way to tell.
+    #[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
     Removable,
     Network,
+    #[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
     Optical,
 }
 
@@ -225,12 +228,59 @@ fn parse_proc_mounts(table: &str) -> Vec<Mount> {
             .file_name()
             .map(|name| name.to_string_lossy().into_owned())
             .unwrap_or_else(|| target.clone());
-        let kind = if is_fuse { MountKind::Network } else { MountKind::Disk };
-        found.push(Mount { path, label, kind });
+        found.push(Mount { path, label, kind: classify_mount(source, fstype, is_fuse) });
     }
 
     found.sort_by(|a, b| a.path.cmp(&b.path));
     found
+}
+
+/// Optical media announce themselves by filesystem type; removable media by a
+/// flag the kernel exposes for the block device underneath.
+#[cfg(target_os = "linux")]
+fn classify_mount(source: &str, fstype: &str, is_fuse: bool) -> MountKind {
+    if matches!(fstype, "iso9660" | "udf") {
+        return MountKind::Optical;
+    }
+    if is_fuse {
+        return MountKind::Network;
+    }
+    if is_removable(source) {
+        return MountKind::Removable;
+    }
+    MountKind::Disk
+}
+
+#[cfg(target_os = "linux")]
+fn is_removable(source: &str) -> bool {
+    let Some(device) = source.strip_prefix("/dev/") else {
+        return false;
+    };
+    // A whole device has its own /sys/block entry; a partition has to be
+    // reduced to the device it sits on.
+    for candidate in [device, base_device(device)] {
+        if let Ok(flag) = fs::read_to_string(format!("/sys/block/{candidate}/removable")) {
+            return flag.trim() == "1";
+        }
+    }
+    false
+}
+
+/// The whole-disk name behind a partition. NVMe and SD cards separate the
+/// partition number with a 'p'; everything else just appends it.
+#[cfg(target_os = "linux")]
+fn base_device(name: &str) -> &str {
+    if let Some(index) = name.rfind('p') {
+        let (head, tail) = name.split_at(index);
+        let digits = &tail[1..];
+        if !digits.is_empty()
+            && digits.bytes().all(|byte| byte.is_ascii_digit())
+            && head.bytes().last().is_some_and(|byte| byte.is_ascii_digit())
+        {
+            return head;
+        }
+    }
+    name.trim_end_matches(|c: char| c.is_ascii_digit())
 }
 
 #[cfg(all(test, target_os = "linux"))]
@@ -253,7 +303,9 @@ pcloud: /mnt/pcloud fuse.rclone rw,nosuid 0 0
 portal /run/user/1000/doc fuse.portal rw,nosuid 0 0
 gvfsd-fuse /run/user/1000/gvfs fuse.gvfsd-fuse rw,nosuid 0 0
 fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
-/dev/sdb1 /media/My\\040Backup ext4 rw,relatime 0 0";
+/dev/sdb1 /media/My\\040Backup ext4 rw,relatime 0 0
+/dev/sr0 /run/media/colt/AUDIO iso9660 ro,nosuid 0 0
+/dev/sdc1 /media/stick vfat rw,nosuid 0 0";
 
     #[test]
     fn keeps_media_and_drops_machinery() {
@@ -262,7 +314,7 @@ fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
 
         assert_eq!(
             paths,
-            ["/boot", "/media/My Backup", "/mnt/grimlock", "/mnt/laserbeak", "/mnt/pcloud", "/tmp"],
+            ["/boot", "/media/My Backup", "/media/stick", "/mnt/grimlock", "/mnt/laserbeak", "/mnt/pcloud", "/tmp"],
             "should keep device-backed and user fuse mounts, sorted"
         );
 
@@ -277,6 +329,23 @@ fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
         assert_eq!(boot.kind, MountKind::Disk);
         // Octal escapes are decoded for display.
         assert!(mounts.iter().any(|m| m.label == "My Backup"));
+    }
+
+    #[test]
+    fn optical_filesystems_are_recognised() {
+        assert_eq!(super::classify_mount("/dev/sr0", "iso9660", false), MountKind::Optical);
+        assert_eq!(super::classify_mount("/dev/sr0", "udf", false), MountKind::Optical);
+        assert_eq!(super::classify_mount("pcloud:", "fuse.rclone", true), MountKind::Network);
+    }
+
+    #[test]
+    fn partitions_reduce_to_their_whole_device() {
+        assert_eq!(super::base_device("sda1"), "sda");
+        assert_eq!(super::base_device("sda"), "sda");
+        assert_eq!(super::base_device("nvme0n1p5"), "nvme0n1");
+        assert_eq!(super::base_device("mmcblk0p1"), "mmcblk0");
+        // 'p' only splits when a digit precedes it, so sdp1 is not sd.
+        assert_eq!(super::base_device("sdp1"), "sdp");
     }
 }
 
