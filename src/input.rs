@@ -284,6 +284,21 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     }
                 }
             }
+            // Bracketed paste: the terminal hands over the system clipboard as
+            // one event instead of a burst of keystrokes.
+            Event::Paste(text) => {
+                if app_state.is_f4_displayed && !app_state.is_editor_save_prompt {
+                    app_state.editor_insert_text(&text);
+                } else if app_state.is_f2_displayed {
+                    for character in text.chars().filter(|character| !character.is_control()) {
+                        app_state.rename_input.insert(character);
+                    }
+                } else if app_state.is_f7_displayed {
+                    for character in text.chars().filter(|character| !character.is_control()) {
+                        app_state.create_input.insert(character);
+                    }
+                }
+            }
             Event::Mouse(mouse_event) => match mouse_event.kind {
                 MouseEventKind::Down(_btn) => {
                     if app_state.is_f4_displayed {

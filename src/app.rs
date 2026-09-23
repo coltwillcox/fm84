@@ -665,6 +665,9 @@ impl AppState {
 
     pub fn editor_copy(&mut self) {
         if let Some(text) = self.editor_state.as_ref().and_then(|state| state.selected_text()) {
+            // Offer it to the terminal as well, so it reaches the system
+            // clipboard where OSC 52 is supported.
+            crate::utils::set_system_clipboard(&text);
             self.clipboard = text;
         }
     }
@@ -677,13 +680,21 @@ impl AppState {
     }
 
     pub fn editor_paste(&mut self) {
-        if self.clipboard.is_empty() {
+        let text = self.clipboard.clone();
+        self.editor_insert_text(&text);
+    }
+
+    /// Insert text at the cursor, replacing any selection. Serves both the
+    /// internal clipboard and a bracketed paste arriving from the terminal.
+    pub fn editor_insert_text(&mut self, text: &str) {
+        if text.is_empty() {
             return;
         }
+        // A pasted Windows clipboard arrives with CRLF; the buffer holds lines.
+        let text = text.replace("\r\n", "\n");
 
         // A selection is replaced by what is pasted over it.
         let mut rehighlight = self.delete_selection();
-        let text = self.clipboard.clone();
 
         if let Some(state) = &mut self.editor_state {
             let line = state.lines[state.cursor_line].clone();

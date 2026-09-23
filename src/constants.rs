@@ -34,6 +34,10 @@ pub const MAX_HIGHLIGHT_SIZE: u64 = 512 * 1024;
 
 // A preview reloads every time the cursor moves, so it only ever reads the head
 // of a file - never the whole thing, and never with the large-file prompt.
+// Terminals commonly reject oversized OSC 52 payloads, and a megabyte of
+// base64 is not worth sending anyway; the internal clipboard still holds it.
+pub const OSC52_MAX_BYTES: usize = 64 * 1024;
+
 // A hexdump -C line: offset, sixteen bytes, then the ASCII gutter.
 pub const HEX_BYTES_PER_LINE: usize = 16;
 pub const HEX_LINE_WIDTH: usize = 78;

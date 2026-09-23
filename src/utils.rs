@@ -1,5 +1,6 @@
 use crate::constants::*;
 use ratatui::style::Color;
+use std::io::{Write, stdout};
 use std::path::Path;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
@@ -26,6 +27,52 @@ pub fn format_size(bytes: u64) -> String {
 /// Expand tabs and neutralise control characters. Files can contain escape
 /// sequences - a lossy text view of a binary almost certainly does - and
 /// passing those through to the terminal would execute them.
+/// Ask the terminal to put `text` on the system clipboard (OSC 52). Terminals
+/// without support ignore it, and it travels over SSH, which is why this is
+/// preferred to linking a platform clipboard library.
+pub fn set_system_clipboard(text: &str) {
+    if text.len() > OSC52_MAX_BYTES {
+        return;
+    }
+    let mut out = stdout();
+    let _ = write!(out, "\x1b]52;c;{}\x07", base64(text.as_bytes()));
+    let _ = out.flush();
+}
+
+/// Minimal base64, needed only for the escape above.
+fn base64(input: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    let mut encoded = String::with_capacity(input.len().div_ceil(3) * 4);
+    for chunk in input.chunks(3) {
+        let bytes = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
+        let packed = (u32::from(bytes[0]) << 16) | (u32::from(bytes[1]) << 8) | u32::from(bytes[2]);
+
+        encoded.push(ALPHABET[(packed >> 18) as usize & 63] as char);
+        encoded.push(ALPHABET[(packed >> 12) as usize & 63] as char);
+        encoded.push(if chunk.len() > 1 { ALPHABET[(packed >> 6) as usize & 63] as char } else { '=' });
+        encoded.push(if chunk.len() > 2 { ALPHABET[packed as usize & 63] as char } else { '=' });
+    }
+    encoded
+}
+
+#[cfg(test)]
+mod base64_tests {
+    use super::base64;
+
+    #[test]
+    fn matches_known_vectors() {
+        assert_eq!(base64(b""), "");
+        assert_eq!(base64(b"f"), "Zg==");
+        assert_eq!(base64(b"fo"), "Zm8=");
+        assert_eq!(base64(b"foo"), "Zm9v");
+        assert_eq!(base64(b"foob"), "Zm9vYg==");
+        assert_eq!(base64(b"fooba"), "Zm9vYmE=");
+        assert_eq!(base64(b"foobar"), "Zm9vYmFy");
+        assert_eq!(base64("héllo\n".as_bytes()), "aMOpbGxvCg==");
+    }
+}
+
 pub fn printable_line(line: &str) -> String {
     let mut text = String::with_capacity(line.len());
     for character in line.chars() {

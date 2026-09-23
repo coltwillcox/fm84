@@ -10,7 +10,7 @@ use app::AppState;
 use color_eyre::Result;
 use crossterm::{
     cursor::Show,
-    event::{DisableMouseCapture, EnableMouseCapture},
+    event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
@@ -38,7 +38,7 @@ fn main() -> Result<()> {
 fn init_terminal() -> io::Result<Tui> {
     enable_raw_mode()?;
     let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)?;
     Terminal::new(CrosstermBackend::new(stdout))
 }
 
@@ -46,7 +46,7 @@ fn init_terminal() -> io::Result<Tui> {
 /// panic hook, so it can't rely on the Terminal still being alive - a build with
 /// panic = "abort" never drops it. Showing the cursor here covers that case.
 fn restore_terminal() -> io::Result<()> {
-    execute!(stdout(), LeaveAlternateScreen, DisableMouseCapture, Show)?;
+    execute!(stdout(), LeaveAlternateScreen, DisableMouseCapture, DisableBracketedPaste, Show)?;
     disable_raw_mode()
 }
 
