@@ -72,7 +72,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             .constraints([Constraint::Length(3), Constraint::Length(1), Constraint::Percentage(100), Constraint::Length(1), Constraint::Length(3)])
             .split(area);
 
-        render_top_panel(f, chunks_main[0], &app_state.cached_clock);
+        render_top_panel(f, chunks_main[0], app_state);
         render_path_bar(f, chunks_main[1], &app_state.dir_left, &app_state.dir_right, area.width, app_state.is_left_active);
         if app_state.is_f3_displayed {
             let (height, width) = render_viewer(f, chunks_main[2], app_state);
@@ -108,7 +108,57 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
     });
 }
 
-fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, cached_clock: &str) {
+/// The left / separator / right split every full-width row shares, so the rows
+/// that line up with the panels all derive their columns the same way.
+fn panel_split(area: Rect) -> std::rc::Rc<[Rect]> {
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Length(1), Constraint::Percentage(50)])
+        .split(area)
+}
+
+fn mount_icon(kind: crate::fs_ops::MountKind) -> &'static str {
+    use crate::fs_ops::MountKind;
+    match kind {
+        MountKind::Home => ICON_HOME,
+        MountKind::Disk => ICON_DRIVE,
+        MountKind::Removable => ICON_REMOVABLE,
+        MountKind::Network => ICON_NETWORK,
+        MountKind::Optical => ICON_OPTICAL,
+    }
+}
+
+/// One panel's row of drive icons: the mount it is on stands out, and while
+/// that panel is choosing, the candidate is highlighted and named.
+fn drive_strip(app_state: &AppState, is_left: bool) -> Line<'static> {
+    let current = app_state.current_mount(is_left);
+    let picking = match app_state.drive_picker {
+        Some((side, index)) if side == is_left => Some(index),
+        _ => None,
+    };
+
+    let mut spans = vec![Span::raw(" ")];
+    for (index, mount) in app_state.mounts.iter().enumerate() {
+        let style = if Some(index) == picking {
+            STYLE_TITLE.bg(COLOR_SELECTED_BACKGROUND)
+        } else if Some(index) == current {
+            STYLE_TITLE
+        } else {
+            STYLE_DIR_DARK
+        };
+        spans.push(Span::styled(format!("{} ", mount_icon(mount.kind)), style));
+    }
+
+    // Name whichever is under consideration, else the one this panel is on.
+    if let Some(mount) = picking.or(current).and_then(|index| app_state.mounts.get(index)) {
+        spans.push(Span::styled(format!(" {}", mount.label), STYLE_COLUMNS));
+    }
+
+    Line::from(spans)
+}
+
+fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+    let cached_clock = app_state.cached_clock.as_str();
     let logo = Span::styled(format!(" {} ", ICON_LOGO), STYLE_TITLE);
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), STYLE_TITLE);
     let clock = Span::styled(cached_clock, STYLE_TITLE);
@@ -120,7 +170,14 @@ fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, cached_clock: &str) 
         .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT)
         .border_style(STYLE_BORDER);
 
+    let inner = block_top.inner(area);
     f.render_widget(block_top, area);
+
+    if inner.height > 0 && !app_state.mounts.is_empty() {
+        let halves = panel_split(Rect { height: 1, ..inner });
+        f.render_widget(Paragraph::new(drive_strip(app_state, true)), halves[0]);
+        f.render_widget(Paragraph::new(drive_strip(app_state, false)), halves[2]);
+    }
 }
 
 fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &PathBuf, dir_right: &PathBuf, total_width: u16, is_left_active: bool) {
@@ -148,7 +205,7 @@ fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &PathBuf, d
 }
 
 fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut AppState) -> u16 {
-    let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Percentage(50), Constraint::Length(1), Constraint::Percentage(50)]).split(chunk);
+    let chunks = panel_split(chunk);
 
     let columns = visible_column_count(chunks[0].width);
     let mut widths = vec![Constraint::Length(2), Constraint::Fill(1)];
@@ -842,7 +899,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F8 - Delete folder/file",
         "F9 - Open terminal",
         "F10 - Quit",
-        "F11 - Options",
+        "F11 - Options (Alt+F1/F2 drives)",
         "F12 - Preview in other panel",
         "Space - Select/deselect file",
         "Ctrl+R - Reload both panels",

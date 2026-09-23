@@ -153,6 +153,197 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
     Ok(children)
 }
 
+/// What kind of place a mount is, so the UI can pick an icon for it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MountKind {
+    Home,
+    Disk,
+    Removable,
+    Network,
+    Optical,
+}
+
+/// Somewhere a panel can jump to: a filesystem mount, or home.
+#[derive(Debug, Clone)]
+pub struct Mount {
+    pub path: PathBuf,
+    pub label: String,
+    pub kind: MountKind,
+}
+
+/// Home, listed first after root because it is where people actually go.
+fn home_mount() -> Option<Mount> {
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    Some(Mount { path: PathBuf::from(home), label: "~".to_string(), kind: MountKind::Home })
+}
+
+/// Mount points worth offering, root first, then home, then the rest by path.
+#[cfg(target_os = "linux")]
+pub fn list_mounts() -> Vec<Mount> {
+    let mut mounts = vec![Mount { path: PathBuf::from("/"), label: "/".to_string(), kind: MountKind::Disk }];
+    mounts.extend(home_mount());
+    if let Ok(table) = fs::read_to_string("/proc/mounts") {
+        mounts.extend(parse_proc_mounts(&table));
+    }
+    mounts
+}
+
+/// Pick the interesting lines out of /proc/mounts. Filesystem type alone is not
+/// enough to tell machinery from media: what separates them is being backed by
+/// a real device, or being a fuse mount somewhere the user chose.
+#[cfg(target_os = "linux")]
+fn parse_proc_mounts(table: &str) -> Vec<Mount> {
+    let mut found: Vec<Mount> = Vec::new();
+
+    for line in table.lines() {
+        let mut fields = line.split_whitespace();
+        let (Some(source), Some(target), Some(fstype)) = (fields.next(), fields.next(), fields.next()) else {
+            continue;
+        };
+        // /proc/mounts escapes spaces and tabs as octal.
+        let target = target.replace("\\040", " ").replace("\\011", "\t");
+
+        // Root is listed separately. The rest of these trees are machinery:
+        // credentials, portals and gvfs under /run, and fusectl under /sys,
+        // which a filesystem-type check alone would let through.
+        const MACHINERY: [&str; 4] = ["/run", "/sys", "/proc", "/dev"];
+        if target == "/" || MACHINERY.iter().any(|prefix| target.starts_with(prefix)) {
+            continue;
+        }
+
+        let is_device = source.starts_with("/dev/");
+        let is_fuse = fstype.starts_with("fuse");
+        if !is_device && !is_fuse {
+            continue;
+        }
+
+        let path = PathBuf::from(&target);
+        if found.iter().any(|mount| mount.path == path) {
+            continue;
+        }
+        let label = path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_else(|| target.clone());
+        let kind = if is_fuse { MountKind::Network } else { MountKind::Disk };
+        found.push(Mount { path, label, kind });
+    }
+
+    found.sort_by(|a, b| a.path.cmp(&b.path));
+    found
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod mount_tests {
+    use super::{MountKind, parse_proc_mounts};
+
+    /// Verbatim lines from a real /proc/mounts, machinery and media mixed.
+    const TABLE: &str = "\
+devtmpfs /dev devtmpfs rw,nosuid 0 0
+run /run tmpfs rw,nosuid 0 0
+/dev/nvme0n1p4 / ext4 rw,relatime 0 0
+tmpfs /dev/shm tmpfs rw,nosuid 0 0
+/dev/nvme0n1p3 /tmp ext4 rw,relatime 0 0
+/dev/nvme0n1p5 /mnt/laserbeak ext4 rw,relatime 0 0
+/dev/sda1 /mnt/grimlock ext4 rw,relatime 0 0
+/dev/nvme0n1p2 /boot vfat rw,relatime 0 0
+none /run/credentials/getty@tty1.service tmpfs ro 0 0
+tmpfs /run/user/1000 tmpfs rw,nosuid 0 0
+pcloud: /mnt/pcloud fuse.rclone rw,nosuid 0 0
+portal /run/user/1000/doc fuse.portal rw,nosuid 0 0
+gvfsd-fuse /run/user/1000/gvfs fuse.gvfsd-fuse rw,nosuid 0 0
+fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
+/dev/sdb1 /media/My\\040Backup ext4 rw,relatime 0 0";
+
+    #[test]
+    fn keeps_media_and_drops_machinery() {
+        let mounts = parse_proc_mounts(TABLE);
+        let paths: Vec<String> = mounts.iter().map(|m| m.path.display().to_string()).collect();
+
+        assert_eq!(
+            paths,
+            ["/boot", "/media/My Backup", "/mnt/grimlock", "/mnt/laserbeak", "/mnt/pcloud", "/tmp"],
+            "should keep device-backed and user fuse mounts, sorted"
+        );
+
+        // Root is added by the caller, not here.
+        assert!(!paths.iter().any(|p| p == "/"));
+        // fusectl matches a bare "fuse" prefix but is machinery, not media.
+        assert!(!paths.iter().any(|p| p.starts_with("/sys")));
+        // A fuse mount the user chose is network-ish; a partition is a disk.
+        let pcloud = mounts.iter().find(|m| m.label == "pcloud").unwrap();
+        assert_eq!(pcloud.kind, MountKind::Network);
+        let boot = mounts.iter().find(|m| m.label == "boot").unwrap();
+        assert_eq!(boot.kind, MountKind::Disk);
+        // Octal escapes are decoded for display.
+        assert!(mounts.iter().any(|m| m.label == "My Backup"));
+    }
+}
+
+/// Every mounted volume on macOS shows up under /Volumes.
+#[cfg(target_vendor = "apple")]
+pub fn list_mounts() -> Vec<Mount> {
+    let mut mounts = vec![Mount { path: PathBuf::from("/"), label: "/".to_string(), kind: MountKind::Disk }];
+    mounts.extend(home_mount());
+
+    let Ok(entries) = read_dir("/Volumes") else {
+        return mounts;
+    };
+    let mut found: Vec<Mount> = entries
+        .flatten()
+        .map(|entry| Mount {
+            label: entry.file_name().to_string_lossy().into_owned(),
+            path: entry.path(),
+            kind: MountKind::Disk,
+        })
+        .collect();
+
+    found.sort_by(|a, b| a.path.cmp(&b.path));
+    mounts.extend(found);
+    mounts
+}
+
+#[cfg(windows)]
+pub fn list_mounts() -> Vec<Mount> {
+    // Declared here rather than pulling in windows-sys, as elsewhere.
+    unsafe extern "system" {
+        fn GetLogicalDrives() -> u32;
+        fn GetDriveTypeW(root: *const u16) -> u32;
+    }
+    const DRIVE_REMOVABLE: u32 = 2;
+    const DRIVE_FIXED: u32 = 3;
+    const DRIVE_REMOTE: u32 = 4;
+    const DRIVE_CDROM: u32 = 5;
+
+    // SAFETY: no arguments, and the bitmask is just read back.
+    let mask = unsafe { GetLogicalDrives() };
+    let mut mounts = Vec::new();
+    mounts.extend(home_mount());
+
+    for letter in 0..26u32 {
+        if mask & (1 << letter) == 0 {
+            continue;
+        }
+        let root = format!("{}:\\", (b'A' + letter as u8) as char);
+        let wide: Vec<u16> = root.encode_utf16().chain(std::iter::once(0)).collect();
+        // SAFETY: wide is NUL-terminated and outlives the call.
+        let kind = match unsafe { GetDriveTypeW(wide.as_ptr()) } {
+            DRIVE_REMOVABLE => MountKind::Removable,
+            DRIVE_REMOTE => MountKind::Network,
+            DRIVE_CDROM => MountKind::Optical,
+            DRIVE_FIXED => MountKind::Disk,
+            _ => continue,
+        };
+        mounts.push(Mount { path: PathBuf::from(&root), label: root[..2].to_string(), kind });
+    }
+    mounts
+}
+
+#[cfg(not(any(target_os = "linux", target_vendor = "apple", windows)))]
+pub fn list_mounts() -> Vec<Mount> {
+    home_mount().into_iter().collect()
+}
+
 /// Walk up from `path` until a directory that still exists is found. A panel's
 /// directory can be removed underneath it - and so can several of its parents,
 /// if something deleted a whole tree - so this climbs until it lands somewhere
@@ -402,4 +593,15 @@ pub fn calculate_dir_size(path: &Path) -> Result<u64, Error> {
     }
 
     Ok(total_size)
+}
+
+#[cfg(test)]
+mod live_mount_probe {
+    #[test]
+    #[ignore = "machine-specific; run with --ignored to eyeball this host's mounts"]
+    fn show() {
+        for mount in super::list_mounts() {
+            println!("  {:<24} {:<14} {:?}", mount.path.display(), mount.label, mount.kind);
+        }
+    }
 }

@@ -11,6 +11,13 @@ pub const ICON_FOLDER: &str = " "; // Added space after icon is workaround fo
 pub const ICON_FILE: &str = " ";
 pub const ICON_LOGO: &str = " ";
 
+// Drive icons for the mount strip, same Nerd Font range as the icons above.
+pub const ICON_DRIVE: &str = "";
+pub const ICON_HOME: &str = "";
+pub const ICON_REMOVABLE: &str = "";
+pub const ICON_NETWORK: &str = "";
+pub const ICON_OPTICAL: &str = "";
+
 // Default synthwave color palette
 pub const COLOR_BORDER: Color = Color::Rgb(116, 58, 213);                    // Violet
 pub const COLOR_COLUMNS: Color = Color::Rgb(0, 255, 255);                    // Cyan

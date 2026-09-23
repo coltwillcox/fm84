@@ -1,11 +1,11 @@
-use crate::app::{AppState, Item};
-use crate::fs_ops::{copy_path, create_directory, delete_path, load_directory_rows, move_path, path_exists, rename_path};
+use crate::app::AppState;
+use crate::fs_ops::{copy_path, create_directory, delete_path, move_path, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use crate::constants::TAB_SPACES;
 use ratatui::layout::Position;
 use ratatui::widgets::TableState;
 use std::io::Result;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
@@ -68,6 +68,17 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     match key.code {
                         KeyCode::Esc => handle_esc(app_state),
                         KeyCode::F(1) => toggle_help(app_state),
+                        KeyCode::F(10) => return Ok(false),
+                        _ => {}
+                    }
+                } else if app_state.drive_picker.is_some() {
+                    match key.code {
+                        KeyCode::Esc => app_state.drive_picker = None,
+                        KeyCode::Enter => app_state.confirm_drive_picker(),
+                        KeyCode::F(1) | KeyCode::F(2) | KeyCode::Right | KeyCode::Down => {
+                            app_state.move_drive_picker(true)
+                        }
+                        KeyCode::Left | KeyCode::Up => app_state.move_drive_picker(false),
                         KeyCode::F(10) => return Ok(false),
                         _ => {}
                     }
@@ -208,11 +219,16 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         _ => {}
                     }
                 } else {
+                    let drive_chord = key.modifiers.intersects(KeyModifiers::ALT | KeyModifiers::CONTROL);
                     match key.code {
                         KeyCode::Esc => {
                             app_state.search_clear();
                             handle_esc(app_state);
                         }
+                        // Alt+F1/F2 choose a drive per panel. Ctrl is an alias,
+                        // because window managers commonly eat Alt+F1 and Alt+F2.
+                        KeyCode::F(1) if drive_chord => app_state.open_drive_picker(true),
+                        KeyCode::F(2) if drive_chord => app_state.open_drive_picker(false),
                         KeyCode::F(1) => toggle_help(app_state),
                         KeyCode::F(2) => toggle_rename(app_state),
                         KeyCode::F(3) => handle_f3_view(app_state),
@@ -506,113 +522,44 @@ fn handle_panel_operation(app_state: &mut AppState, operation: impl FnOnce(&mut 
 }
 
 fn navigate_up_panel(app_state: &mut AppState) {
-    let dir_new: std::path::PathBuf;
-    let name_current: String;
+    let is_left = app_state.is_left_active;
+    let dir = if is_left { &app_state.dir_left } else { &app_state.dir_right };
 
-    {
-        let dir = if app_state.is_left_active { &mut app_state.dir_left } else { &mut app_state.dir_right };
-        name_current = dir.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-        if let Some(parent) = dir.parent() {
-            dir_new = parent.to_path_buf();
-        } else {
-            return;
-        }
-    }
+    // Land on the directory we just came out of.
+    let leaving = dir.file_name().map(|name| name.to_string_lossy().into_owned());
+    let Some(parent) = dir.parent().map(Path::to_path_buf) else {
+        return;
+    };
 
-    let result = load_directory_rows( &dir_new);
-    match result {
-        Ok(children_new) => {
-            let dir = if app_state.is_left_active { &mut app_state.dir_left } else { &mut app_state.dir_right };
-            let children = if app_state.is_left_active { &mut app_state.children_left } else { &mut app_state.children_right };
-            let state = if app_state.is_left_active { &mut app_state.state_left } else { &mut app_state.state_right };
-
-            *dir = dir_new;
-            *children = children_new;
-            let selected_new = children.iter().position(|item| item.name == name_current).unwrap_or(0);
-            state.select(Some(selected_new));
-            app_state.record_dir_stamp(app_state.is_left_active);
-            app_state.search_clear();
-            app_state.clear_active_selections();
-        }
-        Err(e) => app_state.display_error(e.to_string()),
-    }
+    app_state.open_dir(is_left, parent, leaving.as_deref());
 }
 
 fn enter_directory_panel(app_state: &mut AppState) {
-    let selected_item: Option<Item>;
-    let mut parent_dir_new: Option<std::path::PathBuf>;
-    let current_dir_name: Option<String>;
-    let mut enter_subdir: Option<std::path::PathBuf>;
+    let is_left = app_state.is_left_active;
+    let (state, children, dir) = if is_left {
+        (&app_state.state_left, &app_state.children_left, &app_state.dir_left)
+    } else {
+        (&app_state.state_right, &app_state.children_right, &app_state.dir_right)
+    };
 
-    {
-        let state = if app_state.is_left_active { &app_state.state_left } else { &app_state.state_right };
-        let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };
-        let dir = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
+    let Some(item) = state.selected().and_then(|index| children.get(index)).cloned() else {
+        return;
+    };
 
-        selected_item = state.selected().and_then(|index| children.get(index).cloned());
-        parent_dir_new = None;
-        current_dir_name = dir.file_name().map(|n| n.to_string_lossy().to_string());
-        enter_subdir = None;
-
-        if let Some(item) = &selected_item {
-            if item.name == ".." {
-                if let Some(parent) = dir.parent() {
-                    parent_dir_new = Some(parent.to_path_buf());
-                }
-            } else if item.is_dir {
-                let mut dir_new = dir.clone();
-                dir_new.push(item.name.clone());
-                enter_subdir = Some(dir_new);
-            }
-        }
+    if item.name == ".." {
+        navigate_up_panel(app_state);
+        return;
     }
 
-    if let Some(dir_new) = parent_dir_new {
-        let result = load_directory_rows( &dir_new);
-        match result {
-            Ok(children_new) => {
-                let dir = if app_state.is_left_active { &mut app_state.dir_left } else { &mut app_state.dir_right };
-                let children_mut = if app_state.is_left_active { &mut app_state.children_left } else { &mut app_state.children_right };
-                let state = if app_state.is_left_active { &mut app_state.state_left } else { &mut app_state.state_right };
-
-                *dir = dir_new;
-                *children_mut = children_new;
-                let selected_new = children_mut.iter().position(|item| Some(&item.name) == current_dir_name.as_ref()).unwrap_or(0);
-                state.select(Some(selected_new));
-                app_state.record_dir_stamp(app_state.is_left_active);
-                app_state.search_clear();
-                app_state.clear_active_selections();
-            }
-            Err(e) => app_state.display_error(e.to_string()),
-        }
-    } else if let Some(item) = &selected_item {
-        if !item.is_dir {
-            let dir = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
-            let file_path = dir.join(&item.name_full);
-            if let Err(e) = open_with_default(&file_path) {
-                app_state.display_error(format!("Cannot open file: {}", e));
-            }
-            return;
-        }
+    if item.is_dir {
+        let target = dir.join(&item.name);
+        app_state.open_dir(is_left, target, None);
+        return;
     }
 
-    if let Some(dir_new) = enter_subdir {
-        let result = load_directory_rows( &dir_new);
-        match result {
-            Ok(children_new) => {
-                let dir = if app_state.is_left_active { &mut app_state.dir_left } else { &mut app_state.dir_right };
-                let children = if app_state.is_left_active { &mut app_state.children_left } else { &mut app_state.children_right };
-                let state = if app_state.is_left_active { &mut app_state.state_left } else { &mut app_state.state_right };
-
-                *dir = dir_new;
-                *children = children_new;
-                state.select(Some(0));
-                app_state.record_dir_stamp(app_state.is_left_active);
-                app_state.search_clear();
-                app_state.clear_active_selections();
-            }
-            Err(e) => app_state.display_error(e.to_string()),
-        }
+    let file_path = dir.join(&item.name_full);
+    if let Err(e) = open_with_default(&file_path) {
+        app_state.display_error(format!("Cannot open file: {}", e));
     }
 }
 

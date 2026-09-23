@@ -65,6 +65,7 @@ fn install_panic_hook() {
 fn run(terminal: &mut Tui) -> io::Result<()> {
     let mut app_state = AppState::new();
 
+    app_state.mounts = fs_ops::list_mounts();
     app_state.reload_panel(true, None);
     app_state.reload_panel(false, None);
 

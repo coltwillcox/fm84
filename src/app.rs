@@ -1,4 +1,4 @@
-use crate::fs_ops::{disk_usage, get_current_dir, load_directory_rows, nearest_existing_dir};
+use crate::fs_ops::{Mount, disk_usage, get_current_dir, list_mounts, load_directory_rows, nearest_existing_dir};
 use crate::viewer::ViewerState;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -102,6 +102,10 @@ pub struct AppState {
     pub preview: Option<PreviewState>,
     /// Editor clipboard. Internal, so it works in a bare TTY too.
     pub clipboard: String,
+    /// Mounts offered in the top strip, refreshed on the same tick as disk usage.
+    pub mounts: Vec<Mount>,
+    /// Which panel is choosing a drive, and which mount it has highlighted.
+    pub drive_picker: Option<(bool, usize)>,
     pub is_f2_displayed: bool,
     pub is_f7_displayed: bool,
     pub is_left_active: bool,
@@ -233,6 +237,8 @@ impl AppState {
             is_f12_displayed: false,
             preview: None,
             clipboard: String::new(),
+            mounts: Vec::new(),
+            drive_picker: None,
             is_f2_displayed: false,
             is_f7_displayed: false,
             is_left_active: true,
@@ -1142,6 +1148,24 @@ impl AppState {
         }
     }
 
+    /// Point a panel at `dir` and read it. The single way a panel's directory
+    /// changes - navigation, and anything else that jumps somewhere. `select`
+    /// names the entry to land on, otherwise the cursor goes to the top.
+    pub fn open_dir(&mut self, is_left: bool, dir: PathBuf, select: Option<&str>) {
+        if is_left {
+            self.dir_left = dir;
+            self.selected_left.clear();
+            self.state_left.select(Some(0));
+        } else {
+            self.dir_right = dir;
+            self.selected_right.clear();
+            self.state_right.select(Some(0));
+        }
+        self.search_clear();
+        // Handles a vanished target too, by climbing to the nearest parent.
+        self.reload_panel(is_left, select);
+    }
+
     /// Reread one panel from disk. `prefer` names the entry to land on - the
     /// file just renamed or created. Otherwise the cursor keeps the *file* it
     /// was on rather than the row, since entries appearing or vanishing above
@@ -1208,6 +1232,46 @@ impl AppState {
         }
     }
 
+    /// The mount a panel is sitting on: the longest one its directory is under.
+    pub fn current_mount(&self, is_left: bool) -> Option<usize> {
+        let dir = if is_left { &self.dir_left } else { &self.dir_right };
+        self.mounts
+            .iter()
+            .enumerate()
+            .filter(|(_, mount)| dir.starts_with(&mount.path))
+            .max_by_key(|(_, mount)| mount.path.as_os_str().len())
+            .map(|(index, _)| index)
+    }
+
+    /// Start choosing a drive for a panel, highlighting the one it is on.
+    pub fn open_drive_picker(&mut self, is_left: bool) {
+        // Re-read so a stick plugged in a moment ago shows up.
+        self.mounts = list_mounts();
+        if self.mounts.is_empty() {
+            return;
+        }
+        let current = self.current_mount(is_left).unwrap_or(0);
+        self.drive_picker = Some((is_left, current));
+    }
+
+    pub fn move_drive_picker(&mut self, forward: bool) {
+        if let Some((is_left, index)) = self.drive_picker {
+            let count = self.mounts.len();
+            let next = if forward { (index + 1) % count } else { (index + count - 1) % count };
+            self.drive_picker = Some((is_left, next));
+        }
+    }
+
+    /// Take the highlighted drive; the panel jumps to that mount point.
+    pub fn confirm_drive_picker(&mut self) {
+        if let Some((is_left, index)) = self.drive_picker.take() {
+            if let Some(mount) = self.mounts.get(index) {
+                let path = mount.path.clone();
+                self.open_dir(is_left, path, None);
+            }
+        }
+    }
+
     /// Reread any panel whose directory changed underneath us. Called once per
     /// frame; the interval keeps it to a couple of stat calls a second.
     pub fn refresh_stale_panels(&mut self) {
@@ -1216,6 +1280,9 @@ impl AppState {
             return;
         }
         self.last_refresh_check = Instant::now();
+
+        // A drive appearing or going away should show up in the strip.
+        self.mounts = list_mounts();
 
         for is_left in [true, false] {
             // Free space moves without the directory changing - a copy anywhere
