@@ -6,6 +6,70 @@ use std::fs::{self, File, create_dir, read_dir, remove_dir_all, remove_file, ren
 use std::io::{self, Error};
 use std::path::{Path, PathBuf};
 
+/// Permission bits as `ls -l` writes them. The mode comes from the metadata the
+/// listing already holds, so this costs no extra syscall.
+#[cfg(unix)]
+fn format_attributes(metadata: &fs::Metadata, is_dir: bool, is_symlink: bool) -> String {
+    use std::os::unix::fs::PermissionsExt;
+
+    let mode = metadata.permissions().mode();
+    let kind = if is_symlink {
+        'l'
+    } else if is_dir {
+        'd'
+    } else {
+        '-'
+    };
+
+    // Each triplet's execute slot doubles as the setuid/setgid/sticky flag,
+    // which would otherwise be invisible.
+    let triplet = |shift: u32, special: u32, on: char| {
+        let bits = mode >> shift;
+        let execute = bits & 0o1 != 0;
+        [
+            if bits & 0o4 != 0 { 'r' } else { '-' },
+            if bits & 0o2 != 0 { 'w' } else { '-' },
+            match (mode & special != 0, execute) {
+                (true, true) => on,
+                (true, false) => on.to_ascii_uppercase(),
+                (false, true) => 'x',
+                (false, false) => '-',
+            },
+        ]
+    };
+
+    let mut text = String::with_capacity(10);
+    text.push(kind);
+    text.extend(triplet(6, 0o4000, 's'));
+    text.extend(triplet(3, 0o2000, 's'));
+    text.extend(triplet(0, 0o1000, 't'));
+    text
+}
+
+#[cfg(windows)]
+fn format_attributes(metadata: &fs::Metadata, _is_dir: bool, is_symlink: bool) -> String {
+    use std::os::windows::fs::MetadataExt;
+
+    const READONLY: u32 = 0x0000_0001;
+    const HIDDEN: u32 = 0x0000_0002;
+    const SYSTEM: u32 = 0x0000_0004;
+    const DIRECTORY: u32 = 0x0000_0010;
+    const ARCHIVE: u32 = 0x0000_0020;
+
+    let flags = metadata.file_attributes();
+    let flag = |bit: u32, on: char| if flags & bit != 0 { on } else { '-' };
+    let kind = if is_symlink { 'l' } else { flag(DIRECTORY, 'd') };
+
+    [kind, flag(ARCHIVE, 'a'), flag(READONLY, 'r'), flag(HIDDEN, 'h'), flag(SYSTEM, 's')]
+        .iter()
+        .collect()
+}
+
+#[cfg(not(any(unix, windows)))]
+fn format_attributes(_metadata: &fs::Metadata, _is_dir: bool, _is_symlink: bool) -> String {
+    String::new()
+}
+
 pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
     let entries: Vec<_> = read_dir(path)?
         .filter_map(|entry| entry.ok())
@@ -24,6 +88,7 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
             size: String::new(),
             size_bytes: 0,
             modified: String::new(),
+            attributes: String::new(),
         });
     }
 
@@ -55,6 +120,11 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
             })
             .unwrap_or_default();
 
+        let attributes = metadata
+            .as_ref()
+            .map(|metadata| format_attributes(metadata, is_dir, is_symlink))
+            .unwrap_or_default();
+
         children.push(Item {
             name_full,
             name,
@@ -63,6 +133,7 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
             size,
             size_bytes,
             modified,
+            attributes,
         });
     }
 

@@ -20,6 +20,29 @@ const STYLE_FILE: Style = Style::new().fg(COLOR_FILE);
 const STYLE_DIR: Style = Style::new().fg(COLOR_DIRECTORY);
 const STYLE_DIR_DARK: Style = Style::new().fg(COLOR_DIRECTORY_DARK);
 
+/// The columns beside Name, widest-priority first: as a panel narrows they are
+/// given up from the end. Name is never dropped, so it is not listed here.
+const OPTIONAL_COLUMNS: [(&str, u16); 4] = [("Ext", 5), ("Size", 8), ("Modified", 14), ("Attributes", 10)];
+/// Below this, a filename is no longer worth reading, so the next column goes.
+const MIN_NAME_WIDTH: u16 = 12;
+
+/// How many optional columns a panel of this width can carry. Each costs its
+/// own width plus the separator and the spacing either side of it; whatever is
+/// left over belongs to Name.
+fn visible_column_count(panel_width: u16) -> usize {
+    let mut used = 3; // icon plus the gap after it
+    let mut count = 0;
+    for (_, width) in OPTIONAL_COLUMNS {
+        let next = used + width + 3;
+        if panel_width.saturating_sub(next) < MIN_NAME_WIDTH {
+            break;
+        }
+        used = next;
+        count += 1;
+    }
+    count
+}
+
 pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppState) {
     // Update cached clock
     let current_time = Local::now().format(" %H:%M:%S ").to_string();
@@ -123,7 +146,12 @@ fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &PathBuf, d
 fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut AppState) -> u16 {
     let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Percentage(50), Constraint::Length(1), Constraint::Percentage(50)]).split(chunk);
 
-    let widths = [Constraint::Length(2), Constraint::Percentage(50), Constraint::Length(1), Constraint::Percentage(10), Constraint::Length(1), Constraint::Percentage(15), Constraint::Length(1), Constraint::Length(15)];
+    let columns = visible_column_count(chunks[0].width);
+    let mut widths = vec![Constraint::Length(2), Constraint::Fill(1)];
+    for (_, width) in OPTIONAL_COLUMNS.iter().take(columns) {
+        widths.push(Constraint::Length(1));
+        widths.push(Constraint::Length(*width));
+    }
 
     let is_f2_displayed = app_state.is_f2_displayed;
     let table_style = |active: bool| {
@@ -140,10 +168,10 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     // Viewport height (subtract 1 for header row)
     let viewport_height = chunks[0].height.saturating_sub(1) as usize;
 
-    let header = make_header_row();
+    let header = make_header_row(columns);
 
     // Build only visible rows for left panel
-    let (rows_left, offset_left) = build_viewport_rows(app_state, true, viewport_height);
+    let (rows_left, offset_left) = build_viewport_rows(app_state, true, viewport_height, columns);
     let mut state_left_view = TableState::default();
     state_left_view.select(app_state.state_left.selected().map(|s| s.saturating_sub(offset_left)));
 
@@ -164,7 +192,7 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     f.render_widget(separator_vertical, chunks[1]);
 
     // Build only visible rows for right panel
-    let (rows_right, offset_right) = build_viewport_rows(app_state, false, viewport_height);
+    let (rows_right, offset_right) = build_viewport_rows(app_state, false, viewport_height, columns);
     let mut state_right_view = TableState::default();
     state_right_view.select(app_state.state_right.selected().map(|s| s.saturating_sub(offset_right)));
 
@@ -185,7 +213,7 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
 }
 
 /// Build only the rows visible in the viewport, returns (rows, start_offset)
-fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize) -> (Vec<Row<'static>>, usize) {
+fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: usize) -> (Vec<Row<'static>>, usize) {
     let children = if is_left { &app_state.children_left } else { &app_state.children_right };
     let state = if is_left { &app_state.state_left } else { &app_state.state_right };
     let selected_set = if is_left { &app_state.selected_left } else { &app_state.selected_right };
@@ -264,32 +292,32 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
             child.size.clone()
         };
 
-        rows.push(Row::new(vec![
+        let mut cells = vec![
             Cell::from(Span::styled(icon, Style::default().fg(text_color))),
             name_cell,
-            border_cell.clone(),
-            Cell::from(Span::styled(extension, text_style)),
-            border_cell.clone(),
-            Cell::from(Span::styled(size, text_style)),
-            border_cell.clone(),
-            Cell::from(Span::styled(child.modified.clone(), text_style)),
-        ]));
+        ];
+        // Same order as OPTIONAL_COLUMNS.
+        let values = [extension, size, child.modified.clone(), child.attributes.clone()];
+        for value in values.into_iter().take(columns) {
+            cells.push(border_cell.clone());
+            cells.push(Cell::from(Span::styled(value, text_style)));
+        }
+        rows.push(Row::new(cells));
     }
 
     (rows, start)
 }
 
-fn make_header_row() -> Row<'static> {
-    Row::new(vec![
+fn make_header_row(columns: usize) -> Row<'static> {
+    let mut cells = vec![
         Cell::from(Span::styled("", STYLE_COLUMNS)),
         Cell::from(Span::styled("Name", STYLE_COLUMNS)),
-        Cell::from(Span::styled("", STYLE_COLUMNS)),
-        Cell::from(Span::styled("Ext", STYLE_COLUMNS)),
-        Cell::from(Span::styled("", STYLE_COLUMNS)),
-        Cell::from(Span::styled("Size", STYLE_COLUMNS)),
-        Cell::from(Span::styled("", STYLE_COLUMNS)),
-        Cell::from(Span::styled("Modified", STYLE_COLUMNS)),
-    ])
+    ];
+    for (title, _) in OPTIONAL_COLUMNS.iter().take(columns) {
+        cells.push(Cell::from(Span::styled("", STYLE_COLUMNS)));
+        cells.push(Cell::from(Span::styled(*title, STYLE_COLUMNS)));
+    }
+    Row::new(cells)
 }
 
 fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize) {

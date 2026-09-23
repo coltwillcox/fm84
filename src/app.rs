@@ -182,6 +182,7 @@ pub struct Item {
     pub size: String,
     pub size_bytes: u64,
     pub modified: String,
+    pub attributes: String,
 }
 
 impl AppState {
