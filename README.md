@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.9.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.10.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -78,15 +78,21 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🧭 **Vanished directories** - if the open directory is deleted, the panel climbs to the nearest surviving parent
 - 🤫 **Stays out of the way** - never reloads while a dialog, Viewer or Editor is open
 
+### 🧱 Columns
+- 📋 **Name, Ext, Size, Modified, Attributes** - permissions written the way `ls -l` writes them
+- 📐 **Priority when space runs short** - columns drop from the right, Name always stays and keeps the leftover width
+
 ### 📊 Status Bar
 - 📈 **Panel stats** - selected/total file count and size shown per panel
+- 💽 **Disk usage** - a meter and used/total for each panel's filesystem, shortening then stepping aside on narrow terminals
 - 🎨 **Active/inactive styling** - active panel stats highlighted, inactive dimmed
 
 ### 🎨 Viewer (F3)
 - 🖼️ **Bordered frame** with filename title bar
 - 📊 **Line numbers** in the gutter
 - 🔢 **Status bar** - filename, line count, file size, detected syntax
-- 🚫 **Binary detection** - won't melt your terminal with garbage
+- 🔢 **Hex view** - binaries open as a `hexdump -C`; `X` toggles hex for any file, so you can eyeball a BOM or CRLF endings
+- 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
 - ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
@@ -103,6 +109,11 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 - 🖱️ **Mouse click** - click to position cursor anywhere in the editor
+
+### 👁️ Preview (F12)
+- 🪞 **Opposite panel** - shows the head of whatever the cursor is on, and follows it
+- 📁 **Directories** - item count instead of contents
+- 🪶 **Bounded** - reads at most 64 KiB, never prompts, never loads a whole file
 
 ### 📂 Directory Sizes
 - 📏 **Calculated on select** - press Space on a directory to calculate its size
@@ -132,6 +143,9 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 | `F8` / `Delete` | Delete (selected items or cursor item) |
 | `F9` | Open terminal |
 | `F10` | Quit |
+| `F11` | Options |
+| `F12` | Preview cursor file in other panel |
+| `X` | Toggle hex view (in Viewer) |
 | `Space` / `Insert` | Select/deselect file |
 | `Ctrl+R` | Reload both panels |
 | `Scroll` | Scroll content (panels, Viewer, Editor) |
@@ -226,5 +240,5 @@ The color palette channels pure 80s energy:
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.9.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.10.0 ▄▀▄▀▄▀</code>
 </p>

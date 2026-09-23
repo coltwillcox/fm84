@@ -6,6 +6,27 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.10.0] - 2026-09-23
+
+### ✨ Added
+- 💽 **Disk usage per panel** - a five-cell meter plus used/total for each panel's filesystem on the status line; read on the refresh tick, never in the render path, so an unresponsive network mount can't freeze the UI
+- 🔑 **Attributes column** - permissions as `ls -l` writes them, setuid, setgid and sticky bits included, from metadata the listing already holds
+- 🔢 **Hex view in the Viewer** - F3 on a binary shows a `hexdump -C` instead of refusing; `X` toggles hex for any file, which also makes a BOM or CRLF endings visible in a text file
+- 👁️ **F12 Preview** - the head of the cursor file in the opposite panel, following the cursor; capped at 64 KiB so it stays cheap while arrowing through large files
+- ⚙️ **F11 Options** - placeholder popup, under construction
+
+### 🛠️ Changed
+- 📐 **Columns drop by priority** - Name, Ext, Size, Modified, Attributes; Name is never dropped and now takes the leftover width instead of being squeezed to two characters at 80 columns
+- 🔡 **F-key bar drops whole labels** when the terminal is too narrow, rather than clipping one mid-word
+- 📊 **Status bars drop whole segments** for the same reason, instead of overrunning the closing corner
+
+### 🐛 Fixed
+- 🛡️ **Control characters are neutralised in the Viewer** - a text file containing escape sequences could clear the screen and erase the frame around it
+- 🍎 **Disk usage on Apple platforms** - `statvfs` reports block counts through a 32-bit `fsblkcnt_t` there, truncating past about 16 TiB; the native `statfs` is used instead
+- 🚪 **F4's binary notice** closes with F4, and F3 no longer closes it - each key now closes only what it opened
+
+---
+
 ## [0.9.0] - 2026-09-22
 
 ### ✨ Added
