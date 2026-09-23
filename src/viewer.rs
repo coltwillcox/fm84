@@ -107,6 +107,25 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
     })
 }
 
+/// The head of a file, capped in both bytes and lines. Reads lossily so a cut
+/// multi-byte character at the cap can't fail the whole preview.
+pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Vec<String> {
+    if is_binary_file(path).unwrap_or(false) {
+        return vec!["Binary file".to_string()];
+    }
+
+    let Ok(file) = File::open(path) else {
+        return vec!["Cannot read file".to_string()];
+    };
+
+    let mut buffer = Vec::new();
+    if file.take(max_bytes).read_to_end(&mut buffer).is_err() {
+        return vec!["Cannot read file".to_string()];
+    }
+
+    String::from_utf8_lossy(&buffer).lines().take(max_lines).map(|line| line.to_string()).collect()
+}
+
 pub fn detect_syntax(path: &Path) -> String {
     match path.extension().and_then(|s| s.to_str()) {
         Some("rs") => "Rust".to_string(),

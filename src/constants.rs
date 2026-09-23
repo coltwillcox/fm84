@@ -32,5 +32,10 @@ pub const LARGE_FILE_SIZE: u64 = 64 * 1024 * 1024;
 // a second; editing stays fast afterwards regardless of length.
 pub const MAX_HIGHLIGHT_SIZE: u64 = 512 * 1024;
 
+// A preview reloads every time the cursor moves, so it only ever reads the head
+// of a file - never the whole thing, and never with the large-file prompt.
+pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
+pub const PREVIEW_MAX_LINES: usize = 500;
+
 pub const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
 pub const TAB_SPACES: &str = "    ";

@@ -98,6 +98,8 @@ pub struct AppState {
     pub is_error_displayed: bool,
     pub is_f1_displayed: bool,
     pub is_f11_displayed: bool,
+    pub is_f12_displayed: bool,
+    pub preview: Option<PreviewState>,
     pub is_f2_displayed: bool,
     pub is_f7_displayed: bool,
     pub is_left_active: bool,
@@ -174,6 +176,15 @@ pub struct EditorState {
     pub line_ending: &'static str,
 }
 
+/// What the opposite panel is showing while preview mode is on.
+pub struct PreviewState {
+    /// None for the parent entry, which has nothing to show but still holds
+    /// the pane so it doesn't flicker back to a table as the cursor passes.
+    pub path: Option<PathBuf>,
+    pub label: String,
+    pub lines: Vec<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct Item {
     pub name_full: String,
@@ -202,6 +213,8 @@ impl AppState {
             is_error_displayed,
             is_f1_displayed: false,
             is_f11_displayed: false,
+            is_f12_displayed: false,
+            preview: None,
             is_f2_displayed: false,
             is_f7_displayed: false,
             is_left_active: true,
@@ -934,6 +947,52 @@ impl AppState {
                 self.reload_panel(is_left, None);
             }
         }
+    }
+
+    /// Full path of the entry under the cursor, unless that is the parent entry.
+    fn cursor_target(&self) -> Option<(PathBuf, String, bool)> {
+        let (children, state, dir) = if self.is_left_active {
+            (&self.children_left, &self.state_left, &self.dir_left)
+        } else {
+            (&self.children_right, &self.state_right, &self.dir_right)
+        };
+        let item = children.get(state.selected()?)?;
+        if item.name == ".." {
+            return None;
+        }
+        Some((dir.join(&item.name_full), item.name_full.clone(), item.is_dir))
+    }
+
+    /// Keep the preview pointed at whatever the cursor is on. Reads only when
+    /// the target actually changed, so holding an arrow key stays cheap.
+    pub fn refresh_preview(&mut self) {
+        if !self.is_f12_displayed {
+            self.preview = None;
+            return;
+        }
+
+        let target = self.cursor_target();
+        let path = target.as_ref().map(|(path, _, _)| path.clone());
+        if self.preview.as_ref().is_some_and(|preview| preview.path == path) {
+            return;
+        }
+
+        let (label, lines) = match &target {
+            None => (String::new(), Vec::new()),
+            Some((path, name, true)) => {
+                let lines = match std::fs::read_dir(path) {
+                    Ok(entries) => vec![format!("{} items", entries.count())],
+                    Err(e) => vec![e.to_string()],
+                };
+                (name.clone(), lines)
+            }
+            Some((path, name, false)) => (
+                name.clone(),
+                crate::viewer::load_preview(path, crate::constants::PREVIEW_MAX_BYTES, crate::constants::PREVIEW_MAX_LINES),
+            ),
+        };
+
+        self.preview = Some(PreviewState { path, label, lines });
     }
 
     pub fn clear_all_selections(&mut self) {

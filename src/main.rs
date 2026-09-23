@@ -69,6 +69,8 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
     app_state.reload_panel(false, None);
 
     loop {
+        // Before the draw, so a cursor move shows its preview in the same frame.
+        app_state.refresh_preview();
         render_ui(terminal, &mut app_state);
         app_state.refresh_stale_panels();
         if !handle_input(&mut app_state)? {

@@ -205,6 +205,12 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
         .column_spacing(1);
     f.render_stateful_widget(table_right, chunks[2], &mut state_right_view);
 
+    // Preview takes over the panel the cursor is not in.
+    if let Some(preview) = &app_state.preview {
+        let (area, is_left) = if app_state.is_left_active { (chunks[2], false) } else { (chunks[0], true) };
+        render_preview(f, area, preview, is_left);
+    }
+
     // Hand the real geometry to the mouse handlers.
     app_state.table_area_left = chunks[0];
     app_state.table_area_right = chunks[2];
@@ -308,6 +314,30 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
     }
 
     (rows, start)
+}
+
+fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::PreviewState, is_left: bool) {
+    let block = Block::default()
+        .borders(if is_left { Borders::LEFT } else { Borders::RIGHT })
+        .border_style(STYLE_BORDER);
+    let inner = block.inner(area);
+
+    f.render_widget(Clear::default(), area);
+    f.render_widget(block, area);
+    if inner.height == 0 {
+        return;
+    }
+
+    let mut lines = vec![Line::from(Span::styled(format!(" {}", preview.label), STYLE_COLUMNS))];
+    lines.extend(
+        preview
+            .lines
+            .iter()
+            .take(inner.height as usize - 1)
+            .map(|line| Line::from(Span::styled(format!(" {}", line.replace('\t', TAB_SPACES)), STYLE_FILE))),
+    );
+
+    f.render_widget(Paragraph::new(lines), inner);
 }
 
 fn make_header_row(columns: usize) -> Row<'static> {
@@ -661,7 +691,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
 
 /// The F-key hints, dropped from the end when the terminal cannot hold them
 /// whole - a half-drawn label reads worse than a missing one.
-const FKEY_LABELS: [&str; 11] = [
+const FKEY_LABELS: [&str; 12] = [
     " F1 Help ",
     " F2 Rename ",
     " F3 View ",
@@ -673,6 +703,7 @@ const FKEY_LABELS: [&str; 11] = [
     " F9 Terminal ",
     " F10 Quit ",
     " F11 Options ",
+    " F12 Preview ",
 ];
 
 fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect) {
@@ -724,6 +755,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F9 - Open terminal",
         "F10 - Quit",
         "F11 - Options",
+        "F12 - Preview in other panel",
         "Space - Select/deselect file",
         "Ctrl+R - Reload both panels",
         "Type to search, Esc to clear",

@@ -192,6 +192,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(8) | KeyCode::Delete => toggle_delete(app_state),
                         KeyCode::F(9) => open_terminal(app_state),
                         KeyCode::F(11) => toggle_options(app_state),
+                        KeyCode::F(12) => toggle_preview(app_state),
                         KeyCode::F(10) => return Ok(false),
                         KeyCode::Char(' ') => {
                             // Space toggles selection and moves to next item
@@ -314,6 +315,13 @@ fn toggle_help(app_state: &mut AppState) {
         return;
     }
     app_state.is_f1_displayed = !app_state.is_f1_displayed;
+}
+
+fn toggle_preview(app_state: &mut AppState) {
+    if app_state.is_error_displayed || app_state.is_f1_displayed {
+        return;
+    }
+    app_state.is_f12_displayed = !app_state.is_f12_displayed;
 }
 
 fn toggle_options(app_state: &mut AppState) {
