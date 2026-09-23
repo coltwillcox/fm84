@@ -88,7 +88,18 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                 } else if app_state.is_f3_displayed {
                     match key.code {
                         KeyCode::Esc => handle_esc(app_state),
-                        KeyCode::F(3) => app_state.close_viewer(),
+                        // Each key closes only what it opened: F3 the viewer,
+                        // F4 the notice it raises on a binary. Esc closes either.
+                        KeyCode::F(3) => {
+                            if app_state.viewer_state.as_ref().is_some_and(|state| !state.from_edit) {
+                                app_state.close_viewer();
+                            }
+                        }
+                        KeyCode::F(4) => {
+                            if app_state.viewer_state.as_ref().is_some_and(|state| state.from_edit) {
+                                app_state.close_viewer();
+                            }
+                        }
                         KeyCode::Char('x') | KeyCode::Char('X') => app_state.viewer_toggle_hex(),
                         KeyCode::F(10) => return Ok(false),
                         KeyCode::Down => app_state.viewer_scroll_down(),
