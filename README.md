@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.10.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.11.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -103,6 +103,9 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Line endings preserved** - a CRLF file stays CRLF when saved
 - 🖼️ **Bordered frame** with filename and modified indicator in title bar
 - 📄 **Full text editing** - cursor navigation, insert, delete
+- ✂️ **Select, cut, copy, paste** - Shift+arrows to select, Ctrl+A for all, Ctrl+X/C/V (or Ctrl+Insert, Shift+Insert, Shift+Delete)
+- ↩️ **Undo** - Ctrl+Z, 200 steps deep, one step per action rather than per keystroke burst
+- 📋 **System clipboard** - copies reach it over OSC 52, pastes arrive as bracketed paste, both without linking a clipboard library
 - 💾 **Save** - F2 or Ctrl+S
 - 📍 **Line/Column tracking** - always know where you are
 - ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close
@@ -146,6 +149,10 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 | `F11` | Options |
 | `F12` | Preview cursor file in other panel |
 | `X` | Toggle hex view (in Viewer) |
+| `Shift`+arrows | Select text (in Editor) |
+| `Ctrl+A` | Select all (in Editor) |
+| `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Cut / Copy / Paste (in Editor) |
+| `Ctrl+Z` | Undo (in Editor) |
 | `Space` / `Insert` | Select/deselect file |
 | `Ctrl+R` | Reload both panels |
 | `Scroll` | Scroll content (panels, Viewer, Editor) |
@@ -240,5 +247,5 @@ The color palette channels pure 80s energy:
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.10.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.11.0 ▄▀▄▀▄▀</code>
 </p>

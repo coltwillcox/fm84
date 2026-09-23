@@ -6,6 +6,20 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.11.0] - 2026-09-23
+
+### ✨ Added
+- ✂️ **Selection in the Editor** - Shift with any cursor key extends a selection, Ctrl+A takes the lot; the selection is drawn over the syntax colours rather than replacing them
+- 📋 **Cut, copy and paste** - Ctrl+X/C/V, plus the Ctrl+Insert, Shift+Insert and Shift+Delete aliases; typing, Backspace and Delete all replace a selection
+- 🌐 **System clipboard** - copies are offered to the terminal with OSC 52 and pastes arrive through bracketed paste, so the clipboard works over SSH without linking a platform clipboard library
+- ↩️ **Undo** - Ctrl+Z, 200 steps, one step per action rather than per internal operation, restoring the cursor along with the text
+
+### 🛠️ Changed
+- 🎨 **The cursor line keeps its syntax colours** - it was previously redrawn from the raw text
+- 🛡️ **Control characters are neutralised in the Editor too**, closing the same escape-sequence hole the Viewer had
+
+---
+
 ## [0.10.0] - 2026-09-23
 
 ### ✨ Added
