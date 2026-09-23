@@ -27,14 +27,25 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                 if let KeyCode::Char(c) = key.code
                     && control != alt
                 {
-                    let is_save = control && c == 's' && app_state.is_f4_displayed && !app_state.is_editor_save_prompt;
-                    if is_save && let Err(e) = app_state.editor_save() {
-                        app_state.display_error(e);
-                    }
-                    // Ctrl+R rereads both panels from disk.
-                    if control && c == 'r' && !app_state.is_modal_open() {
-                        app_state.reload_panel(true, None);
-                        app_state.reload_panel(false, None);
+                    let in_editor = app_state.is_f4_displayed && !app_state.is_editor_save_prompt;
+                    if control {
+                        match c {
+                            's' if in_editor => {
+                                if let Err(e) = app_state.editor_save() {
+                                    app_state.display_error(e);
+                                }
+                            }
+                            'a' if in_editor => app_state.editor_select_all(),
+                            'c' if in_editor => app_state.editor_copy(),
+                            'x' if in_editor => app_state.editor_cut(),
+                            'v' if in_editor => app_state.editor_paste(),
+                            // Ctrl+R rereads both panels from disk.
+                            'r' if !app_state.is_modal_open() => {
+                                app_state.reload_panel(true, None);
+                                app_state.reload_panel(false, None);
+                            }
+                            _ => {}
+                        }
                     }
                     return Ok(true);
                 }
@@ -144,6 +155,9 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     if let Some(state) = &mut app_state.editor_state {
                         state.auto_scroll = true;
                     }
+                    // Shift turns a cursor move into a selection; without it the
+                    // selection is dropped.
+                    let extend = key.modifiers.contains(KeyModifiers::SHIFT);
                     match key.code {
                         KeyCode::Esc | KeyCode::F(4) => {
                             if app_state.editor_is_modified() {
@@ -159,16 +173,20 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                             }
                         }
                         KeyCode::F(10) => return Ok(false),
-                        KeyCode::Up => app_state.editor_cursor_up(),
-                        KeyCode::Down => app_state.editor_cursor_down(),
-                        KeyCode::Left => app_state.editor_cursor_left(),
-                        KeyCode::Right => app_state.editor_cursor_right(),
-                        KeyCode::Home => app_state.editor_home(),
-                        KeyCode::End => app_state.editor_end(),
-                        KeyCode::PageUp => app_state.editor_page_up(),
-                        KeyCode::PageDown => app_state.editor_page_down(),
+                        KeyCode::Up => { app_state.editor_prepare_move(extend); app_state.editor_cursor_up(); }
+                        KeyCode::Down => { app_state.editor_prepare_move(extend); app_state.editor_cursor_down(); }
+                        KeyCode::Left => { app_state.editor_prepare_move(extend); app_state.editor_cursor_left(); }
+                        KeyCode::Right => { app_state.editor_prepare_move(extend); app_state.editor_cursor_right(); }
+                        KeyCode::Home => { app_state.editor_prepare_move(extend); app_state.editor_home(); }
+                        KeyCode::End => { app_state.editor_prepare_move(extend); app_state.editor_end(); }
+                        KeyCode::PageUp => { app_state.editor_prepare_move(extend); app_state.editor_page_up(); }
+                        KeyCode::PageDown => { app_state.editor_prepare_move(extend); app_state.editor_page_down(); }
                         KeyCode::Enter => app_state.editor_enter(),
                         KeyCode::Backspace => app_state.editor_backspace(),
+                        // CUA aliases, which bypass the Ctrl-chord gate entirely.
+                        KeyCode::Insert if key.modifiers.contains(KeyModifiers::CONTROL) => app_state.editor_copy(),
+                        KeyCode::Insert if extend => app_state.editor_paste(),
+                        KeyCode::Delete if extend => app_state.editor_cut(),
                         KeyCode::Delete => app_state.editor_delete(),
                         KeyCode::Tab => app_state.editor_insert_char('\t'),
                         KeyCode::Char(c) => app_state.editor_insert_char(c),
@@ -1092,5 +1110,6 @@ fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16) {
         state.cursor_line = target_line;
         state.cursor_col = char_col;
         state.auto_scroll = true;
+        state.selection_anchor = None;
     }
 }

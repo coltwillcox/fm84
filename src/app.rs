@@ -100,6 +100,8 @@ pub struct AppState {
     pub is_f11_displayed: bool,
     pub is_f12_displayed: bool,
     pub preview: Option<PreviewState>,
+    /// Editor clipboard. Internal, so it works in a bare TTY too.
+    pub clipboard: String,
     pub is_f2_displayed: bool,
     pub is_f7_displayed: bool,
     pub is_left_active: bool,
@@ -168,6 +170,8 @@ pub struct EditorState {
     pub horizontal_offset: usize,
     pub modified: bool,
     pub auto_scroll: bool,
+    /// Where a selection began. The selection runs from here to the cursor.
+    pub selection_anchor: Option<(usize, usize)>,
     /// Parser state entering each line, so an edit re-parses from that line
     /// instead of the whole file. Empty when highlighting is off.
     pub line_states: Vec<crate::viewer::LineState>,
@@ -215,6 +219,7 @@ impl AppState {
             is_f11_displayed: false,
             is_f12_displayed: false,
             preview: None,
+            clipboard: String::new(),
             is_f2_displayed: false,
             is_f7_displayed: false,
             is_left_active: true,
@@ -564,6 +569,7 @@ impl AppState {
             horizontal_offset: 0,
             modified: false,
             auto_scroll: true,
+            selection_anchor: None,
             line_ending,
             line_states,
         });
@@ -624,6 +630,104 @@ impl AppState {
         if let Some(state) = &mut self.editor_state {
             state.horizontal_offset += 1;
             state.auto_scroll = false;
+        }
+    }
+
+    /// Remove the selected range, leaving the cursor where the selection began.
+    /// Returns the line to re-highlight from, or None if nothing was selected.
+    /// Shared by cut, paste, typing, Backspace and Delete.
+    fn delete_selection(&mut self) -> Option<usize> {
+        let state = self.editor_state.as_mut()?;
+        let ((first_line, first_col), (last_line, last_col)) = state.selection()?;
+
+        let head = char_slice(&state.lines[first_line], 0, first_col);
+        let last = &state.lines[last_line];
+        let tail = char_slice(last, last_col, last.chars().count());
+
+        state.lines.splice(first_line..=last_line, [format!("{head}{tail}")]);
+        state.cursor_line = first_line;
+        state.cursor_col = first_col;
+        state.selection_anchor = None;
+        state.modified = true;
+        Some(first_line)
+    }
+
+    pub fn editor_select_all(&mut self) {
+        let height = self.editor_viewport_height;
+        if let Some(state) = &mut self.editor_state {
+            let last_line = state.lines.len().saturating_sub(1);
+            state.selection_anchor = Some((0, 0));
+            state.cursor_line = last_line;
+            state.cursor_col = state.lines[last_line].chars().count();
+            state.scroll_offset = last_line.saturating_sub(height.saturating_sub(1));
+        }
+    }
+
+    pub fn editor_copy(&mut self) {
+        if let Some(text) = self.editor_state.as_ref().and_then(|state| state.selected_text()) {
+            self.clipboard = text;
+        }
+    }
+
+    pub fn editor_cut(&mut self) {
+        self.editor_copy();
+        if let Some(from) = self.delete_selection() {
+            self.editor_rehighlight_from(from);
+        }
+    }
+
+    pub fn editor_paste(&mut self) {
+        if self.clipboard.is_empty() {
+            return;
+        }
+
+        // A selection is replaced by what is pasted over it.
+        let mut rehighlight = self.delete_selection();
+        let text = self.clipboard.clone();
+
+        if let Some(state) = &mut self.editor_state {
+            let line = state.lines[state.cursor_line].clone();
+            let head = char_slice(&line, 0, state.cursor_col);
+            let tail = char_slice(&line, state.cursor_col, line.chars().count());
+            let pieces: Vec<&str> = text.split('\n').collect();
+            let start_line = state.cursor_line;
+
+            if let [only] = pieces[..] {
+                state.lines[start_line] = format!("{head}{only}{tail}");
+                state.cursor_col += only.chars().count();
+            } else {
+                let last = pieces.len() - 1;
+                let mut replacement = Vec::with_capacity(pieces.len());
+                replacement.push(format!("{head}{}", pieces[0]));
+                replacement.extend(pieces[1..last].iter().map(|piece| (*piece).to_string()));
+                replacement.push(format!("{}{tail}", pieces[last]));
+
+                state.lines.splice(start_line..=start_line, replacement);
+                state.cursor_line = start_line + last;
+                state.cursor_col = pieces[last].chars().count();
+            }
+
+            state.modified = true;
+            state.selection_anchor = None;
+            rehighlight = Some(rehighlight.unwrap_or(start_line).min(start_line));
+        }
+
+        if let Some(from) = rehighlight {
+            self.editor_rehighlight_from(from);
+        }
+    }
+
+    /// Called before a cursor move: Shift extends the selection from where the
+    /// cursor was, anything else drops it.
+    pub fn editor_prepare_move(&mut self, extend: bool) {
+        if let Some(state) = &mut self.editor_state {
+            if extend {
+                if state.selection_anchor.is_none() {
+                    state.selection_anchor = Some((state.cursor_line, state.cursor_col));
+                }
+            } else {
+                state.selection_anchor = None;
+            }
         }
     }
 
@@ -713,6 +817,8 @@ impl AppState {
     }
 
     pub fn editor_insert_char(&mut self, c: char) {
+        // Typing over a selection replaces it.
+        self.delete_selection();
         let mut from = None;
         if let Some(state) = &mut self.editor_state {
             let line = &mut state.lines[state.cursor_line];
@@ -728,6 +834,11 @@ impl AppState {
     }
 
     pub fn editor_backspace(&mut self) {
+        // With a selection, Backspace removes that rather than a character.
+        if let Some(from) = self.delete_selection() {
+            self.editor_rehighlight_from(from);
+            return;
+        }
         let mut from = None;
         if let Some(state) = &mut self.editor_state {
             if state.cursor_col > 0 {
@@ -756,6 +867,10 @@ impl AppState {
     }
 
     pub fn editor_delete(&mut self) {
+        if let Some(from) = self.delete_selection() {
+            self.editor_rehighlight_from(from);
+            return;
+        }
         let mut from = None;
         if let Some(state) = &mut self.editor_state {
             let line_len = state.lines[state.cursor_line].chars().count();
@@ -779,6 +894,7 @@ impl AppState {
     }
 
     pub fn editor_enter(&mut self) {
+        self.delete_selection();
         let mut from = None;
         if let Some(state) = &mut self.editor_state {
             from = Some(state.cursor_line);
@@ -1066,6 +1182,36 @@ impl AppState {
 }
 
 impl EditorState {
+    /// The selection as ((line, col), (line, col)) in document order, or None
+    /// when nothing is selected.
+    pub fn selection(&self) -> Option<((usize, usize), (usize, usize))> {
+        let anchor = self.selection_anchor?;
+        let cursor = (self.cursor_line, self.cursor_col);
+        if anchor == cursor {
+            return None;
+        }
+        Some(if anchor < cursor { (anchor, cursor) } else { (cursor, anchor) })
+    }
+
+    /// The selected text, with '\n' between lines whatever the file uses.
+    pub fn selected_text(&self) -> Option<String> {
+        let ((first_line, first_col), (last_line, last_col)) = self.selection()?;
+
+        if first_line == last_line {
+            return Some(char_slice(&self.lines[first_line], first_col, last_col));
+        }
+
+        let first = &self.lines[first_line];
+        let mut text = char_slice(first, first_col, first.chars().count());
+        for line in &self.lines[first_line + 1..last_line] {
+            text.push('\n');
+            text.push_str(line);
+        }
+        text.push('\n');
+        text.push_str(&char_slice(&self.lines[last_line], 0, last_col));
+        Some(text)
+    }
+
     /// Clamp cursor_col to current line length.
     fn clamp_col(&mut self) {
         let line_len = self.lines[self.cursor_line].chars().count();
@@ -1079,6 +1225,11 @@ fn detect_line_ending(content: &str) -> &'static str {
     let crlf = content.matches("\r\n").count();
     let lf = content.matches('\n').count() - crlf;
     if crlf > lf { "\r\n" } else { "\n" }
+}
+
+/// A character range of a line, as a new String.
+fn char_slice(line: &str, from: usize, to: usize) -> String {
+    line[char_to_byte(line, from)..char_to_byte(line, to)].to_string()
 }
 
 /// Convert a char index to a byte index in a string.

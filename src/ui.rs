@@ -20,6 +20,7 @@ const STYLE_COLUMNS: Style = Style::new().fg(COLOR_COLUMNS);
 const STYLE_FILE: Style = Style::new().fg(COLOR_FILE);
 const STYLE_DIR: Style = Style::new().fg(COLOR_DIRECTORY);
 const STYLE_DIR_DARK: Style = Style::new().fg(COLOR_DIRECTORY_DARK);
+const STYLE_SELECTION: Style = Style::new().bg(COLOR_SELECTED_BACKGROUND_INACTIVE);
 
 /// The columns beside Name, widest-priority first: as a panel narrows they are
 /// given up from the end. Name is never dropped, so it is not listed here.
@@ -439,6 +440,58 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
     }
 }
 
+/// Visual column of a character index, with tabs expanded the way the editor
+/// draws them.
+fn visual_column(line: &str, char_col: usize) -> usize {
+    line.chars().take(char_col).map(|c| if c == '\t' { TAB_SPACES.len() } else { 1 }).sum()
+}
+
+/// Merge `extra` into the styles covering visual columns [from, to), splitting
+/// spans at the boundaries so the syntax colours survive underneath.
+fn overlay_range(spans: Vec<Span<'static>>, from: usize, to: usize, extra: Style) -> Vec<Span<'static>> {
+    if from >= to {
+        return spans;
+    }
+
+    let mut result = Vec::with_capacity(spans.len() + 2);
+    let mut column = 0;
+    for span in spans {
+        let text = span.content.into_owned();
+        let length = text.chars().count();
+        let span_end = column + length;
+
+        if span_end <= from || column >= to {
+            result.push(Span::styled(text, span.style));
+        } else {
+            let characters: Vec<char> = text.chars().collect();
+            let head = from.saturating_sub(column).min(length);
+            let tail = to.saturating_sub(column).min(length);
+            if head > 0 {
+                result.push(Span::styled(characters[..head].iter().collect::<String>(), span.style));
+            }
+            result.push(Span::styled(characters[head..tail].iter().collect::<String>(), span.style.patch(extra)));
+            if tail < length {
+                result.push(Span::styled(characters[tail..].iter().collect::<String>(), span.style));
+            }
+        }
+        column = span_end;
+    }
+    result
+}
+
+/// Draw the cursor cell, padding out to it when it sits past end-of-line.
+fn place_cursor(mut spans: Vec<Span<'static>>, column: usize, style: Style) -> Vec<Span<'static>> {
+    let total: usize = spans.iter().map(|span| span.content.chars().count()).sum();
+    if column < total {
+        return overlay_range(spans, column, column + 1, style);
+    }
+    if column > total {
+        spans.push(Span::raw(" ".repeat(column - total)));
+    }
+    spans.push(Span::styled(" ", style));
+    spans
+}
+
 fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> usize {
     let (viewport_height, content_area) = if let Some(editor_state) = &mut app_state.editor_state {
         let filename = editor_state.file_path.file_name()
@@ -501,42 +554,42 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
         }
         let h_offset = editor_state.horizontal_offset;
 
-        // Render content with cursor and syntax highlighting
+        // Syntax colours first, then the selection over them, then the cursor.
         let has_highlighting = !editor_state.highlighted_lines.is_empty();
         let cursor_style = Style::default().fg(COLOR_SELECTED_FOREGROUND).bg(COLOR_SELECTED_BACKGROUND);
+        let selection = editor_state.selection();
         let mut content_lines: Vec<Line> = Vec::with_capacity(end - start);
+
         for (idx, line) in editor_state.lines[start..end].iter().enumerate() {
             let actual_line_idx = start + idx;
 
-            if actual_line_idx == editor_state.cursor_line {
-                // Expand tabs then split at the visual cursor position
-                let visual_col: usize = line.chars().take(editor_state.cursor_col)
-                    .map(|c| if c == '\t' { TAB_SPACES.len() } else { 1 })
-                    .sum();
-                let expanded = line.replace('\t', TAB_SPACES);
-                let exp_chars: Vec<char> = expanded.chars().collect();
-                let before: String = exp_chars[..visual_col.min(exp_chars.len())].iter().collect();
-                let cursor_char = exp_chars.get(visual_col).copied().unwrap_or(' ');
-                let after: String = if visual_col < exp_chars.len() {
-                    exp_chars[visual_col + 1..].iter().collect()
+            let mut spans: Vec<Span<'static>> =
+                if has_highlighting && actual_line_idx < editor_state.highlighted_lines.len() {
+                    editor_state.highlighted_lines[actual_line_idx]
+                        .iter()
+                        .map(|span| Span::styled(printable_line(&span.content), span.style))
+                        .collect()
                 } else {
-                    String::new()
+                    vec![Span::styled(printable_line(line), STYLE_FILE)]
                 };
 
-                content_lines.push(Line::from(vec![
-                    Span::styled(before, STYLE_FILE),
-                    Span::styled(cursor_char.to_string(), cursor_style),
-                    Span::styled(after, STYLE_FILE),
-                ]));
-            } else if has_highlighting && actual_line_idx < editor_state.highlighted_lines.len() {
-                let spans: Vec<Span> = editor_state.highlighted_lines[actual_line_idx]
-                    .iter()
-                    .map(|span| Span::styled(span.content.replace('\t', TAB_SPACES), span.style))
-                    .collect();
-                content_lines.push(Line::from(spans));
-            } else {
-                content_lines.push(Line::from(Span::styled(line.replace('\t', TAB_SPACES), STYLE_FILE)));
+            if let Some(((first_line, first_col), (last_line, last_col))) = selection
+                && (first_line..=last_line).contains(&actual_line_idx)
+            {
+                let from = if actual_line_idx == first_line { visual_column(line, first_col) } else { 0 };
+                let to = if actual_line_idx == last_line {
+                    visual_column(line, last_col)
+                } else {
+                    visual_column(line, line.chars().count())
+                };
+                spans = overlay_range(spans, from, to, STYLE_SELECTION);
             }
+
+            if actual_line_idx == editor_state.cursor_line {
+                spans = place_cursor(spans, visual_column(line, editor_state.cursor_col), cursor_style);
+            }
+
+            content_lines.push(Line::from(spans));
         }
 
         let content_para = Paragraph::new(content_lines)
