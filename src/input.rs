@@ -43,6 +43,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                             'z' | 'Z' if in_editor => app_state.editor_redo(),
                             'y' | 'Y' if in_editor => app_state.editor_redo(),
                             'c' if in_editor => app_state.editor_copy(),
+                            'c' if app_state.is_f3_displayed => app_state.viewer_copy(),
                             'x' if in_editor => app_state.editor_cut(),
                             'v' if in_editor => app_state.editor_paste(),
                             // Ctrl+R rereads both panels from disk.
@@ -327,9 +328,19 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
             Event::Mouse(mouse_event) => match mouse_event.kind {
                 MouseEventKind::Down(_btn) => {
                     if app_state.is_f4_displayed {
-                        handle_editor_click(app_state, mouse_event.column, mouse_event.row);
+                        handle_editor_click(app_state, mouse_event.column, mouse_event.row, false);
+                    } else if app_state.is_f3_displayed {
+                        handle_viewer_click(app_state, mouse_event.column, mouse_event.row, false);
                     } else {
                         handle_mouse_click(app_state, mouse_event.column, mouse_event.row);
+                    }
+                }
+                // Dragging extends whatever the press started.
+                MouseEventKind::Drag(_btn) => {
+                    if app_state.is_f4_displayed {
+                        handle_editor_click(app_state, mouse_event.column, mouse_event.row, true);
+                    } else if app_state.is_f3_displayed {
+                        handle_viewer_click(app_state, mouse_event.column, mouse_event.row, true);
                     }
                 }
                 MouseEventKind::ScrollDown => {
@@ -1062,7 +1073,34 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     }
 }
 
-fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16) {
+/// Place the cursor from a mouse position. `extend` is a drag, which keeps the
+/// anchor where the press put it so the selection grows.
+/// Selection in the viewer, in columns of the line as drawn, so hex and text
+/// modes behave the same.
+fn handle_viewer_click(app_state: &mut AppState, column: u16, row: u16, extend: bool) {
+    let area = app_state.viewer_content_area;
+    if !area.contains(Position::new(column, row)) {
+        return;
+    }
+
+    if let Some(state) = &mut app_state.viewer_state {
+        // The binary notice has nothing to select.
+        if state.from_edit {
+            return;
+        }
+
+        let line = (state.scroll_offset + (row - area.y) as usize).min(state.total_lines.saturating_sub(1));
+        let width = state.line_text(line).chars().count();
+        let position = (line, ((column - area.x) as usize + state.horizontal_offset).min(width));
+
+        state.selection = match (extend, state.selection) {
+            (true, Some((anchor, _))) => Some((anchor, position)),
+            _ => Some((position, position)),
+        };
+    }
+}
+
+fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: bool) {
     // The content area as drawn, so the border and gutter widths don't have to
     // be worked out again here.
     let area = app_state.editor_content_area;
@@ -1091,6 +1129,10 @@ fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16) {
         state.cursor_line = target_line;
         state.cursor_col = char_col;
         state.auto_scroll = true;
-        state.selection_anchor = None;
+        if !extend {
+            // A press anchors here; the selection stays empty until a drag moves
+            // the cursor away, since an anchor equal to the cursor selects nothing.
+            state.selection_anchor = Some((target_line, char_col));
+        }
     }
 }

@@ -1,6 +1,5 @@
 use crate::app::AppState;
 use crate::constants::*;
-use crate::constants::HEX_BYTES_PER_LINE;
 use crate::utils::*;
 use chrono::Local;
 use ratatui::{
@@ -75,9 +74,10 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         render_top_panel(f, chunks_main[0], app_state);
         render_path_bar(f, chunks_main[1], &app_state.dir_left, &app_state.dir_right, area.width, app_state.is_left_active);
         if app_state.is_f3_displayed {
-            let (height, width) = render_viewer(f, chunks_main[2], app_state);
+            let (height, width, content_area) = render_viewer(f, chunks_main[2], app_state);
             app_state.viewer_viewport_height = height;
             app_state.viewer_viewport_width = width;
+            app_state.viewer_content_area = content_area;
         } else if app_state.is_f4_displayed {
             app_state.editor_viewport_height = render_editor(f, chunks_main[2], app_state);
         } else {
@@ -411,7 +411,7 @@ fn make_header_row(columns: usize) -> Row<'static> {
     Row::new(cells)
 }
 
-fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize) {
+fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect) {
     if let Some(viewer_state) = &app_state.viewer_state {
         let filename = viewer_state.file_path.file_name()
             .and_then(|n| n.to_str())
@@ -463,37 +463,36 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
                 .alignment(Alignment::Center)
                 .style(STYLE_TITLE);
             f.render_widget(binary_msg, chunks[1]);
-        } else if viewer_state.hex {
-            // Format only the rows on screen; a hexdump of the whole file would
-            // be far larger than the file itself.
-            let hex_lines: Vec<Line> = (start..end)
-                .map(|row| {
-                    let offset = row * HEX_BYTES_PER_LINE;
-                    let stop = (offset + HEX_BYTES_PER_LINE).min(viewer_state.bytes.len());
-                    let chunk = viewer_state.bytes.get(offset..stop).unwrap_or(&[]);
-                    Line::from(Span::raw(crate::viewer::hex_line(offset, chunk)))
+        } else {
+            // Both modes render from the same line text, so the selection and
+            // the copy see exactly what is on screen.
+            let selection = viewer_state.selected_range();
+            let content_lines: Vec<Line> = (start..end)
+                .map(|index| {
+                    let text = viewer_state.line_text(index);
+                    let width = text.chars().count();
+                    let mut spans = vec![Span::styled(text, STYLE_FILE)];
+
+                    if let Some(((first_line, first_col), (last_line, last_col))) = selection
+                        && (first_line..=last_line).contains(&index)
+                    {
+                        let to = if index == last_line { last_col.min(width) } else { width };
+                        let from = if index == first_line { first_col.min(to) } else { 0 };
+                        spans = overlay_range(spans, from, to, STYLE_SELECTION);
+                    }
+                    Line::from(spans)
                 })
                 .collect();
-            let hex_para = Paragraph::new(hex_lines)
+
+            let content_para = Paragraph::new(content_lines)
                 .style(STYLE_FILE)
                 .scroll((0, viewer_state.horizontal_offset as u16));
-            f.render_widget(hex_para, chunks[1]);
-        } else {
-            let content_lines: Vec<Line> = viewer_state.content_lines[start..end]
-                .iter()
-                .map(|line| Line::from(Span::raw(printable_line(line))))
-                .collect();
-
-            let content_para =
-                Paragraph::new(content_lines)
-                    .style(STYLE_FILE)
-                    .scroll((0, viewer_state.horizontal_offset as u16));
             f.render_widget(content_para, chunks[1]);
         }
 
-        (viewport_height, chunks[1].width as usize)
+        (viewport_height, chunks[1].width as usize, chunks[1])
     } else {
-        (0, 0)
+        (0, 0, Rect::default())
     }
 }
 

@@ -38,6 +38,9 @@ pub struct ViewerState {
     /// Raw contents, held only while hex mode needs them.
     pub bytes: Vec<u8>,
     pub hex: bool,
+    /// (anchor, cursor) as (line, column) into the line *as rendered*, so hex
+    /// and text modes need no separate handling.
+    pub selection: Option<((usize, usize), (usize, usize))>,
     /// Longest rendered line, so horizontal scrolling can stop at the end of
     /// the content instead of running on into empty space.
     pub max_line_width: usize,
@@ -79,6 +82,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
             from_edit: false,
             bytes,
             hex: true,
+            selection: None,
             max_line_width: 0,
         });
     }
@@ -109,6 +113,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         syntax_name,
         bytes: Vec::new(),
         hex: false,
+        selection: None,
         max_line_width,
     })
 }
@@ -134,6 +139,46 @@ pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Vec<String
 
 /// Rows a hexdump of these bytes occupies; at least one, so an empty file still
 /// has a line to render.
+impl ViewerState {
+    /// The selection in document order, or None when nothing is selected.
+    pub fn selected_range(&self) -> Option<((usize, usize), (usize, usize))> {
+        let (anchor, cursor) = self.selection?;
+        if anchor == cursor {
+            return None;
+        }
+        Some(if anchor < cursor { (anchor, cursor) } else { (cursor, anchor) })
+    }
+
+    /// The selected text, taken from the lines as drawn.
+    pub fn selected_text(&self) -> Option<String> {
+        let ((first_line, first_col), (last_line, last_col)) = self.selected_range()?;
+
+        let mut text = String::new();
+        for index in first_line..=last_line {
+            let characters: Vec<char> = self.line_text(index).chars().collect();
+            let to = if index == last_line { last_col.min(characters.len()) } else { characters.len() };
+            let from = if index == first_line { first_col.min(to) } else { 0 };
+
+            if index > first_line {
+                text.push('\n');
+            }
+            text.extend(&characters[from..to]);
+        }
+        Some(text)
+    }
+
+    /// A line as the viewer draws it, whichever mode is active.
+    pub fn line_text(&self, index: usize) -> String {
+        if self.hex {
+            let offset = index * HEX_BYTES_PER_LINE;
+            let stop = (offset + HEX_BYTES_PER_LINE).min(self.bytes.len());
+            hex_line(offset, self.bytes.get(offset..stop).unwrap_or(&[]))
+        } else {
+            self.content_lines.get(index).map(|line| crate::utils::printable_line(line)).unwrap_or_default()
+        }
+    }
+}
+
 pub fn hex_line_count(bytes: &[u8]) -> usize {
     bytes.len().div_ceil(HEX_BYTES_PER_LINE).max(1)
 }

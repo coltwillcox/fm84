@@ -153,6 +153,7 @@ pub struct AppState {
     pub viewport_start_left: usize,
     pub viewport_start_right: usize,
     pub editor_content_area: Rect,
+    pub viewer_content_area: Rect,
     // Directory mtimes as of the last load, so an external change can be spotted
     // without stat-ing every entry.
     pub dir_stamp_left: Option<SystemTime>,
@@ -285,6 +286,7 @@ impl AppState {
             viewport_start_left: 0,
             viewport_start_right: 0,
             editor_content_area: Rect::default(),
+            viewer_content_area: Rect::default(),
             dir_stamp_left: None,
             dir_stamp_right: None,
             last_refresh_check: Instant::now(),
@@ -484,6 +486,13 @@ impl AppState {
 
     /// Switch the viewer between text and a hexdump. Reads the raw bytes the
     /// first time they are needed, so a text file only pays for them on demand.
+    pub fn viewer_copy(&mut self) {
+        if let Some(text) = self.viewer_state.as_ref().and_then(|state| state.selected_text()) {
+            crate::utils::set_system_clipboard(&text);
+            self.clipboard = text;
+        }
+    }
+
     pub fn viewer_toggle_hex(&mut self) {
         // Nothing to toggle on the refusal notice F4 puts up.
         if self.viewer_state.as_ref().is_some_and(|state| state.from_edit) {
