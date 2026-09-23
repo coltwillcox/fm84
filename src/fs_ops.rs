@@ -100,7 +100,7 @@ pub fn nearest_existing_dir(path: &Path) -> Option<PathBuf> {
 /// Bytes used and total for the filesystem holding `path`, as `df` counts them.
 /// None when the platform call fails, so a dead network mount shows nothing
 /// rather than an error.
-#[cfg(unix)]
+#[cfg(all(unix, not(target_vendor = "apple")))]
 pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
     use std::ffi::CString;
     use std::os::unix::ffi::OsStrExt;
@@ -119,6 +119,30 @@ pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
     let block = stats.f_frsize as u64;
     let total = (stats.f_blocks as u64).checked_mul(block)?;
     let free = (stats.f_bfree as u64).checked_mul(block)?;
+    Some((total.saturating_sub(free), total))
+}
+
+/// Apple platforms declare statvfs block counts as a 32-bit fsblkcnt_t, so it
+/// truncates past about 16 TiB. Their native statfs carries the counts as u64.
+#[cfg(target_vendor = "apple")]
+pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
+    use std::ffi::CString;
+    use std::os::unix::ffi::OsStrExt;
+
+    let c_path = CString::new(path.as_os_str().as_bytes()).ok()?;
+    // SAFETY: c_path is a valid NUL-terminated string and stats is only read
+    // back after statfs reports success.
+    let stats = unsafe {
+        let mut stats = std::mem::zeroed::<libc::statfs>();
+        if libc::statfs(c_path.as_ptr(), &mut stats) != 0 {
+            return None;
+        }
+        stats
+    };
+
+    let block = stats.f_bsize as u64;
+    let total = stats.f_blocks.checked_mul(block)?;
+    let free = stats.f_bfree.checked_mul(block)?;
     Some((total.saturating_sub(free), total))
 }
 
