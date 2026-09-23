@@ -16,13 +16,26 @@ use crossterm::{
 };
 use input::handle_input;
 use ratatui::{Terminal, backend::CrosstermBackend};
-use std::io::{self, Stdout, stdout};
+use std::io::{self, IsTerminal, Stdout, stdout};
 use ui::render_ui;
 
 type Tui = Terminal<CrosstermBackend<Stdout>>;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
+
+    // Launched from a .desktop entry with no terminal, raw mode fails with a
+    // bare ENXIO that nobody sees. Say what is wrong instead.
+    if !stdout().is_terminal() {
+        eprintln!("fm84 needs a terminal.");
+        eprintln!();
+        eprintln!("Run it from one, or launch it through one, for example:");
+        eprintln!("    kitty -e fm84");
+        eprintln!();
+        eprintln!("In a .desktop file, set Terminal=true or make Exec start a terminal.");
+        std::process::exit(1);
+    }
+
     install_panic_hook();
 
     let mut terminal = init_terminal()?;
