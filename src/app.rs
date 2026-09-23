@@ -108,6 +108,8 @@ pub struct AppState {
     pub drive_picker: Option<(bool, usize)>,
     pub is_f2_displayed: bool,
     pub is_f7_displayed: bool,
+    /// The create dialog makes a directory (F7) or an empty file (Shift+F4).
+    pub create_is_dir: bool,
     pub is_left_active: bool,
     pub dir_left: PathBuf,
     pub dir_right: PathBuf,
@@ -241,6 +243,7 @@ impl AppState {
             drive_picker: None,
             is_f2_displayed: false,
             is_f7_displayed: false,
+            create_is_dir: true,
             is_left_active: true,
             dir_left: dir_root.clone(),
             dir_right: dir_root,

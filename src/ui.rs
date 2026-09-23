@@ -896,6 +896,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F5 - Copy to other panel",
         "F6 - Move to other panel",
         "F7 - Create directory",
+        "Shift+F4 - Create file",
         "F8 - Delete folder/file",
         "F9 - Open terminal",
         "F10 - Quit",
@@ -955,7 +956,7 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
 fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
     let popup_area = centered_rect(60, 20, area);
     let popup_block = Block::default()
-        .title(Line::from(Span::styled(" Create Directory ", STYLE_TITLE)).centered())
+        .title(Line::from(Span::styled(if app_state.create_is_dir { " Create Directory " } else { " Create File " }, STYLE_TITLE)).centered())
         .borders(Borders::ALL)
         .style(STYLE_BORDER);
 

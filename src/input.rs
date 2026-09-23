@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::fs_ops::{copy_path, create_directory, delete_path, move_path, path_exists, rename_path};
+use crate::fs_ops::{copy_path, create_directory, create_file, delete_path, move_path, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use crate::constants::TAB_SPACES;
 use ratatui::layout::Position;
@@ -98,7 +98,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                 } else if app_state.is_f7_displayed {
                     match key.code {
                         KeyCode::Esc => handle_esc(app_state),
-                        KeyCode::F(7) => toggle_create(app_state),
+                        KeyCode::F(7) => toggle_create(app_state, true),
+                        KeyCode::F(4) if key.modifiers.contains(KeyModifiers::SHIFT) => toggle_create(app_state, false),
                         KeyCode::F(10) => return Ok(false),
                         KeyCode::Enter => handle_create_confirm(app_state),
                         KeyCode::Char(to_insert) => app_state.create_input.insert(to_insert),
@@ -232,10 +233,12 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(1) => toggle_help(app_state),
                         KeyCode::F(2) => toggle_rename(app_state),
                         KeyCode::F(3) => handle_f3_view(app_state),
+                        // Shift+F4 creates an empty file, as MC does.
+                        KeyCode::F(4) if key.modifiers.contains(KeyModifiers::SHIFT) => toggle_create(app_state, false),
                         KeyCode::F(4) => handle_f4_edit(app_state),
                         KeyCode::F(5) => toggle_copy(app_state),
                         KeyCode::F(6) => toggle_move(app_state),
-                        KeyCode::F(7) => toggle_create(app_state),
+                        KeyCode::F(7) => toggle_create(app_state, true),
                         KeyCode::F(8) | KeyCode::Delete => toggle_delete(app_state),
                         KeyCode::F(9) => open_terminal(app_state),
                         KeyCode::F(11) => toggle_options(app_state),
@@ -418,16 +421,21 @@ fn toggle_rename(app_state: &mut AppState) {
     app_state.is_f2_displayed = true;
 }
 
-fn toggle_create(app_state: &mut AppState) {
+/// One dialog serves both: F7 makes a directory, Shift+F4 an empty file.
+fn toggle_create(app_state: &mut AppState, is_dir: bool) {
     if app_state.is_error_displayed || app_state.is_f1_displayed {
         return;
     }
 
-    app_state.is_f7_displayed = !app_state.is_f7_displayed;
-    if app_state.is_f7_displayed {
-        // Opening dialog - clear input fields only
-        app_state.create_input.clear();
+    // The same key closes it again; the other one switches what is being made.
+    if app_state.is_f7_displayed && app_state.create_is_dir == is_dir {
+        app_state.reset_create();
+        return;
     }
+
+    app_state.is_f7_displayed = true;
+    app_state.create_is_dir = is_dir;
+    app_state.create_input.clear();
 }
 
 fn handle_rename(app_state: &mut AppState) {
@@ -661,7 +669,12 @@ fn handle_create_confirm(app_state: &mut AppState) {
     new_dir_path.push(&app_state.create_input.text);
 
     let created = app_state.create_input.text.clone();
-    match create_directory(new_dir_path) {
+    let result = if app_state.create_is_dir {
+        create_directory(new_dir_path)
+    } else {
+        create_file(new_dir_path)
+    };
+    match result {
         Ok(_) => app_state.reload_panel(app_state.is_left_active, Some(&created)),
         Err(e) => app_state.display_error(e.to_string()),
     }

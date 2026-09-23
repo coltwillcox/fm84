@@ -541,6 +541,13 @@ pub fn path_exists(path: &Path) -> bool {
     path.symlink_metadata().is_ok()
 }
 
+/// Create an empty file, refusing if anything is already there - create_new
+/// fails rather than truncating, matching how create_dir refuses.
+pub fn create_file(path: PathBuf) -> Result<(), Error> {
+    std::fs::OpenOptions::new().write(true).create_new(true).open(path)?;
+    Ok(())
+}
+
 pub fn create_directory(path: PathBuf) -> Result<(), Error> {
     create_dir(path)?;
     Ok(())
