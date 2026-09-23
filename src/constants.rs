@@ -36,6 +36,10 @@ pub const MAX_HIGHLIGHT_SIZE: u64 = 512 * 1024;
 // of a file - never the whole thing, and never with the large-file prompt.
 // Terminals commonly reject oversized OSC 52 payloads, and a megabyte of
 // base64 is not worth sending anyway; the internal clipboard still holds it.
+// Editing steps kept for undo. Each holds only the lines it replaced, so this
+// is bounded by what was edited rather than by the size of the file.
+pub const UNDO_LIMIT: usize = 200;
+
 pub const OSC52_MAX_BYTES: usize = 64 * 1024;
 
 // A hexdump -C line: offset, sixteen bytes, then the ASCII gutter.

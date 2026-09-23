@@ -36,6 +36,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                                 }
                             }
                             'a' if in_editor => app_state.editor_select_all(),
+                            'z' if in_editor => app_state.editor_undo(),
                             'c' if in_editor => app_state.editor_copy(),
                             'x' if in_editor => app_state.editor_cut(),
                             'v' if in_editor => app_state.editor_paste(),

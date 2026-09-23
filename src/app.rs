@@ -172,12 +172,25 @@ pub struct EditorState {
     pub auto_scroll: bool,
     /// Where a selection began. The selection runs from here to the cursor.
     pub selection_anchor: Option<(usize, usize)>,
+    /// Edits that can be undone, oldest first.
+    pub undo_stack: Vec<EditStep>,
     /// Parser state entering each line, so an edit re-parses from that line
     /// instead of the whole file. Empty when highlighting is off.
     pub line_states: Vec<crate::viewer::LineState>,
     /// The terminator this file was written with, so saving doesn't rewrite
     /// every line of a CRLF file just because one character changed.
     pub line_ending: &'static str,
+}
+
+/// One undoable edit: the lines it replaced, and where the cursor was. The
+/// number of lines that took their place is worked out at undo time from how
+/// the buffer's length changed, so nothing has to be recorded afterwards.
+#[derive(Clone)]
+pub struct EditStep {
+    first_line: usize,
+    before: Vec<String>,
+    total_lines_before: usize,
+    cursor: (usize, usize),
 }
 
 /// What the opposite panel is showing while preview mode is on.
@@ -572,6 +585,7 @@ impl AppState {
             selection_anchor: None,
             line_ending,
             line_states,
+            undo_stack: Vec::new(),
         });
         self.is_f4_displayed = true;
         Ok(())
@@ -633,6 +647,64 @@ impl AppState {
         }
     }
 
+    /// Remember the lines `range` covers before they are replaced. Called once
+    /// per user action, with a range spanning everything that action touches.
+    fn push_undo(&mut self, range: std::ops::RangeInclusive<usize>) {
+        if let Some(state) = &mut self.editor_state {
+            let last = (*range.end()).min(state.lines.len().saturating_sub(1));
+            let first = (*range.start()).min(last);
+
+            state.undo_stack.push(EditStep {
+                first_line: first,
+                before: state.lines[first..=last].to_vec(),
+                total_lines_before: state.lines.len(),
+                cursor: (state.cursor_line, state.cursor_col),
+            });
+
+            if state.undo_stack.len() > crate::constants::UNDO_LIMIT {
+                state.undo_stack.remove(0);
+            }
+        }
+    }
+
+    /// The range a user action is about to touch: the selection when there is
+    /// one, otherwise the given fallback.
+    fn edit_range(&self, fallback: std::ops::RangeInclusive<usize>) -> std::ops::RangeInclusive<usize> {
+        match self.editor_state.as_ref().and_then(|state| state.selection()) {
+            Some(((first, _), (last, _))) => first..=last,
+            None => fallback,
+        }
+    }
+
+    pub fn editor_undo(&mut self) {
+        let mut from = None;
+
+        if let Some(state) = &mut self.editor_state {
+            if let Some(step) = state.undo_stack.pop() {
+                // However many lines replaced the originals, the buffer's change
+                // in length tells us how many to take back out.
+                let removed = step.total_lines_before - step.before.len();
+                let replaced = state.lines.len().saturating_sub(removed);
+                let end = (step.first_line + replaced).min(state.lines.len());
+
+                state.lines.splice(step.first_line..end, step.before);
+                state.cursor_line = step.cursor.0.min(state.lines.len().saturating_sub(1));
+                state.cursor_col = step.cursor.1.min(state.lines[state.cursor_line].chars().count());
+                state.selection_anchor = None;
+                state.modified = true;
+
+                if state.cursor_line < state.scroll_offset {
+                    state.scroll_offset = state.cursor_line;
+                }
+                from = Some(step.first_line);
+            }
+        }
+
+        if let Some(from) = from {
+            self.editor_rehighlight_from(from);
+        }
+    }
+
     /// Remove the selected range, leaving the cursor where the selection began.
     /// Returns the line to re-highlight from, or None if nothing was selected.
     /// Shared by cut, paste, typing, Backspace and Delete.
@@ -673,6 +745,8 @@ impl AppState {
     }
 
     pub fn editor_cut(&mut self) {
+        let line = self.editor_state.as_ref().map_or(0, |state| state.cursor_line);
+        self.push_undo(self.edit_range(line..=line));
         self.editor_copy();
         if let Some(from) = self.delete_selection() {
             self.editor_rehighlight_from(from);
@@ -690,6 +764,9 @@ impl AppState {
         if text.is_empty() {
             return;
         }
+        let line = self.editor_state.as_ref().map_or(0, |state| state.cursor_line);
+        self.push_undo(self.edit_range(line..=line));
+
         // A pasted Windows clipboard arrives with CRLF; the buffer holds lines.
         let text = text.replace("\r\n", "\n");
 
@@ -828,6 +905,8 @@ impl AppState {
     }
 
     pub fn editor_insert_char(&mut self, c: char) {
+        let line = self.editor_state.as_ref().map_or(0, |state| state.cursor_line);
+        self.push_undo(self.edit_range(line..=line));
         // Typing over a selection replaces it.
         self.delete_selection();
         let mut from = None;
@@ -845,6 +924,14 @@ impl AppState {
     }
 
     pub fn editor_backspace(&mut self) {
+        let fallback = match self.editor_state.as_ref() {
+            // Joining with the line above puts that line in range too.
+            Some(state) if state.cursor_col == 0 => state.cursor_line.saturating_sub(1)..=state.cursor_line,
+            Some(state) => state.cursor_line..=state.cursor_line,
+            None => return,
+        };
+        self.push_undo(self.edit_range(fallback));
+
         // With a selection, Backspace removes that rather than a character.
         if let Some(from) = self.delete_selection() {
             self.editor_rehighlight_from(from);
@@ -878,6 +965,16 @@ impl AppState {
     }
 
     pub fn editor_delete(&mut self) {
+        let fallback = match self.editor_state.as_ref() {
+            // At end of line the next line is pulled up, so include it.
+            Some(state) if state.cursor_col >= state.lines[state.cursor_line].chars().count() => {
+                state.cursor_line..=state.cursor_line + 1
+            }
+            Some(state) => state.cursor_line..=state.cursor_line,
+            None => return,
+        };
+        self.push_undo(self.edit_range(fallback));
+
         if let Some(from) = self.delete_selection() {
             self.editor_rehighlight_from(from);
             return;
@@ -905,6 +1002,8 @@ impl AppState {
     }
 
     pub fn editor_enter(&mut self) {
+        let line = self.editor_state.as_ref().map_or(0, |state| state.cursor_line);
+        self.push_undo(self.edit_range(line..=line));
         self.delete_selection();
         let mut from = None;
         if let Some(state) = &mut self.editor_state {
