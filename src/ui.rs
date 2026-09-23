@@ -92,6 +92,8 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             render_editor_save_popup(f, area);
         } else if app_state.is_f1_displayed {
             render_help_popup(f, area);
+        } else if app_state.is_f11_displayed {
+            render_options_popup(f, area);
         } else if app_state.is_f5_displayed {
             render_copy_move_popup(f, area, app_state, true);
         } else if app_state.is_f6_displayed {
@@ -657,20 +659,39 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     }
 }
 
+/// The F-key hints, dropped from the end when the terminal cannot hold them
+/// whole - a half-drawn label reads worse than a missing one.
+const FKEY_LABELS: [&str; 11] = [
+    " F1 Help ",
+    " F2 Rename ",
+    " F3 View ",
+    " F4 Edit ",
+    " F5 Copy ",
+    " F6 Move ",
+    " F7 Create ",
+    " F8 Delete ",
+    " F9 Terminal ",
+    " F10 Quit ",
+    " F11 Options ",
+];
+
 fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect) {
-    let block_bottom = Block::default()
-        .title_bottom(Line::from(Span::styled(" F1 Help ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F2 Rename ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F3 View ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F4 Edit ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F5 Copy ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F6 Move ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F7 Create ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F8 Delete ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F9 Terminal ", STYLE_TITLE)).centered())
-        .title_bottom(Line::from(Span::styled(" F10 Quit ", STYLE_TITLE)).centered())
+    let mut block_bottom = Block::default()
         .borders(Borders::LEFT | Borders::BOTTOM | Borders::RIGHT)
         .border_style(STYLE_BORDER);
+
+    // Two corners, then each label with a dash between. The last label's
+    // trailing space can fall off the end unnoticed, hence the one spare column.
+    let mut used = 2;
+    for (index, label) in FKEY_LABELS.iter().enumerate() {
+        let needed = used + display_width(label) + usize::from(index > 0);
+        if needed > area.width as usize + 1 {
+            break;
+        }
+        used = needed;
+        block_bottom = block_bottom.title_bottom(Line::from(Span::styled(*label, STYLE_TITLE)).centered());
+    }
+
     f.render_widget(block_bottom, area);
 }
 
@@ -702,6 +723,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F8 - Delete folder/file",
         "F9 - Open terminal",
         "F10 - Quit",
+        "F11 - Options",
         "Space - Select/deselect file",
         "Ctrl+R - Reload both panels",
         "Type to search, Esc to clear",
@@ -730,6 +752,27 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         .collect();
     let help_para = Paragraph::new(lines).alignment(Alignment::Center);
     f.render_widget(help_para, inner);
+}
+
+fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
+    let popup_area = centered_rect(50, 25, area);
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(" Options ", STYLE_TITLE)).centered())
+        .borders(Borders::ALL)
+        .style(STYLE_BORDER);
+
+    f.render_widget(Clear::default(), popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    f.render_widget(
+        Paragraph::new("Under construction").alignment(Alignment::Center).style(STYLE_TITLE),
+        popup_area.inner(Margin { vertical: 2, horizontal: 2 }),
+    );
+
+    f.render_widget(
+        Paragraph::new("Esc - Close").alignment(Alignment::Center).style(STYLE_COLUMNS),
+        popup_area.inner(Margin { vertical: 4, horizontal: 2 }),
+    );
 }
 
 fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {

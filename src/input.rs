@@ -59,6 +59,12 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(10) => return Ok(false),
                         _ => {}
                     }
+                } else if app_state.is_f11_displayed {
+                    match key.code {
+                        KeyCode::Esc | KeyCode::F(11) => app_state.is_f11_displayed = false,
+                        KeyCode::F(10) => return Ok(false),
+                        _ => {}
+                    }
                 } else if app_state.is_f8_displayed {
                     match key.code {
                         KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => handle_esc(app_state),
@@ -185,6 +191,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(7) => toggle_create(app_state),
                         KeyCode::F(8) | KeyCode::Delete => toggle_delete(app_state),
                         KeyCode::F(9) => open_terminal(app_state),
+                        KeyCode::F(11) => toggle_options(app_state),
                         KeyCode::F(10) => return Ok(false),
                         KeyCode::Char(' ') => {
                             // Space toggles selection and moves to next item
@@ -309,6 +316,13 @@ fn toggle_help(app_state: &mut AppState) {
     app_state.is_f1_displayed = !app_state.is_f1_displayed;
 }
 
+fn toggle_options(app_state: &mut AppState) {
+    if app_state.is_error_displayed || app_state.is_f1_displayed {
+        return;
+    }
+    app_state.is_f11_displayed = !app_state.is_f11_displayed;
+}
+
 fn toggle_rename(app_state: &mut AppState) {
     if app_state.is_error_displayed || app_state.is_f1_displayed {
         return;
@@ -392,6 +406,7 @@ fn handle_rename(app_state: &mut AppState) {
 fn handle_esc(app_state: &mut AppState) {
     app_state.reset_error();
     app_state.is_f1_displayed = false;
+    app_state.is_f11_displayed = false;
     app_state.reset_rename();
     app_state.reset_create();
     app_state.reset_delete();
@@ -938,6 +953,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // Don't handle clicks during modal dialogs (except F2 rename which gets canceled)
     if app_state.is_error_displayed
         || app_state.is_f1_displayed
+        || app_state.is_f11_displayed
         || app_state.is_f3_displayed
         || app_state.is_f4_displayed
         || app_state.is_f5_displayed

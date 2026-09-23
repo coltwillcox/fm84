@@ -97,6 +97,7 @@ impl TextInput {
 pub struct AppState {
     pub is_error_displayed: bool,
     pub is_f1_displayed: bool,
+    pub is_f11_displayed: bool,
     pub is_f2_displayed: bool,
     pub is_f7_displayed: bool,
     pub is_left_active: bool,
@@ -200,6 +201,7 @@ impl AppState {
         Self {
             is_error_displayed,
             is_f1_displayed: false,
+            is_f11_displayed: false,
             is_f2_displayed: false,
             is_f7_displayed: false,
             is_left_active: true,
@@ -809,6 +811,7 @@ impl AppState {
     pub fn is_modal_open(&self) -> bool {
         self.is_error_displayed
             || self.is_f1_displayed
+            || self.is_f11_displayed
             || self.is_f2_displayed
             || self.is_f3_displayed
             || self.is_f4_displayed
