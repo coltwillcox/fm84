@@ -558,12 +558,17 @@ fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments:
     let mut used = 3usize; // "├─" (2) + "┤" (1)
 
     for (i, &seg) in segments.iter().enumerate() {
+        let padded = format!(" {} ", seg);
+        let needed = display_width(&padded) + usize::from(i > 0);
+        // Drop trailing segments that do not fit rather than clip one mid-word
+        // and lose the closing corner. The first one always stays.
+        if i > 0 && used + needed > area.width as usize {
+            break;
+        }
         if i > 0 {
             spans.push(Span::styled("─", STYLE_BORDER));
-            used += 1;
         }
-        let padded = format!(" {} ", seg);
-        used += display_width(&padded);
+        used += needed;
         spans.push(Span::styled(padded, STYLE_TITLE));
     }
 
@@ -628,8 +633,13 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
                 .unwrap_or("Unknown");
             let line_seg = format!("Line {}/{}", viewer_state.scroll_offset + 1, viewer_state.total_lines);
             let size_seg = format_size(viewer_state.file_size);
-            let mode = if viewer_state.hex { "HEX  X Text" } else { viewer_state.syntax_name.as_str() };
-            render_segmented_status_bar(f, area, &[filename, &line_seg, &size_seg, mode]);
+            let mut segments = vec![filename, line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()];
+            // Bracketed half is the view you are in. Omitted on the notice F4
+            // raises for a binary, where there is nothing to toggle.
+            if !viewer_state.from_edit {
+                segments.push(if viewer_state.hex { "X Text [Hex]" } else { "X [Text] Hex" });
+            }
+            render_segmented_status_bar(f, area, &segments);
         }
     } else if !app_state.search_input.is_empty() {
         // Show search string
