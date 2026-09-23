@@ -1,4 +1,4 @@
-use crate::fs_ops::{get_current_dir, load_directory_rows, nearest_existing_dir};
+use crate::fs_ops::{disk_usage, get_current_dir, load_directory_rows, nearest_existing_dir};
 use crate::viewer::ViewerState;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -147,6 +147,9 @@ pub struct AppState {
     pub dir_stamp_left: Option<SystemTime>,
     pub dir_stamp_right: Option<SystemTime>,
     pub last_refresh_check: Instant,
+    // (used, total) bytes for each panel's filesystem.
+    pub disk_left: Option<(u64, u64)>,
+    pub disk_right: Option<(u64, u64)>,
     /// A file big enough to be worth asking about: (path, size, opening to edit).
     pub large_file: Option<(PathBuf, u64, bool)>,
 }
@@ -240,6 +243,8 @@ impl AppState {
             dir_stamp_left: None,
             dir_stamp_right: None,
             last_refresh_check: Instant::now(),
+            disk_left: None,
+            disk_right: None,
             large_file: None,
         }
     }
@@ -823,6 +828,19 @@ impl AppState {
         } else {
             self.dir_stamp_right = stamp;
         }
+        self.record_disk_usage(is_left);
+    }
+
+    /// Read the panel filesystem's used/total. Off the render path: statvfs is
+    /// a syscall and blocks outright on an unresponsive network mount.
+    pub fn record_disk_usage(&mut self, is_left: bool) {
+        let dir = if is_left { &self.dir_left } else { &self.dir_right };
+        let usage = disk_usage(dir);
+        if is_left {
+            self.disk_left = usage;
+        } else {
+            self.disk_right = usage;
+        }
     }
 
     /// Reread one panel from disk. `prefer` names the entry to land on - the
@@ -901,6 +919,10 @@ impl AppState {
         self.last_refresh_check = Instant::now();
 
         for is_left in [true, false] {
+            // Free space moves without the directory changing - a copy anywhere
+            // else on the same filesystem shifts it - so this updates every tick.
+            self.record_disk_usage(is_left);
+
             let dir = if is_left { &self.dir_left } else { &self.dir_right };
             let stamp = std::fs::metadata(dir).and_then(|metadata| metadata.modified()).ok();
             let known = if is_left { self.dir_stamp_left } else { self.dir_stamp_right };

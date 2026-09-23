@@ -505,6 +505,24 @@ fn render_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, text: String, style
     f.render_widget(Paragraph::new(Line::from(status_line)), area);
 }
 
+/// Five cells filled in proportion to how full the filesystem is. Both glyphs
+/// are Neutral width, so the bar measures the same in every terminal - mixing
+/// in an Ambiguous-width glyph like ▓ would double it under a CJK locale.
+fn usage_meter(used: u64, total: u64) -> String {
+    const CELLS: u64 = 5;
+    let filled = if total == 0 { 0 } else { (used.saturating_mul(CELLS) / total).min(CELLS) };
+    "▪".repeat(filled as usize) + &"▫".repeat((CELLS - filled) as usize)
+}
+
+/// The widest disk readout that still leaves a dash either side: meter plus
+/// figures, then figures alone, then nothing at all.
+fn disk_readout(usage: Option<(u64, u64)>, available: usize) -> Option<String> {
+    let (used, total) = usage?;
+    let figures = format!("{}/{}", format_size(used), format_size(total));
+    let options = [format!(" {} {} ", usage_meter(used, total), figures), format!(" {} ", figures)];
+    options.into_iter().find(|text| display_width(text) + 2 <= available)
+}
+
 fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
     let status_style = STYLE_TITLE.bg(COLOR_SELECTED_BACKGROUND);
 
@@ -575,17 +593,38 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             (STYLE_DIR_DARK, STYLE_TITLE)
         };
 
-        let status_line = vec![
+        // Disk usage sits at the far end of each panel's dash run, dropping to a
+        // shorter form and then out entirely as the terminal narrows.
+        let left_disk = disk_readout(app_state.disk_left, left_pad);
+        let right_disk = disk_readout(app_state.disk_right, right_pad);
+        let dashes = |pad: usize, disk: &Option<String>| {
+            pad - disk.as_ref().map_or(0, |text| display_width(text) + 1)
+        };
+
+        let mut status_line = vec![
             Span::styled("├─", STYLE_BORDER),
             Span::styled(format!(" {}", left_count), left_style),
             Span::styled(" - ", STYLE_BORDER),
             Span::styled(format!("{} ", left_size), left_style),
-            Span::styled(format!("{}┴─", "─".repeat(left_pad)), STYLE_BORDER),
+            Span::styled("─".repeat(dashes(left_pad, &left_disk)), STYLE_BORDER),
+        ];
+        if let Some(text) = left_disk {
+            status_line.push(Span::styled(text, left_style));
+            status_line.push(Span::styled("─", STYLE_BORDER));
+        }
+        status_line.extend([
+            Span::styled("┴─", STYLE_BORDER),
             Span::styled(format!(" {}", right_count), right_style),
             Span::styled(" - ", STYLE_BORDER),
             Span::styled(format!("{} ", right_size), right_style),
-            Span::styled(format!("{}┤", "─".repeat(right_pad)), STYLE_BORDER),
-        ];
+            Span::styled("─".repeat(dashes(right_pad, &right_disk)), STYLE_BORDER),
+        ]);
+        if let Some(text) = right_disk {
+            status_line.push(Span::styled(text, right_style));
+            status_line.push(Span::styled("─", STYLE_BORDER));
+        }
+        status_line.push(Span::styled("┤", STYLE_BORDER));
+
         f.render_widget(Paragraph::new(Line::from(status_line)), area);
     }
 }

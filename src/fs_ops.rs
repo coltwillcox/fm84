@@ -97,6 +97,63 @@ pub fn nearest_existing_dir(path: &Path) -> Option<PathBuf> {
     None
 }
 
+/// Bytes used and total for the filesystem holding `path`, as `df` counts them.
+/// None when the platform call fails, so a dead network mount shows nothing
+/// rather than an error.
+#[cfg(unix)]
+pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
+    use std::ffi::CString;
+    use std::os::unix::ffi::OsStrExt;
+
+    let c_path = CString::new(path.as_os_str().as_bytes()).ok()?;
+    // SAFETY: c_path is a valid NUL-terminated string and stats is only read
+    // back after statvfs reports success.
+    let stats = unsafe {
+        let mut stats = std::mem::zeroed::<libc::statvfs>();
+        if libc::statvfs(c_path.as_ptr(), &mut stats) != 0 {
+            return None;
+        }
+        stats
+    };
+
+    let block = stats.f_frsize as u64;
+    let total = (stats.f_blocks as u64).checked_mul(block)?;
+    let free = (stats.f_bfree as u64).checked_mul(block)?;
+    Some((total.saturating_sub(free), total))
+}
+
+#[cfg(windows)]
+pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
+    use std::os::windows::ffi::OsStrExt;
+
+    // Declared here rather than pulling in windows-sys for one call.
+    unsafe extern "system" {
+        fn GetDiskFreeSpaceExW(
+            directory: *const u16,
+            free_to_caller: *mut u64,
+            total: *mut u64,
+            total_free: *mut u64,
+        ) -> i32;
+    }
+
+    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    let (mut free_to_caller, mut total, mut total_free) = (0u64, 0u64, 0u64);
+    // SAFETY: wide is NUL-terminated and the three outputs are only read back
+    // after the call reports success.
+    let ok = unsafe {
+        GetDiskFreeSpaceExW(wide.as_ptr(), &mut free_to_caller, &mut total, &mut total_free) != 0
+    };
+    if !ok {
+        return None;
+    }
+    Some((total.saturating_sub(total_free), total))
+}
+
+#[cfg(not(any(unix, windows)))]
+pub fn disk_usage(_path: &Path) -> Option<(u64, u64)> {
+    None
+}
+
 pub fn get_current_dir() -> Result<PathBuf, Error> {
     env::current_dir()
 }

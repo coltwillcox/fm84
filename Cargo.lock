@@ -367,6 +367,7 @@ dependencies = [
  "chrono",
  "color-eyre",
  "crossterm 0.29.0",
+ "libc",
  "ratatui",
  "syntect",
  "unicode-width 0.2.0",
