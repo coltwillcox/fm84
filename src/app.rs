@@ -180,6 +180,8 @@ pub struct EditorState {
     pub selection_anchor: Option<(usize, usize)>,
     /// Edits that can be undone, oldest first.
     pub undo_stack: Vec<EditStep>,
+    /// Undone edits, ready to be put back. Cleared by any fresh edit.
+    pub redo_stack: Vec<EditStep>,
     /// Parser state entering each line, so an edit re-parses from that line
     /// instead of the whole file. Empty when highlighting is off.
     pub line_states: Vec<crate::viewer::LineState>,
@@ -595,6 +597,7 @@ impl AppState {
             line_ending,
             line_states,
             undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
         });
         self.is_f4_displayed = true;
         Ok(())
@@ -670,6 +673,9 @@ impl AppState {
                 cursor: (state.cursor_line, state.cursor_col),
             });
 
+            // Editing after undoing forks the history; the old branch is gone.
+            state.redo_stack.clear();
+
             if state.undo_stack.len() > crate::constants::UNDO_LIMIT {
                 state.undo_stack.remove(0);
             }
@@ -686,15 +692,34 @@ impl AppState {
     }
 
     pub fn editor_undo(&mut self) {
+        self.step_history(true);
+    }
+
+    pub fn editor_redo(&mut self) {
+        self.step_history(false);
+    }
+
+    /// Move one step through the edit history. Undo and redo are the same
+    /// operation in opposite directions: apply a step, and push the step that
+    /// would put things back onto the other stack.
+    fn step_history(&mut self, undoing: bool) {
         let mut from = None;
 
         if let Some(state) = &mut self.editor_state {
-            if let Some(step) = state.undo_stack.pop() {
+            let stack = if undoing { &mut state.undo_stack } else { &mut state.redo_stack };
+            if let Some(step) = stack.pop() {
                 // However many lines replaced the originals, the buffer's change
                 // in length tells us how many to take back out.
                 let removed = step.total_lines_before - step.before.len();
                 let replaced = state.lines.len().saturating_sub(removed);
                 let end = (step.first_line + replaced).min(state.lines.len());
+
+                let inverse = EditStep {
+                    first_line: step.first_line,
+                    before: state.lines[step.first_line..end].to_vec(),
+                    total_lines_before: state.lines.len(),
+                    cursor: (state.cursor_line, state.cursor_col),
+                };
 
                 state.lines.splice(step.first_line..end, step.before);
                 state.cursor_line = step.cursor.0.min(state.lines.len().saturating_sub(1));
@@ -705,6 +730,13 @@ impl AppState {
                 if state.cursor_line < state.scroll_offset {
                     state.scroll_offset = state.cursor_line;
                 }
+
+                let other = if undoing { &mut state.redo_stack } else { &mut state.undo_stack };
+                other.push(inverse);
+                if other.len() > crate::constants::UNDO_LIMIT {
+                    other.remove(0);
+                }
+
                 from = Some(step.first_line);
             }
         }

@@ -36,7 +36,12 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                                 }
                             }
                             'a' if in_editor => app_state.editor_select_all(),
-                            'z' if in_editor => app_state.editor_undo(),
+                            // Ctrl+Z undoes; Ctrl+Shift+Z and Ctrl+Y put it back.
+                            'z' if in_editor && !key.modifiers.contains(KeyModifiers::SHIFT) => {
+                                app_state.editor_undo()
+                            }
+                            'z' | 'Z' if in_editor => app_state.editor_redo(),
+                            'y' | 'Y' if in_editor => app_state.editor_redo(),
                             'c' if in_editor => app_state.editor_copy(),
                             'x' if in_editor => app_state.editor_cut(),
                             'v' if in_editor => app_state.editor_paste(),

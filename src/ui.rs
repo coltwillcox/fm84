@@ -733,7 +733,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             let name_seg = format!("{}{}", filename, modified);
             let pos_seg = format!("Ln {}, Col {}", editor_state.cursor_line + 1, editor_state.cursor_col + 1);
             let lines_seg = format!("{} lines", editor_state.lines.len());
-            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, "F2/Ctrl+S Save", "Ctrl+Z Undo", "Esc Exit"]);
+            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, "F2/Ctrl+S Save", "Ctrl+Z/Y Undo", "Esc Exit"]);
         }
     } else if app_state.is_f3_displayed {
         // Show viewer status
@@ -891,7 +891,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F2 - Rename folder/file",
         "F3 - View file (X for hex)",
         "F4 - Edit file (Ctrl+S/F2 save)",
-        "  Ctrl+Z undo, Ctrl+X/C/V cut/copy/paste",
+        "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
         "  Shift+arrows select, Ctrl+A all",
         "F5 - Copy to other panel",
         "F6 - Move to other panel",
