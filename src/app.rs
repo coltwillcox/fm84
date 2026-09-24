@@ -440,17 +440,22 @@ impl AppState {
         Ok(())
     }
 
-    /// Redraw an image as ASCII whenever the viewer width differs from the one
-    /// it was drawn at. Returns true if it did, so the caller can draw again.
+    /// Redraw an image as ASCII whenever the viewer size or the fit/fill choice
+    /// asks for a different width than it was drawn at. Returns true if it did,
+    /// so the caller can draw again.
     pub fn fit_viewer_image(&mut self) -> bool {
-        let columns = self.viewer_viewport_width;
+        let (width, height) = (self.viewer_viewport_width, self.viewer_viewport_height);
         let Some(state) = &mut self.viewer_state else {
             return false;
         };
         let Some(image) = &state.image else {
             return false;
         };
-        if state.mode != ViewMode::Image || columns == 0 || columns == state.image_columns {
+        if state.mode != ViewMode::Image || width == 0 || height == 0 {
+            return false;
+        }
+        let columns = crate::viewer::image_columns_for(image, width, height, state.image_fill);
+        if columns == state.image_columns {
             return false;
         }
 
@@ -462,6 +467,17 @@ impl AppState {
         // Positions into the old drawing mean nothing in the new one.
         state.selection = None;
         true
+    }
+
+    /// Switch an image between fitting inside the viewer and filling it. The
+    /// redraw itself happens in fit_viewer_image before the next frame.
+    pub fn viewer_toggle_fill(&mut self) {
+        if let Some(state) = &mut self.viewer_state
+            && state.mode == ViewMode::Image
+        {
+            state.image_fill = !state.image_fill;
+            state.scroll_offset = 0;
+        }
     }
 
     pub fn close_viewer(&mut self) {

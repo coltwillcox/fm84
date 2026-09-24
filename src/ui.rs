@@ -460,6 +460,15 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
             f.render_widget(line_number_para, chunks[0]);
         }
 
+        // An image sits in the middle of the viewer when it is smaller than it -
+        // always so for Fit. Centred here rather than padded with spaces, which
+        // a copy would pick up. Clicks map through this same area.
+        let content_area = if viewer_state.mode == ViewMode::Image {
+            centered(chunks[1], viewer_state.image_columns, viewer_state.total_lines)
+        } else {
+            chunks[1]
+        };
+
         // Render content
         if viewer_state.from_edit {
             let binary_msg = Paragraph::new("Binary file detected. Press Esc to return.")
@@ -493,13 +502,22 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
             let content_para = Paragraph::new(content_lines)
                 .style(STYLE_FILE)
                 .scroll((0, viewer_state.horizontal_offset as u16));
-            f.render_widget(content_para, chunks[1]);
+            f.render_widget(content_para, content_area);
         }
 
-        (viewport_height, chunks[1].width as usize, chunks[1])
+        // The viewport is the whole pane even when an image is centred in part
+        // of it: fit and fill are worked out from the space available.
+        (viewport_height, chunks[1].width as usize, content_area)
     } else {
         (0, 0, Rect::default())
     }
+}
+
+/// A `width` x `height` area in the middle of `area`, shrunk to fit inside it.
+fn centered(area: Rect, width: usize, height: usize) -> Rect {
+    let width = width.min(area.width as usize) as u16;
+    let height = height.min(area.height as usize) as u16;
+    Rect::new(area.x + (area.width - width) / 2, area.y + (area.height - height) / 2, width, height)
 }
 
 /// A line of image characters, one span per run of the same colour.
@@ -779,6 +797,9 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
                     (false, ViewMode::Hex) => "X Text [Hex]",
                     (false, _) => "X [Text] Hex",
                 });
+                if viewer_state.mode == ViewMode::Image {
+                    segments.push(if viewer_state.image_fill { "F Fit [Fill]" } else { "F [Fit] Fill" });
+                }
             }
             render_segmented_status_bar(f, area, &segments);
         }
@@ -1165,4 +1186,20 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage((100 - percent_x) / 2), Constraint::Percentage(percent_x), Constraint::Percentage((100 - percent_x) / 2)])
         .split(popup_layout[1])[1]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn centered_sits_in_the_middle_and_never_overflows() {
+        let area = Rect::new(10, 5, 80, 20);
+        assert_eq!(centered(area, 40, 20), Rect::new(30, 5, 40, 20));
+        assert_eq!(centered(area, 80, 10), Rect::new(10, 10, 80, 10));
+        // Larger than the area, as a filled image is: clipped to it, not shifted.
+        assert_eq!(centered(area, 200, 90), area);
+        // An odd leftover puts the extra column on the right.
+        assert_eq!(centered(area, 79, 20).x, 10);
+    }
 }

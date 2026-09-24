@@ -61,6 +61,8 @@ pub struct ViewerState {
     pub image_colors: Vec<Vec<Color>>,
     /// The width `image_lines` was last drawn at; 0 when not yet.
     pub image_columns: usize,
+    /// Cover the whole viewer and scroll the overflow, rather than fit inside it.
+    pub image_fill: bool,
 }
 
 pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
@@ -106,6 +108,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
                 max_line_width: 0,
                 image: Some(image),
                 image_columns: 0,
+                image_fill: false,
                 image_lines: Vec::new(),
                 image_colors: Vec::new(),
             });
@@ -126,6 +129,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
             max_line_width: 0,
             image: None,
             image_columns: 0,
+            image_fill: false,
             image_lines: Vec::new(),
             image_colors: Vec::new(),
         });
@@ -161,6 +165,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         max_line_width,
         image: None,
         image_columns: 0,
+        image_fill: false,
         image_lines: Vec::new(),
         image_colors: Vec::new(),
     })
@@ -180,6 +185,16 @@ fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
         image
     };
     Some((image, label))
+}
+
+/// The width to draw an image at in a `width` x `height` viewer. Fit keeps the
+/// whole picture inside it; fill covers it, overflowing in one direction. Two
+/// rows of pixels go to a cell, which is what image_to_ascii assumes as well.
+pub fn image_columns_for(image: &DynamicImage, width: usize, height: usize, fill: bool) -> usize {
+    // The width at which the drawing is exactly `height` rows tall.
+    let full_height = height as f64 * 2.0 * image.width() as f64 / image.height().max(1) as f64;
+    let columns = if fill { width.max(full_height.ceil() as usize) } else { width.min(full_height.floor() as usize) };
+    columns.max(1)
 }
 
 /// Rows of characters approximating the image at `columns` wide, with the colour
@@ -550,6 +565,23 @@ mod image_tests {
         assert_eq!((image.width(), image.height()), (3, 2));
         assert_eq!(label, "PNG 3x2");
         assert!(load_image(b"\0\x01\x02 not an image").is_none());
+    }
+
+    #[test]
+    fn fit_stays_inside_and_fill_covers() {
+        // Cell aspect halves rows, so a square image is twice as wide as tall.
+        let square = solid(100, 100, [0, 0, 0, 255]);
+        assert_eq!(image_columns_for(&square, 80, 20, false), 40);
+        assert_eq!(image_columns_for(&square, 80, 20, true), 80);
+        assert_eq!(image_columns_for(&square, 30, 20, false), 30);
+        assert_eq!(image_columns_for(&square, 30, 20, true), 40);
+
+        for (width, height) in [(80, 20), (30, 20), (200, 50), (7, 3)] {
+            let fit = image_columns_for(&square, width, height, false);
+            assert!(fit <= width && image_to_ascii(&square, fit).0.len() <= height);
+            let fill = image_columns_for(&square, width, height, true);
+            assert!(fill >= width && image_to_ascii(&square, fill).0.len() >= height);
+        }
     }
 
     #[test]
