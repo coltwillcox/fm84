@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.11.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.12.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -54,6 +54,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
 - 🔗 **Symlinked directories** - listed and entered like the real thing
+- 💿 **Drive switcher** - Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2) pick a mount for either panel; removable and optical media get their own icons
 
 ### 🔍 Quick Search
 - 🔎 **Type-ahead search** - just start typing to find files
@@ -63,11 +64,11 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 📝 File Operations
 - **F1** 💡 - Help/About
 - **F2** ✏️ - Rename files & folders
-- **F3** 👁️ - View files (bordered, plain text, horizontal scrolling)
+- **F3** 👁️ - View files (text, hexdump, or images as ASCII art)
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, unsaved changes prompt, mouse click to position cursor)
 - **F5** 📋 - Copy to other panel (selected items or cursor item)
 - **F6** 📦 - Move to other panel (selected items or cursor item)
-- **F7** 📂 - Create new directories
+- **F7** 📂 - Create new directories (**Shift+F4** for an empty file)
 - **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation)
 - **F9** 💻 - Open external terminal in current directory
 - **F10** 🚪 - Exit to the void
@@ -95,6 +96,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📊 **Line numbers** in the gutter
 - 🔢 **Status bar** - filename, line count, file size, detected syntax
 - 🔢 **Hex view** - binaries open as a `hexdump -C`; `X` toggles hex for any file, so you can eyeball a BOM or CRLF endings
+- 🖼️ **Images as ASCII art** - PNG, JPEG, GIF, WebP and BMP drawn in colour; `X` cycles Image, Text and Hex, `F` switches between fitting the whole picture in, centred, and filling the viewer
+- 🖱️ **Mouse selection** - drag to select, Ctrl+C to copy
 - 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
 - ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
@@ -107,14 +110,14 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🖼️ **Bordered frame** with filename and modified indicator in title bar
 - 📄 **Full text editing** - cursor navigation, insert, delete
 - ✂️ **Select, cut, copy, paste** - Shift+arrows to select, Ctrl+A for all, Ctrl+X/C/V (or Ctrl+Insert, Shift+Insert, Shift+Delete)
-- ↩️ **Undo** - Ctrl+Z, 200 steps deep, one step per action rather than per keystroke burst
+- ↩️ **Undo and redo** - Ctrl+Z, then Ctrl+Y or Ctrl+Shift+Z, 200 steps deep, one step per action rather than per keystroke burst
 - 📋 **System clipboard** - copies reach it over OSC 52, pastes arrive as bracketed paste, both without linking a clipboard library
 - 💾 **Save** - F2 or Ctrl+S
 - 📍 **Line/Column tracking** - always know where you are
 - ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
-- 🖱️ **Mouse click** - click to position cursor anywhere in the editor
+- 🖱️ **Mouse click and drag** - click to position the cursor, drag to select
 
 ### 👁️ Preview (F12)
 - 🪞 **Opposite panel** - shows the head of whatever the cursor is on, and follows it
@@ -146,16 +149,21 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 | `F5` | Copy to other panel |
 | `F6` | Move to other panel |
 | `F7` | Create directory |
+| `Shift+F4` | Create empty file |
 | `F8` / `Delete` | Delete (selected items or cursor item) |
 | `F9` | Open terminal |
 | `F10` | Quit |
 | `F11` | Options |
 | `F12` | Preview cursor file in other panel |
-| `X` | Toggle hex view (in Viewer) |
+| `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too) |
+| `X` | Toggle hex view; cycle Image, Text, Hex for images (in Viewer) |
+| `F` | Fit or fill an image (in Viewer) |
 | `Shift`+arrows | Select text (in Editor) |
 | `Ctrl+A` | Select all (in Editor) |
 | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Cut / Copy / Paste (in Editor) |
 | `Ctrl+Z` | Undo (in Editor) |
+| `Ctrl+Y` / `Ctrl+Shift+Z` | Redo (in Editor) |
+| `Ctrl+C` | Copy selection (in Viewer) |
 | `Space` / `Insert` | Select/deselect file |
 | `Ctrl+R` | Reload both panels |
 | `Scroll` | Scroll content (panels, Viewer, Editor) |
@@ -207,6 +215,7 @@ tar -xzf fm84-v*.tar.gz
 - 🖥️ **ratatui** - TUI framework
 - ⌨️ **crossterm** - Terminal magic
 - 🎨 **syntect** - Syntax highlighting
+- 🖼️ **image** - Decoding pictures for the Viewer
 - 🕐 **chrono** - Time vibes
 
 ---
@@ -250,5 +259,5 @@ The color palette channels pure 80s energy:
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.11.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.12.0 ▄▀▄▀▄▀</code>
 </p>

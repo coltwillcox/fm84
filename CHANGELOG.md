@@ -6,6 +6,24 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.12.0] - 2026-09-24
+
+### ✨ Added
+- 🖼️ **Images in the Viewer** - PNG, JPEG, GIF, WebP and BMP drawn as ASCII art, each character coloured by its pixel; the format is detected from the content rather than the extension, and anything that fails to decode still opens in hex
+- 🔁 **`X` cycles Image, Text and Hex** for images, and Text and Hex for everything else as before
+- 📐 **Fit and fill** - `F` switches an image between fitting whole and centred in the Viewer, the default, and filling it with the overflow scrolled; redrawn whenever the terminal is resized
+- 💿 **Drive switcher** - Alt+F1 and Alt+F2 (or Ctrl+F1/F2, since window managers often take Alt) pick a mount for the left or right panel from a strip of drive icons; arrows move, Enter jumps, Esc cancels
+- 🔌 **Removable and optical mounts** are recognised on Linux and get their own icons
+- 📄 **Shift+F4 creates an empty file**, refusing if anything already has that name
+- ↪️ **Redo in the Editor** - Ctrl+Y or Ctrl+Shift+Z
+- 🖱️ **Mouse selection** - drag to select in the Editor and the Viewer; Ctrl+C copies from the Viewer
+
+### 🛠️ Changed
+- 🚫 **Refuses to start without a terminal** - launched from a desktop entry, it now explains how to run it instead of failing with a bare `ENXIO`
+- 🧹 **Switching the Viewer mode clears the selection**, which pointed at different content in the new mode
+
+---
+
 ## [0.11.0] - 2026-09-23
 
 ### ✨ Added
