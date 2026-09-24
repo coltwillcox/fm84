@@ -53,6 +53,12 @@ pub const OSC52_MAX_BYTES: usize = 64 * 1024;
 pub const HEX_BYTES_PER_LINE: usize = 16;
 pub const HEX_LINE_WIDTH: usize = 78;
 
+// Images are kept downscaled to this many pixels on the longer side. Wider than
+// any terminal is columns, so refitting on resize never works from the original.
+pub const IMAGE_MAX_SIDE: u32 = 1024;
+// Characters from light to dense, for a light-on-dark terminal.
+pub const IMAGE_RAMP: &[u8] = b" .:-=+*#%@";
+
 pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;
 

@@ -1,4 +1,6 @@
-use crate::constants::{HEX_BYTES_PER_LINE, HEX_LINE_WIDTH};
+use crate::constants::{HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_MAX_SIDE, IMAGE_RAMP};
+use image::DynamicImage;
+use image::imageops::FilterType;
 use ratatui::style::Color;
 use ratatui::text::Span;
 use std::fs::File;
@@ -44,6 +46,12 @@ pub struct ViewerState {
     /// Longest rendered line, so horizontal scrolling can stop at the end of
     /// the content instead of running on into empty space.
     pub max_line_width: usize,
+    /// A decoded image, drawn as ASCII into `content_lines` in place of text.
+    pub image: Option<DynamicImage>,
+    /// The width `content_lines` was last drawn at from `image`; 0 when not yet.
+    pub image_columns: usize,
+    /// The colour of every character in `content_lines`, while it holds an image.
+    pub image_colors: Vec<Vec<Color>>,
 }
 
 pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
@@ -71,6 +79,28 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
     // Check binary first
     if is_binary_file(path)? {
         let bytes = std::fs::read(path)?;
+        // An image opens as ASCII art, drawn once the viewer width is known.
+        // Anything that fails to decode is shown as the binary it is.
+        if let Some((image, syntax_name)) = load_image(&bytes) {
+            return Ok(ViewerState {
+                file_path: path.to_path_buf(),
+                content_lines: Vec::new(),
+                scroll_offset: 0,
+                horizontal_offset: 0,
+                total_lines: 1,
+                file_size,
+                syntax_name,
+                from_edit: false,
+                bytes,
+                hex: false,
+                selection: None,
+                max_line_width: 0,
+                image: Some(image),
+                image_columns: 0,
+                image_colors: Vec::new(),
+            });
+        }
+
         return Ok(ViewerState {
             file_path: path.to_path_buf(),
             content_lines: Vec::new(),
@@ -84,6 +114,9 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
             hex: true,
             selection: None,
             max_line_width: 0,
+            image: None,
+            image_columns: 0,
+            image_colors: Vec::new(),
         });
     }
 
@@ -115,7 +148,50 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         hex: false,
         selection: None,
         max_line_width,
+        image: None,
+        image_columns: 0,
+        image_colors: Vec::new(),
     })
+}
+
+/// Decode an image by its content, not its extension, along with the status bar
+/// label for it. None for anything that is not an image this build can read.
+fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
+    let format = image::guess_format(bytes).ok()?;
+    let image = image::load_from_memory_with_format(bytes, format).ok()?;
+    let name = format.extensions_str().first().map_or_else(|| format!("{format:?}"), |ext| ext.to_uppercase());
+    let label = format!("{} {}x{}", name, image.width(), image.height());
+
+    let image = if image.width().max(image.height()) > IMAGE_MAX_SIDE {
+        image.thumbnail(IMAGE_MAX_SIDE, IMAGE_MAX_SIDE)
+    } else {
+        image
+    };
+    Some((image, label))
+}
+
+/// Rows of characters approximating the image at `columns` wide, with the colour
+/// of each character. Terminal cells are roughly twice as tall as wide, so rows
+/// are halved to keep the aspect. The character carries the brightness and
+/// transparent pixels count as black, the colour of the viewer behind them.
+pub fn image_to_ascii(image: &DynamicImage, columns: usize) -> (Vec<String>, Vec<Vec<Color>>) {
+    let columns = columns.max(1) as u32;
+    let rows = (image.height() as f64 * columns as f64 / image.width().max(1) as f64 / 2.0).round().max(1.0) as u32;
+    let small = image.resize_exact(columns, rows, FilterType::Triangle).to_rgba8();
+
+    small
+        .rows()
+        .map(|row| {
+            row.map(|pixel| {
+                let [red, green, blue, alpha] = pixel.0;
+                let luma = 0.299 * red as f64 + 0.587 * green as f64 + 0.114 * blue as f64;
+                let level = luma * alpha as f64 / 255.0 / 255.0;
+                let character = IMAGE_RAMP[(level * (IMAGE_RAMP.len() - 1) as f64).round() as usize] as char;
+                (character, Color::Rgb(red, green, blue))
+            })
+            .unzip()
+        })
+        .unzip()
 }
 
 /// The head of a file, capped in both bytes and lines. Reads lossily so a cut
@@ -398,3 +474,45 @@ mod tests {
     }
 }
 
+
+#[cfg(test)]
+mod image_tests {
+    use super::*;
+    use image::{Rgba, RgbaImage};
+
+    fn solid(width: u32, height: u32, pixel: [u8; 4]) -> DynamicImage {
+        DynamicImage::ImageRgba8(RgbaImage::from_pixel(width, height, Rgba(pixel)))
+    }
+
+    #[test]
+    fn ramp_ends_map_to_black_and_white() {
+        assert_eq!(image_to_ascii(&solid(4, 4, [0, 0, 0, 255]), 4).0[0], "    ");
+        assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 255]), 4).0[0], "@@@@");
+    }
+
+    #[test]
+    fn transparent_counts_as_black() {
+        assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 0]), 4).0[0], "    ");
+    }
+
+    #[test]
+    fn rows_are_halved_for_the_cell_aspect() {
+        let (lines, colors) = image_to_ascii(&solid(100, 100, [128, 128, 128, 255]), 40);
+        assert_eq!(lines.len(), 20);
+        assert!(lines.iter().all(|line| line.chars().count() == 40));
+        assert_eq!(colors.len(), 20);
+        assert!(colors.iter().flatten().all(|color| *color == Color::Rgb(128, 128, 128)));
+        // A very wide image still keeps one row.
+        assert_eq!(image_to_ascii(&solid(1000, 1, [0, 0, 0, 255]), 10).0.len(), 1);
+    }
+
+    #[test]
+    fn decodes_by_content_and_rejects_the_rest() {
+        let mut png = Vec::new();
+        solid(3, 2, [255, 0, 0, 255]).write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        let (image, label) = load_image(&png).unwrap();
+        assert_eq!((image.width(), image.height()), (3, 2));
+        assert_eq!(label, "PNG 3x2");
+        assert!(load_image(b"\0\x01\x02 not an image").is_none());
+    }
+}

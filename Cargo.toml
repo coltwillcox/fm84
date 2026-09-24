@@ -7,6 +7,7 @@ edition = "2024"
 chrono = "0.4.40"
 color-eyre = "0.6.3"
 crossterm = "0.29.0"
+image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
 ratatui = "0.29.0"
 syntect = "5.2"
 unicode-width = "0.2"

@@ -440,6 +440,31 @@ impl AppState {
         Ok(())
     }
 
+    /// Redraw an image as ASCII whenever the viewer width differs from the one
+    /// it was drawn at. Returns true if it did, so the caller can draw again.
+    pub fn fit_viewer_image(&mut self) -> bool {
+        let columns = self.viewer_viewport_width;
+        let Some(state) = &mut self.viewer_state else {
+            return false;
+        };
+        let Some(image) = &state.image else {
+            return false;
+        };
+        if state.hex || columns == 0 || columns == state.image_columns {
+            return false;
+        }
+
+        (state.content_lines, state.image_colors) = crate::viewer::image_to_ascii(image, columns);
+        state.total_lines = state.content_lines.len();
+        state.max_line_width = columns;
+        state.image_columns = columns;
+        state.horizontal_offset = 0;
+        state.scroll_offset = state.scroll_offset.min(state.total_lines.saturating_sub(1));
+        // Positions into the old drawing mean nothing in the new one.
+        state.selection = None;
+        true
+    }
+
     pub fn close_viewer(&mut self) {
         self.is_f3_displayed = false;
         self.viewer_state = None;
@@ -511,8 +536,9 @@ impl AppState {
 
             if error.is_none() {
                 // Leaving hex on a file that was never decoded: build the text
-                // lossily rather than leave the pane blank.
-                if state.hex && state.content_lines.is_empty() {
+                // lossily rather than leave the pane blank. An image is redrawn
+                // from its pixels instead.
+                if state.hex && state.content_lines.is_empty() && state.image.is_none() {
                     state.content_lines = String::from_utf8_lossy(&state.bytes).lines().map(str::to_string).collect();
                     if state.content_lines.is_empty() {
                         state.content_lines.push(String::new());
@@ -569,6 +595,8 @@ impl AppState {
                 state.from_edit = true;
                 state.hex = false;
                 state.bytes = Vec::new();
+                state.image = None;
+                state.image_colors = Vec::new();
                 state.content_lines = Vec::new();
                 state.total_lines = 1;
             }

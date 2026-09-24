@@ -86,6 +86,11 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
         // Before the draw, so a cursor move shows its preview in the same frame.
         app_state.refresh_preview();
         render_ui(terminal, &mut app_state);
+        // An image fits the width the viewer was just drawn at, so a new width
+        // means drawing again now rather than on the next event.
+        if app_state.fit_viewer_image() {
+            render_ui(terminal, &mut app_state);
+        }
         app_state.refresh_stale_panels();
         if !handle_input(&mut app_state)? {
             break;

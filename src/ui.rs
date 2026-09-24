@@ -427,8 +427,10 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         let inner_area = border_block.inner(area);
         f.render_widget(border_block, area);
 
-        // Hex rows carry their own offset, so the gutter is not needed there.
-        let line_num_width = if viewer_state.hex {
+        // Hex rows carry their own offset, so the gutter is not needed there,
+        // and line numbers mean nothing down the side of a picture.
+        let no_gutter = viewer_state.hex || viewer_state.image.is_some();
+        let line_num_width = if no_gutter {
             0
         } else {
             (viewer_state.total_lines.to_string().len() as u16).max(3) + 2
@@ -442,9 +444,9 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         let viewport_height = inner_area.height as usize;
         let start = viewer_state.scroll_offset;
         let end = (start + viewport_height).min(viewer_state.total_lines);
-        // Line numbers, unless hex rows are carrying their own offsets - the
-        // gutter is zero-width there and must not be formatted at all.
-        if !viewer_state.hex {
+        // Line numbers, unless the gutter is zero-width - it must not be
+        // formatted at all then.
+        if !no_gutter {
             let num_width = (line_num_width as usize).saturating_sub(1);
             let line_numbers: Vec<Line> = (start..end)
                 .map(|line_num| Line::from(Span::styled(
@@ -471,7 +473,10 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
                 .map(|index| {
                     let text = viewer_state.line_text(index);
                     let width = text.chars().count();
-                    let mut spans = vec![Span::styled(text, STYLE_FILE)];
+                    let mut spans = match viewer_state.image_colors.get(index) {
+                        Some(colors) if !viewer_state.hex => colored_spans(&text, colors),
+                        _ => vec![Span::styled(text, STYLE_FILE)],
+                    };
 
                     if let Some(((first_line, first_col), (last_line, last_col))) = selection
                         && (first_line..=last_line).contains(&index)
@@ -494,6 +499,26 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
     } else {
         (0, 0, Rect::default())
     }
+}
+
+/// A line of image characters, one span per run of the same colour.
+fn colored_spans(text: &str, colors: &[ratatui::style::Color]) -> Vec<Span<'static>> {
+    let mut spans = Vec::new();
+    let mut run = String::new();
+    let mut run_color = None;
+    for (character, &color) in text.chars().zip(colors) {
+        if let Some(previous) = run_color
+            && previous != color
+        {
+            spans.push(Span::styled(std::mem::take(&mut run), Style::new().fg(previous)));
+        }
+        run_color = Some(color);
+        run.push(character);
+    }
+    if let Some(color) = run_color {
+        spans.push(Span::styled(run, Style::new().fg(color)));
+    }
+    spans
 }
 
 /// Visual column of a character index, with tabs expanded the way the editor
@@ -746,7 +771,12 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             // Bracketed half is the view you are in. Omitted on the notice F4
             // raises for a binary, where there is nothing to toggle.
             if !viewer_state.from_edit {
-                segments.push(if viewer_state.hex { "X Text [Hex]" } else { "X [Text] Hex" });
+                segments.push(match (viewer_state.image.is_some(), viewer_state.hex) {
+                    (true, true) => "X Image [Hex]",
+                    (true, false) => "X [Image] Hex",
+                    (false, true) => "X Text [Hex]",
+                    (false, false) => "X [Text] Hex",
+                });
             }
             render_segmented_status_bar(f, area, &segments);
         }
