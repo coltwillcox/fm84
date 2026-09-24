@@ -484,8 +484,6 @@ impl AppState {
         }
     }
 
-    /// Switch the viewer between text and a hexdump. Reads the raw bytes the
-    /// first time they are needed, so a text file only pays for them on demand.
     pub fn viewer_copy(&mut self) {
         if let Some(text) = self.viewer_state.as_ref().and_then(|state| state.selected_text()) {
             crate::utils::set_system_clipboard(&text);
@@ -493,6 +491,8 @@ impl AppState {
         }
     }
 
+    /// Switch the viewer between text and a hexdump. Reads the raw bytes the
+    /// first time they are needed, so a text file only pays for them on demand.
     pub fn viewer_toggle_hex(&mut self) {
         // Nothing to toggle on the refusal notice F4 puts up.
         if self.viewer_state.as_ref().is_some_and(|state| state.from_edit) {

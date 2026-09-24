@@ -23,10 +23,6 @@ pub fn format_size(bytes: u64) -> String {
     format!("{:.0} {}", size, UNITS[unit_index])
 }
 
-/// Width of a line as the viewer draws it: tabs expanded, columns not bytes.
-/// Expand tabs and neutralise control characters. Files can contain escape
-/// sequences - a lossy text view of a binary almost certainly does - and
-/// passing those through to the terminal would execute them.
 /// Ask the terminal to put `text` on the system clipboard (OSC 52). Terminals
 /// without support ignore it, and it travels over SSH, which is why this is
 /// preferred to linking a platform clipboard library.
@@ -73,6 +69,9 @@ mod base64_tests {
     }
 }
 
+/// Expand tabs and neutralise control characters. Files can contain escape
+/// sequences - a lossy text view of a binary almost certainly does - and
+/// passing those through to the terminal would execute them.
 pub fn printable_line(line: &str) -> String {
     let mut text = String::with_capacity(line.len());
     for character in line.chars() {
@@ -87,6 +86,7 @@ pub fn printable_line(line: &str) -> String {
     text
 }
 
+/// Width of a line as the viewer draws it: tabs expanded, columns not bytes.
 pub fn line_display_width(line: &str) -> usize {
     line.chars()
         .map(|character| {

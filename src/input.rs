@@ -1073,8 +1073,6 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     }
 }
 
-/// Place the cursor from a mouse position. `extend` is a drag, which keeps the
-/// anchor where the press put it so the selection grows.
 /// Selection in the viewer, in columns of the line as drawn, so hex and text
 /// modes behave the same.
 fn handle_viewer_click(app_state: &mut AppState, column: u16, row: u16, extend: bool) {
@@ -1100,6 +1098,8 @@ fn handle_viewer_click(app_state: &mut AppState, column: u16, row: u16, extend: 
     }
 }
 
+/// Place the cursor from a mouse position. `extend` is a drag, which keeps the
+/// anchor where the press put it so the selection grows.
 fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: bool) {
     // The content area as drawn, so the border and gutter widths don't have to
     // be worked out again here.

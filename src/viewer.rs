@@ -137,8 +137,6 @@ pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Vec<String
     String::from_utf8_lossy(&buffer).lines().take(max_lines).map(|line| line.to_string()).collect()
 }
 
-/// Rows a hexdump of these bytes occupies; at least one, so an empty file still
-/// has a line to render.
 impl ViewerState {
     /// The selection in document order, or None when nothing is selected.
     pub fn selected_range(&self) -> Option<((usize, usize), (usize, usize))> {
@@ -179,6 +177,8 @@ impl ViewerState {
     }
 }
 
+/// Rows a hexdump of these bytes occupies; at least one, so an empty file still
+/// has a line to render.
 pub fn hex_line_count(bytes: &[u8]) -> usize {
     bytes.len().div_ceil(HEX_BYTES_PER_LINE).max(1)
 }
