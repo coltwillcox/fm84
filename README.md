@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.12.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.12.1** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -184,6 +184,8 @@ cargo build --release
 cargo run --release
 ```
 
+*Debug builds compile dependencies optimised too, so a plain `cargo run` still decodes images at full speed. The first debug build takes a little longer for it.*
+
 ---
 
 ## 📀 Releases
@@ -259,5 +261,5 @@ The color palette channels pure 80s energy:
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.12.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.12.1 ▄▀▄▀▄▀</code>
 </p>

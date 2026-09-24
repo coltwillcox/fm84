@@ -6,6 +6,14 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.12.1] - 2026-09-24
+
+### 🛠️ Changed
+- 🎨 **Lighter image frames** - colours are rounded to 32 levels per channel so neighbouring characters share one escape sequence, cutting a full-screen image from about 170 KB of terminal output to 110 KB; scrolling a filled image is quicker, most of all over SSH
+- ⚡ **Dependencies are optimised in debug builds** - unoptimised, image decoding ran 10-30x slower, so `cargo run` took about half a second to open a photo; the first debug build takes longer, and release builds are unchanged
+
+---
+
 ## [0.12.0] - 2026-09-24
 
 ### ✨ Added
