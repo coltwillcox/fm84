@@ -14,3 +14,9 @@ unicode-width = "0.2"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
+
+# Dependencies built optimised even in debug builds. Unoptimised, image decoding
+# runs 10-30x slower and opening a photo takes the better part of a second. Our
+# own code stays quick to rebuild and fully debuggable.
+[profile.dev.package."*"]
+opt-level = 3

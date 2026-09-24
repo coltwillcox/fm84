@@ -58,6 +58,10 @@ pub const HEX_LINE_WIDTH: usize = 78;
 pub const IMAGE_MAX_SIDE: u32 = 1024;
 // Characters from light to dense, for a light-on-dark terminal.
 pub const IMAGE_RAMP: &[u8] = b" .:-=+*#%@";
+// Low bits dropped from each colour channel, so neighbouring characters share
+// a colour and one escape sequence. Three cuts a full-screen image frame from
+// about 170 KB to 110 KB with no visible banding; four starts to show it.
+pub const IMAGE_COLOR_DROP_BITS: u32 = 3;
 
 pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;

@@ -1,4 +1,4 @@
-use crate::constants::{HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_MAX_SIDE, IMAGE_RAMP};
+use crate::constants::{HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_MAX_SIDE, IMAGE_RAMP};
 use image::DynamicImage;
 use image::imageops::FilterType;
 use ratatui::style::Color;
@@ -197,6 +197,13 @@ pub fn image_columns_for(image: &DynamicImage, width: usize, height: usize, fill
     columns.max(1)
 }
 
+/// A colour channel with its low bits dropped, landing in the middle of the
+/// band it now stands for rather than at the dark end of it.
+fn coarse(channel: u8) -> u8 {
+    let band = 1u8 << IMAGE_COLOR_DROP_BITS;
+    (channel & !(band - 1)) | (band / 2)
+}
+
 /// Rows of characters approximating the image at `columns` wide, with the colour
 /// of each character. Terminal cells are roughly twice as tall as wide, so rows
 /// are halved to keep the aspect. The character carries the brightness and
@@ -214,7 +221,7 @@ pub fn image_to_ascii(image: &DynamicImage, columns: usize) -> (Vec<String>, Vec
                 let luma = 0.299 * red as f64 + 0.587 * green as f64 + 0.114 * blue as f64;
                 let level = luma * alpha as f64 / 255.0 / 255.0;
                 let character = IMAGE_RAMP[(level * (IMAGE_RAMP.len() - 1) as f64).round() as usize] as char;
-                (character, Color::Rgb(red, green, blue))
+                (character, Color::Rgb(coarse(red), coarse(green), coarse(blue)))
             })
             .unzip()
         })
@@ -536,6 +543,16 @@ mod image_tests {
     }
 
     #[test]
+    fn colours_share_bands_and_stay_in_range() {
+        // Neighbouring values collapse into one band, centred within it.
+        let band = 1u8 << IMAGE_COLOR_DROP_BITS;
+        assert_eq!(coarse(0), band / 2);
+        assert_eq!(coarse(band - 1), band / 2);
+        assert_eq!(coarse(band), band + band / 2);
+        assert!((0..=255u8).all(|value| coarse(value).abs_diff(value) <= band / 2));
+    }
+
+    #[test]
     fn ramp_ends_map_to_black_and_white() {
         assert_eq!(image_to_ascii(&solid(4, 4, [0, 0, 0, 255]), 4).0[0], "    ");
         assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 255]), 4).0[0], "@@@@");
@@ -552,7 +569,7 @@ mod image_tests {
         assert_eq!(lines.len(), 20);
         assert!(lines.iter().all(|line| line.chars().count() == 40));
         assert_eq!(colors.len(), 20);
-        assert!(colors.iter().flatten().all(|color| *color == Color::Rgb(128, 128, 128)));
+        assert!(colors.iter().flatten().all(|color| *color == Color::Rgb(coarse(128), coarse(128), coarse(128))));
         // A very wide image still keeps one row.
         assert_eq!(image_to_ascii(&solid(1000, 1, [0, 0, 0, 255]), 10).0.len(), 1);
     }
