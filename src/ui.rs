@@ -1,6 +1,7 @@
 use crate::app::AppState;
 use crate::constants::*;
 use crate::utils::*;
+use crate::viewer::ViewMode;
 use chrono::Local;
 use ratatui::{
     Terminal,
@@ -429,7 +430,7 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
 
         // Hex rows carry their own offset, so the gutter is not needed there,
         // and line numbers mean nothing down the side of a picture.
-        let no_gutter = viewer_state.hex || viewer_state.image.is_some();
+        let no_gutter = viewer_state.mode != ViewMode::Text;
         let line_num_width = if no_gutter {
             0
         } else {
@@ -474,7 +475,7 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
                     let text = viewer_state.line_text(index);
                     let width = text.chars().count();
                     let mut spans = match viewer_state.image_colors.get(index) {
-                        Some(colors) if !viewer_state.hex => colored_spans(&text, colors),
+                        Some(colors) if viewer_state.mode == ViewMode::Image => colored_spans(&text, colors),
                         _ => vec![Span::styled(text, STYLE_FILE)],
                     };
 
@@ -771,11 +772,12 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             // Bracketed half is the view you are in. Omitted on the notice F4
             // raises for a binary, where there is nothing to toggle.
             if !viewer_state.from_edit {
-                segments.push(match (viewer_state.image.is_some(), viewer_state.hex) {
-                    (true, true) => "X Image [Hex]",
-                    (true, false) => "X [Image] Hex",
-                    (false, true) => "X Text [Hex]",
-                    (false, false) => "X [Text] Hex",
+                segments.push(match (viewer_state.image.is_some(), viewer_state.mode) {
+                    (true, ViewMode::Image) => "X [Image] Text Hex",
+                    (true, ViewMode::Text) => "X Image [Text] Hex",
+                    (true, ViewMode::Hex) => "X Image Text [Hex]",
+                    (false, ViewMode::Hex) => "X Text [Hex]",
+                    (false, _) => "X [Text] Hex",
                 });
             }
             render_segmented_status_bar(f, area, &segments);

@@ -28,6 +28,14 @@ fn highlighter() -> &'static Highlighter<'static> {
     })
 }
 
+/// What the viewer is showing of a file.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ViewMode {
+    Text,
+    Hex,
+    Image,
+}
+
 pub struct ViewerState {
     pub file_path: PathBuf,
     pub content_lines: Vec<String>,
@@ -37,21 +45,22 @@ pub struct ViewerState {
     pub file_size: u64,
     pub syntax_name: String,
     pub from_edit: bool,
-    /// Raw contents, held only while hex mode needs them.
+    /// Raw contents, held only while hex mode or an image needs them.
     pub bytes: Vec<u8>,
-    pub hex: bool,
+    pub mode: ViewMode,
     /// (anchor, cursor) as (line, column) into the line *as rendered*, so hex
     /// and text modes need no separate handling.
     pub selection: Option<((usize, usize), (usize, usize))>,
     /// Longest rendered line, so horizontal scrolling can stop at the end of
     /// the content instead of running on into empty space.
     pub max_line_width: usize,
-    /// A decoded image, drawn as ASCII into `content_lines` in place of text.
+    /// A decoded image, drawn as ASCII into `image_lines`.
     pub image: Option<DynamicImage>,
-    /// The width `content_lines` was last drawn at from `image`; 0 when not yet.
-    pub image_columns: usize,
-    /// The colour of every character in `content_lines`, while it holds an image.
+    /// The ASCII drawing of `image`, and the colour of each of its characters.
+    pub image_lines: Vec<String>,
     pub image_colors: Vec<Vec<Color>>,
+    /// The width `image_lines` was last drawn at; 0 when not yet.
+    pub image_columns: usize,
 }
 
 pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
@@ -92,11 +101,12 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
                 syntax_name,
                 from_edit: false,
                 bytes,
-                hex: false,
+                mode: ViewMode::Image,
                 selection: None,
                 max_line_width: 0,
                 image: Some(image),
                 image_columns: 0,
+                image_lines: Vec::new(),
                 image_colors: Vec::new(),
             });
         }
@@ -111,11 +121,12 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
             syntax_name: "Binary".to_string(),
             from_edit: false,
             bytes,
-            hex: true,
+            mode: ViewMode::Hex,
             selection: None,
             max_line_width: 0,
             image: None,
             image_columns: 0,
+            image_lines: Vec::new(),
             image_colors: Vec::new(),
         });
     }
@@ -145,11 +156,12 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         from_edit: false,
         syntax_name,
         bytes: Vec::new(),
-        hex: false,
+        mode: ViewMode::Text,
         selection: None,
         max_line_width,
         image: None,
         image_columns: 0,
+        image_lines: Vec::new(),
         image_colors: Vec::new(),
     })
 }
@@ -243,12 +255,36 @@ impl ViewerState {
 
     /// A line as the viewer draws it, whichever mode is active.
     pub fn line_text(&self, index: usize) -> String {
-        if self.hex {
-            let offset = index * HEX_BYTES_PER_LINE;
-            let stop = (offset + HEX_BYTES_PER_LINE).min(self.bytes.len());
-            hex_line(offset, self.bytes.get(offset..stop).unwrap_or(&[]))
-        } else {
-            self.content_lines.get(index).map(|line| crate::utils::printable_line(line)).unwrap_or_default()
+        match self.mode {
+            ViewMode::Hex => {
+                let offset = index * HEX_BYTES_PER_LINE;
+                let stop = (offset + HEX_BYTES_PER_LINE).min(self.bytes.len());
+                hex_line(offset, self.bytes.get(offset..stop).unwrap_or(&[]))
+            }
+            ViewMode::Image => self.image_lines.get(index).cloned().unwrap_or_default(),
+            ViewMode::Text => {
+                self.content_lines.get(index).map(|line| crate::utils::printable_line(line)).unwrap_or_default()
+            }
+        }
+    }
+
+    /// Lines in the active mode; at least one, so there is always a row to draw.
+    pub fn line_count(&self) -> usize {
+        match self.mode {
+            ViewMode::Hex => hex_line_count(&self.bytes),
+            ViewMode::Image => self.image_lines.len().max(1),
+            ViewMode::Text => self.content_lines.len().max(1),
+        }
+    }
+
+    /// The mode X moves on to: the picture comes first for an image, then its
+    /// bytes as text and as hex.
+    pub fn next_mode(&self) -> ViewMode {
+        match self.mode {
+            ViewMode::Image => ViewMode::Text,
+            ViewMode::Text => ViewMode::Hex,
+            ViewMode::Hex if self.image.is_some() => ViewMode::Image,
+            ViewMode::Hex => ViewMode::Text,
         }
     }
 }
@@ -514,5 +550,33 @@ mod image_tests {
         assert_eq!((image.width(), image.height()), (3, 2));
         assert_eq!(label, "PNG 3x2");
         assert!(load_image(b"\0\x01\x02 not an image").is_none());
+    }
+
+    #[test]
+    fn x_cycles_image_text_hex_and_text_hex() {
+        let dir = std::env::temp_dir().join(format!("fm84-view-modes-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let png = dir.join("picture.png");
+        solid(3, 2, [255, 0, 0, 255]).save(&png).unwrap();
+        let text = dir.join("notes.txt");
+        std::fs::write(&text, "hello\n").unwrap();
+
+        let mut state = load_file_content(&png).unwrap();
+        let mut seen = vec![state.mode];
+        for _ in 0..3 {
+            state.mode = state.next_mode();
+            seen.push(state.mode);
+        }
+        assert_eq!(seen, [ViewMode::Image, ViewMode::Text, ViewMode::Hex, ViewMode::Image]);
+
+        let mut state = load_file_content(&text).unwrap();
+        let mut seen = vec![state.mode];
+        for _ in 0..2 {
+            state.mode = state.next_mode();
+            seen.push(state.mode);
+        }
+        assert_eq!(seen, [ViewMode::Text, ViewMode::Hex, ViewMode::Text]);
+
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }

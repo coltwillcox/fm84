@@ -130,7 +130,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                                 app_state.close_viewer();
                             }
                         }
-                        KeyCode::Char('x') | KeyCode::Char('X') => app_state.viewer_toggle_hex(),
+                        KeyCode::Char('x') | KeyCode::Char('X') => app_state.viewer_next_mode(),
                         KeyCode::F(10) => return Ok(false),
                         KeyCode::Down => app_state.viewer_scroll_down(),
                         KeyCode::Up => app_state.viewer_scroll_up(),

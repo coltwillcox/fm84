@@ -1,5 +1,5 @@
 use crate::fs_ops::{Mount, disk_usage, get_current_dir, list_mounts, load_directory_rows, nearest_existing_dir};
-use crate::viewer::ViewerState;
+use crate::viewer::{ViewMode, ViewerState};
 use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::text::Span;
@@ -450,13 +450,12 @@ impl AppState {
         let Some(image) = &state.image else {
             return false;
         };
-        if state.hex || columns == 0 || columns == state.image_columns {
+        if state.mode != ViewMode::Image || columns == 0 || columns == state.image_columns {
             return false;
         }
 
-        (state.content_lines, state.image_colors) = crate::viewer::image_to_ascii(image, columns);
-        state.total_lines = state.content_lines.len();
-        state.max_line_width = columns;
+        (state.image_lines, state.image_colors) = crate::viewer::image_to_ascii(image, columns);
+        state.total_lines = state.line_count();
         state.image_columns = columns;
         state.horizontal_offset = 0;
         state.scroll_offset = state.scroll_offset.min(state.total_lines.saturating_sub(1));
@@ -516,9 +515,10 @@ impl AppState {
         }
     }
 
-    /// Switch the viewer between text and a hexdump. Reads the raw bytes the
-    /// first time they are needed, so a text file only pays for them on demand.
-    pub fn viewer_toggle_hex(&mut self) {
+    /// Step the viewer to its next mode: text and a hexdump, and the picture for
+    /// an image. Reads the raw bytes the first time they are needed, so a text
+    /// file only pays for them on demand.
+    pub fn viewer_next_mode(&mut self) {
         // Nothing to toggle on the refusal notice F4 puts up.
         if self.viewer_state.as_ref().is_some_and(|state| state.from_edit) {
             return;
@@ -527,7 +527,8 @@ impl AppState {
         let mut error = None;
 
         if let Some(state) = &mut self.viewer_state {
-            if !state.hex && state.bytes.is_empty() && state.file_size > 0 {
+            let next = state.next_mode();
+            if next == ViewMode::Hex && state.bytes.is_empty() && state.file_size > 0 {
                 match std::fs::read(&state.file_path) {
                     Ok(bytes) => state.bytes = bytes,
                     Err(e) => error = Some(e.to_string()),
@@ -535,10 +536,9 @@ impl AppState {
             }
 
             if error.is_none() {
-                // Leaving hex on a file that was never decoded: build the text
-                // lossily rather than leave the pane blank. An image is redrawn
-                // from its pixels instead.
-                if state.hex && state.content_lines.is_empty() && state.image.is_none() {
+                // Text of a file that was never decoded - a binary or an image:
+                // build it lossily rather than leave the pane blank.
+                if next == ViewMode::Text && state.content_lines.is_empty() {
                     state.content_lines = String::from_utf8_lossy(&state.bytes).lines().map(str::to_string).collect();
                     if state.content_lines.is_empty() {
                         state.content_lines.push(String::new());
@@ -551,12 +551,10 @@ impl AppState {
                         .unwrap_or(0);
                 }
 
-                state.hex = !state.hex;
-                state.total_lines = if state.hex {
-                    crate::viewer::hex_line_count(&state.bytes)
-                } else {
-                    state.content_lines.len().max(1)
-                };
+                state.mode = next;
+                state.total_lines = state.line_count();
+                // Positions in one mode's lines mean nothing in another's.
+                state.selection = None;
                 state.scroll_offset = state.scroll_offset.min(state.total_lines.saturating_sub(1));
                 state.horizontal_offset = 0;
             }
@@ -570,7 +568,11 @@ impl AppState {
     pub fn viewer_scroll_right(&mut self) {
         if let Some(state) = &mut self.viewer_state {
             // Stop once the longest line's end reaches the right edge.
-            let longest = if state.hex { crate::constants::HEX_LINE_WIDTH } else { state.max_line_width };
+            let longest = match state.mode {
+                ViewMode::Hex => crate::constants::HEX_LINE_WIDTH,
+                ViewMode::Image => state.image_columns,
+                ViewMode::Text => state.max_line_width,
+            };
             let max = longest.saturating_sub(self.viewer_viewport_width);
             state.horizontal_offset = (state.horizontal_offset + 1).min(max);
         }
@@ -593,9 +595,10 @@ impl AppState {
             if let Some(state) = &mut self.viewer_state {
                 // Editing is refused outright; F3 is where a binary gets read.
                 state.from_edit = true;
-                state.hex = false;
+                state.mode = ViewMode::Text;
                 state.bytes = Vec::new();
                 state.image = None;
+                state.image_lines = Vec::new();
                 state.image_colors = Vec::new();
                 state.content_lines = Vec::new();
                 state.total_lines = 1;
