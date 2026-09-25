@@ -67,6 +67,11 @@ pub const IMAGE_COLOR_DROP_BITS: u32 = 3;
 // slow to build, large to hold, and showing nothing the first few screens do
 // not - and would rebuild them on every resize.
 pub const IMAGE_MAX_OVERFLOW: usize = 4;
+// Past this the viewer asks before decoding a picture. Measured in pixels, not
+// file size: a few hundred KB of PNG can unpack to hundreds of MB. Set below
+// the decoder's own 512 MB ceiling, so the question is asked while there is
+// still an answer - beyond that it refuses outright and the file opens as hex.
+pub const IMAGE_MAX_DECODED: u64 = 256 * 1024 * 1024;
 
 pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;

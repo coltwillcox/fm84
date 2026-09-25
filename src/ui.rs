@@ -1123,29 +1123,40 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
 }
 
 fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
-    let Some((file_path, size, is_edit)) = &app_state.large_file else {
+    let Some(large) = &app_state.large_file else {
         return;
     };
-    let name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("Unknown");
-    let verb = if *is_edit { "Edit" } else { "View" };
+    let name = large.path.file_name().and_then(|n| n.to_str()).unwrap_or("Unknown");
+    let verb = if large.is_edit { "Edit" } else { "View" };
 
     let popup_area = centered_rect(60, 30, area);
+    let title = if large.dimensions.is_some() { " Large Picture " } else { " Large File " };
     let popup_block = Block::default()
-        .title(Line::from(Span::styled(" Large File ", STYLE_TITLE)).centered())
+        .title(Line::from(Span::styled(title, STYLE_TITLE)).centered())
         .borders(Borders::ALL)
         .style(STYLE_BORDER);
 
     f.render_widget(Clear::default(), popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let message = format!("{} \"{}\" ({})?", verb, name, format_size(*size));
+    // A picture is named by its dimensions as well: the figure beside them is
+    // what it unpacks to, which says nothing about the size of the file itself.
+    let message = match large.dimensions {
+        Some((width, height)) => format!("{} \"{}\" ({}x{}, {})?", verb, name, width, height, format_size(large.size)),
+        None => format!("{} \"{}\" ({})?", verb, name, format_size(large.size)),
+    };
     f.render_widget(
         Paragraph::new(message).alignment(Alignment::Center).style(STYLE_TITLE),
         popup_area.inner(Margin { vertical: 2, horizontal: 2 }),
     );
 
+    let note = if large.dimensions.is_some() {
+        "Decoding a picture this size needs that much memory."
+    } else {
+        "Reading a file this large may take a while."
+    };
     f.render_widget(
-        Paragraph::new("Reading a file this large may take a while.").alignment(Alignment::Center).style(STYLE_FILE),
+        Paragraph::new(note).alignment(Alignment::Center).style(STYLE_FILE),
         popup_area.inner(Margin { vertical: 4, horizontal: 2 }),
     );
 

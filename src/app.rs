@@ -162,8 +162,19 @@ pub struct AppState {
     // (used, total) bytes for each panel's filesystem.
     pub disk_left: Option<(u64, u64)>,
     pub disk_right: Option<(u64, u64)>,
-    /// A file big enough to be worth asking about: (path, size, opening to edit).
-    pub large_file: Option<(PathBuf, u64, bool)>,
+    /// Set while the prompt for an expensive file is up.
+    pub large_file: Option<LargeFile>,
+}
+
+/// A file big enough to be worth asking about before it is opened.
+pub struct LargeFile {
+    pub path: PathBuf,
+    pub is_edit: bool,
+    /// Memory it will take once open.
+    pub size: u64,
+    /// Set for a picture, whose `size` is what it unpacks to rather than what it
+    /// occupies on disk - a small file can hold an enormous number of pixels.
+    pub dimensions: Option<(u32, u32)>,
 }
 
 #[derive(Clone)]
@@ -408,16 +419,30 @@ impl AppState {
         };
 
         if size > crate::constants::LARGE_FILE_SIZE {
-            self.large_file = Some((file_path, size, is_edit));
-        } else {
-            self.open_file(file_path, is_edit);
+            self.large_file = Some(LargeFile { path: file_path, is_edit, size, dimensions: None });
+            return;
         }
+
+        // What a picture costs is its pixel count, and the two part company
+        // completely: a few hundred KB of PNG can unpack to hundreds of MB, and
+        // the size checked above never sees it coming. Reading the header to
+        // find out costs a fraction of a millisecond. The editor refuses
+        // binaries outright, so nothing is decoded on that path.
+        if !is_edit
+            && let Some((dimensions, decoded)) = crate::viewer::image_cost(&file_path)
+            && decoded > crate::constants::IMAGE_MAX_DECODED
+        {
+            self.large_file = Some(LargeFile { path: file_path, is_edit, size: decoded, dimensions: Some(dimensions) });
+            return;
+        }
+
+        self.open_file(file_path, is_edit);
     }
 
     /// Answer to the large-file prompt: load it after all.
     pub fn confirm_large_file(&mut self) {
-        if let Some((file_path, _, is_edit)) = self.large_file.take() {
-            self.open_file(file_path, is_edit);
+        if let Some(large) = self.large_file.take() {
+            self.open_file(large.path, large.is_edit);
         }
     }
 

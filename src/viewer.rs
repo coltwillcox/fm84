@@ -171,6 +171,16 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
     })
 }
 
+/// A picture's dimensions and the memory it will occupy once decoded, read from
+/// its header alone - not a pixel of it. Four bytes per pixel is what RGBA
+/// costs; a photo without transparency needs three, so this errs high, which is
+/// the safe side for a warning. None for anything that is not a picture.
+pub fn image_cost(path: &Path) -> Option<((u32, u32), u64)> {
+    let reader = image::ImageReader::open(path).ok()?.with_guessed_format().ok()?;
+    let (width, height) = reader.into_dimensions().ok()?;
+    Some(((width, height), u64::from(width) * u64::from(height) * 4))
+}
+
 /// Decode an image by its content, not its extension, along with the status bar
 /// label for it. None for anything that is not an image this build can read.
 fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
@@ -556,6 +566,7 @@ mod tests {
 #[cfg(test)]
 mod image_tests {
     use super::*;
+    use crate::constants::IMAGE_MAX_DECODED;
     use image::{Rgba, RgbaImage};
 
     fn solid(width: u32, height: u32, pixel: [u8; 4]) -> DynamicImage {
@@ -659,6 +670,30 @@ mod image_tests {
         // A photo is untouched by the cap: fill still covers the pane exactly.
         assert_eq!(image_size_for(&solid(1024, 576, GREY), width, height, true).0, width);
         assert_eq!(image_size_for(&solid(1024, 576, GREY), width, height, false).0, 177);
+    }
+
+    #[test]
+    fn cost_comes_from_the_header_not_the_file_size() {
+        let dir = std::env::temp_dir().join(format!("fm84-image-cost-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let png = dir.join("picture.png");
+        solid(600, 400, [1, 2, 3, 255]).save(&png).unwrap();
+        assert_eq!(image_cost(&png).unwrap(), ((600, 400), 600 * 400 * 4));
+        // The gap between the two is the whole point: this one is 164x.
+        assert!(std::fs::metadata(&png).unwrap().len() * 100 < 600 * 400 * 4);
+
+        let text = dir.join("notes.txt");
+        std::fs::write(&text, "hello\n").unwrap();
+        assert!(image_cost(&text).is_none());
+        assert!(image_cost(&dir.join("absent.png")).is_none());
+
+        // Where the prompt falls: a 24 MP photo opens straight away, while the
+        // 12000x12000 picture that unpacks to 549 MiB is asked about first.
+        const { assert!(6000 * 4000 * 4 < IMAGE_MAX_DECODED) };
+        const { assert!(12000 * 12000 * 4 > IMAGE_MAX_DECODED) };
+
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
