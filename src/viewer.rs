@@ -187,10 +187,10 @@ fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
     Some((image, label))
 }
 
-/// The width to draw an image at in a `width` x `height` viewer. Fit keeps the
-/// whole picture inside it; fill covers it, overflowing in one direction. Two
-/// rows of pixels go to a cell, which is what image_to_ascii assumes as well.
-pub fn image_columns_for(image: &DynamicImage, width: usize, height: usize, fill: bool) -> usize {
+/// The size to draw an image at in a `width` x `height` viewer, in characters.
+/// Fit keeps the whole picture inside it; fill covers it, overflowing in one
+/// direction.
+pub fn image_size_for(image: &DynamicImage, width: usize, height: usize, fill: bool) -> (usize, usize) {
     // The width at which the drawing is exactly `height` rows tall.
     let full_height = height as f64 * 2.0 * image.width() as f64 / image.height().max(1) as f64;
     let columns = if fill { width.max(full_height.ceil() as usize) } else { width.min(full_height.floor() as usize) };
@@ -201,8 +201,22 @@ pub fn image_columns_for(image: &DynamicImage, width: usize, height: usize, fill
     // the same factor is the width at which the drawing is that many screens
     // tall, so the two caps mirror each other.
     let overflow = IMAGE_MAX_OVERFLOW as f64;
-    let columns = columns.min(width * IMAGE_MAX_OVERFLOW).min((full_height * overflow).ceil() as usize);
-    columns.max(1)
+    let columns = columns.min(width * IMAGE_MAX_OVERFLOW).min((full_height * overflow).ceil() as usize).max(1);
+
+    let rows = aspect_rows(image, columns);
+    // Fit overflows only for a picture more than twice as tall as the viewer
+    // per column of its width - past 100:1 in a typical pane - where even a
+    // single column is too wide to keep the proportions. Squash it into the
+    // viewer rather than hand Fit something it cannot show whole; a sliver that
+    // thin has no shape left to distort.
+    if !fill && rows > height { (columns, height.max(1)) } else { (columns, rows) }
+}
+
+/// Rows that keep the picture's proportions at `columns` wide. A terminal cell
+/// is about twice as tall as it is wide, so a square image draws half as many
+/// rows as it has columns.
+fn aspect_rows(image: &DynamicImage, columns: usize) -> usize {
+    (image.height() as f64 * columns as f64 / image.width().max(1) as f64 / 2.0).round().max(1.0) as usize
 }
 
 /// A colour channel with its low bits dropped, landing in the middle of the
@@ -212,13 +226,11 @@ fn coarse(channel: u8) -> u8 {
     (channel & !(band - 1)) | (band / 2)
 }
 
-/// Rows of characters approximating the image at `columns` wide, with the colour
-/// of each character. Terminal cells are roughly twice as tall as wide, so rows
-/// are halved to keep the aspect. The character carries the brightness and
+/// A `columns` x `rows` grid of characters approximating the image, with the
+/// colour of each character. The character carries the brightness and
 /// transparent pixels count as black, the colour of the viewer behind them.
-pub fn image_to_ascii(image: &DynamicImage, columns: usize) -> (Vec<String>, Vec<Vec<Color>>) {
-    let columns = columns.max(1) as u32;
-    let rows = (image.height() as f64 * columns as f64 / image.width().max(1) as f64 / 2.0).round().max(1.0) as u32;
+pub fn image_to_ascii(image: &DynamicImage, columns: usize, rows: usize) -> (Vec<String>, Vec<Vec<Color>>) {
+    let (columns, rows) = (columns.max(1) as u32, rows.max(1) as u32);
     let small = image.resize_exact(columns, rows, FilterType::Triangle).to_rgba8();
 
     small
@@ -562,24 +574,28 @@ mod image_tests {
 
     #[test]
     fn ramp_ends_map_to_black_and_white() {
-        assert_eq!(image_to_ascii(&solid(4, 4, [0, 0, 0, 255]), 4).0[0], "    ");
-        assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 255]), 4).0[0], "@@@@");
+        assert_eq!(image_to_ascii(&solid(4, 4, [0, 0, 0, 255]), 4, 2).0[0], "    ");
+        assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 255]), 4, 2).0[0], "@@@@");
     }
 
     #[test]
     fn transparent_counts_as_black() {
-        assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 0]), 4).0[0], "    ");
+        assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 0]), 4, 2).0[0], "    ");
     }
 
     #[test]
     fn rows_are_halved_for_the_cell_aspect() {
-        let (lines, colors) = image_to_ascii(&solid(100, 100, [128, 128, 128, 255]), 40);
+        let square = solid(100, 100, [128, 128, 128, 255]);
+        let (columns, rows) = image_size_for(&square, 40, 40, false);
+        assert_eq!((columns, rows), (40, 20));
+
+        let (lines, colors) = image_to_ascii(&square, columns, rows);
         assert_eq!(lines.len(), 20);
         assert!(lines.iter().all(|line| line.chars().count() == 40));
         assert_eq!(colors.len(), 20);
         assert!(colors.iter().flatten().all(|color| *color == Color::Rgb(coarse(128), coarse(128), coarse(128))));
         // A very wide image still keeps one row.
-        assert_eq!(image_to_ascii(&solid(1000, 1, [0, 0, 0, 255]), 10).0.len(), 1);
+        assert_eq!(image_size_for(&solid(1000, 1, [0, 0, 0, 255]), 10, 10, false).1, 1);
     }
 
     #[test]
@@ -596,16 +612,30 @@ mod image_tests {
     fn fit_stays_inside_and_fill_covers() {
         // Cell aspect halves rows, so a square image is twice as wide as tall.
         let square = solid(100, 100, [0, 0, 0, 255]);
-        assert_eq!(image_columns_for(&square, 80, 20, false), 40);
-        assert_eq!(image_columns_for(&square, 80, 20, true), 80);
-        assert_eq!(image_columns_for(&square, 30, 20, false), 30);
-        assert_eq!(image_columns_for(&square, 30, 20, true), 40);
+        assert_eq!(image_size_for(&square, 80, 20, false).0, 40);
+        assert_eq!(image_size_for(&square, 80, 20, true).0, 80);
+        assert_eq!(image_size_for(&square, 30, 20, false).0, 30);
+        assert_eq!(image_size_for(&square, 30, 20, true).0, 40);
 
+        // Fit is inside the viewer for every shape, including the slivers that
+        // have to be squashed to get there.
+        for (image_width, image_height) in [(100, 100), (1024, 576), (1, 1024), (4, 1024), (1024, 1)] {
+            let image = solid(image_width, image_height, [0, 0, 0, 255]);
+            for (width, height) in [(80, 20), (30, 20), (200, 50), (7, 3)] {
+                let (columns, rows) = image_size_for(&image, width, height, false);
+                assert!(
+                    columns <= width && rows <= height,
+                    "{image_width}x{image_height} fit in {width}x{height}: {columns}x{rows}"
+                );
+                let drawn = image_to_ascii(&image, columns, rows).0;
+                assert_eq!(drawn.len(), rows);
+            }
+        }
+
+        // Fill covers the viewer, except where the cap in the test below stops it.
         for (width, height) in [(80, 20), (30, 20), (200, 50), (7, 3)] {
-            let fit = image_columns_for(&square, width, height, false);
-            assert!(fit <= width && image_to_ascii(&square, fit).0.len() <= height);
-            let fill = image_columns_for(&square, width, height, true);
-            assert!(fill >= width && image_to_ascii(&square, fill).0.len() >= height);
+            let (columns, rows) = image_size_for(&square, width, height, true);
+            assert!(columns >= width && rows >= height);
         }
     }
 
@@ -618,8 +648,8 @@ mod image_tests {
         for (image_width, image_height) in [(1, 1024), (2, 1024), (4, 1024), (1024, 1), (1024, 2), (1024, 576)] {
             let image = solid(image_width, image_height, GREY);
             for fill in [false, true] {
-                let columns = image_columns_for(&image, width, height, fill);
-                let (lines, colors) = image_to_ascii(&image, columns);
+                let (columns, rows) = image_size_for(&image, width, height, fill);
+                let (lines, colors) = image_to_ascii(&image, columns, rows);
                 let cells = columns * lines.len();
                 assert!(cells <= budget, "{image_width}x{image_height} fill={fill}: {columns}x{} is {cells} cells", lines.len());
                 assert_eq!(colors.len(), lines.len());
@@ -627,8 +657,8 @@ mod image_tests {
         }
 
         // A photo is untouched by the cap: fill still covers the pane exactly.
-        assert_eq!(image_columns_for(&solid(1024, 576, GREY), width, height, true), width);
-        assert_eq!(image_columns_for(&solid(1024, 576, GREY), width, height, false), 177);
+        assert_eq!(image_size_for(&solid(1024, 576, GREY), width, height, true).0, width);
+        assert_eq!(image_size_for(&solid(1024, 576, GREY), width, height, false).0, 177);
     }
 
     #[test]

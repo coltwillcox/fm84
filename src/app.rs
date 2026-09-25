@@ -454,12 +454,14 @@ impl AppState {
         if state.mode != ViewMode::Image || width == 0 || height == 0 {
             return false;
         }
-        let columns = crate::viewer::image_columns_for(image, width, height, state.image_fill);
-        if columns == state.image_columns {
+        let (columns, rows) = crate::viewer::image_size_for(image, width, height, state.image_fill);
+        // Rows as well as columns: a picture squashed to fit is one column wide
+        // whatever the viewer's height, so only the row count shows the change.
+        if columns == state.image_columns && rows == state.image_lines.len() {
             return false;
         }
 
-        (state.image_lines, state.image_colors) = crate::viewer::image_to_ascii(image, columns);
+        (state.image_lines, state.image_colors) = crate::viewer::image_to_ascii(image, columns, rows);
         state.total_lines = state.line_count();
         state.image_columns = columns;
         state.horizontal_offset = 0;
