@@ -27,16 +27,11 @@
 > *We're still soldering the circuits on this one, choom.* 🔧
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-0.png" width="801">
-</div>
-<div align="center">
-<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-1.png" width="801">
-</div>
-<div align="center">
-<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="801">
-</div>
-<div align="center">
-<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-3.png" width="801">
+<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-0.png" width="400">
+<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-1.png" width="400">
+<br>
+<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="400">
+<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-3.png" width="400">
 </div>
 
 ---
