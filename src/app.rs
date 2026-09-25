@@ -3,7 +3,7 @@ use crate::fs_ops::{
     nearest_existing_dir, rename_in_place,
 };
 use crate::viewer::{ViewMode, ViewerState};
-use ratatui::layout::Rect;
+use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
 use ratatui::text::Span;
 use ratatui::widgets::TableState;
@@ -160,6 +160,11 @@ pub struct AppState {
     pub viewport_start_right: usize,
     pub editor_content_area: Rect,
     pub viewer_content_area: Rect,
+    // The drive strips as drawn, and where each icon sits along one. Both
+    // strips lay their icons out the same way, so one set of slots serves both.
+    pub drive_strip_left: Rect,
+    pub drive_strip_right: Rect,
+    pub drive_slots: Vec<(u16, u16)>,
     // Directory mtimes as of the last load, so an external change can be spotted
     // without stat-ing every entry.
     pub dir_stamp_left: Option<SystemTime>,
@@ -355,6 +360,9 @@ impl AppState {
             disk_right: None,
             large_file: None,
             job: None,
+            drive_strip_left: Rect::default(),
+            drive_strip_right: Rect::default(),
+            drive_slots: Vec::new(),
         }
     }
 
@@ -1503,6 +1511,25 @@ impl AppState {
         }
     }
 
+    /// The panel and the mount under a click, when it landed on a drive icon.
+    /// The strip runs the width of its half, so most of it is not an icon: a
+    /// click on the label beside them, or past the last one, is not a drive.
+    pub fn drive_at(&self, column: u16, row: u16) -> Option<(bool, usize)> {
+        let position = Position::new(column, row);
+        let is_left = if self.drive_strip_left.contains(position) {
+            true
+        } else if self.drive_strip_right.contains(position) {
+            false
+        } else {
+            return None;
+        };
+
+        let strip = if is_left { self.drive_strip_left } else { self.drive_strip_right };
+        let offset = column - strip.x;
+        let index = slot_at(&self.drive_slots, offset)?;
+        (index < self.mounts.len()).then_some((is_left, index))
+    }
+
     /// The mount a panel is sitting on: the longest one its directory is under.
     pub fn current_mount(&self, is_left: bool) -> Option<usize> {
         let dir = if is_left { &self.dir_left } else { &self.dir_right };
@@ -1675,6 +1702,13 @@ fn detect_line_ending(content: &str) -> &'static str {
     if crlf > lf { "\r\n" } else { "\n" }
 }
 
+/// Which of a strip's slots a column falls in, measured from the strip's left
+/// edge. None for the gaps around them: the space the strip opens with, and
+/// everything past the last icon, where the mount's name is written.
+fn slot_at(slots: &[(u16, u16)], offset: u16) -> Option<usize> {
+    slots.iter().position(|&(start, width)| offset >= start && offset < start + width)
+}
+
 /// The worker thread behind a copy or move.
 ///
 /// Renames come first and on their own. A move within one filesystem is a
@@ -1752,7 +1786,33 @@ fn char_to_byte(s: &str, char_idx: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::recentre;
+    use super::{recentre, slot_at};
+
+    #[test]
+    fn a_click_lands_on_the_icon_it_looks_like() {
+        // Seven icons, each a glyph and the space after it, past the space the
+        // strip opens with - the layout drive_strip actually produces.
+        let slots: Vec<(u16, u16)> = (0..7).map(|i| (1 + i * 2, 2)).collect();
+
+        assert_eq!(slot_at(&slots, 0), None); // the opening space
+        assert_eq!(slot_at(&slots, 1), Some(0)); // first glyph
+        assert_eq!(slot_at(&slots, 2), Some(0)); // the space that goes with it
+        assert_eq!(slot_at(&slots, 3), Some(1));
+        assert_eq!(slot_at(&slots, 13), Some(6)); // last icon
+        assert_eq!(slot_at(&slots, 14), Some(6));
+        assert_eq!(slot_at(&slots, 15), None); // past the end, where the label goes
+        assert_eq!(slot_at(&slots, 200), None);
+
+        // Every column of every slot maps back to that slot, and they never
+        // overlap - a gap or an overlap here is a click landing one icon over.
+        for (index, &(start, width)) in slots.iter().enumerate() {
+            for offset in start..start + width {
+                assert_eq!(slot_at(&slots, offset), Some(index), "offset {offset}");
+            }
+        }
+
+        assert_eq!(slot_at(&[], 1), None);
+    }
 
     #[test]
     fn a_drawing_smaller_than_the_pane_has_no_offset() {

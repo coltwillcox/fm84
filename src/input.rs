@@ -984,6 +984,17 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
         app_state.reset_rename();
     }
 
+    // A drive icon sends that panel to the mount, the same as picking one with
+    // Alt+F1 or Alt+F2. Checked before the panels, since the strip sits above
+    // them and a click there is never a click on a file.
+    if let Some((is_left, index)) = app_state.drive_at(column, row)
+        && let Some(path) = app_state.mounts.get(index).map(|mount| mount.path.clone())
+    {
+        app_state.is_left_active = is_left;
+        app_state.open_dir(is_left, path, None);
+        return;
+    }
+
     // Check for double-click (same position within 500ms)
     let now = Instant::now();
     let is_double_click = if let Some(last_time) = app_state.last_click_time {

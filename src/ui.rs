@@ -132,8 +132,10 @@ fn mount_icon(kind: crate::fs_ops::MountKind) -> &'static str {
 }
 
 /// One panel's row of drive icons: the mount it is on stands out, and while
-/// that panel is choosing, the candidate is highlighted and named.
-fn drive_strip(app_state: &AppState, is_left: bool) -> Line<'static> {
+/// that panel is choosing, the candidate is highlighted and named. Also returns
+/// the column each icon starts at and how wide it is, measured from the text
+/// actually drawn, so a click cannot land anywhere but where it looks.
+fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16, u16)>) {
     let current = app_state.current_mount(is_left);
     let picking = match app_state.drive_picker {
         Some((side, index)) if side == is_left => Some(index),
@@ -141,6 +143,8 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> Line<'static> {
     };
 
     let mut spans = vec![Span::raw(" ")];
+    let mut slots = Vec::with_capacity(app_state.mounts.len());
+    let mut column = 1; // past the space the strip opens with
     for (index, mount) in app_state.mounts.iter().enumerate() {
         let style = if Some(index) == picking {
             STYLE_TITLE.bg(COLOR_SELECTED_BACKGROUND)
@@ -149,7 +153,11 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> Line<'static> {
         } else {
             STYLE_DIR_DARK
         };
-        spans.push(Span::styled(format!("{} ", mount_icon(mount.kind)), style));
+        let text = format!("{} ", mount_icon(mount.kind));
+        let width = display_width(&text) as u16;
+        slots.push((column, width));
+        column += width;
+        spans.push(Span::styled(text, style));
     }
 
     // Name whichever is under consideration, else the one this panel is on.
@@ -157,10 +165,10 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> Line<'static> {
         spans.push(Span::styled(format!(" {}", mount.label), STYLE_COLUMNS));
     }
 
-    Line::from(spans)
+    (Line::from(spans), slots)
 }
 
-fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
     let cached_clock = app_state.cached_clock.as_str();
     let logo = Span::styled(format!(" {} ", ICON_LOGO), STYLE_TITLE);
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), STYLE_TITLE);
@@ -178,8 +186,19 @@ fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState
 
     if inner.height > 0 && !app_state.mounts.is_empty() {
         let halves = panel_split(Rect { height: 1, ..inner });
-        f.render_widget(Paragraph::new(drive_strip(app_state, true)), halves[0]);
-        f.render_widget(Paragraph::new(drive_strip(app_state, false)), halves[2]);
+        let (left, slots) = drive_strip(app_state, true);
+        let (right, _) = drive_strip(app_state, false);
+        f.render_widget(Paragraph::new(left), halves[0]);
+        f.render_widget(Paragraph::new(right), halves[2]);
+
+        // Hand the real geometry to the mouse handler, as the panels do.
+        app_state.drive_strip_left = halves[0];
+        app_state.drive_strip_right = halves[2];
+        app_state.drive_slots = slots;
+    } else {
+        // Nothing drawn this frame, so there is nothing to click either.
+        app_state.drive_strip_left = Rect::default();
+        app_state.drive_strip_right = Rect::default();
     }
 }
 
