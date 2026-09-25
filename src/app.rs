@@ -1533,6 +1533,9 @@ impl AppState {
 
         match load_directory_rows(&dir) {
             Ok(items) => {
+                let selected = if is_left { &mut self.selected_left } else { &mut self.selected_right };
+                prune_selection(selected, &items);
+
                 let index = wanted
                     .and_then(|name| items.iter().position(|item| item.name_full == name))
                     .unwrap_or(previous_index)
@@ -1769,6 +1772,21 @@ fn run_delete(items: Vec<(PathBuf, bool)>, updates: &Sender<JobUpdate>, cancel: 
     let _ = updates.send(JobUpdate::Finished(Ok(Transfer::Done)));
 }
 
+/// Drop selections whose file is no longer there.
+///
+/// A selection is keyed by name so it can follow its file across a re-sort, but
+/// that leaves the name behind when the file itself goes. Nothing shows it: the
+/// count and the operations all walk the files and ask whether each is
+/// selected, so a name with no file behind it is silently inert - until
+/// something takes that name again, at which point a file the user never picked
+/// is selected, and joins the next copy, move or delete. Worse, those read the
+/// selection *instead of* the cursor whenever it is not empty, so one such name
+/// quietly redirects the whole operation.
+fn prune_selection(selected: &mut HashSet<String>, items: &[Item]) {
+    let names: HashSet<&str> = items.iter().map(|item| item.name_full.as_str()).collect();
+    selected.retain(|name| names.contains(name.as_str()));
+}
+
 /// Which of a strip's slots a column falls in, measured from the strip's left
 /// edge. None for the gaps around them: the space the strip opens with, and
 /// everything past the last icon, where the mount's name is written.
@@ -1853,7 +1871,46 @@ fn char_to_byte(s: &str, char_idx: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{recentre, slot_at};
+    use super::{Item, prune_selection, recentre, slot_at};
+    use std::collections::HashSet;
+
+    fn row(name: &str) -> Item {
+        Item {
+            name_full: name.to_string(),
+            name: name.to_string(),
+            extension: String::new(),
+            is_dir: false,
+            size: String::new(),
+            size_bytes: 0,
+            modified: String::new(),
+            attributes: String::new(),
+        }
+    }
+
+    #[test]
+    fn a_selection_outlives_a_re_sort_but_not_its_file() {
+        let mut selected: HashSet<String> =
+            ["one.txt", "two.txt"].iter().map(|name| name.to_string()).collect();
+
+        // Re-sorted, renumbered: both files are still there, so both stay
+        // selected. This is what keying by name rather than row is for.
+        prune_selection(&mut selected, &[row("zzz.txt"), row("two.txt"), row("one.txt")]);
+        assert_eq!(selected.len(), 2);
+
+        // one.txt is gone, so its selection goes with it.
+        prune_selection(&mut selected, &[row("renamed.txt"), row("two.txt")]);
+        assert_eq!(selected.iter().collect::<Vec<_>>(), ["two.txt"]);
+
+        // And it does not come back when something else takes the name, which
+        // would otherwise put a file the user never picked into the next delete.
+        prune_selection(&mut selected, &[row("one.txt"), row("two.txt")]);
+        assert_eq!(selected.iter().collect::<Vec<_>>(), ["two.txt"]);
+
+        // An empty directory clears the lot.
+        prune_selection(&mut selected, &[]);
+        assert!(selected.is_empty());
+    }
+
 
     #[test]
     fn a_click_lands_on_the_icon_it_looks_like() {
