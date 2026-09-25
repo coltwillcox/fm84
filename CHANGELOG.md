@@ -6,6 +6,23 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.13.0] - 2026-09-25
+
+### ✨ Added
+- 📊 **Progress for copying and moving** - a bar with the current file, bytes done, total and transfer rate; Esc cancels and the half-written file is cleaned up, while everything already finished stays. The transfer runs off the interface thread, so a slow or stalled disk cannot freeze the display, and a copy that finishes at once never flashes a popup on the way past
+- 🔍 **Zoom in the Viewer** - `+` and `-` scale a picture from a quarter of the fitted size up to four times it, in round steps shown on the status bar. Whatever is in the middle of the view stays in the middle, so zooming in on a detail keeps it in sight. `F` returns to a plain Fit or Fill
+- 🖱️ **Clickable drive icons** - a click on the strip sends that panel to the mount and moves the focus there, alongside Alt+F1 and Alt+F2
+
+### 🛠️ Changed
+- ❓ **A picture is weighed by its pixels, not its file size** - the two part company entirely, and a 410 KB PNG that unpacks to 549 MiB now asks first. The dimensions are read from the header, without decoding a pixel
+- 📐 **Fit fits at any shape** - a picture more than twice as tall as the Viewer per column of its width used to hand Fit something it could not show whole, needing ten screens of scrolling. It is squashed into the Viewer instead; at that ratio it is a single column of colour with no shape left to distort
+- ⚡ **Filling an extreme aspect ratio stays quick** - a one-pixel-wide strip covering the pane meant a drawing 102,400 rows tall, half a second to build and 160 MB to hold, and again on every resize. The overflow is now held to a few screens each way
+
+### 🐛 Fixed
+- 🖱️ **The mouse no longer reaches what is behind a popup** - clicks and the scroll wheel moved the panels under every dialog, so a panel could be scrolled out from under the question being asked about it
+
+---
+
 ## [0.12.1] - 2026-09-24
 
 ### 🛠️ Changed

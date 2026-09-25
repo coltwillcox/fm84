@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.12.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.13.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -54,7 +54,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
 - 🔗 **Symlinked directories** - listed and entered like the real thing
-- 💿 **Drive switcher** - Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2) pick a mount for either panel; removable and optical media get their own icons
+- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; removable and optical media get their own icons
 
 ### 🔍 Quick Search
 - 🔎 **Type-ahead search** - just start typing to find files
@@ -68,6 +68,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, unsaved changes prompt, mouse click to position cursor)
 - **F5** 📋 - Copy to other panel (selected items or cursor item)
 - **F6** 📦 - Move to other panel (selected items or cursor item)
+- 📊 **Progress while copying and moving** - a bar with the current file, bytes done and transfer rate; Esc cancels, and the half-written file is cleaned up. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file)
 - **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation)
 - **F9** 💻 - Open external terminal in current directory
@@ -97,9 +98,10 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔢 **Status bar** - filename, line count, file size, detected syntax
 - 🔢 **Hex view** - binaries open as a `hexdump -C`; `X` toggles hex for any file, so you can eyeball a BOM or CRLF endings
 - 🖼️ **Images as ASCII art** - PNG, JPEG, GIF, WebP and BMP drawn in colour; `X` cycles Image, Text and Hex, `F` switches between fitting the whole picture in, centred, and filling the viewer
+- 🔍 **Zoom** - `+` and `-` scale a picture from a quarter of the fitted size to four times it, keeping whatever is in the middle of the view in the middle
 - 🖱️ **Mouse selection** - drag to select, Ctrl+C to copy
 - 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
-- ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory
+- ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory, and before decoding a picture that needs over 256 MiB of it - a few hundred KB of PNG can unpack to hundreds of MB
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 
@@ -155,9 +157,10 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 | `F10` | Quit |
 | `F11` | Options |
 | `F12` | Preview cursor file in other panel |
-| `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too) |
+| `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
 | `X` | Toggle hex view; cycle Image, Text, Hex for images (in Viewer) |
 | `F` | Fit or fill an image (in Viewer) |
+| `+` / `-` | Zoom an image in or out (in Viewer) |
 | `Shift`+arrows | Select text (in Editor) |
 | `Ctrl+A` | Select all (in Editor) |
 | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Cut / Copy / Paste (in Editor) |
