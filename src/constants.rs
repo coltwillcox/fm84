@@ -62,6 +62,11 @@ pub const IMAGE_RAMP: &[u8] = b" .:-=+*#%@";
 // a colour and one escape sequence. Three cuts a full-screen image frame from
 // about 170 KB to 110 KB with no visible banding; four starts to show it.
 pub const IMAGE_COLOR_DROP_BITS: u32 = 3;
+// How far a filled image may overflow the viewer, in screenfuls each way. An
+// extreme aspect ratio would otherwise draw hundreds of thousands of rows -
+// slow to build, large to hold, and showing nothing the first few screens do
+// not - and would rebuild them on every resize.
+pub const IMAGE_MAX_OVERFLOW: usize = 4;
 
 pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;

@@ -1,4 +1,4 @@
-use crate::constants::{HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_MAX_SIDE, IMAGE_RAMP};
+use crate::constants::{HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP};
 use image::DynamicImage;
 use image::imageops::FilterType;
 use ratatui::style::Color;
@@ -194,6 +194,14 @@ pub fn image_columns_for(image: &DynamicImage, width: usize, height: usize, fill
     // The width at which the drawing is exactly `height` rows tall.
     let full_height = height as f64 * 2.0 * image.width() as f64 / image.height().max(1) as f64;
     let columns = if fill { width.max(full_height.ceil() as usize) } else { width.min(full_height.floor() as usize) };
+    // Covering the width of a one-pixel-wide strip means a drawing 102,400 rows
+    // tall - half a second to build and 160 MB to hold, and again on every
+    // resize. Hold the overflow to a few screens each way, which lowers the
+    // column count without touching the aspect ratio. `full_height` scaled by
+    // the same factor is the width at which the drawing is that many screens
+    // tall, so the two caps mirror each other.
+    let overflow = IMAGE_MAX_OVERFLOW as f64;
+    let columns = columns.min(width * IMAGE_MAX_OVERFLOW).min((full_height * overflow).ceil() as usize);
     columns.max(1)
 }
 
@@ -599,6 +607,28 @@ mod image_tests {
             let fill = image_columns_for(&square, width, height, true);
             assert!(fill >= width && image_to_ascii(&square, fill).0.len() >= height);
         }
+    }
+
+    #[test]
+    fn extreme_aspects_stay_cheap_to_draw() {
+        const GREY: [u8; 4] = [128, 128, 128, 255];
+        let (width, height) = (200, 50);
+        // Both caps at once is the worst the sizing can produce.
+        let budget = width * height * IMAGE_MAX_OVERFLOW * IMAGE_MAX_OVERFLOW;
+        for (image_width, image_height) in [(1, 1024), (2, 1024), (4, 1024), (1024, 1), (1024, 2), (1024, 576)] {
+            let image = solid(image_width, image_height, GREY);
+            for fill in [false, true] {
+                let columns = image_columns_for(&image, width, height, fill);
+                let (lines, colors) = image_to_ascii(&image, columns);
+                let cells = columns * lines.len();
+                assert!(cells <= budget, "{image_width}x{image_height} fill={fill}: {columns}x{} is {cells} cells", lines.len());
+                assert_eq!(colors.len(), lines.len());
+            }
+        }
+
+        // A photo is untouched by the cap: fill still covers the pane exactly.
+        assert_eq!(image_columns_for(&solid(1024, 576, GREY), width, height, true), width);
+        assert_eq!(image_columns_for(&solid(1024, 576, GREY), width, height, false), 177);
     }
 
     #[test]
