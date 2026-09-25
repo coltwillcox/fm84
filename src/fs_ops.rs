@@ -4,7 +4,7 @@ use crate::utils::format_size;
 use chrono::Local;
 use std::env;
 use std::fs::{self, File, create_dir, read_dir, remove_dir_all, remove_file, rename};
-use std::io::{self, Error, Read};
+use std::io::{self, Error, ErrorKind, Read};
 use std::path::{Path, PathBuf};
 
 /// Permission bits as `ls -l` writes them. The mode comes from the metadata the
@@ -600,7 +600,38 @@ pub fn measure(items: &[(PathBuf, PathBuf, bool)]) -> u64 {
         .sum()
 }
 
+/// True when copying `source` to `dest` would descend into what it is writing:
+/// a directory copied to somewhere inside itself. copy_dir_recursive creates
+/// the destination before it reads the source, so it then finds it, copies it,
+/// finds it again, and carries on until the path outgrows PATH_MAX - around a
+/// thousand levels, re-copying every file at each one.
+///
+/// Paths are resolved first, so a destination reaching the source through a
+/// symlink counts. A symlink source does not: it is recreated as a link rather
+/// than walked, so it cannot recurse.
+pub fn copies_into_itself(source: &Path, dest: &Path) -> bool {
+    if fs::symlink_metadata(source).map(|meta| meta.file_type().is_symlink()).unwrap_or(false) || !source.is_dir() {
+        return false;
+    }
+
+    let resolve = |path: &Path| path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    let source = resolve(source);
+    // The destination does not exist yet, so its parent is what can be resolved.
+    let dest = match (dest.parent(), dest.file_name()) {
+        (Some(parent), Some(name)) => resolve(parent).join(name),
+        _ => resolve(dest),
+    };
+    // Component-wise, so "/x/subfoo" is not inside "/x/sub".
+    dest.starts_with(&source)
+}
+
 pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
+    // Refused here as well as before the transfer starts, so no caller can
+    // reach the runaway however it assembles its paths.
+    if copies_into_itself(&source, &dest) {
+        return Err(Error::new(ErrorKind::InvalidInput, format!("Cannot copy \"{}\" into itself", source.display())));
+    }
+
     // A symlink is copied as the link itself, never as its target, matching
     // cp -r. is_dir can't decide this: it comes from DirEntry::metadata(),
     // which doesn't follow links, so a link to a directory arrives false here
@@ -846,6 +877,65 @@ mod transfer_tests {
         let mut report = |_: Step<'_>| false;
         assert_eq!(copy_path(source, dest.clone(), true, &mut report).unwrap(), Transfer::Cancelled);
         assert!(!dest.join("a.bin").exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_directory_will_not_be_copied_into_itself() {
+        let dir = scratch("into-itself").canonicalize().unwrap();
+        let source = dir.join("sub");
+        fs::create_dir(&source).unwrap();
+        fs::write(source.join("f.bin"), vec![1u8; 32]).unwrap();
+
+        // Straight into itself, and deeper inside itself.
+        assert!(copies_into_itself(&source, &source.join("sub")));
+        assert!(copies_into_itself(&source, &source.join("a").join("b")));
+
+        // Ordinary copies must still go through.
+        assert!(!copies_into_itself(&source, &dir.join("elsewhere")));
+        assert!(!copies_into_itself(&source, &dir.join("sub2")));
+        // Sharing a name prefix is not being inside: "/x/subfoo" is not in "/x/sub".
+        assert!(!copies_into_itself(&source, &dir.join("subfoo").join("sub")));
+        // A file has nothing to recurse into.
+        assert!(!copies_into_itself(&source.join("f.bin"), &source.join("f.bin").join("x")));
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn a_link_into_the_source_is_caught_and_a_link_source_is_not() {
+        let dir = scratch("into-itself-links").canonicalize().unwrap();
+        let source = dir.join("sub");
+        fs::create_dir(&source).unwrap();
+
+        // A destination that reaches the source through a link is still inside.
+        let link = dir.join("link");
+        std::os::unix::fs::symlink(&source, &link).unwrap();
+        assert!(copies_into_itself(&source, &link.join("copy")));
+
+        // A link is recreated rather than walked, so it cannot recurse and is
+        // not refused - even pointing at the directory it is copied into.
+        assert!(!copies_into_itself(&link, &source.join("copy")));
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn the_runaway_copy_is_refused_before_anything_is_written() {
+        let dir = scratch("runaway").canonicalize().unwrap();
+        let source = dir.join("sub");
+        fs::create_dir(&source).unwrap();
+        fs::write(source.join("f.bin"), vec![9u8; 64]).unwrap();
+
+        let mut report = |_: Step<'_>| true;
+        let error = copy_path(source.clone(), source.join("sub"), true, &mut report).unwrap_err();
+        assert_eq!(error.kind(), ErrorKind::InvalidInput);
+        assert!(error.to_string().contains("into itself"), "{error}");
+        // Nothing started, so nothing was left behind.
+        assert!(!source.join("sub").exists());
+        assert_eq!(fs::read_dir(&source).unwrap().count(), 1);
+
         fs::remove_dir_all(&dir).unwrap();
     }
 

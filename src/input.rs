@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::fs_ops::{create_directory, create_file, delete_path, path_exists, rename_path};
+use crate::fs_ops::{copies_into_itself, create_directory, create_file, delete_path, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use crate::constants::TAB_SPACES;
 use ratatui::layout::Position;
@@ -909,6 +909,14 @@ fn handle_copy_confirm(app_state: &mut AppState) {
         return;
     }
 
+    // A destination inside the source would be copied into itself, filling the
+    // disk. Refused alongside the check above, before anything has been written.
+    if let Some((source, _, _)) = items.iter().find(|(source, dest, _)| copies_into_itself(source, dest)) {
+        app_state.display_error(format!("Cannot copy \"{}\" into itself", source.display()));
+        app_state.reset_copy();
+        return;
+    }
+
     // The work itself, the panel reload and the selections are all handled by
     // the job as it finishes.
     app_state.reset_copy();
@@ -966,6 +974,14 @@ fn handle_move_confirm(app_state: &mut AppState) {
     // through would leave some items moved and the rest not.
     if let Some((_, dest, _)) = items.iter().find(|(_, dest, _)| path_exists(dest)) {
         app_state.display_error(format!("Destination already exists: {}", dest.display()));
+        app_state.reset_move();
+        return;
+    }
+
+    // A destination inside the source would be copied into itself, filling the
+    // disk. Refused alongside the check above, before anything has been written.
+    if let Some((source, _, _)) = items.iter().find(|(source, dest, _)| copies_into_itself(source, dest)) {
+        app_state.display_error(format!("Cannot copy \"{}\" into itself", source.display()));
         app_state.reset_move();
         return;
     }
