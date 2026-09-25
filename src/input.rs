@@ -58,11 +58,20 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                 }
 
                 if app_state.job.is_some() {
-                    // Only Esc means anything while a transfer runs. Everything
-                    // else would act on panels that are about to be reread, and
-                    // F10 would leave the worker writing into a dead terminal.
-                    if key.code == KeyCode::Esc {
-                        app_state.cancel_transfer();
+                    // Only these two mean anything while a transfer runs;
+                    // anything else would act on panels about to be reread.
+                    match key.code {
+                        KeyCode::Esc => app_state.cancel_transfer(),
+                        // The second F10 leaves, abandoning the job where it
+                        // stands. Asked for twice because it is the way out of
+                        // a transfer stuck in a write to a disk that has
+                        // stopped answering, where a cancel is never noticed -
+                        // and because what is part way through writing is left
+                        // behind. The first press only offers it: the job runs
+                        // on untouched, and Esc is still the way to stop it.
+                        KeyCode::F(10) if app_state.quit_armed => return Ok(false),
+                        KeyCode::F(10) => app_state.quit_armed = true,
+                        _ => {}
                     }
                 } else if app_state.is_f2_displayed {
                     match key.code {

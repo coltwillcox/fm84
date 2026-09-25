@@ -175,8 +175,11 @@ pub struct AppState {
     pub disk_right: Option<(u64, u64)>,
     /// Set while the prompt for an expensive file is up.
     pub large_file: Option<LargeFile>,
-    /// Set while a copy or move is running on its own thread.
+    /// Set while a copy, move or delete is running on its own thread.
     pub job: Option<TransferJob>,
+    /// F10 was pressed during a job. The job carries on; a second press is
+    /// what leaves. Cleared when the job ends, so it only ever covers one.
+    pub quit_armed: bool,
 }
 
 /// A copy or move running on a worker thread, and what it has told us so far.
@@ -379,6 +382,7 @@ impl AppState {
             disk_right: None,
             large_file: None,
             job: None,
+            quit_armed: false,
             drive_strip_left: Rect::default(),
             drive_strip_right: Rect::default(),
             drive_slots: Vec::new(),
@@ -1422,6 +1426,9 @@ impl AppState {
         self.reload_panel(true, None);
         self.reload_panel(false, None);
         self.clear_active_selections();
+
+        // The offer to quit covered this job, and this job is over.
+        self.quit_armed = false;
 
         match result {
             Ok(Transfer::Done) => {}

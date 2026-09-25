@@ -1167,22 +1167,27 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
         None => "Counting...".to_string(),
     };
 
+    // Once F10 has been pressed the offer stays up for the rest of the job, so
+    // there is always something on screen saying how to get out of one that is
+    // not going to finish.
+    let hint = if app_state.quit_armed { "Esc - Cancel    F10 again - Quit" } else { "Esc - Cancel" };
+
     // A copy moves bytes and a delete removes entries, so each is counted in
     // what it actually does rather than forcing both into the same figure.
     let detail = match (job.kind, job.total) {
         (TransferKind::Delete, Some(total)) if total > 0 => {
-            format!("{} of {} entries    Esc - Cancel", job.done, total)
+            format!("{} of {} entries    {hint}", job.done, total)
         }
         (_, Some(total)) if total > 0 => {
             let rate = job.done as f64 / elapsed.as_secs_f64().max(0.001);
             format!(
-                "{} of {} at {}/s    Esc - Cancel",
+                "{} of {} at {}/s    {hint}",
                 format_size(job.done),
                 format_size(total),
                 format_size(rate as u64)
             )
         }
-        _ => "Esc - Cancel".to_string(),
+        _ => hint.to_string(),
     };
 
     // One paragraph rather than a widget per line: stacking margins to place
