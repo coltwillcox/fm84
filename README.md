@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.13.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.14.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -74,9 +74,10 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, unsaved changes prompt, mouse click to position cursor)
 - **F5** 📋 - Copy to other panel (selected items or cursor item)
 - **F6** 📦 - Move to other panel (selected items or cursor item)
-- 📊 **Progress while copying and moving** - a bar with the current file, bytes done and transfer rate; Esc cancels, and the half-written file is cleaned up. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
+- 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels, and a cancelled copy cleans up the half-written file. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
+- 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file)
-- **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation)
+- **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation and progress)
 - **F9** 💻 - Open external terminal in current directory
 - **F10** 🚪 - Exit to the void
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
@@ -159,8 +160,9 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 | `F7` | Create directory |
 | `Shift+F4` | Create empty file |
 | `F8` / `Delete` | Delete (selected items or cursor item) |
+| `Esc` | Cancel a running copy, move or delete |
 | `F9` | Open terminal |
-| `F10` | Quit |
+| `F10` | Quit (twice during an operation) |
 | `F11` | Options |
 | `F12` | Preview cursor file in other panel |
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |

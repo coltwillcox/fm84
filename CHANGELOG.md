@@ -6,6 +6,19 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.14.0] - 2026-09-25
+
+### ✨ Added
+- 🗑️ **Progress while deleting** - counted in entries removed rather than bytes, since deleting is about how many there are and not how big they are. Esc stops it, leaving whatever it had not reached; a large tree on a slow disk no longer holds the whole app still
+- 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave and a second F10 takes it. Cancelling is only noticed between entries, so a transfer stuck writing to a disk that has stopped answering would otherwise trap the app with no way out at all. The first press changes nothing about the operation itself: Esc is still what stops it
+
+### 🐛 Fixed
+- ♻️ **Copying a directory into itself** - the destination is created before the source is read, so the copy found it, descended into what it was writing, and went on until the path outgrew PATH_MAX. A 1 MiB directory became 1017 MiB across 1018 levels in about a second; large enough and it would have filled the disk. It is refused now, the way `cp` refuses it
+- ⌨️ **Popups hiding the line that says which key to press** - placing each line with a deeper margin cost two rows apiece, and once a popup was shorter than that the last line was handed nowhere to draw and silently vanished. On a 24-row terminal that meant Delete asked "Delete 3 items?" with nothing on screen saying that Y confirms. Create needed 56 rows before its line appeared
+- 👻 **Selections coming back on a file that only shares a name** - a selection is keyed by name so it survives a re-sort, but the name stayed behind when the file went, invisible until something else took it. That file was then selected without the user ever picking it, and since a selection is used *instead of* the cursor, one such name quietly redirected the next copy, move or delete
+
+---
+
 ## [0.13.0] - 2026-09-25
 
 ### ✨ Added
