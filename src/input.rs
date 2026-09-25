@@ -84,6 +84,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::Delete => app_state.rename_input.delete_forward(),
                         KeyCode::Left => app_state.rename_input.move_left(),
                         KeyCode::Right => app_state.rename_input.move_right(),
+                        KeyCode::Home => app_state.rename_input.move_home(),
+                        KeyCode::End => app_state.rename_input.move_end(),
                         _ => {}
                     }
                 } else if app_state.is_f1_displayed {
@@ -129,6 +131,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::Delete => app_state.create_input.delete_forward(),
                         KeyCode::Left => app_state.create_input.move_left(),
                         KeyCode::Right => app_state.create_input.move_right(),
+                        KeyCode::Home => app_state.create_input.move_home(),
+                        KeyCode::End => app_state.create_input.move_end(),
                         _ => {}
                     }
                 } else if app_state.is_f3_displayed {

@@ -53,6 +53,14 @@ impl TextInput {
         }
     }
 
+    pub fn move_home(&mut self) {
+        self.cursor = 0;
+    }
+
+    pub fn move_end(&mut self) {
+        self.cursor = self.text.chars().count();
+    }
+
     pub fn insert(&mut self, c: char) {
         let idx = self.byte_index();
         self.text.insert(idx, c);
