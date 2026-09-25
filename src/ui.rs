@@ -1,4 +1,4 @@
-use crate::app::AppState;
+use crate::app::{AppState, TransferKind};
 use crate::constants::*;
 use crate::utils::*;
 use crate::viewer::ViewMode;
@@ -1139,10 +1139,14 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
         return;
     }
 
-    let title = match (job.is_cancelling(), job.is_copy) {
-        (true, _) => " Cancelling ",
-        (false, true) => " Copying ",
-        (false, false) => " Moving ",
+    let title = if job.is_cancelling() {
+        " Cancelling ".to_string()
+    } else {
+        match job.kind {
+            TransferKind::Copy => " Copying ".to_string(),
+            TransferKind::Move => " Moving ".to_string(),
+            TransferKind::Delete => " Deleting ".to_string(),
+        }
     };
     let popup_area = centered_rect(60, 30, area);
     let popup_block = Block::default()
@@ -1163,14 +1167,21 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
         None => "Counting...".to_string(),
     };
 
-    let rate = job.done_bytes as f64 / elapsed.as_secs_f64().max(0.001);
-    let detail = match job.total_bytes {
-        Some(total) if total > 0 => format!(
-            "{} of {} at {}/s    Esc - Cancel",
-            format_size(job.done_bytes),
-            format_size(total),
-            format_size(rate as u64)
-        ),
+    // A copy moves bytes and a delete removes entries, so each is counted in
+    // what it actually does rather than forcing both into the same figure.
+    let detail = match (job.kind, job.total) {
+        (TransferKind::Delete, Some(total)) if total > 0 => {
+            format!("{} of {} entries    Esc - Cancel", job.done, total)
+        }
+        (_, Some(total)) if total > 0 => {
+            let rate = job.done as f64 / elapsed.as_secs_f64().max(0.001);
+            format!(
+                "{} of {} at {}/s    Esc - Cancel",
+                format_size(job.done),
+                format_size(total),
+                format_size(rate as u64)
+            )
+        }
         _ => "Esc - Cancel".to_string(),
     };
 

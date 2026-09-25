@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::fs_ops::{copies_into_itself, create_directory, create_file, delete_path, path_exists, rename_path};
+use crate::fs_ops::{copies_into_itself, create_directory, create_file, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use crate::constants::TAB_SPACES;
 use ratatui::layout::Position;
@@ -672,20 +672,13 @@ fn toggle_delete(app_state: &mut AppState) {
 
 fn handle_delete_confirm(app_state: &mut AppState) {
     let parent_path = if app_state.is_left_active { app_state.dir_left.clone() } else { app_state.dir_right.clone() };
-    let items = std::mem::take(&mut app_state.delete_items);
+    let items: Vec<(PathBuf, bool)> =
+        std::mem::take(&mut app_state.delete_items).into_iter().map(|(name, is_dir)| (parent_path.join(name), is_dir)).collect();
 
-    for (name, is_dir) in &items {
-        let item_path = parent_path.join(name);
-        if let Err(e) = delete_path(item_path, *is_dir) {
-            app_state.display_error(e.to_string());
-            app_state.reset_delete();
-            return;
-        }
-    }
-
-    app_state.reload_panel(app_state.is_left_active, None);
-    app_state.clear_active_selections();
+    // The removals, the panel reload and the selections are all handled by the
+    // job as it finishes, the same as a copy or a move.
     app_state.reset_delete();
+    app_state.start_delete(items);
 }
 
 fn handle_create_confirm(app_state: &mut AppState) {

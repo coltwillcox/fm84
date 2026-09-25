@@ -3,7 +3,7 @@ use crate::constants::COPY_CHUNK;
 use crate::utils::format_size;
 use chrono::Local;
 use std::env;
-use std::fs::{self, File, create_dir, read_dir, remove_dir_all, remove_file, rename};
+use std::fs::{self, File, create_dir, read_dir, remove_dir, remove_file, rename};
 use std::io::{self, Error, ErrorKind, Read};
 use std::path::{Path, PathBuf};
 
@@ -519,21 +519,85 @@ pub fn rename_path(original_path: PathBuf, new_path: PathBuf) -> Result<(), Erro
     Ok(())
 }
 
-pub fn delete_path(path: PathBuf, is_dir: bool) -> Result<(), Error> {
+/// Entries a delete will remove, for the progress bar to count against. A
+/// directory counts itself as well as everything inside it, which is what the
+/// walk below removes. Anything unreadable counts as nothing rather than
+/// failing the job, since this is only ever a denominator.
+pub fn count_entries(items: &[(PathBuf, bool)]) -> u64 {
+    fn walk(path: &Path) -> u64 {
+        let Ok(entries) = read_dir(path) else {
+            return 1;
+        };
+        1 + entries
+            .flatten()
+            .map(|entry| match entry.file_type() {
+                Ok(file_type) if file_type.is_dir() => walk(&entry.path()),
+                _ => 1,
+            })
+            .sum::<u64>()
+    }
+
+    items
+        .iter()
+        .map(|(path, is_dir)| {
+            let link = fs::symlink_metadata(path).map(|meta| meta.file_type().is_symlink()).unwrap_or(false);
+            if *is_dir && !link { walk(path) } else { 1 }
+        })
+        .sum()
+}
+
+/// Remove a file, or a directory and everything in it, reporting each entry as
+/// it goes and stopping when the report says to.
+///
+/// Walked rather than handed to remove_dir_all, which has nowhere to report
+/// from and no way to be interrupted: a large tree on a slow disk would hold
+/// the whole app still. A cancelled delete leaves whatever it had not reached.
+pub fn delete_path(path: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
     // A symlink is removed as a link, never followed - including one pointing at
     // a directory, which reaches here with is_dir set because the panel treats it
-    // as one. remove_dir_all on a link would be wrong.
+    // as one. Walking into one would delete what it points at.
     let is_symlink = path
         .symlink_metadata()
         .map(|metadata| metadata.file_type().is_symlink())
         .unwrap_or(false);
 
     if is_dir && !is_symlink {
-        remove_dir_all(path)?;
+        delete_dir_recursive(&path, report)
     } else {
-        remove_file(path)?;
+        remove_one(&path, false, report)
     }
-    Ok(())
+}
+
+/// Remove one entry, announcing it first so the popup can name it, and counting
+/// it once it is gone.
+fn remove_one(path: &Path, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
+    if !report(Step::Starting(path)) {
+        return Ok(Transfer::Cancelled);
+    }
+    if is_dir { remove_dir(path)? } else { remove_file(path)? }
+    report(Step::Advanced(1));
+    Ok(Transfer::Done)
+}
+
+fn delete_dir_recursive(path: &Path, report: Report<'_>) -> Result<Transfer, Error> {
+    for entry in read_dir(path)? {
+        let entry = entry?;
+        let entry_path = entry.path();
+
+        // file_type() describes the entry itself, so a link to a directory is a
+        // link here and is unlinked rather than followed into.
+        let outcome = if entry.file_type()?.is_dir() {
+            delete_dir_recursive(&entry_path, &mut *report)?
+        } else {
+            remove_one(&entry_path, false, &mut *report)?
+        };
+        if outcome == Transfer::Cancelled {
+            return Ok(Transfer::Cancelled);
+        }
+    }
+
+    // The directory itself, now that it is empty.
+    remove_one(path, true, report)
 }
 
 /// True if anything occupies this path, including a dangling symlink - which
@@ -558,8 +622,9 @@ pub fn create_directory(path: PathBuf) -> Result<(), Error> {
 pub enum Step<'a> {
     /// Starting this file. Bytes reported after it belong to it.
     Starting(&'a Path),
-    /// Another `bytes` of the current file are written.
-    Copied(u64),
+    /// Another `amount` of the current entry is done. Bytes for a copy, and
+    /// entries removed for a delete, which is what each counts its total in.
+    Advanced(u64),
 }
 
 /// How a transfer ended. Cancelled leaves everything already finished where it
@@ -684,7 +749,7 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
         if copied == 0 {
             return Ok(Transfer::Done);
         }
-        if !report(Step::Copied(copied)) {
+        if !report(Step::Advanced(copied)) {
             // What is on disk is half a file that will never be finished.
             // Left alone it would sit there looking like a complete copy.
             drop(dst_file);
@@ -739,7 +804,7 @@ pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
                 }
 
                 // Delete source - if this fails, the copy succeeded but source remains
-                if let Err(del_err) = delete_path(source, is_dir) {
+                if let Err(del_err) = delete_path(source, is_dir, &mut |_| true) {
                     return Err(Error::new(
                         del_err.kind(),
                         format!(
@@ -829,7 +894,7 @@ mod transfer_tests {
             let mut report = |step: Step<'_>| {
                 match step {
                     Step::Starting(path) => started.push(path.file_name().unwrap().to_string_lossy().into_owned()),
-                    Step::Copied(n) => bytes += n,
+                    Step::Advanced(n) => bytes += n,
                 }
                 true
             };
@@ -854,7 +919,7 @@ mod transfer_tests {
         let mut chunks = 0;
         {
             let mut report = |step: Step<'_>| {
-                if let Step::Copied(_) = step {
+                if let Step::Advanced(_) = step {
                     chunks += 1;
                 }
                 chunks < 1
@@ -935,6 +1000,93 @@ mod transfer_tests {
         // Nothing started, so nothing was left behind.
         assert!(!source.join("sub").exists());
         assert_eq!(fs::read_dir(&source).unwrap().count(), 1);
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_delete_counts_and_removes_every_entry() {
+        let dir = scratch("delete").canonicalize().unwrap();
+        let tree = dir.join("tree");
+        fs::create_dir(&tree).unwrap();
+        fs::write(tree.join("a.bin"), b"a").unwrap();
+        fs::create_dir(tree.join("inner")).unwrap();
+        fs::write(tree.join("inner").join("b.bin"), b"b").unwrap();
+
+        // tree, a.bin, inner, b.bin. Counted before the delete, since counting
+        // walks the live filesystem and there is nothing left to walk after.
+        let total = count_entries(&[(tree.clone(), true)]);
+        assert_eq!(total, 4);
+
+        let mut removed = 0u64;
+        let mut named = Vec::new();
+        {
+            let mut report = |step: Step<'_>| {
+                match step {
+                    Step::Starting(path) => named.push(path.file_name().unwrap().to_string_lossy().into_owned()),
+                    Step::Advanced(n) => removed += n,
+                }
+                true
+            };
+            assert_eq!(delete_path(tree.clone(), true, &mut report).unwrap(), Transfer::Done);
+        }
+
+        assert!(!tree.exists());
+        // What the bar counts has to reach what the counting pass promised.
+        assert_eq!(removed, total);
+        named.sort();
+        assert_eq!(named, ["a.bin", "b.bin", "inner", "tree"]);
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn cancelling_a_delete_leaves_the_rest_alone() {
+        let dir = scratch("delete-cancel").canonicalize().unwrap();
+        let tree = dir.join("tree");
+        fs::create_dir(&tree).unwrap();
+        for index in 0..8 {
+            fs::write(tree.join(format!("f{index}.bin")), b"x").unwrap();
+        }
+
+        // Stop after the first entry, the way Esc does partway through.
+        let mut removed = 0;
+        {
+            let mut report = |step: Step<'_>| {
+                if let Step::Advanced(_) = step {
+                    removed += 1;
+                }
+                removed < 1
+            };
+            assert_eq!(delete_path(tree.clone(), true, &mut report).unwrap(), Transfer::Cancelled);
+        }
+
+        // The tree is still there, minus what had already gone.
+        assert!(tree.exists());
+        assert_eq!(fs::read_dir(&tree).unwrap().count(), 7);
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn deleting_a_link_to_a_directory_spares_what_it_points_at() {
+        let dir = scratch("delete-link").canonicalize().unwrap();
+        let target = dir.join("target");
+        fs::create_dir(&target).unwrap();
+        fs::write(target.join("keep.bin"), b"keep").unwrap();
+
+        // The panel reports a link to a directory as a directory, so the delete
+        // arrives with is_dir set and must still only unlink it.
+        let link = dir.join("link");
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+        assert_eq!(count_entries(&[(link.clone(), true)]), 1);
+
+        let mut report = |_: Step<'_>| true;
+        assert_eq!(delete_path(link.clone(), true, &mut report).unwrap(), Transfer::Done);
+
+        assert!(!link.exists());
+        assert!(target.join("keep.bin").exists(), "the link's target was followed");
 
         fs::remove_dir_all(&dir).unwrap();
     }

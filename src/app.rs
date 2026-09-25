@@ -1,6 +1,6 @@
 use crate::fs_ops::{
-    Mount, Step, Transfer, copy_path, disk_usage, get_current_dir, list_mounts, load_directory_rows, measure, move_path,
-    nearest_existing_dir, rename_in_place,
+    Mount, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, list_mounts,
+    load_directory_rows, measure, move_path, nearest_existing_dir, rename_in_place,
 };
 use crate::viewer::{ViewMode, ViewerState};
 use ratatui::layout::{Position, Rect};
@@ -184,25 +184,44 @@ pub struct AppState {
 /// mount can block for seconds, and that is exactly when a progress bar and a
 /// way out of it are wanted.
 pub struct TransferJob {
-    pub is_copy: bool,
-    /// None until the counting pass has something to report.
-    pub total_bytes: Option<u64>,
-    pub done_bytes: u64,
+    pub kind: TransferKind,
+    /// None until the counting pass has something to report. Counted in bytes
+    /// for a copy or move, and in entries removed for a delete.
+    pub total: Option<u64>,
+    pub done: u64,
     pub current: PathBuf,
     pub started: Instant,
-    /// Set by Esc, read by the worker between chunks.
+    /// Set by Esc, read by the worker between entries.
     cancel: Arc<AtomicBool>,
     updates: Receiver<JobUpdate>,
-    /// The panel being written into, so both can be reread when it ends.
-    to_left: bool,
+}
+
+/// Which of the three long jobs is running. They share a popup, a worker and a
+/// way out, and differ only in what they count and what they are called.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum TransferKind {
+    Copy,
+    Move,
+    Delete,
+}
+
+impl TransferKind {
+    /// The word the popup and the cancelled message use.
+    pub fn title(self) -> &'static str {
+        match self {
+            TransferKind::Copy => "Copy",
+            TransferKind::Move => "Move",
+            TransferKind::Delete => "Delete",
+        }
+    }
 }
 
 impl TransferJob {
     /// How far along, once there is a total to measure against. None while the
     /// counting pass is still running, or when there is nothing to count.
     pub fn fraction(&self) -> Option<f64> {
-        match self.total_bytes {
-            Some(total) if total > 0 => Some((self.done_bytes as f64 / total as f64).min(1.0)),
+        match self.total {
+            Some(total) if total > 0 => Some((self.done as f64 / total as f64).min(1.0)),
             _ => None,
         }
     }
@@ -217,7 +236,7 @@ impl TransferJob {
 enum JobUpdate {
     Total(u64),
     Starting(PathBuf),
-    Copied(u64),
+    Advanced(u64),
     Finished(Result<Transfer, String>),
 }
 
@@ -1329,23 +1348,34 @@ impl AppState {
         self.popup_is_open() || self.is_f2_displayed || self.is_f3_displayed || self.is_f4_displayed
     }
 
-    /// Hand a copy or move to a worker thread and start following it.
-    pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
+    /// Hand a long job to a worker thread and start following it.
+    fn start_job<F>(&mut self, kind: TransferKind, work: F)
+    where
+        F: FnOnce(&Sender<JobUpdate>, &AtomicBool) + Send + 'static,
+    {
         let cancel = Arc::new(AtomicBool::new(false));
         let (sender, updates) = mpsc::channel();
         let worker_cancel = Arc::clone(&cancel);
-        std::thread::spawn(move || run_transfer(items, is_copy, &sender, &worker_cancel));
+        std::thread::spawn(move || work(&sender, &worker_cancel));
 
         self.job = Some(TransferJob {
-            is_copy,
-            total_bytes: None,
-            done_bytes: 0,
+            kind,
+            total: None,
+            done: 0,
             current: PathBuf::new(),
             started: Instant::now(),
             cancel,
             updates,
-            to_left: !self.is_left_active,
         });
+    }
+
+    pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
+        let kind = if is_copy { TransferKind::Copy } else { TransferKind::Move };
+        self.start_job(kind, move |updates, cancel| run_transfer(items, is_copy, updates, cancel));
+    }
+
+    pub fn start_delete(&mut self, items: Vec<(PathBuf, bool)>) {
+        self.start_job(TransferKind::Delete, move |updates, cancel| run_delete(items, updates, cancel));
     }
 
     /// Ask a running transfer to stop. It ends at the next chunk or file, so
@@ -1366,9 +1396,9 @@ impl AppState {
         let mut finished = None;
         loop {
             match job.updates.try_recv() {
-                Ok(JobUpdate::Total(bytes)) => job.total_bytes = Some(bytes),
+                Ok(JobUpdate::Total(amount)) => job.total = Some(amount),
                 Ok(JobUpdate::Starting(path)) => job.current = path,
-                Ok(JobUpdate::Copied(bytes)) => job.done_bytes += bytes,
+                Ok(JobUpdate::Advanced(amount)) => job.done += amount,
                 Ok(JobUpdate::Finished(result)) => {
                     finished = Some(result);
                     break;
@@ -1389,15 +1419,18 @@ impl AppState {
 
         // Both panels: a move empties one and fills the other, and a copy into
         // the same directory shows up on the side it came from.
-        self.reload_panel(job.to_left, None);
-        self.reload_panel(!job.to_left, None);
+        self.reload_panel(true, None);
+        self.reload_panel(false, None);
         self.clear_active_selections();
 
-        let what = if job.is_copy { "Copy" } else { "Move" };
         match result {
             Ok(Transfer::Done) => {}
             Ok(Transfer::Cancelled) => {
-                self.display_error(format!("{what} cancelled after {}", crate::utils::format_size(job.done_bytes)))
+                let far = match job.kind {
+                    TransferKind::Delete => format!("{} entries", job.done),
+                    _ => crate::utils::format_size(job.done),
+                };
+                self.display_error(format!("{} cancelled after {far}", job.kind.title()))
             }
             Err(e) => self.display_error(e),
         }
@@ -1702,6 +1735,33 @@ fn detect_line_ending(content: &str) -> &'static str {
     if crlf > lf { "\r\n" } else { "\n" }
 }
 
+/// The worker thread behind a delete. The count comes first so the bar has a
+/// denominator; walking the tree twice costs a second pass of readdir, which is
+/// cheap beside the removals themselves.
+fn run_delete(items: Vec<(PathBuf, bool)>, updates: &Sender<JobUpdate>, cancel: &AtomicBool) {
+    let _ = updates.send(JobUpdate::Total(count_entries(&items)));
+
+    let mut report = |step: Step<'_>| {
+        let update = match step {
+            Step::Starting(path) => JobUpdate::Starting(path.to_path_buf()),
+            Step::Advanced(amount) => JobUpdate::Advanced(amount),
+        };
+        updates.send(update).is_ok() && !cancel.load(Ordering::Relaxed)
+    };
+
+    for (path, is_dir) in items {
+        match delete_path(path, is_dir, &mut report) {
+            Ok(Transfer::Done) => {}
+            outcome => {
+                let _ = updates.send(JobUpdate::Finished(outcome.map_err(|e| e.to_string())));
+                return;
+            }
+        }
+    }
+
+    let _ = updates.send(JobUpdate::Finished(Ok(Transfer::Done)));
+}
+
 /// Which of a strip's slots a column falls in, measured from the strip's left
 /// edge. None for the gaps around them: the space the strip opens with, and
 /// everything past the last icon, where the mount's name is written.
@@ -1729,7 +1789,7 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, updates: &S
     let mut report = |step: Step<'_>| {
         let update = match step {
             Step::Starting(path) => JobUpdate::Starting(path.to_path_buf()),
-            Step::Copied(bytes) => JobUpdate::Copied(bytes),
+            Step::Advanced(amount) => JobUpdate::Advanced(amount),
         };
         // A closed channel means the UI has gone, which is its own reason to stop.
         updates.send(update).is_ok() && !cancel.load(Ordering::Relaxed)
