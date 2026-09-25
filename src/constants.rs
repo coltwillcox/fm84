@@ -72,6 +72,12 @@ pub const IMAGE_MAX_OVERFLOW: usize = 4;
 // the decoder's own 512 MB ceiling, so the question is asked while there is
 // still an answer - beyond that it refuses outright and the file opens as hex.
 pub const IMAGE_MAX_DECODED: u64 = 256 * 1024 * 1024;
+// The sizes + and - step through, as a percentage of the Fit or Fill size.
+// A ladder rather than a constant factor, so the figure on the status bar is
+// always a round one. The top of it is IMAGE_MAX_OVERFLOW, which is where the
+// drawing is capped anyway - a step past that would change nothing on screen.
+pub const IMAGE_ZOOM_STEPS: [u16; 8] = [25, 50, 75, 100, 150, 200, 300, 400];
+pub const IMAGE_ZOOM_NORMAL: u16 = 100;
 
 pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;

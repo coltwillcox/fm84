@@ -786,6 +786,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
                 .unwrap_or("Unknown");
             let line_seg = format!("Line {}/{}", viewer_state.scroll_offset + 1, viewer_state.total_lines);
             let size_seg = format_size(viewer_state.file_size);
+            let zoom_seg = format!("+/- Zoom {}%", viewer_state.image_zoom);
             let mut segments = vec![filename, line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()];
             // Bracketed half is the view you are in. Omitted on the notice F4
             // raises for a binary, where there is nothing to toggle.
@@ -799,6 +800,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
                 });
                 if viewer_state.mode == ViewMode::Image {
                     segments.push(if viewer_state.image_fill { "F Fit [Fill]" } else { "F [Fit] Fill" });
+                    segments.push(zoom_seg.as_str());
                 }
             }
             render_segmented_status_bar(f, area, &segments);
@@ -941,7 +943,8 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     let help_lines = vec![
         "F1 - This help",
         "F2 - Rename folder/file",
-        "F3 - View file (X hex/image, F fit/fill)",
+        "F3 - View file (X text/hex/image)",
+        "  F fit/fill, +/- zoom",
         "F4 - Edit file (Ctrl+S/F2 save)",
         "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
         "  Shift+arrows select, Ctrl+A all",

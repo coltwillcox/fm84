@@ -1,4 +1,6 @@
-use crate::constants::{HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP};
+use crate::constants::{
+    HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL,
+};
 use image::DynamicImage;
 use image::imageops::FilterType;
 use ratatui::style::Color;
@@ -63,6 +65,9 @@ pub struct ViewerState {
     pub image_columns: usize,
     /// Cover the whole viewer and scroll the overflow, rather than fit inside it.
     pub image_fill: bool,
+    /// What + and - have scaled the picture to, as a percentage of the Fit or
+    /// Fill size, so those two keep deciding what 100% means.
+    pub image_zoom: u16,
 }
 
 pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
@@ -109,6 +114,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
                 image: Some(image),
                 image_columns: 0,
                 image_fill: false,
+                image_zoom: IMAGE_ZOOM_NORMAL,
                 image_lines: Vec::new(),
                 image_colors: Vec::new(),
             });
@@ -130,6 +136,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
             image: None,
             image_columns: 0,
             image_fill: false,
+            image_zoom: IMAGE_ZOOM_NORMAL,
             image_lines: Vec::new(),
             image_colors: Vec::new(),
         });
@@ -166,6 +173,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         image: None,
         image_columns: 0,
         image_fill: false,
+        image_zoom: IMAGE_ZOOM_NORMAL,
         image_lines: Vec::new(),
         image_colors: Vec::new(),
     })
@@ -199,11 +207,12 @@ fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
 
 /// The size to draw an image at in a `width` x `height` viewer, in characters.
 /// Fit keeps the whole picture inside it; fill covers it, overflowing in one
-/// direction.
-pub fn image_size_for(image: &DynamicImage, width: usize, height: usize, fill: bool) -> (usize, usize) {
+/// direction; `zoom` then scales whichever of the two is the baseline.
+pub fn image_size_for(image: &DynamicImage, width: usize, height: usize, fill: bool, zoom: u16) -> (usize, usize) {
     // The width at which the drawing is exactly `height` rows tall.
     let full_height = height as f64 * 2.0 * image.width() as f64 / image.height().max(1) as f64;
-    let columns = if fill { width.max(full_height.ceil() as usize) } else { width.min(full_height.floor() as usize) };
+    let base = if fill { width.max(full_height.ceil() as usize) } else { width.min(full_height.floor() as usize) };
+    let columns = base * zoom as usize / IMAGE_ZOOM_NORMAL as usize;
     // Covering the width of a one-pixel-wide strip means a drawing 102,400 rows
     // tall - half a second to build and 160 MB to hold, and again on every
     // resize. Hold the overflow to a few screens each way, which lowers the
@@ -218,8 +227,9 @@ pub fn image_size_for(image: &DynamicImage, width: usize, height: usize, fill: b
     // per column of its width - past 100:1 in a typical pane - where even a
     // single column is too wide to keep the proportions. Squash it into the
     // viewer rather than hand Fit something it cannot show whole; a sliver that
-    // thin has no shape left to distort.
-    if !fill && rows > height { (columns, height.max(1)) } else { (columns, rows) }
+    // thin has no shape left to distort. Zooming in asks to see the picture
+    // bigger than the viewer, so it scrolls rather than being squashed.
+    if !fill && zoom <= IMAGE_ZOOM_NORMAL && rows > height { (columns, height.max(1)) } else { (columns, rows) }
 }
 
 /// Rows that keep the picture's proportions at `columns` wide. A terminal cell
@@ -566,7 +576,7 @@ mod tests {
 #[cfg(test)]
 mod image_tests {
     use super::*;
-    use crate::constants::IMAGE_MAX_DECODED;
+    use crate::constants::{IMAGE_MAX_DECODED, IMAGE_ZOOM_NORMAL, IMAGE_ZOOM_STEPS};
     use image::{Rgba, RgbaImage};
 
     fn solid(width: u32, height: u32, pixel: [u8; 4]) -> DynamicImage {
@@ -597,7 +607,7 @@ mod image_tests {
     #[test]
     fn rows_are_halved_for_the_cell_aspect() {
         let square = solid(100, 100, [128, 128, 128, 255]);
-        let (columns, rows) = image_size_for(&square, 40, 40, false);
+        let (columns, rows) = image_size_for(&square, 40, 40, false, IMAGE_ZOOM_NORMAL);
         assert_eq!((columns, rows), (40, 20));
 
         let (lines, colors) = image_to_ascii(&square, columns, rows);
@@ -606,7 +616,7 @@ mod image_tests {
         assert_eq!(colors.len(), 20);
         assert!(colors.iter().flatten().all(|color| *color == Color::Rgb(coarse(128), coarse(128), coarse(128))));
         // A very wide image still keeps one row.
-        assert_eq!(image_size_for(&solid(1000, 1, [0, 0, 0, 255]), 10, 10, false).1, 1);
+        assert_eq!(image_size_for(&solid(1000, 1, [0, 0, 0, 255]), 10, 10, false, IMAGE_ZOOM_NORMAL).1, 1);
     }
 
     #[test]
@@ -623,17 +633,17 @@ mod image_tests {
     fn fit_stays_inside_and_fill_covers() {
         // Cell aspect halves rows, so a square image is twice as wide as tall.
         let square = solid(100, 100, [0, 0, 0, 255]);
-        assert_eq!(image_size_for(&square, 80, 20, false).0, 40);
-        assert_eq!(image_size_for(&square, 80, 20, true).0, 80);
-        assert_eq!(image_size_for(&square, 30, 20, false).0, 30);
-        assert_eq!(image_size_for(&square, 30, 20, true).0, 40);
+        assert_eq!(image_size_for(&square, 80, 20, false, IMAGE_ZOOM_NORMAL).0, 40);
+        assert_eq!(image_size_for(&square, 80, 20, true, IMAGE_ZOOM_NORMAL).0, 80);
+        assert_eq!(image_size_for(&square, 30, 20, false, IMAGE_ZOOM_NORMAL).0, 30);
+        assert_eq!(image_size_for(&square, 30, 20, true, IMAGE_ZOOM_NORMAL).0, 40);
 
         // Fit is inside the viewer for every shape, including the slivers that
         // have to be squashed to get there.
         for (image_width, image_height) in [(100, 100), (1024, 576), (1, 1024), (4, 1024), (1024, 1)] {
             let image = solid(image_width, image_height, [0, 0, 0, 255]);
             for (width, height) in [(80, 20), (30, 20), (200, 50), (7, 3)] {
-                let (columns, rows) = image_size_for(&image, width, height, false);
+                let (columns, rows) = image_size_for(&image, width, height, false, IMAGE_ZOOM_NORMAL);
                 assert!(
                     columns <= width && rows <= height,
                     "{image_width}x{image_height} fit in {width}x{height}: {columns}x{rows}"
@@ -645,7 +655,7 @@ mod image_tests {
 
         // Fill covers the viewer, except where the cap in the test below stops it.
         for (width, height) in [(80, 20), (30, 20), (200, 50), (7, 3)] {
-            let (columns, rows) = image_size_for(&square, width, height, true);
+            let (columns, rows) = image_size_for(&square, width, height, true, IMAGE_ZOOM_NORMAL);
             assert!(columns >= width && rows >= height);
         }
     }
@@ -659,17 +669,25 @@ mod image_tests {
         for (image_width, image_height) in [(1, 1024), (2, 1024), (4, 1024), (1024, 1), (1024, 2), (1024, 576)] {
             let image = solid(image_width, image_height, GREY);
             for fill in [false, true] {
-                let (columns, rows) = image_size_for(&image, width, height, fill);
-                let (lines, colors) = image_to_ascii(&image, columns, rows);
-                let cells = columns * lines.len();
-                assert!(cells <= budget, "{image_width}x{image_height} fill={fill}: {columns}x{} is {cells} cells", lines.len());
-                assert_eq!(colors.len(), lines.len());
+                // Every rung of the zoom ladder, since zooming in is the one
+                // thing that could put the blow-up back.
+                for zoom in IMAGE_ZOOM_STEPS {
+                    let (columns, rows) = image_size_for(&image, width, height, fill, zoom);
+                    let (lines, colors) = image_to_ascii(&image, columns, rows);
+                    let cells = columns * lines.len();
+                    assert!(
+                        cells <= budget,
+                        "{image_width}x{image_height} fill={fill} zoom={zoom}: {columns}x{} is {cells} cells",
+                        lines.len()
+                    );
+                    assert_eq!(colors.len(), lines.len());
+                }
             }
         }
 
         // A photo is untouched by the cap: fill still covers the pane exactly.
-        assert_eq!(image_size_for(&solid(1024, 576, GREY), width, height, true).0, width);
-        assert_eq!(image_size_for(&solid(1024, 576, GREY), width, height, false).0, 177);
+        assert_eq!(image_size_for(&solid(1024, 576, GREY), width, height, true, IMAGE_ZOOM_NORMAL).0, width);
+        assert_eq!(image_size_for(&solid(1024, 576, GREY), width, height, false, IMAGE_ZOOM_NORMAL).0, 177);
     }
 
     #[test]
@@ -694,6 +712,30 @@ mod image_tests {
         const { assert!(12000 * 12000 * 4 > IMAGE_MAX_DECODED) };
 
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn zoom_scales_the_fitted_size_and_stops_at_the_cap() {
+        let (width, height) = (200, 50);
+        let photo = solid(1024, 576, [128, 128, 128, 255]);
+        let fitted = image_size_for(&photo, width, height, false, IMAGE_ZOOM_NORMAL).0;
+
+        // Each rung scales the fitted width by its own percentage.
+        for zoom in IMAGE_ZOOM_STEPS {
+            let (columns, _) = image_size_for(&photo, width, height, false, zoom);
+            let wanted = fitted * zoom as usize / 100;
+            assert!(columns.abs_diff(wanted) <= 1, "zoom {zoom}%: {columns} columns, wanted about {wanted}");
+        }
+
+        // Zooming out shrinks it, zooming in overflows the pane and scrolls.
+        assert!(image_size_for(&photo, width, height, false, 25).0 < fitted);
+        assert!(image_size_for(&photo, width, height, false, 400).1 > height);
+
+        // The ladder tops out where the drawing is capped, so the last rung is
+        // the last one that changes anything.
+        assert_eq!(*IMAGE_ZOOM_STEPS.last().unwrap() as usize, IMAGE_MAX_OVERFLOW * 100);
+        assert!(IMAGE_ZOOM_STEPS.contains(&IMAGE_ZOOM_NORMAL));
+        assert!(IMAGE_ZOOM_STEPS.windows(2).all(|pair| pair[0] < pair[1]));
     }
 
     #[test]

@@ -479,18 +479,22 @@ impl AppState {
         if state.mode != ViewMode::Image || width == 0 || height == 0 {
             return false;
         }
-        let (columns, rows) = crate::viewer::image_size_for(image, width, height, state.image_fill);
+        let (columns, rows) = crate::viewer::image_size_for(image, width, height, state.image_fill, state.image_zoom);
         // Rows as well as columns: a picture squashed to fit is one column wide
         // whatever the viewer's height, so only the row count shows the change.
         if columns == state.image_columns && rows == state.image_lines.len() {
             return false;
         }
 
+        let (was_columns, was_rows) = (state.image_columns, state.image_lines.len());
         (state.image_lines, state.image_colors) = crate::viewer::image_to_ascii(image, columns, rows);
         state.total_lines = state.line_count();
         state.image_columns = columns;
-        state.horizontal_offset = 0;
-        state.scroll_offset = state.scroll_offset.min(state.total_lines.saturating_sub(1));
+        // Hold whatever was in the middle of the pane in the middle of it. A
+        // zoom step that threw the view back to the top-left would be no use
+        // for looking closely at a detail, which is what zooming in is for.
+        state.horizontal_offset = recentre(state.horizontal_offset, width, was_columns, columns);
+        state.scroll_offset = recentre(state.scroll_offset, height, was_rows, rows);
         // Positions into the old drawing mean nothing in the new one.
         state.selection = None;
         true
@@ -503,7 +507,24 @@ impl AppState {
             && state.mode == ViewMode::Image
         {
             state.image_fill = !state.image_fill;
+            // F is also the way back to an unzoomed picture from any zoom.
+            state.image_zoom = crate::constants::IMAGE_ZOOM_NORMAL;
             state.scroll_offset = 0;
+        }
+    }
+
+    /// Step an image up or down the zoom ladder. The zoom scales whichever of
+    /// Fit and Fill is showing, so F still decides what 100% means. The drawing
+    /// itself is rebuilt by fit_viewer_image before the next frame.
+    pub fn viewer_zoom(&mut self, closer: bool) {
+        if let Some(state) = &mut self.viewer_state
+            && state.mode == ViewMode::Image
+        {
+            let steps = crate::constants::IMAGE_ZOOM_STEPS;
+            // Where the current zoom sits on the ladder, whichever rung it is on.
+            let at = steps.iter().position(|&percent| percent >= state.image_zoom).unwrap_or(steps.len() - 1);
+            let next = if closer { (at + 1).min(steps.len() - 1) } else { at.saturating_sub(1) };
+            state.image_zoom = steps[next];
         }
     }
 
@@ -1522,6 +1543,24 @@ fn detect_line_ending(content: &str) -> &'static str {
     if crlf > lf { "\r\n" } else { "\n" }
 }
 
+/// Where a scroll offset belongs after the drawing changed size, so that the
+/// middle of the pane goes on showing the same part of the picture. `extent` is
+/// the pane's size along the axis being moved.
+///
+/// A drawing smaller than the pane is centred by the renderer rather than
+/// scrolled, so it carries no offset of its own - which is both where such a
+/// drawing starts from and where it lands.
+fn recentre(offset: usize, extent: usize, before: usize, after: usize) -> usize {
+    if before == 0 || after <= extent {
+        return 0;
+    }
+    // Where the middle of the pane falls on the old drawing, as a fraction of
+    // it. One that fitted was centred, so its middle was the picture's own.
+    let middle = if before <= extent { 0.5 } else { (offset as f64 + extent as f64 / 2.0) / before as f64 };
+    let centre = middle * after as f64 - extent as f64 / 2.0;
+    (centre.round().max(0.0) as usize).min(after - extent)
+}
+
 /// A character range of a line, as a new String.
 fn char_slice(line: &str, from: usize, to: usize) -> String {
     line[char_to_byte(line, from)..char_to_byte(line, to)].to_string()
@@ -1533,4 +1572,51 @@ fn char_to_byte(s: &str, char_idx: usize) -> usize {
         .nth(char_idx)
         .map(|(i, _)| i)
         .unwrap_or(s.len())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::recentre;
+
+    #[test]
+    fn a_drawing_smaller_than_the_pane_has_no_offset() {
+        // The renderer centres it, so scrolling would only push it off-screen.
+        // Zooming back in from below 100% used to land here at the far end.
+        assert_eq!(recentre(0, 33, 7, 15), 0);
+        assert_eq!(recentre(0, 33, 15, 22), 0);
+        assert_eq!(recentre(0, 33, 30, 33), 0);
+        // Nothing drawn yet.
+        assert_eq!(recentre(0, 33, 0, 45), 0);
+    }
+
+    #[test]
+    fn growing_past_the_pane_centres_what_was_centred() {
+        // A 30-row drawing in a 33-row pane was centred, so 45 rows should be
+        // centred too: (45 - 33) / 2.
+        assert_eq!(recentre(0, 33, 30, 45), 6);
+        assert_eq!(recentre(0, 33, 30, 60), 14);
+    }
+
+    #[test]
+    fn an_overflowing_drawing_keeps_the_middle_of_the_pane() {
+        // Centred at 45 rows, still centred at 60.
+        assert_eq!(recentre(6, 33, 45, 60), 14);
+        // It is the middle of the pane that is held, not the edges: the pane
+        // covers less of the bigger drawing, so a view at the top or the bottom
+        // moves inwards rather than staying pinned there.
+        assert_eq!(recentre(0, 33, 45, 60), 6);
+        assert_eq!(recentre(12, 33, 45, 60), 22);
+    }
+
+    #[test]
+    fn the_offset_never_runs_past_the_end() {
+        for before in [1usize, 7, 30, 45, 200] {
+            for after in [1usize, 7, 30, 45, 200] {
+                for offset in [0, 5, 100] {
+                    let landed = recentre(offset, 33, before, after);
+                    assert!(landed <= after.saturating_sub(33), "{before}->{after} from {offset}: {landed}");
+                }
+            }
+        }
+    }
 }

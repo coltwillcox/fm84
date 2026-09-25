@@ -132,6 +132,10 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         }
                         KeyCode::Char('x') | KeyCode::Char('X') => app_state.viewer_next_mode(),
                         KeyCode::Char('f') | KeyCode::Char('F') => app_state.viewer_toggle_fill(),
+                        // Zoom a picture. The unshifted keys count too, so it is
+                        // one key either way on a numeric keypad or a main row.
+                        KeyCode::Char('+') | KeyCode::Char('=') => app_state.viewer_zoom(true),
+                        KeyCode::Char('-') | KeyCode::Char('_') => app_state.viewer_zoom(false),
                         KeyCode::F(10) => return Ok(false),
                         KeyCode::Down => app_state.viewer_scroll_down(),
                         KeyCode::Up => app_state.viewer_scroll_up(),
