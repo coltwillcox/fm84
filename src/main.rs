@@ -83,8 +83,11 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
     app_state.reload_panel(false, None);
 
     loop {
-        // Before the draw, so a cursor move shows its preview in the same frame.
+        // Both before the draw, so the frame shows the newest it could: a cursor
+        // move shows its preview, and a transfer its latest count, rather than
+        // whatever they were an iteration ago.
         app_state.refresh_preview();
+        app_state.poll_transfer();
         render_ui(terminal, &mut app_state);
         // An image fits the width the viewer was just drawn at, so a new width
         // means drawing again now rather than on the next event.

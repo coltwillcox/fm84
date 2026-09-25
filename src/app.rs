@@ -1,4 +1,7 @@
-use crate::fs_ops::{Mount, disk_usage, get_current_dir, list_mounts, load_directory_rows, nearest_existing_dir};
+use crate::fs_ops::{
+    Mount, Step, Transfer, copy_path, disk_usage, get_current_dir, list_mounts, load_directory_rows, measure, move_path,
+    nearest_existing_dir, rename_in_place,
+};
 use crate::viewer::{ViewMode, ViewerState};
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -6,6 +9,9 @@ use ratatui::text::Span;
 use ratatui::widgets::TableState;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
+use std::sync::Arc;
 use std::time::{Instant, SystemTime};
 
 /// Reusable single-line text input with cursor.
@@ -164,6 +170,50 @@ pub struct AppState {
     pub disk_right: Option<(u64, u64)>,
     /// Set while the prompt for an expensive file is up.
     pub large_file: Option<LargeFile>,
+    /// Set while a copy or move is running on its own thread.
+    pub job: Option<TransferJob>,
+}
+
+/// A copy or move running on a worker thread, and what it has told us so far.
+/// The work is off the UI thread because a single write to a stalled network
+/// mount can block for seconds, and that is exactly when a progress bar and a
+/// way out of it are wanted.
+pub struct TransferJob {
+    pub is_copy: bool,
+    /// None until the counting pass has something to report.
+    pub total_bytes: Option<u64>,
+    pub done_bytes: u64,
+    pub current: PathBuf,
+    pub started: Instant,
+    /// Set by Esc, read by the worker between chunks.
+    cancel: Arc<AtomicBool>,
+    updates: Receiver<JobUpdate>,
+    /// The panel being written into, so both can be reread when it ends.
+    to_left: bool,
+}
+
+impl TransferJob {
+    /// How far along, once there is a total to measure against. None while the
+    /// counting pass is still running, or when there is nothing to count.
+    pub fn fraction(&self) -> Option<f64> {
+        match self.total_bytes {
+            Some(total) if total > 0 => Some((self.done_bytes as f64 / total as f64).min(1.0)),
+            _ => None,
+        }
+    }
+
+    pub fn is_cancelling(&self) -> bool {
+        self.cancel.load(Ordering::Relaxed)
+    }
+}
+
+/// What the worker sends back. Bytes are per chunk rather than a running total,
+/// so a message that arrives late still counts once.
+enum JobUpdate {
+    Total(u64),
+    Starting(PathBuf),
+    Copied(u64),
+    Finished(Result<Transfer, String>),
 }
 
 /// A file big enough to be worth asking about before it is opened.
@@ -304,6 +354,7 @@ impl AppState {
             disk_left: None,
             disk_right: None,
             large_file: None,
+            job: None,
         }
     }
 
@@ -1247,20 +1298,101 @@ impl AppState {
         }
     }
 
-    /// True while a dialog, prompt, viewer or editor owns the screen.
-    pub fn is_modal_open(&self) -> bool {
+    /// True while a popup is covering the screen. What is behind one must sit
+    /// still: it cannot be seen, and the popup is answering for it.
+    pub fn popup_is_open(&self) -> bool {
         self.is_error_displayed
             || self.is_f1_displayed
             || self.is_f11_displayed
-            || self.is_f2_displayed
-            || self.is_f3_displayed
-            || self.is_f4_displayed
             || self.is_f5_displayed
             || self.is_f6_displayed
             || self.is_f7_displayed
             || self.is_f8_displayed
             || self.is_editor_save_prompt
             || self.large_file.is_some()
+            || self.job.is_some()
+    }
+
+    /// True while a dialog, prompt, viewer or editor owns the screen. The three
+    /// added here are not popups: the viewer and the editor are whole-screen
+    /// modes that take their own mouse input, and the rename prompt sits in the
+    /// panel, where a click cancels it rather than being swallowed.
+    pub fn is_modal_open(&self) -> bool {
+        self.popup_is_open() || self.is_f2_displayed || self.is_f3_displayed || self.is_f4_displayed
+    }
+
+    /// Hand a copy or move to a worker thread and start following it.
+    pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
+        let cancel = Arc::new(AtomicBool::new(false));
+        let (sender, updates) = mpsc::channel();
+        let worker_cancel = Arc::clone(&cancel);
+        std::thread::spawn(move || run_transfer(items, is_copy, &sender, &worker_cancel));
+
+        self.job = Some(TransferJob {
+            is_copy,
+            total_bytes: None,
+            done_bytes: 0,
+            current: PathBuf::new(),
+            started: Instant::now(),
+            cancel,
+            updates,
+            to_left: !self.is_left_active,
+        });
+    }
+
+    /// Ask a running transfer to stop. It ends at the next chunk or file, so
+    /// the job stays up for a moment afterwards rather than vanishing at once.
+    pub fn cancel_transfer(&mut self) {
+        if let Some(job) = &self.job {
+            job.cancel.store(true, Ordering::Relaxed);
+        }
+    }
+
+    /// Take whatever the worker has sent since the last frame. Called once per
+    /// frame, so the bar advances at the rate the loop already runs at.
+    pub fn poll_transfer(&mut self) {
+        let Some(job) = &mut self.job else {
+            return;
+        };
+
+        let mut finished = None;
+        loop {
+            match job.updates.try_recv() {
+                Ok(JobUpdate::Total(bytes)) => job.total_bytes = Some(bytes),
+                Ok(JobUpdate::Starting(path)) => job.current = path,
+                Ok(JobUpdate::Copied(bytes)) => job.done_bytes += bytes,
+                Ok(JobUpdate::Finished(result)) => {
+                    finished = Some(result);
+                    break;
+                }
+                Err(TryRecvError::Empty) => break,
+                // Gone without a word, which only happens if it panicked.
+                Err(TryRecvError::Disconnected) => {
+                    finished = Some(Err("Transfer stopped unexpectedly".to_string()));
+                    break;
+                }
+            }
+        }
+
+        let Some(result) = finished else {
+            return;
+        };
+        let job = self.job.take().expect("checked at the top");
+
+        // Both panels: a move empties one and fills the other, and a copy into
+        // the same directory shows up on the side it came from.
+        self.reload_panel(job.to_left, None);
+        self.reload_panel(!job.to_left, None);
+        self.clear_active_selections();
+
+        let what = if job.is_copy { "Copy" } else { "Move" };
+        match result {
+            Ok(Transfer::Done) => {}
+            Ok(Transfer::Cancelled) => {
+                self.display_error(format!("{what} cancelled after {}", crate::utils::format_size(job.done_bytes)))
+            }
+            Err(e) => self.display_error(e),
+        }
     }
 
     /// Remember a directory's mtime so a later change to it stands out.
@@ -1541,6 +1673,50 @@ fn detect_line_ending(content: &str) -> &'static str {
     let crlf = content.matches("\r\n").count();
     let lf = content.matches('\n').count() - crlf;
     if crlf > lf { "\r\n" } else { "\n" }
+}
+
+/// The worker thread behind a copy or move.
+///
+/// Renames come first and on their own. A move within one filesystem is a
+/// rename, which takes no time and moves no bytes - measuring a large tree
+/// before doing it would hold up a transfer that was about to be instant.
+fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, updates: &Sender<JobUpdate>, cancel: &AtomicBool) {
+    let mut remaining = Vec::new();
+    for (source, dest, is_dir) in items {
+        if !is_copy && rename_in_place(&source, &dest) {
+            continue;
+        }
+        remaining.push((source, dest, is_dir));
+    }
+
+    // Only what is actually going to be copied needs counting.
+    let _ = updates.send(JobUpdate::Total(measure(&remaining)));
+
+    let mut report = |step: Step<'_>| {
+        let update = match step {
+            Step::Starting(path) => JobUpdate::Starting(path.to_path_buf()),
+            Step::Copied(bytes) => JobUpdate::Copied(bytes),
+        };
+        // A closed channel means the UI has gone, which is its own reason to stop.
+        updates.send(update).is_ok() && !cancel.load(Ordering::Relaxed)
+    };
+
+    for (source, dest, is_dir) in remaining {
+        let result = if is_copy {
+            copy_path(source, dest, is_dir, &mut report)
+        } else {
+            move_path(source, dest, is_dir, &mut report)
+        };
+        match result {
+            Ok(Transfer::Done) => {}
+            outcome => {
+                let _ = updates.send(JobUpdate::Finished(outcome.map_err(|e| e.to_string())));
+                return;
+            }
+        }
+    }
+
+    let _ = updates.send(JobUpdate::Finished(Ok(Transfer::Done)));
 }
 
 /// Where a scroll offset belongs after the drawing changed size, so that the

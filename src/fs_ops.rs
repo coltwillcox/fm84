@@ -1,9 +1,10 @@
 use crate::app::Item;
+use crate::constants::COPY_CHUNK;
 use crate::utils::format_size;
 use chrono::Local;
 use std::env;
 use std::fs::{self, File, create_dir, read_dir, remove_dir_all, remove_file, rename};
-use std::io::{self, Error};
+use std::io::{self, Error, Read};
 use std::path::{Path, PathBuf};
 
 /// Permission bits as `ls -l` writes them. The mode comes from the metadata the
@@ -553,17 +554,64 @@ pub fn create_directory(path: PathBuf) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool) -> Result<(), Error> {
+/// What a running transfer reports as it goes.
+pub enum Step<'a> {
+    /// Starting this file. Bytes reported after it belong to it.
+    Starting(&'a Path),
+    /// Another `bytes` of the current file are written.
+    Copied(u64),
+}
+
+/// How a transfer ended. Cancelled leaves everything already finished where it
+/// is; only the one file that was in flight is cleaned up.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Transfer {
+    Done,
+    Cancelled,
+}
+
+/// Takes progress and answers whether to carry on. Returning false stops the
+/// transfer at the next chunk or file, whichever comes first.
+pub type Report<'a> = &'a mut dyn FnMut(Step<'_>) -> bool;
+
+/// Move by renaming, which only works within one filesystem. True if it did;
+/// the caller copies instead when it did not. Kept separate from move_path so
+/// a caller can get the instant moves out of the way before measuring the rest.
+pub fn rename_in_place(source: &Path, dest: &Path) -> bool {
+    rename(source, dest).is_ok()
+}
+
+/// Bytes a transfer will move, for the progress bar to count against. A
+/// directory is walked; anything unreadable counts as nothing rather than
+/// failing the job, since this is only ever a denominator.
+pub fn measure(items: &[(PathBuf, PathBuf, bool)]) -> u64 {
+    items
+        .iter()
+        .map(|(source, _, is_dir)| {
+            // A symlink is recreated, not followed, so it carries no bytes.
+            if fs::symlink_metadata(source).map(|meta| meta.file_type().is_symlink()).unwrap_or(false) {
+                0
+            } else if *is_dir {
+                calculate_dir_size(source).unwrap_or(0)
+            } else {
+                fs::metadata(source).map(|meta| meta.len()).unwrap_or(0)
+            }
+        })
+        .sum()
+}
+
+pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
     // A symlink is copied as the link itself, never as its target, matching
     // cp -r. is_dir can't decide this: it comes from DirEntry::metadata(),
     // which doesn't follow links, so a link to a directory arrives false here
     // and would otherwise be handed to copy_file_content.
     if fs::symlink_metadata(&source)?.file_type().is_symlink() {
-        copy_symlink(&source, &dest)
+        copy_symlink(&source, &dest)?;
+        Ok(Transfer::Done)
     } else if is_dir {
-        copy_dir_recursive(&source, &dest)
+        copy_dir_recursive(&source, &dest, report)
     } else {
-        copy_file_content(&source, &dest)
+        copy_file_content(&source, &dest, report)
     }
 }
 
@@ -588,15 +636,34 @@ fn copy_symlink(source: &Path, dest: &Path) -> Result<(), Error> {
 /// Copy file content without trying to preserve Unix permissions.
 /// This works across filesystems (e.g., ext4 to exFAT) where permission
 /// preservation would fail with EPERM.
-/// Uses io::copy which leverages copy_file_range (zero-copy) on Linux.
-fn copy_file_content(source: &Path, dest: &Path) -> Result<(), Error> {
+///
+/// The copy runs in COPY_CHUNK pieces so there is somewhere to report progress
+/// from and somewhere to notice a cancel. Each piece is still an io::copy, over
+/// a reader limited to the chunk rather than a buffer of our own, which is what
+/// keeps the platform's fast path - copy_file_range on Linux.
+fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<Transfer, Error> {
+    if !report(Step::Starting(source)) {
+        return Ok(Transfer::Cancelled);
+    }
+
     let mut src_file = File::open(source)?;
     let mut dst_file = File::create(dest)?;
-    io::copy(&mut src_file, &mut dst_file)?;
-    Ok(())
+    loop {
+        let copied = io::copy(&mut (&mut src_file).take(COPY_CHUNK), &mut dst_file)?;
+        if copied == 0 {
+            return Ok(Transfer::Done);
+        }
+        if !report(Step::Copied(copied)) {
+            // What is on disk is half a file that will never be finished.
+            // Left alone it would sit there looking like a complete copy.
+            drop(dst_file);
+            let _ = remove_file(dest);
+            return Ok(Transfer::Cancelled);
+        }
+    }
 }
 
-fn copy_dir_recursive(source: &Path, dest: &Path) -> Result<(), Error> {
+fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<Transfer, Error> {
     fs::create_dir_all(dest)?;
 
     for entry in read_dir(source)? {
@@ -609,29 +676,36 @@ fn copy_dir_recursive(source: &Path, dest: &Path) -> Result<(), Error> {
         // ancestor recurses until the path outgrows PATH_MAX. cp -r recreates
         // the link, so do the same.
         let file_type = entry.file_type()?;
-        if file_type.is_symlink() {
+        let outcome = if file_type.is_symlink() {
             copy_symlink(&entry_path, &dest_path)?;
+            Transfer::Done
         } else if file_type.is_dir() {
-            copy_dir_recursive(&entry_path, &dest_path)?;
+            copy_dir_recursive(&entry_path, &dest_path, &mut *report)?
         } else {
-            copy_file_content(&entry_path, &dest_path)?;
+            copy_file_content(&entry_path, &dest_path, &mut *report)?
+        };
+        if outcome == Transfer::Cancelled {
+            return Ok(Transfer::Cancelled);
         }
     }
 
-    Ok(())
+    Ok(Transfer::Done)
 }
 
-pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool) -> Result<(), Error> {
+pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
     // Try rename first (fast, same filesystem)
     match rename(&source, &dest) {
-        Ok(_) => Ok(()),
+        Ok(_) => Ok(Transfer::Done),
         Err(e) => {
             // Check for cross-device error:
             // - EXDEV (18) on Linux/macOS/Unix
             // - ERROR_NOT_SAME_DEVICE (17) on Windows
             if matches!(e.raw_os_error(), Some(17) | Some(18)) {
                 // Cross-device move: copy then delete
-                copy_path(source.clone(), dest.clone(), is_dir)?;
+                if copy_path(source.clone(), dest.clone(), is_dir, report)? == Transfer::Cancelled {
+                    // The copy stopped partway, so the source has to stay.
+                    return Ok(Transfer::Cancelled);
+                }
 
                 // Delete source - if this fails, the copy succeeded but source remains
                 if let Err(del_err) = delete_path(source, is_dir) {
@@ -644,7 +718,7 @@ pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool) -> Result<(), Err
                         ),
                     ));
                 }
-                Ok(())
+                Ok(Transfer::Done)
             } else {
                 Err(e)
             }
@@ -679,5 +753,113 @@ mod live_mount_probe {
         for mount in super::list_mounts() {
             println!("  {:<24} {:<14} {:?}", mount.path.display(), mount.label, mount.kind);
         }
+    }
+}
+
+#[cfg(test)]
+mod transfer_tests {
+    use super::*;
+
+    fn scratch(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("fm84-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn measure_adds_up_files_and_walks_directories() {
+        let dir = scratch("measure");
+        fs::write(dir.join("a.bin"), vec![0u8; 1000]).unwrap();
+        fs::create_dir(dir.join("sub")).unwrap();
+        fs::write(dir.join("sub").join("b.bin"), vec![0u8; 2500]).unwrap();
+
+        let items = vec![
+            (dir.join("a.bin"), dir.join("copy-a.bin"), false),
+            (dir.join("sub"), dir.join("copy-sub"), true),
+        ];
+        assert_eq!(measure(&items), 3500);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_copy_reports_every_file_and_every_byte() {
+        let dir = scratch("report");
+        let source = dir.join("src");
+        fs::create_dir(&source).unwrap();
+        // One file longer than a chunk, so the inner loop reports several times.
+        fs::write(source.join("big.bin"), vec![7u8; COPY_CHUNK as usize * 2 + 13]).unwrap();
+        fs::write(source.join("small.bin"), vec![7u8; 10]).unwrap();
+        let dest = dir.join("dst");
+
+        let mut started = Vec::new();
+        let mut bytes = 0u64;
+        {
+            let mut report = |step: Step<'_>| {
+                match step {
+                    Step::Starting(path) => started.push(path.file_name().unwrap().to_string_lossy().into_owned()),
+                    Step::Copied(n) => bytes += n,
+                }
+                true
+            };
+            assert_eq!(copy_path(source.clone(), dest.clone(), true, &mut report).unwrap(), Transfer::Done);
+        }
+
+        started.sort();
+        assert_eq!(started, ["big.bin", "small.bin"]);
+        // What the bar counts has to reach what the counting pass promised.
+        assert_eq!(bytes, measure(&[(source, dest, true)]));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn cancelling_clears_the_half_written_file() {
+        let dir = scratch("cancel");
+        let source = dir.join("big.bin");
+        let dest = dir.join("copy.bin");
+        fs::write(&source, vec![7u8; COPY_CHUNK as usize * 3]).unwrap();
+
+        // Stop after the first chunk, the way Esc does partway through.
+        let mut chunks = 0;
+        {
+            let mut report = |step: Step<'_>| {
+                if let Step::Copied(_) = step {
+                    chunks += 1;
+                }
+                chunks < 1
+            };
+            assert_eq!(copy_path(source, dest.clone(), false, &mut report).unwrap(), Transfer::Cancelled);
+        }
+        // A fragment left behind would sit there looking like a finished copy.
+        assert!(!dest.exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn refusing_the_first_file_copies_nothing() {
+        let dir = scratch("refuse");
+        let source = dir.join("src");
+        fs::create_dir(&source).unwrap();
+        fs::write(source.join("a.bin"), vec![1u8; 10]).unwrap();
+        let dest = dir.join("dst");
+
+        let mut report = |_: Step<'_>| false;
+        assert_eq!(copy_path(source, dest.clone(), true, &mut report).unwrap(), Transfer::Cancelled);
+        assert!(!dest.join("a.bin").exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_rename_within_one_filesystem_moves_no_bytes() {
+        let dir = scratch("rename");
+        let source = dir.join("a.bin");
+        let dest = dir.join("b.bin");
+        fs::write(&source, vec![3u8; 4096]).unwrap();
+
+        assert!(rename_in_place(&source, &dest));
+        assert!(!source.exists() && dest.exists());
+        // Across filesystems it has to say so rather than pretend.
+        assert!(!rename_in_place(&dest, Path::new("/proc/fm84-cannot-go-here")));
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

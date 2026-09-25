@@ -87,7 +87,9 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         render_bottom_panel(f, chunks_main[3], app_state);
         render_fkey_bar(f, chunks_main[4]);
 
-        if app_state.is_error_displayed {
+        if app_state.job.is_some() {
+            render_transfer_popup(f, area, app_state);
+        } else if app_state.is_error_displayed {
             render_error_popup(f, area, app_state);
         } else if app_state.large_file.is_some() {
             render_large_file_popup(f, area, app_state);
@@ -1065,6 +1067,77 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     f.render_widget(
         Paragraph::new("Y / Enter - Yes    N / Esc - No").alignment(Alignment::Center).style(STYLE_COLUMNS),
         popup_area.inner(Margin { vertical: 6, horizontal: 2 }),
+    );
+}
+
+/// A bar of `width` cells filled in proportion to `fraction`. Same two glyphs
+/// as the disk meter, both Neutral width - an Ambiguous-width glyph would
+/// measure double under a CJK locale and push the bar out of the popup.
+fn progress_bar(fraction: f64, width: usize) -> String {
+    let filled = ((fraction.clamp(0.0, 1.0) * width as f64).round() as usize).min(width);
+    "\u{25aa}".repeat(filled) + &"\u{25ab}".repeat(width - filled)
+}
+
+/// How a copy or move is getting on. Held back for a moment after the transfer
+/// starts, so the many that finish at once never flash a popup on the way past.
+fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+    let Some(job) = &app_state.job else {
+        return;
+    };
+    let elapsed = job.started.elapsed();
+    if elapsed < TRANSFER_POPUP_DELAY {
+        return;
+    }
+
+    let title = match (job.is_cancelling(), job.is_copy) {
+        (true, _) => " Cancelling ",
+        (false, true) => " Copying ",
+        (false, false) => " Moving ",
+    };
+    let popup_area = centered_rect(60, 30, area);
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, STYLE_TITLE)).centered())
+        .borders(Borders::ALL)
+        .style(STYLE_BORDER);
+
+    f.render_widget(Clear::default(), popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let name = job.current.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+    // The counting pass runs before any bytes move, so there is a moment at the
+    // start with nothing to measure against, and a rename has nothing to count.
+    let bar_width = popup_area.width.saturating_sub(14) as usize;
+    let bar = match job.fraction() {
+        Some(fraction) => format!("{} {:>3.0}%", progress_bar(fraction, bar_width), fraction * 100.0),
+        None => "Counting...".to_string(),
+    };
+
+    let rate = job.done_bytes as f64 / elapsed.as_secs_f64().max(0.001);
+    let detail = match job.total_bytes {
+        Some(total) if total > 0 => format!(
+            "{} of {} at {}/s    Esc - Cancel",
+            format_size(job.done_bytes),
+            format_size(total),
+            format_size(rate as u64)
+        ),
+        _ => "Esc - Cancel".to_string(),
+    };
+
+    // One paragraph rather than a widget per line: stacking margins to place
+    // them costs two rows each, which silently leaves nothing to draw in once
+    // the popup is short.
+    let lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(name.to_string(), STYLE_TITLE)),
+        Line::from(""),
+        Line::from(Span::styled(bar, STYLE_COLUMNS)),
+        Line::from(""),
+        Line::from(Span::styled(detail, STYLE_FILE)),
+    ];
+    f.render_widget(
+        Paragraph::new(lines).alignment(Alignment::Center),
+        popup_area.inner(Margin { vertical: 1, horizontal: 2 }),
     );
 }
 

@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::fs_ops::{copy_path, create_directory, create_file, delete_path, move_path, path_exists, rename_path};
+use crate::fs_ops::{create_directory, create_file, delete_path, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use crate::constants::TAB_SPACES;
 use ratatui::layout::Position;
@@ -57,7 +57,14 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     return Ok(true);
                 }
 
-                if app_state.is_f2_displayed {
+                if app_state.job.is_some() {
+                    // Only Esc means anything while a transfer runs. Everything
+                    // else would act on panels that are about to be reread, and
+                    // F10 would leave the worker writing into a dead terminal.
+                    if key.code == KeyCode::Esc {
+                        app_state.cancel_transfer();
+                    }
+                } else if app_state.is_f2_displayed {
                     match key.code {
                         KeyCode::Esc => handle_esc(app_state),
                         KeyCode::F(2) => toggle_rename(app_state),
@@ -330,7 +337,10 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     }
                 }
             }
-            Event::Mouse(mouse_event) => match mouse_event.kind {
+            // Nothing behind a popup responds to the mouse - not clicks and not
+            // the wheel, which would otherwise scroll a panel out of sight of the
+            // dialog asking about it.
+            Event::Mouse(mouse_event) if !app_state.popup_is_open() => match mouse_event.kind {
                 MouseEventKind::Down(_btn) => {
                     if app_state.is_f4_displayed {
                         handle_editor_click(app_state, mouse_event.column, mouse_event.row, false);
@@ -899,19 +909,10 @@ fn handle_copy_confirm(app_state: &mut AppState) {
         return;
     }
 
-    for (source, dest, is_dir) in &items {
-        if let Err(e) = copy_path(source.clone(), dest.clone(), *is_dir) {
-            app_state.display_error(e.to_string());
-            app_state.reset_copy();
-            return;
-        }
-    }
-
-    // Reload the destination panel (opposite of active)
-    app_state.reload_panel(!app_state.is_left_active, None);
-
-    app_state.clear_active_selections();
+    // The work itself, the panel reload and the selections are all handled by
+    // the job as it finishes.
     app_state.reset_copy();
+    app_state.start_transfer(items, true);
 }
 
 fn toggle_move(app_state: &mut AppState) {
@@ -969,35 +970,14 @@ fn handle_move_confirm(app_state: &mut AppState) {
         return;
     }
 
-    for (source, dest, is_dir) in &items {
-        if let Err(e) = move_path(source.clone(), dest.clone(), *is_dir) {
-            app_state.display_error(e.to_string());
-            app_state.reset_move();
-            return;
-        }
-    }
-
-    app_state.reload_panel(app_state.is_left_active, None);
-    app_state.reload_panel(!app_state.is_left_active, None);
-
-    app_state.clear_active_selections();
     app_state.reset_move();
+    app_state.start_transfer(items, false);
 }
 
 fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
-    // Don't handle clicks during modal dialogs (except F2 rename which gets canceled)
-    if app_state.is_error_displayed
-        || app_state.is_f1_displayed
-        || app_state.is_f11_displayed
-        || app_state.is_f3_displayed
-        || app_state.is_f4_displayed
-        || app_state.is_f5_displayed
-        || app_state.is_f6_displayed
-        || app_state.is_f7_displayed
-        || app_state.is_f8_displayed
-    {
-        return;
-    }
+    // Popups are turned away before the event gets this far, and the viewer and
+    // editor are picked off by the caller. A second list of them here is what
+    // let a transfer's popup be clicked straight through.
 
     // Cancel F2 rename mode if active
     if app_state.is_f2_displayed {
