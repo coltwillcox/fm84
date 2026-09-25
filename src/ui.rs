@@ -944,6 +944,40 @@ fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect) {
     f.render_widget(block_bottom, area);
 }
 
+/// The area inside a popup's border that its body is laid out in.
+fn popup_inner(area: Rect) -> Rect {
+    area.inner(Margin { vertical: 1, horizontal: 2 })
+}
+
+/// Lay a popup's lines out inside its border, centred, with a blank row between
+/// each while they all still fit.
+///
+/// Placing them with a widget per line and a deeper margin each time costs two
+/// rows per line, and the moment the popup is shorter than that the innermost
+/// widget is handed a zero-height area and silently draws nothing. The line
+/// that goes first is the last one, which is the one saying which key answers
+/// the prompt - so the dialog would ask a question with no way to see the
+/// answer. Here the blank rows go before any content does.
+fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>) {
+    let inner = popup_inner(area);
+    let room = inner.height as usize;
+
+    let airy = lines.len().saturating_mul(2).saturating_sub(1);
+    let mut body: Vec<Line> = Vec::with_capacity(airy.max(lines.len()));
+    for (index, line) in lines.into_iter().enumerate() {
+        if index > 0 && airy <= room {
+            body.push(Line::from(""));
+        }
+        body.push(line);
+    }
+
+    // Sit the block in the middle of whatever is left over.
+    let padding = room.saturating_sub(body.len()) / 2;
+    let mut out = vec![Line::from(""); padding];
+    out.extend(body);
+    f.render_widget(Paragraph::new(out).alignment(Alignment::Center), inner);
+}
+
 fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
     let popup_area = centered_rect(60, 20, area);
     let popup_block = Block::default()
@@ -954,10 +988,7 @@ fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut Ap
     f.render_widget(Clear::default(), popup_area);
     f.render_widget(popup_block, popup_area);
 
-    f.render_widget(
-        Paragraph::new(app_state.error_message.clone()).alignment(Alignment::Center).style(STYLE_TITLE),
-        popup_area.inner(Margin { vertical: 2, horizontal: 2 }),
-    );
+    popup_body(f, popup_area, vec![Line::from(Span::styled(app_state.error_message.clone(), STYLE_TITLE))]);
 }
 
 fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
@@ -1018,14 +1049,13 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     f.render_widget(Clear::default(), popup_area);
     f.render_widget(popup_block, popup_area);
 
-    f.render_widget(
-        Paragraph::new("Under construction").alignment(Alignment::Center).style(STYLE_TITLE),
-        popup_area.inner(Margin { vertical: 2, horizontal: 2 }),
-    );
-
-    f.render_widget(
-        Paragraph::new("Esc - Close").alignment(Alignment::Center).style(STYLE_COLUMNS),
-        popup_area.inner(Margin { vertical: 4, horizontal: 2 }),
+    popup_body(
+        f,
+        popup_area,
+        vec![
+            Line::from(Span::styled("Under construction", STYLE_TITLE)),
+            Line::from(Span::styled("Esc - Close", STYLE_COLUMNS)),
+        ],
     );
 }
 
@@ -1041,16 +1071,21 @@ fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
 
     // Show input with block cursor (REVERSED so it's visible against paragraph bg)
     let cursor_style = STYLE_TITLE.add_modifier(Modifier::REVERSED);
-    let input_line = Line::from(app_state.create_input.cursor_spans(STYLE_TITLE, cursor_style));
-    f.render_widget(
-        Paragraph::new(input_line).alignment(Alignment::Center).style(STYLE_TITLE.bg(COLOR_SELECTED_BACKGROUND)),
-        popup_area.inner(Margin { vertical: 3, horizontal: 2 }),
-    );
-
-    // Instructions
-    f.render_widget(
-        Paragraph::new("Enter - Create    Esc - Cancel").alignment(Alignment::Center).style(STYLE_COLUMNS),
-        popup_area.inner(Margin { vertical: 5, horizontal: 2 }),
+    // Padded out to the full width so the highlight reads as an input field.
+    // Paragraph styles the spans rather than the row, so a bare line would
+    // colour only the characters typed so far.
+    let typed = app_state.create_input.cursor_spans(STYLE_TITLE, cursor_style);
+    let width = popup_inner(popup_area).width as usize;
+    let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+    let left = width.saturating_sub(typed_width) / 2;
+    let mut spans = vec![Span::raw(" ".repeat(left))];
+    spans.extend(typed);
+    spans.push(Span::raw(" ".repeat(width.saturating_sub(left + typed_width))));
+    let input_line = Line::from(spans).style(STYLE_TITLE.bg(COLOR_SELECTED_BACKGROUND));
+    popup_body(
+        f,
+        popup_area,
+        vec![input_line, Line::from(Span::styled("Enter - Create    Esc - Cancel", STYLE_COLUMNS))],
     );
 }
 
@@ -1073,20 +1108,16 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     f.render_widget(Clear::default(), popup_area);
     f.render_widget(popup_block, popup_area);
 
-    // Message
-    let message = if count == 1 {
-        format!("Delete \"{}\"?", app_state.delete_items[0].0)
+    let mut lines = Vec::new();
+    if count == 1 {
+        lines.push(Line::from(Span::styled(format!("Delete \"{}\"?", app_state.delete_items[0].0), STYLE_TITLE)));
     } else {
         let names: Vec<&str> = app_state.delete_items.iter().map(|(name, _)| name.as_str()).collect();
-        format!("Delete {} items?\n\n{}", count, names.join(", "))
-    };
-    f.render_widget(Paragraph::new(message).alignment(Alignment::Center).style(STYLE_TITLE), popup_area.inner(Margin { vertical: 2, horizontal: 2 }));
-
-    // Instructions
-    f.render_widget(
-        Paragraph::new("Y / Enter - Yes    N / Esc - No").alignment(Alignment::Center).style(STYLE_COLUMNS),
-        popup_area.inner(Margin { vertical: 6, horizontal: 2 }),
-    );
+        lines.push(Line::from(Span::styled(format!("Delete {count} items?"), STYLE_TITLE)));
+        lines.push(Line::from(Span::styled(names.join(", "), STYLE_FILE)));
+    }
+    lines.push(Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", STYLE_COLUMNS)));
+    popup_body(f, popup_area, lines);
 }
 
 /// A bar of `width` cells filled in proportion to `fraction`. Same two glyphs
@@ -1197,23 +1228,17 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
             .collect();
         format!("{} {} items: {}", verb, count, names.join(", "))
     };
-    f.render_widget(
-        Paragraph::new(source_msg).alignment(Alignment::Center).style(STYLE_TITLE),
-        popup_area.inner(Margin { vertical: 2, horizontal: 2 }),
-    );
-
     // Destination directory
     let dest_dir = items[0].1.parent().map(|p| p.to_path_buf()).unwrap_or_default();
     let dest_display = limit_path_string(&dest_dir, popup_area.width as usize - 10);
-    f.render_widget(
-        Paragraph::new(format!("to: {}", dest_display)).alignment(Alignment::Center).style(STYLE_FILE),
-        popup_area.inner(Margin { vertical: 4, horizontal: 2 }),
-    );
-
-    // Instructions
-    f.render_widget(
-        Paragraph::new("Y / Enter - Yes    N / Esc - No").alignment(Alignment::Center).style(STYLE_COLUMNS),
-        popup_area.inner(Margin { vertical: 6, horizontal: 2 }),
+    popup_body(
+        f,
+        popup_area,
+        vec![
+            Line::from(Span::styled(source_msg, STYLE_TITLE)),
+            Line::from(Span::styled(format!("to: {dest_display}"), STYLE_FILE)),
+            Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", STYLE_COLUMNS)),
+        ],
     );
 }
 
@@ -1240,24 +1265,19 @@ fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &A
         Some((width, height)) => format!("{} \"{}\" ({}x{}, {})?", verb, name, width, height, format_size(large.size)),
         None => format!("{} \"{}\" ({})?", verb, name, format_size(large.size)),
     };
-    f.render_widget(
-        Paragraph::new(message).alignment(Alignment::Center).style(STYLE_TITLE),
-        popup_area.inner(Margin { vertical: 2, horizontal: 2 }),
-    );
-
     let note = if large.dimensions.is_some() {
         "Decoding a picture this size needs that much memory."
     } else {
         "Reading a file this large may take a while."
     };
-    f.render_widget(
-        Paragraph::new(note).alignment(Alignment::Center).style(STYLE_FILE),
-        popup_area.inner(Margin { vertical: 4, horizontal: 2 }),
-    );
-
-    f.render_widget(
-        Paragraph::new("Y / Enter - Yes    N / Esc - No").alignment(Alignment::Center).style(STYLE_COLUMNS),
-        popup_area.inner(Margin { vertical: 6, horizontal: 2 }),
+    popup_body(
+        f,
+        popup_area,
+        vec![
+            Line::from(Span::styled(message, STYLE_TITLE)),
+            Line::from(Span::styled(note, STYLE_FILE)),
+            Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", STYLE_COLUMNS)),
+        ],
     );
 }
 
@@ -1271,14 +1291,13 @@ fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     f.render_widget(Clear::default(), popup_area);
     f.render_widget(popup_block, popup_area);
 
-    f.render_widget(
-        Paragraph::new("Save changes before closing?").alignment(Alignment::Center).style(STYLE_TITLE),
-        popup_area.inner(Margin { vertical: 3, horizontal: 2 }),
-    );
-
-    f.render_widget(
-        Paragraph::new("Y - Save    N - Discard    Esc - Cancel").alignment(Alignment::Center).style(STYLE_COLUMNS),
-        popup_area.inner(Margin { vertical: 5, horizontal: 2 }),
+    popup_body(
+        f,
+        popup_area,
+        vec![
+            Line::from(Span::styled("Save changes before closing?", STYLE_TITLE)),
+            Line::from(Span::styled("Y - Save    N - Discard    Esc - Cancel", STYLE_COLUMNS)),
+        ],
     );
 }
 
