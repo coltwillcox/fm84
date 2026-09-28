@@ -833,17 +833,17 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
 
     let mut src_file = File::open(source)?;
     // Only an overwrite, or a directory merged into another, finds something
-    // already here.
-    clear_link(dest)?;
-    let mut dst_file = match File::create(dest) {
-        Ok(file) => file,
-        // A read-only file in the way: removed and written afresh, as cp -f
-        // does. If the directory itself refuses, the remove fails too.
-        Err(e) if e.kind() == ErrorKind::PermissionDenied && dest.symlink_metadata().is_ok_and(|metadata| metadata.is_file()) => {
-            remove_file(dest)?;
-            File::create(dest)?
-        }
-        Err(e) => return Err(e),
+    // already here. That file is somebody's, so it is not touched until the
+    // copy has finished: the bytes go beside it and a rename puts them in
+    // place at the end. Writing straight over it would destroy it the moment
+    // the copy began, and a cancel or a full disk would leave neither the old
+    // file nor the new one.
+    let replacing = dest.symlink_metadata().is_ok();
+    let (target, mut dst_file) = if replacing {
+        temp_beside(dest)?
+    } else {
+        clear_link(dest)?;
+        (dest.to_path_buf(), File::create(dest)?)
     };
     loop {
         let copied = match io::copy(&mut (&mut src_file).take(COPY_CHUNK), &mut dst_file) {
@@ -851,21 +851,30 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
             Err(e) => {
                 // A read or write that failed partway - a full disk, a device
                 // gone - leaves a truncated file that would pass for a finished
-                // copy, the same as a cancel does. It goes the same way.
+                // copy, the same as a cancel does. It goes the same way. When
+                // replacing, that is the temporary, and what was there is
+                // untouched.
                 drop(dst_file);
-                let _ = remove_file(dest);
+                let _ = remove_file(&target);
                 return Err(e);
             }
         };
         if copied == 0 {
-            let _ = fs::set_permissions(dest, metadata.permissions());
+            let _ = fs::set_permissions(&target, metadata.permissions());
+            if replacing {
+                // The one moment the old file changes, and it changes all at
+                // once: anything reading it sees the old bytes or the new ones.
+                drop(dst_file);
+                clear_link(dest)?;
+                rename(&target, dest)?;
+            }
             return Ok(Transfer::Done);
         }
         if !report(Step::Advanced(copied)) {
             // What is on disk is half a file that will never be finished.
             // Left alone it would sit there looking like a complete copy.
             drop(dst_file);
-            let _ = remove_file(dest);
+            let _ = remove_file(&target);
             return Ok(Transfer::Cancelled);
         }
     }
@@ -987,6 +996,24 @@ pub fn check_destinations(items: &[(PathBuf, PathBuf, bool)]) -> Result<Vec<Path
 /// Clear a link out of the way of a file about to be written at `dest`, so the
 /// write replaces the link instead of following it into whatever it points
 /// at. Anything else stays for the write to deal with.
+/// A file to write into beside `dest`, for when something is already there.
+/// Same directory, so the rename that finishes the copy is atomic and cannot
+/// half-replace anything; a temporary elsewhere would have to be copied back
+/// across, which is the thing being avoided.
+fn temp_beside(dest: &Path) -> Result<(PathBuf, File), Error> {
+    let name = dest.file_name().unwrap_or_default().to_string_lossy().into_owned();
+    for attempt in 0..1000u32 {
+        let candidate = dest.with_file_name(format!(".{name}.fm84-{}-{attempt}", std::process::id()));
+        match File::options().write(true).create_new(true).open(&candidate) {
+            Ok(file) => return Ok((candidate, file)),
+            // Something of ours from a run that was killed partway. Step past it.
+            Err(e) if e.kind() == ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e),
+        }
+    }
+    Err(Error::new(ErrorKind::AlreadyExists, format!("Cannot make room beside {}", dest.display())))
+}
+
 fn clear_link(dest: &Path) -> Result<(), Error> {
     match dest.symlink_metadata() {
         // A link to a directory is removed as a directory on Windows.
@@ -1097,6 +1124,51 @@ mod transfer_tests {
         assert_eq!(started, ["big.bin", "small.bin"]);
         // What the bar counts has to reach what the counting pass promised.
         assert_eq!(bytes, measure(&[(source, dest, true)]));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_cancelled_overwrite_leaves_the_old_file_alone() {
+        let dir = scratch("overwrite-cancel").canonicalize().unwrap();
+        let source = dir.join("new.bin");
+        let dest = dir.join("old.bin");
+        fs::write(&source, vec![7u8; COPY_CHUNK as usize * 3]).unwrap();
+        fs::write(&dest, b"the file that was already here").unwrap();
+
+        // Stop after the first chunk, the way Esc does partway through.
+        let mut chunks = 0;
+        {
+            let mut report = |step: Step<'_>| {
+                if let Step::Advanced(_) = step {
+                    chunks += 1;
+                }
+                chunks < 1
+            };
+            assert_eq!(copy_path(source, dest.clone(), false, &mut report).unwrap(), Transfer::Cancelled);
+        }
+
+        // Untouched: not truncated, not removed, still the original bytes.
+        assert_eq!(fs::read(&dest).unwrap(), b"the file that was already here");
+        // And nothing of ours left lying beside it.
+        let strays: Vec<_> = fs::read_dir(&dir).unwrap().flatten().map(|e| e.file_name()).filter(|n| n.to_string_lossy().contains("fm84-")).collect();
+        assert!(strays.is_empty(), "left behind {strays:?}");
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn an_overwrite_that_finishes_replaces_the_file() {
+        let dir = scratch("overwrite-done").canonicalize().unwrap();
+        let source = dir.join("new.bin");
+        let dest = dir.join("old.bin");
+        fs::write(&source, b"replacement").unwrap();
+        fs::write(&dest, b"the file that was already here").unwrap();
+
+        let mut report = |_: Step<'_>| true;
+        assert_eq!(copy_path(source, dest.clone(), false, &mut report).unwrap(), Transfer::Done);
+        assert_eq!(fs::read(&dest).unwrap(), b"replacement");
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 2, "a temporary was left behind");
+
         fs::remove_dir_all(&dir).unwrap();
     }
 
