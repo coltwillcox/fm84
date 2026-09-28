@@ -1810,6 +1810,25 @@ impl EditorState {
         Some(text)
     }
 
+    /// Settle the vertical scroll before a frame is drawn. It never runs past
+    /// the last screenful - an edit that shortens the file, such as deleting a
+    /// selection made with Ctrl+A, would otherwise leave it pointing past the
+    /// end - and after a key, which sets auto_scroll, it brings the cursor into
+    /// view: a paste, an undo or a deleted selection can each land it off
+    /// screen. The mouse wheel clears auto_scroll, so reading elsewhere in the
+    /// file does not snap back to the cursor.
+    pub fn keep_in_view(&mut self, height: usize) {
+        let height = height.max(1);
+        if self.auto_scroll {
+            if self.cursor_line < self.scroll_offset {
+                self.scroll_offset = self.cursor_line;
+            } else if self.cursor_line >= self.scroll_offset + height {
+                self.scroll_offset = self.cursor_line + 1 - height;
+            }
+        }
+        self.scroll_offset = self.scroll_offset.min(self.lines.len().saturating_sub(height));
+    }
+
     /// Clamp cursor_col to current line length.
     fn clamp_col(&mut self) {
         let line_len = self.lines[self.cursor_line].chars().count();

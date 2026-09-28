@@ -752,6 +752,7 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
             .split(inner_area);
 
         let viewport_height = inner_area.height as usize;
+        editor_state.keep_in_view(viewport_height);
         let start = editor_state.scroll_offset;
         let end = (start + viewport_height).min(total_lines);
         let num_width = (line_num_width as usize).saturating_sub(1);
@@ -1532,5 +1533,47 @@ mod tests {
         assert_eq!(centered(area, 200, 90), area);
         // An odd leftover puts the extra column on the right.
         assert_eq!(centered(area, 79, 20).x, 10);
+    }
+
+    /// An editor open on a file of `lines` numbered lines, and a terminal to
+    /// draw it on. The file is removed again when the test is done with it.
+    fn editor_on(name: &str, lines: usize) -> (AppState, Terminal<ratatui::backend::TestBackend>, std::path::PathBuf) {
+        let path = std::env::temp_dir().join(format!("fm84-{name}-{}.txt", std::process::id()));
+        let text: String = (1..=lines).map(|n| format!("{n}\n")).collect();
+        std::fs::write(&path, text).unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.open_editor(path.clone()).unwrap();
+        let terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        (app_state, terminal, path)
+    }
+
+    #[test]
+    fn deleting_everything_from_the_bottom_of_a_long_file_draws() {
+        let (mut app_state, mut terminal, path) = editor_on("select-all", 100);
+        render_ui(&mut terminal, &mut app_state);
+        // Ctrl+A scrolls to the end; Backspace then leaves a single line. The
+        // scroll used to stay where Ctrl+A put it, and the next frame sliced
+        // the lines with its start past its end.
+        app_state.editor_select_all();
+        app_state.editor_backspace();
+        render_ui(&mut terminal, &mut app_state);
+        let state = app_state.editor_state.as_ref().unwrap();
+        assert_eq!(state.lines, [""]);
+        assert_eq!(state.scroll_offset, 0);
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn a_long_paste_leaves_the_cursor_on_screen() {
+        let (mut app_state, mut terminal, path) = editor_on("paste", 3);
+        render_ui(&mut terminal, &mut app_state);
+        let pasted: String = (0..200).map(|n| format!("pasted {n}\n")).collect();
+        app_state.editor_insert_text(&pasted);
+        render_ui(&mut terminal, &mut app_state);
+        let state = app_state.editor_state.as_ref().unwrap();
+        let height = app_state.editor_viewport_height;
+        assert!(state.cursor_line >= state.scroll_offset && state.cursor_line < state.scroll_offset + height);
+        std::fs::remove_file(path).unwrap();
     }
 }
