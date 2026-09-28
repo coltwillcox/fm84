@@ -6,6 +6,16 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.18.1] - 2026-09-29
+
+### 🐛 Fixed
+- 💾 **Overwriting a file no longer destroys it when the copy does not finish** - the copy wrote straight over the file it was replacing, so it was truncated the moment it began, and cancelling or running out of disk then removed what was left. A 11 MB file replaced by a 3 GB one and cancelled a quarter of a second in was simply gone, leaving neither the old nor the new. The bytes now go to a temporary beside it and a rename puts them in place at the end, so what is there is either the old file or the new one and never a half of either
+
+### 🛠️ Changed
+- 🏷️ **Release builds are pinned to fixed runner images** rather than the `-latest` labels, which move on their own - `ubuntu-latest` becomes Ubuntu 26 between 19 October and 19 November 2026. A Linux binary asks for the glibc of whatever built it, so an image moving underneath would quietly raise the minimum glibc for everyone downloading a release. The pins are what the labels point at today, so nothing about the builds changes
+
+---
+
 ## [0.18.0] - 2026-09-29
 
 ### ✨ Added
