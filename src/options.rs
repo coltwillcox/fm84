@@ -35,6 +35,80 @@ pub enum Theme {
     Outrun,
     Vaporwave,
     HighContrast,
+    Dracula,
+    Monokai,
+    Nord,
+    GruvboxDark,
+    SolarizedDark,
+    TokyoNight,
+    CatppuccinMocha,
+    SolarizedLight,
+    GruvboxLight,
+    CatppuccinLatte,
+    GithubLight,
+}
+
+impl Theme {
+    /// In the order F11 steps through them: fm84's own, then the well-known
+    /// dark schemes, then the light ones.
+    pub const ALL: [Theme; 15] = [
+        Theme::Synthwave,
+        Theme::Outrun,
+        Theme::Vaporwave,
+        Theme::HighContrast,
+        Theme::Dracula,
+        Theme::Monokai,
+        Theme::Nord,
+        Theme::GruvboxDark,
+        Theme::SolarizedDark,
+        Theme::TokyoNight,
+        Theme::CatppuccinMocha,
+        Theme::SolarizedLight,
+        Theme::GruvboxLight,
+        Theme::CatppuccinLatte,
+        Theme::GithubLight,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Theme::Synthwave => "Synthwave",
+            Theme::Outrun => "Outrun",
+            Theme::Vaporwave => "Vaporwave",
+            Theme::HighContrast => "High contrast",
+            Theme::Dracula => "Dracula",
+            Theme::Monokai => "Monokai",
+            Theme::Nord => "Nord",
+            Theme::GruvboxDark => "Gruvbox Dark",
+            Theme::SolarizedDark => "Solarized Dark",
+            Theme::TokyoNight => "Tokyo Night",
+            Theme::CatppuccinMocha => "Catppuccin Mocha",
+            Theme::SolarizedLight => "Solarized Light",
+            Theme::GruvboxLight => "Gruvbox Light",
+            Theme::CatppuccinLatte => "Catppuccin Latte",
+            Theme::GithubLight => "GitHub Light",
+        }
+    }
+
+    /// How the config file names it.
+    fn key(self) -> &'static str {
+        match self {
+            Theme::Synthwave => "synthwave",
+            Theme::Outrun => "outrun",
+            Theme::Vaporwave => "vaporwave",
+            Theme::HighContrast => "high-contrast",
+            Theme::Dracula => "dracula",
+            Theme::Monokai => "monokai",
+            Theme::Nord => "nord",
+            Theme::GruvboxDark => "gruvbox-dark",
+            Theme::SolarizedDark => "solarized-dark",
+            Theme::TokyoNight => "tokyo-night",
+            Theme::CatppuccinMocha => "catppuccin-mocha",
+            Theme::SolarizedLight => "solarized-light",
+            Theme::GruvboxLight => "gruvbox-light",
+            Theme::CatppuccinLatte => "catppuccin-latte",
+            Theme::GithubLight => "github-light",
+        }
+    }
 }
 
 /// How the Modified column writes a date.
@@ -95,6 +169,9 @@ pub struct Options {
     pub remember_dirs: bool,
     pub preview_on_start: bool,
     pub theme: Theme,
+    /// Paint the theme's background, rather than drawing on the terminal's.
+    /// A light theme needs it; on a dark terminal its text would vanish.
+    pub theme_background: bool,
     pub icon_style: IconStyle,
     pub clock: Clock,
     pub tab_width: usize,
@@ -130,6 +207,7 @@ impl Default for Options {
             remember_dirs: false,
             preview_on_start: false,
             theme: Theme::Synthwave,
+            theme_background: true,
             icon_style: IconStyle::NerdFont,
             clock: Clock::Hours24,
             tab_width: 4,
@@ -162,6 +240,7 @@ pub enum OptionRow {
     RememberDirs,
     PreviewOnStart,
     Theme,
+    ThemeBackground,
     IconStyle,
     Clock,
     TabWidth,
@@ -171,7 +250,7 @@ pub enum OptionRow {
     ImageDefault,
 }
 
-pub const OPTION_ROWS: [OptionRow; 25] = [
+pub const OPTION_ROWS: [OptionRow; 26] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -190,6 +269,7 @@ pub const OPTION_ROWS: [OptionRow; 25] = [
     OptionRow::RememberDirs,
     OptionRow::PreviewOnStart,
     OptionRow::Theme,
+    OptionRow::ThemeBackground,
     OptionRow::IconStyle,
     OptionRow::Clock,
     OptionRow::TabWidth,
@@ -220,6 +300,7 @@ impl OptionRow {
             OptionRow::RememberDirs => "Remember directories",
             OptionRow::PreviewOnStart => "Preview on startup",
             OptionRow::Theme => "Theme",
+            OptionRow::ThemeBackground => "Background",
             OptionRow::IconStyle => "Icons",
             OptionRow::Clock => "Clock",
             OptionRow::TabWidth => "Tab width",
@@ -299,13 +380,8 @@ impl Options {
             OptionRow::Editor => self.editor.clone(),
             OptionRow::RememberDirs => on_off(self.remember_dirs),
             OptionRow::PreviewOnStart => on_off(self.preview_on_start),
-            OptionRow::Theme => match self.theme {
-                Theme::Synthwave => "Synthwave",
-                Theme::Outrun => "Outrun",
-                Theme::Vaporwave => "Vaporwave",
-                Theme::HighContrast => "High contrast",
-            }
-            .to_string(),
+            OptionRow::Theme => self.theme.label().to_string(),
+            OptionRow::ThemeBackground => if self.theme_background { "Theme" } else { "Terminal" }.to_string(),
             OptionRow::IconStyle => match self.icon_style {
                 IconStyle::NerdFont => "Nerd Font",
                 IconStyle::NerdFontMono => "Nerd Font Mono",
@@ -382,8 +458,10 @@ impl Options {
             OptionRow::RememberDirs => self.remember_dirs = !self.remember_dirs,
             OptionRow::PreviewOnStart => self.preview_on_start = !self.preview_on_start,
             OptionRow::Theme => {
-                let themes = [Theme::Synthwave, Theme::Outrun, Theme::Vaporwave, Theme::HighContrast];
-                self.theme = step(&themes, self.theme, forward);
+                self.theme = step(&Theme::ALL, self.theme, forward);
+            }
+            OptionRow::ThemeBackground => {
+                self.theme_background = !self.theme_background;
             }
             OptionRow::IconStyle => {
                 let styles = [IconStyle::NerdFont, IconStyle::NerdFontMono, IconStyle::Plain];
@@ -470,13 +548,12 @@ impl Options {
                 "editor" => options.editor = value.to_string(),
                 "remember_dirs" => options.remember_dirs = flag(options.remember_dirs),
                 "preview_on_start" => options.preview_on_start = flag(options.preview_on_start),
-                "theme" => {
-                    options.theme = match value {
-                        "synthwave" => Theme::Synthwave,
-                        "outrun" => Theme::Outrun,
-                        "vaporwave" => Theme::Vaporwave,
-                        "high-contrast" => Theme::HighContrast,
-                        _ => options.theme,
+                "theme" => options.theme = Theme::ALL.into_iter().find(|theme| theme.key() == value).unwrap_or(options.theme),
+                "background" => {
+                    options.theme_background = match value {
+                        "theme" => true,
+                        "terminal" => false,
+                        _ => options.theme_background,
                     }
                 }
                 "icons" => {
@@ -529,12 +606,6 @@ impl Options {
             SizeUnits::Binary => "binary",
             SizeUnits::Decimal => "decimal",
         };
-        let theme = match self.theme {
-            Theme::Synthwave => "synthwave",
-            Theme::Outrun => "outrun",
-            Theme::Vaporwave => "vaporwave",
-            Theme::HighContrast => "high-contrast",
-        };
         let icons = match self.icon_style {
             IconStyle::NerdFont => "nerd-font",
             IconStyle::NerdFontMono => "nerd-font-mono",
@@ -575,6 +646,8 @@ impl Options {
              \n\
              # Appearance\n\
              theme = {}\n\
+             # theme paints the theme's own background; terminal keeps the terminal's.\n\
+             background = {}\n\
              icons = {}\n\
              # 24, 12 or off.\n\
              clock = {}\n\
@@ -603,7 +676,8 @@ impl Options {
             self.editor,
             self.remember_dirs,
             self.preview_on_start,
-            theme,
+            self.theme.key(),
+            if self.theme_background { "theme" } else { "terminal" },
             icons,
             clock,
             self.tab_width,
@@ -701,7 +775,8 @@ mod tests {
             editor: "nvim".to_string(),
             remember_dirs: true,
             preview_on_start: true,
-            theme: Theme::HighContrast,
+            theme: Theme::GithubLight,
+            theme_background: false,
             icon_style: IconStyle::Plain,
             clock: Clock::Off,
             tab_width: 8,

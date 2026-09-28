@@ -102,6 +102,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
 
     let _ = terminal.draw(|f| {
         let area = f.area();
+        paint_background(f, area);
 
         // Guard against terminal too small to render
         if area.height < 10 || area.width < 30 {
@@ -157,6 +158,21 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             render_delete_popup(f, area, app_state);
         }
     });
+}
+
+/// Fill an area with the theme's background, when F11 has it painted. Cells
+/// drawn over it keep it unless they set their own.
+fn paint_background(f: &mut ratatui::Frame<'_>, area: Rect) {
+    if let Some(background) = crate::display::background() {
+        f.render_widget(Block::new().style(Style::new().bg(background)), area);
+    }
+}
+
+/// Blank an area for a popup to draw on. Clear alone would hand it back to
+/// the terminal's background, showing through a painted theme.
+fn clear(f: &mut ratatui::Frame<'_>, area: Rect) {
+    f.render_widget(Clear, area);
+    paint_background(f, area);
 }
 
 /// The left / separator / right split every full-width row shares, so the rows
@@ -496,7 +512,7 @@ fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::
         .border_style(style_border());
     let inner = block.inner(area);
 
-    f.render_widget(Clear::default(), area);
+    clear(f, area);
     f.render_widget(block, area);
     if inner.height == 0 {
         return;
@@ -571,7 +587,7 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
                 )))
                 .collect();
             let line_number_para = Paragraph::new(line_numbers)
-                .style(Style::default().bg(ratatui::style::Color::Black));
+                .style(Style::default().bg(crate::display::gutter()));
             f.render_widget(line_number_para, chunks[0]);
         }
 
@@ -753,7 +769,7 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
             .collect();
         if line_numbers {
             let line_number_para = Paragraph::new(numbers)
-                .style(Style::default().bg(ratatui::style::Color::Black));
+                .style(Style::default().bg(crate::display::gutter()));
             f.render_widget(line_number_para, chunks[0]);
         }
 
@@ -1084,7 +1100,7 @@ fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut Ap
         .borders(Borders::ALL)
         .style(style_border());
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     popup_body(f, popup_area, vec![Line::from(Span::styled(app_state.error_message.clone(), style_title()))]);
@@ -1126,7 +1142,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         .borders(Borders::ALL)
         .style(style_border());
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     let inner = popup_area.inner(Margin { vertical: 2, horizontal: 2 });
@@ -1178,7 +1194,7 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppS
         popup_block = popup_block.title_bottom(Line::from(Span::styled(position, style_columns())).right_aligned());
     }
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     let mut lines = Vec::with_capacity(room + 3);
@@ -1240,7 +1256,7 @@ fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         .borders(Borders::ALL)
         .style(style_border());
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     // Show input with block cursor (REVERSED so it's visible against paragraph bg)
@@ -1279,7 +1295,7 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         .borders(Borders::ALL)
         .style(style_border());
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     let mut lines = Vec::new();
@@ -1328,7 +1344,7 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
         .borders(Borders::ALL)
         .style(style_border());
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     let name = job.current.file_name().and_then(|n| n.to_str()).unwrap_or("");
@@ -1403,7 +1419,7 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
         .borders(Borders::ALL)
         .style(style_border());
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     // Source info
@@ -1446,7 +1462,7 @@ fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &A
         .borders(Borders::ALL)
         .style(style_border());
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     // A picture is named by its dimensions as well: the figure beside them is
@@ -1478,7 +1494,7 @@ fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         .borders(Borders::ALL)
         .style(style_border());
 
-    f.render_widget(Clear::default(), popup_area);
+    clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     popup_body(

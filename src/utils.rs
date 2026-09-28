@@ -129,12 +129,17 @@ pub fn color_for_extension(ext: &str) -> Color {
     if ext.is_empty() {
         return crate::display::palette().file;
     }
+    extension_color(ext, crate::display::light_background())
+}
+
+/// The colour hashed from an extension, for a light background or a dark one.
+pub fn extension_color(ext: &str, light: bool) -> Color {
     // Simple hash of extension bytes.
     let hash: u32 = ext.bytes().fold(5381u32, |h, b| h.wrapping_mul(33).wrapping_add(b as u32));
-    // Derive hue 0..360, keep saturation and lightness high for synthwave look.
+    // Derive hue 0..360, keeping saturation and lightness high for a bright
+    // look on a dark background - or low enough to read on a light one.
     let hue: f64 = (hash % 360) as f64;
-    let saturation: f64 = 0.7;
-    let lightness: f64 = 0.65;
+    let (saturation, lightness): (f64, f64) = if light { (0.75, 0.32) } else { (0.7, 0.7) };
     // HSL to RGB.
     let c = (1.0 - (2.0 * lightness - 1.0).abs()) * saturation;
     let x = c * (1.0 - ((hue / 60.0) % 2.0 - 1.0).abs());

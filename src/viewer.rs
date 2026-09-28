@@ -14,7 +14,7 @@ use syntect::parsing::{ParseState, ScopeStack, SyntaxSet};
 
 static SYNTAX_SET: OnceLock<SyntaxSet> = OnceLock::new();
 static THEME_SET: OnceLock<ThemeSet> = OnceLock::new();
-static HIGHLIGHTER: OnceLock<Highlighter<'static>> = OnceLock::new();
+static HIGHLIGHTERS: OnceLock<std::collections::HashMap<&'static str, Highlighter<'static>>> = OnceLock::new();
 
 /// Parser and highlighter state as it stands *before* a given line.
 pub type LineState = (ParseState, HighlightState);
@@ -23,11 +23,22 @@ fn syntax_set() -> &'static SyntaxSet {
     SYNTAX_SET.get_or_init(SyntaxSet::load_defaults_newlines)
 }
 
+/// The highlighter for the palette showing, so a light theme gets dark code.
+/// The theme cannot change while a file is open - F11 is not reachable from
+/// the viewer or the editor - so the highlight state an open file carries was
+/// always made by the highlighter it goes back to.
 fn highlighter() -> &'static Highlighter<'static> {
-    HIGHLIGHTER.get_or_init(|| {
+    let highlighters = HIGHLIGHTERS.get_or_init(|| {
         let themes = THEME_SET.get_or_init(ThemeSet::load_defaults);
-        Highlighter::new(&themes.themes["base16-ocean.dark"])
-    })
+        crate::options::Theme::ALL
+            .iter()
+            .map(|&theme| crate::display::palette_of(theme).syntax_theme)
+            .filter_map(|name| themes.themes.get(name).map(|theme| (name, Highlighter::new(theme))))
+            .collect()
+    });
+    highlighters
+        .get(crate::display::palette().syntax_theme)
+        .unwrap_or_else(|| highlighters.values().next().expect("syntect ships its default themes"))
 }
 
 /// What the viewer is showing of a file.
@@ -247,9 +258,16 @@ fn coarse(channel: u8) -> u8 {
 }
 
 /// A `columns` x `rows` grid of characters approximating the image, with the
-/// colour of each character. The character carries the brightness and
-/// transparent pixels count as black, the colour of the viewer behind them.
+/// colour of each character. The character carries the brightness, and
+/// transparent pixels are left blank, showing the viewer behind them.
+///
+/// On a dark background a dense character is a bright one. On a light theme
+/// it is the other way round: ink is dark, so density stands for darkness.
 pub fn image_to_ascii(image: &DynamicImage, columns: usize, rows: usize) -> (Vec<String>, Vec<Vec<Color>>) {
+    image_to_ascii_on(image, columns, rows, crate::display::light_background())
+}
+
+fn image_to_ascii_on(image: &DynamicImage, columns: usize, rows: usize, light: bool) -> (Vec<String>, Vec<Vec<Color>>) {
     let (columns, rows) = (columns.max(1) as u32, rows.max(1) as u32);
     let small = image.resize_exact(columns, rows, FilterType::Triangle).to_rgba8();
 
@@ -259,7 +277,8 @@ pub fn image_to_ascii(image: &DynamicImage, columns: usize, rows: usize) -> (Vec
             row.map(|pixel| {
                 let [red, green, blue, alpha] = pixel.0;
                 let luma = 0.299 * red as f64 + 0.587 * green as f64 + 0.114 * blue as f64;
-                let level = luma * alpha as f64 / 255.0 / 255.0;
+                let ink = if light { 255.0 - luma } else { luma };
+                let level = ink * alpha as f64 / 255.0 / 255.0;
                 let character = IMAGE_RAMP[(level * (IMAGE_RAMP.len() - 1) as f64).round() as usize] as char;
                 (character, Color::Rgb(coarse(red), coarse(green), coarse(blue)))
             })
@@ -595,13 +614,22 @@ mod image_tests {
 
     #[test]
     fn ramp_ends_map_to_black_and_white() {
-        assert_eq!(image_to_ascii(&solid(4, 4, [0, 0, 0, 255]), 4, 2).0[0], "    ");
-        assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 255]), 4, 2).0[0], "@@@@");
+        assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 255]), 4, 2, false).0[0], "    ");
+        assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 255]), 4, 2, false).0[0], "@@@@");
     }
 
     #[test]
-    fn transparent_counts_as_black() {
-        assert_eq!(image_to_ascii(&solid(4, 4, [255, 255, 255, 0]), 4, 2).0[0], "    ");
+    fn a_light_background_turns_the_ramp_round() {
+        assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 255]), 4, 2, true).0[0], "@@@@");
+        assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 255]), 4, 2, true).0[0], "    ");
+    }
+
+    #[test]
+    fn transparent_is_left_blank() {
+        for light in [false, true] {
+            assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 0]), 4, 2, light).0[0], "    ");
+            assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 0]), 4, 2, light).0[0], "    ");
+        }
     }
 
     #[test]
@@ -610,7 +638,7 @@ mod image_tests {
         let (columns, rows) = image_size_for(&square, 40, 40, false, IMAGE_ZOOM_NORMAL);
         assert_eq!((columns, rows), (40, 20));
 
-        let (lines, colors) = image_to_ascii(&square, columns, rows);
+        let (lines, colors) = image_to_ascii_on(&square, columns, rows, false);
         assert_eq!(lines.len(), 20);
         assert!(lines.iter().all(|line| line.chars().count() == 40));
         assert_eq!(colors.len(), 20);
@@ -648,7 +676,7 @@ mod image_tests {
                     columns <= width && rows <= height,
                     "{image_width}x{image_height} fit in {width}x{height}: {columns}x{rows}"
                 );
-                let drawn = image_to_ascii(&image, columns, rows).0;
+                let drawn = image_to_ascii_on(&image, columns, rows, false).0;
                 assert_eq!(drawn.len(), rows);
             }
         }
@@ -673,7 +701,7 @@ mod image_tests {
                 // thing that could put the blow-up back.
                 for zoom in IMAGE_ZOOM_STEPS {
                     let (columns, rows) = image_size_for(&image, width, height, fill, zoom);
-                    let (lines, colors) = image_to_ascii(&image, columns, rows);
+                    let (lines, colors) = image_to_ascii_on(&image, columns, rows, false);
                     let cells = columns * lines.len();
                     assert!(
                         cells <= budget,
