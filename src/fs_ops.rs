@@ -792,7 +792,17 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
     let mut src_file = File::open(source)?;
     let mut dst_file = File::create(dest)?;
     loop {
-        let copied = io::copy(&mut (&mut src_file).take(COPY_CHUNK), &mut dst_file)?;
+        let copied = match io::copy(&mut (&mut src_file).take(COPY_CHUNK), &mut dst_file) {
+            Ok(copied) => copied,
+            Err(e) => {
+                // A read or write that failed partway - a full disk, a device
+                // gone - leaves a truncated file that would pass for a finished
+                // copy, the same as a cancel does. It goes the same way.
+                drop(dst_file);
+                let _ = remove_file(dest);
+                return Err(e);
+            }
+        };
         if copied == 0 {
             return Ok(Transfer::Done);
         }
@@ -1012,6 +1022,20 @@ mod transfer_tests {
         fifo(&tree.join("pipe"));
         assert!(copy_path(tree, dir.join("tree-copy"), true, &mut report).is_err());
 
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn a_failed_copy_leaves_no_fragment() {
+        // A regular file that opens, then fails the first read: offset 0 of a
+        // process's memory is never mapped.
+        let source = Path::new("/proc/self/mem");
+        let dir = scratch("failed");
+        let dest = dir.join("mem-copy");
+        let mut report = |_: Step<'_>| true;
+        assert!(copy_path(source.to_path_buf(), dest.clone(), false, &mut report).is_err());
+        assert!(!path_exists(&dest));
         fs::remove_dir_all(&dir).unwrap();
     }
 
