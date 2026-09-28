@@ -12,15 +12,41 @@ pub fn display_width(text: &str) -> usize {
 
 // Converts bytes to human-readable format with binary prefixes (KiB, MiB, etc.)
 pub fn format_size(bytes: u64) -> String {
+    let (step, units) = if crate::display::decimal_sizes() { (1000.0, DECIMAL_UNITS) } else { (1024.0, UNITS) };
     let mut size = bytes as f64;
     let mut unit_index = 0;
 
-    while size >= 1024.0 && unit_index < UNITS.len() - 1 {
-        size /= 1024.0;
+    while size >= step && unit_index < units.len() - 1 {
+        size /= step;
         unit_index += 1;
     }
 
-    format!("{:.0} {}", size, UNITS[unit_index])
+    format!("{:.0} {}", size, units[unit_index])
+}
+
+/// A modification time as the Modified column writes it. `now` is passed in
+/// so a relative date can be tested, and so one frame measures every row from
+/// the same moment.
+pub fn format_modified(time: std::time::SystemTime, format: crate::options::DateFormat, now: std::time::SystemTime) -> String {
+    use crate::options::DateFormat;
+    let local: chrono::DateTime<chrono::Local> = time.into();
+    match format {
+        DateFormat::Short => local.format("%d/%m/%y %H:%M").to_string(),
+        DateFormat::Iso => local.format("%Y-%m-%d %H:%M").to_string(),
+        DateFormat::Relative => {
+            // A time ahead of the clock - a file from a machine set a little
+            // fast - reads as just now rather than as a negative age.
+            let seconds = now.duration_since(time).map_or(0, |age| age.as_secs());
+            match seconds {
+                0..60 => "just now".to_string(),
+                60..3600 => format!("{} min ago", seconds / 60),
+                3600..86_400 => format!("{} h ago", seconds / 3600),
+                86_400..2_592_000 => format!("{} days ago", seconds / 86_400),
+                2_592_000..31_536_000 => format!("{} mo ago", seconds / 2_592_000),
+                _ => format!("{} yr ago", seconds / 31_536_000),
+            }
+        }
+    }
 }
 
 /// Ask the terminal to put `text` on the system clipboard (OSC 52). Terminals
@@ -149,4 +175,34 @@ pub fn limit_path_string(path: &Path, n: usize) -> String {
     }
 
     format!("...{}", &path_string[start..])
+}
+
+#[cfg(test)]
+mod format_tests {
+    use super::format_modified;
+    use crate::options::DateFormat;
+    use std::time::{Duration, SystemTime};
+
+    #[test]
+    fn a_relative_date_counts_back_from_now() {
+        let now = SystemTime::UNIX_EPOCH + Duration::from_secs(2_000_000_000);
+        let ago = |seconds: u64| format_modified(now - Duration::from_secs(seconds), DateFormat::Relative, now);
+        assert_eq!(ago(0), "just now");
+        assert_eq!(ago(59), "just now");
+        assert_eq!(ago(60), "1 min ago");
+        assert_eq!(ago(3599), "59 min ago");
+        assert_eq!(ago(3600 * 5), "5 h ago");
+        assert_eq!(ago(86_400 * 29), "29 days ago");
+        assert_eq!(ago(86_400 * 60), "2 mo ago");
+        assert_eq!(ago(86_400 * 800), "2 yr ago");
+        // Ahead of the clock.
+        assert_eq!(format_modified(now + Duration::from_secs(90), DateFormat::Relative, now), "just now");
+    }
+
+    #[test]
+    fn the_fixed_formats_fit_their_column() {
+        let time = SystemTime::UNIX_EPOCH + Duration::from_secs(2_000_000_000);
+        assert_eq!(format_modified(time, DateFormat::Short, time).len(), 14);
+        assert_eq!(format_modified(time, DateFormat::Iso, time).len(), 16);
+    }
 }

@@ -1,11 +1,12 @@
 //! The settings that drawing reads everywhere, down in helpers that are never
-//! handed the app state: which palette is showing, and how wide a tab is.
-//! `AppState.options` stays the one source of truth; `apply` copies these two
-//! here whenever it changes, so a draw never has to thread them through.
+//! handed the app state: which palette is showing, how wide a tab is, and
+//! which units a size is written in. `AppState.options` stays the one source
+//! of truth; `apply` copies these here whenever it changes, so a draw never
+//! has to thread them through.
 
-use crate::options::{Options, Theme};
+use crate::options::{Options, SizeUnits, Theme};
 use ratatui::style::Color;
-use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 
 /// Every colour the interface uses, one palette per theme.
 pub struct Palette {
@@ -89,12 +90,14 @@ const HIGH_CONTRAST: Palette = Palette {
 
 static THEME: AtomicU8 = AtomicU8::new(0);
 static TAB_WIDTH: AtomicUsize = AtomicUsize::new(4);
+static DECIMAL_SIZES: AtomicBool = AtomicBool::new(false);
 
 /// Take up the options that drawing reads. Called at startup and after every
 /// change in the options dialog.
 pub fn apply(options: &Options) {
     THEME.store(options.theme as u8, Ordering::Relaxed);
     TAB_WIDTH.store(options.tab_width, Ordering::Relaxed);
+    DECIMAL_SIZES.store(options.size_units == SizeUnits::Decimal, Ordering::Relaxed);
 }
 
 pub fn palette() -> &'static Palette {
@@ -109,4 +112,9 @@ pub fn palette() -> &'static Palette {
 /// How many columns a tab expands to.
 pub fn tab_width() -> usize {
     TAB_WIDTH.load(Ordering::Relaxed)
+}
+
+/// Sizes in powers of 1000 rather than 1024.
+pub fn decimal_sizes() -> bool {
+    DECIMAL_SIZES.load(Ordering::Relaxed)
 }

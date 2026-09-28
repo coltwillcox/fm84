@@ -2,7 +2,6 @@ use crate::app::Item;
 use crate::constants::COPY_CHUNK;
 use crate::options::{Options, SortKey};
 use crate::utils::format_size;
-use chrono::Local;
 use std::env;
 use std::fs::{self, File, create_dir, read_dir, remove_dir, remove_file, rename};
 use std::io::{self, Error, ErrorKind, Read};
@@ -103,7 +102,6 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
             is_dir: true,
             size: String::new(),
             size_bytes: 0,
-            modified: String::new(),
             modified_at: None,
             attributes: String::new(),
         });
@@ -132,13 +130,9 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
         let extension = if is_dir { String::new() } else { entry_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_string() };
         let size_bytes = if is_dir { 0 } else { metadata.as_ref().map(|m| m.len()).unwrap_or(0) };
         let size = if is_dir { "<DIR>".to_string() } else { format_size(size_bytes) };
+        // Written out when drawn, in whichever format F11 names - and a
+        // relative date has to be, or it would go stale between reloads.
         let modified_at = metadata.as_ref().and_then(|m| m.modified().ok());
-        let modified = modified_at
-            .map(|t| {
-                let dt: chrono::DateTime<Local> = t.into();
-                dt.format("%d/%m/%y %H:%M").to_string()
-            })
-            .unwrap_or_default();
 
         let attributes = metadata
             .as_ref()
@@ -152,7 +146,6 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
             is_dir,
             size,
             size_bytes,
-            modified,
             modified_at,
             attributes,
         });
@@ -165,21 +158,25 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
     Ok(children)
 }
 
-/// Directories before files whichever way the rest runs, then the chosen key,
-/// with the name settling ties so equal sizes or dates still list steadily.
+/// Directories before files whichever way the rest runs, unless F11 mixes
+/// them in, then the chosen key, with the name settling ties so equal sizes or
+/// dates still list steadily.
 fn compare_rows(a: &Item, b: &Item, options: &Options) -> std::cmp::Ordering {
     use std::cmp::Ordering;
 
-    match (a.is_dir, b.is_dir) {
-        (true, false) => return Ordering::Less,
-        (false, true) => return Ordering::Greater,
-        _ => {}
+    if options.dirs_first {
+        match (a.is_dir, b.is_dir) {
+            (true, false) => return Ordering::Less,
+            (false, true) => return Ordering::Greater,
+            _ => {}
+        }
     }
 
-    let name = || a.name_full.to_lowercase().cmp(&b.name_full.to_lowercase());
+    let text = |a: &str, b: &str| if options.case_sensitive { a.cmp(b) } else { a.to_lowercase().cmp(&b.to_lowercase()) };
+    let name = || text(&a.name_full, &b.name_full);
     let order = match options.sort_key {
         SortKey::Name => name(),
-        SortKey::Extension => a.extension.to_lowercase().cmp(&b.extension.to_lowercase()).then_with(name),
+        SortKey::Extension => text(&a.extension, &b.extension).then_with(name),
         SortKey::Size => a.size_bytes.cmp(&b.size_bytes).then_with(name),
         SortKey::Modified => a.modified_at.cmp(&b.modified_at).then_with(name),
     };

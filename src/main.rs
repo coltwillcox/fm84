@@ -51,10 +51,15 @@ fn main() -> Result<()> {
 }
 
 fn init_terminal() -> io::Result<Tui> {
+    take_terminal()?;
+    Terminal::new(CrosstermBackend::new(stdout()))
+}
+
+/// Raw mode, the alternate screen and the mouse: everything fm84 needs from
+/// the terminal, and everything restore_terminal gives back.
+fn take_terminal() -> io::Result<()> {
     enable_raw_mode()?;
-    let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)?;
-    Terminal::new(CrosstermBackend::new(stdout))
+    execute!(stdout(), EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)
 }
 
 /// Undo everything init_terminal did. Runs on normal exit, on error, and from the
@@ -81,6 +86,16 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
     let mut app_state = AppState::new();
     display::apply(&app_state.options);
 
+    // A directory gone since then is handled by the reload, which climbs to
+    // the nearest one still there.
+    if app_state.options.remember_dirs
+        && let Some((left, right)) = options::load_session()
+    {
+        app_state.dir_left = left;
+        app_state.dir_right = right;
+    }
+    app_state.is_f12_displayed = app_state.options.preview_on_start;
+
     app_state.mounts = fs_ops::list_mounts();
     app_state.reload_panel(true, None);
     app_state.reload_panel(false, None);
@@ -101,7 +116,49 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
         if !handle_input(&mut app_state)? {
             break;
         }
+        if let Some(path) = app_state.external_edit.take() {
+            run_external_editor(terminal, &mut app_state, &path)?;
+        }
     }
 
+    // Nowhere to report a failure by now, and nothing lost by it but a
+    // starting point.
+    if app_state.options.remember_dirs {
+        let _ = options::save_session(&app_state.dir_left, &app_state.dir_right);
+    }
+
+    Ok(())
+}
+
+/// Give the terminal to the editor F11 names until it exits, then take it
+/// back. The command is split on whitespace; `{}` stands for the file, which
+/// otherwise goes on the end.
+fn run_external_editor(terminal: &mut Tui, app_state: &mut AppState, path: &std::path::Path) -> io::Result<()> {
+    let path_text = path.to_string_lossy();
+    let command = app_state.options.editor.clone();
+    let mut parts: Vec<String> = command.split_whitespace().map(|part| part.replace("{}", &path_text)).collect();
+    if !command.contains("{}") {
+        parts.push(path_text.into_owned());
+    }
+    let program = parts.remove(0);
+
+    restore_terminal()?;
+    let result = std::process::Command::new(&program)
+        .args(&parts)
+        .current_dir(path.parent().unwrap_or(std::path::Path::new(".")))
+        .status();
+    take_terminal()?;
+    // The editor drew over everything; forget what ratatui thinks is there.
+    terminal.clear()?;
+
+    match result {
+        Ok(status) if !status.success() => app_state.display_error(format!("{} exited with {}", program, status)),
+        Ok(_) => {}
+        Err(e) => app_state.display_error(format!("Cannot start {}: {}", program, e)),
+    }
+    // The file has likely changed size, and the editor may have left a backup
+    // or swap file beside it.
+    app_state.reload_panel(true, None);
+    app_state.reload_panel(false, None);
     Ok(())
 }

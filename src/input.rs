@@ -822,8 +822,12 @@ fn handle_f4_edit(app_state: &mut AppState) {
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_full);
 
-        // Open internal editor
-        app_state.request_open(file_path, true);
+        // An external editor, when F11 names one; otherwise the built-in.
+        if app_state.options.editor.trim().is_empty() {
+            app_state.request_open(file_path, true);
+        } else {
+            app_state.external_edit = Some(file_path);
+        }
     }
 }
 
@@ -963,6 +967,9 @@ fn toggle_copy(app_state: &mut AppState) {
         }
 
         app_state.copy_items = items;
+        if !app_state.options.confirm_copy_move {
+            handle_copy_confirm(app_state);
+        }
     } else {
         app_state.reset_copy();
     }
@@ -1032,6 +1039,9 @@ fn toggle_move(app_state: &mut AppState) {
         }
 
         app_state.move_items = items;
+        if !app_state.options.confirm_copy_move {
+            handle_move_confirm(app_state);
+        }
     } else {
         app_state.reset_move();
     }

@@ -1,7 +1,7 @@
 use crate::app::{AppState, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
-use crate::options::{IconStyle, OPTION_ROWS};
+use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options};
 use crate::utils::*;
 use crate::viewer::ViewMode;
 use chrono::Local;
@@ -24,32 +24,78 @@ fn style_dir() -> Style { Style::new().fg(palette().directory) }
 fn style_dir_dark() -> Style { Style::new().fg(palette().directory_dark) }
 fn style_selection() -> Style { Style::new().bg(palette().selected_background_inactive) }
 
-/// The columns beside Name, widest-priority first: as a panel narrows they are
-/// given up from the end. Name is never dropped, so it is not listed here.
-const OPTIONAL_COLUMNS: [(&str, u16); 4] = [("Ext", 5), ("Size", 8), ("Modified", 14), ("Attributes", 10)];
+/// The columns beside Name. Name is never dropped, so it is not one of them.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Column {
+    Ext,
+    Size,
+    Modified,
+    Attributes,
+}
+
+/// Widest-priority first: as a panel narrows they are given up from the end.
+const OPTIONAL_COLUMNS: [Column; 4] = [Column::Ext, Column::Size, Column::Modified, Column::Attributes];
 /// Below this, a filename is no longer worth reading, so the next column goes.
 const MIN_NAME_WIDTH: u16 = 12;
 
-/// How many optional columns a panel of this width can carry. Each costs its
-/// own width plus the separator and the spacing either side of it; whatever is
-/// left over belongs to Name.
-fn visible_column_count(panel_width: u16) -> usize {
+impl Column {
+    fn title(self) -> &'static str {
+        match self {
+            Column::Ext => "Ext",
+            Column::Size => "Size",
+            Column::Modified => "Modified",
+            Column::Attributes => "Attributes",
+        }
+    }
+
+    fn width(self, options: &Options) -> u16 {
+        match self {
+            Column::Ext => 5,
+            Column::Size => 8,
+            Column::Modified => match options.date_format {
+                DateFormat::Short => 14,
+                DateFormat::Iso => 16,
+                // "29 days ago", the longest a relative date gets.
+                DateFormat::Relative => 11,
+            },
+            Column::Attributes => 10,
+        }
+    }
+
+    fn enabled(self, options: &Options) -> bool {
+        match self {
+            Column::Ext => options.column_ext,
+            Column::Size => options.column_size,
+            Column::Modified => options.column_modified,
+            Column::Attributes => options.column_attributes,
+        }
+    }
+}
+
+/// The optional columns a panel of this width can carry, of those F11 leaves
+/// on. Each costs its own width plus the separator and the spacing either side
+/// of it; whatever is left over belongs to Name.
+fn visible_columns(options: &Options, panel_width: u16) -> Vec<Column> {
     let mut used = 3; // icon plus the gap after it
-    let mut count = 0;
-    for (_, width) in OPTIONAL_COLUMNS {
-        let next = used + width + 3;
+    let mut columns = Vec::with_capacity(OPTIONAL_COLUMNS.len());
+    for column in OPTIONAL_COLUMNS.into_iter().filter(|column| column.enabled(options)) {
+        let next = used + column.width(options) + 3;
         if panel_width.saturating_sub(next) < MIN_NAME_WIDTH {
             break;
         }
         used = next;
-        count += 1;
+        columns.push(column);
     }
-    count
+    columns
 }
 
 pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppState) {
     // Update cached clock
-    let current_time = Local::now().format(" %H:%M:%S ").to_string();
+    let current_time = match app_state.options.clock {
+        Clock::Hours24 => Local::now().format(" %H:%M:%S ").to_string(),
+        Clock::Hours12 => Local::now().format(" %I:%M:%S %p ").to_string(),
+        Clock::Off => String::new(),
+    };
     if app_state.cached_clock != current_time {
         app_state.cached_clock = current_time;
     }
@@ -265,11 +311,11 @@ fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &PathBuf, d
 fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut AppState) -> u16 {
     let chunks = panel_split(chunk);
 
-    let columns = visible_column_count(chunks[0].width);
+    let columns = visible_columns(&app_state.options, chunks[0].width);
     let mut widths = vec![Constraint::Length(2), Constraint::Fill(1)];
-    for (_, width) in OPTIONAL_COLUMNS.iter().take(columns) {
+    for column in &columns {
         widths.push(Constraint::Length(1));
-        widths.push(Constraint::Length(*width));
+        widths.push(Constraint::Length(column.width(&app_state.options)));
     }
 
     let is_f2_displayed = app_state.is_f2_displayed;
@@ -287,10 +333,10 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     // Viewport height (subtract 1 for header row)
     let viewport_height = chunks[0].height.saturating_sub(1) as usize;
 
-    let header = make_header_row(columns);
+    let header = make_header_row(&columns);
 
     // Build only visible rows for left panel
-    let (rows_left, offset_left) = build_viewport_rows(app_state, true, viewport_height, columns);
+    let (rows_left, offset_left) = build_viewport_rows(app_state, true, viewport_height, &columns);
     let mut state_left_view = TableState::default();
     state_left_view.select(app_state.state_left.selected().map(|s| s.saturating_sub(offset_left)));
 
@@ -311,7 +357,7 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     f.render_widget(separator_vertical, chunks[1]);
 
     // Build only visible rows for right panel
-    let (rows_right, offset_right) = build_viewport_rows(app_state, false, viewport_height, columns);
+    let (rows_right, offset_right) = build_viewport_rows(app_state, false, viewport_height, &columns);
     let mut state_right_view = TableState::default();
     state_right_view.select(app_state.state_right.selected().map(|s| s.saturating_sub(offset_right)));
 
@@ -338,7 +384,7 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
 }
 
 /// Build only the rows visible in the viewport, returns (rows, start_offset)
-fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: usize) -> (Vec<Row<'static>>, usize) {
+fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: &[Column]) -> (Vec<Row<'static>>, usize) {
     let children = if is_left { &app_state.children_left } else { &app_state.children_right };
     let state = if is_left { &app_state.state_left } else { &app_state.state_right };
     let selected_set = if is_left { &app_state.selected_left } else { &app_state.selected_right };
@@ -365,6 +411,13 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
     let border_cell = Cell::from(Span::styled("│", style_border()));
 
     let mut rows = Vec::with_capacity(end - start);
+    // One moment for every row, so a relative date reads the same across them.
+    let now = std::time::SystemTime::now();
+    let date_format = app_state.options.date_format;
+    // Name leaves the extension to its own column. Without one - turned off, or
+    // given up to a narrow panel - it shows the whole name, or Cargo.lock and
+    // Cargo.toml would read the same.
+    let has_ext_column = columns.contains(&Column::Ext);
 
     for index in start..end {
         let child = &children[index];
@@ -401,7 +454,7 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
         } else {
             (Cell::from(Line::from(vec![
                 Span::styled(dir_prefix, bracket_style),
-                Span::styled(child.name.clone(), text_style),
+                Span::styled(if has_ext_column { child.name.clone() } else { child.name_full.clone() }, text_style),
                 Span::styled(dir_suffix, bracket_style),
             ])), child.extension.clone())
         };
@@ -421,9 +474,13 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
             Cell::from(Span::styled(icon, Style::default().fg(text_color))),
             name_cell,
         ];
-        // Same order as OPTIONAL_COLUMNS.
-        let values = [extension, size, child.modified.clone(), child.attributes.clone()];
-        for value in values.into_iter().take(columns) {
+        for column in columns {
+            let value = match column {
+                Column::Ext => extension.clone(),
+                Column::Size => size.clone(),
+                Column::Modified => child.modified_at.map(|time| format_modified(time, date_format, now)).unwrap_or_default(),
+                Column::Attributes => child.attributes.clone(),
+            };
             cells.push(border_cell.clone());
             cells.push(Cell::from(Span::styled(value, text_style)));
         }
@@ -457,14 +514,14 @@ fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::
     f.render_widget(Paragraph::new(lines), inner);
 }
 
-fn make_header_row(columns: usize) -> Row<'static> {
+fn make_header_row(columns: &[Column]) -> Row<'static> {
     let mut cells = vec![
         Cell::from(Span::styled("", style_columns())),
         Cell::from(Span::styled("Name", style_columns())),
     ];
-    for (title, _) in OPTIONAL_COLUMNS.iter().take(columns) {
+    for column in columns {
         cells.push(Cell::from(Span::styled("", style_columns())));
-        cells.push(Cell::from(Span::styled(*title, style_columns())));
+        cells.push(Cell::from(Span::styled(column.title(), style_columns())));
     }
     Row::new(cells)
 }
@@ -1082,76 +1139,98 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
 }
 
 fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+    let inner_width = 60.min(area.width as usize).saturating_sub(4);
+    let cursor_style = Style::new().fg(palette().selected_foreground).bg(palette().selected_background).add_modifier(Modifier::BOLD);
+
+    // Every line of the list, headings among the rows, and which one the
+    // cursor is on - the scrolling below works in lines, not rows.
+    let mut list: Vec<Line> = Vec::with_capacity(OPTION_ROWS.len() * 2);
+    let mut cursor_line = 0;
+    for (index, &row) in OPTION_ROWS.iter().enumerate() {
+        if let Some(section) = row.section() {
+            if !list.is_empty() {
+                list.push(Line::from(""));
+            }
+            list.push(Line::from(Span::styled(format!(" {}", section), style_title().add_modifier(Modifier::BOLD))));
+        }
+        if index == app_state.options_cursor {
+            cursor_line = list.len();
+        }
+        list.push(option_line(app_state, row, index == app_state.options_cursor, inner_width, cursor_style));
+    }
+
     // A border row each side, a blank row above and below the list, and two
     // for the key hint under it.
-    let width = 60.min(area.width as usize);
-    let popup_area = centered(area, width, OPTION_ROWS.len() + 6);
-    let popup_block = Block::default()
+    let popup_area = centered(area, inner_width + 4, list.len() + 6);
+    let mut popup_block = Block::default()
         .title(Line::from(Span::styled(" Options ", style_title())).centered())
         .borders(Borders::ALL)
         .style(style_border());
 
+    // On a short terminal the list scrolls, keeping the cursor row in view.
+    // The blank rows and the hint around it take three.
+    let inner = popup_inner(popup_area);
+    let room = (inner.height as usize).saturating_sub(3).max(1);
+    let first = (cursor_line + 1).saturating_sub(room);
+    if room < list.len() {
+        // Where the cursor is in the whole list, since some of it is hidden.
+        let position = format!(" {}/{} ", app_state.options_cursor + 1, OPTION_ROWS.len());
+        popup_block = popup_block.title_bottom(Line::from(Span::styled(position, style_columns())).right_aligned());
+    }
+
     f.render_widget(Clear::default(), popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let inner = popup_inner(popup_area);
-    let row_width = inner.width as usize;
-    let cursor_style = Style::new().fg(palette().selected_foreground).bg(palette().selected_background).add_modifier(Modifier::BOLD);
-
-    // On a short terminal the list scrolls, keeping the cursor row in view.
-    // The blank rows and the hint around it take three.
-    let room = (inner.height as usize).saturating_sub(3).max(1);
-    let first = (app_state.options_cursor + 1).saturating_sub(room);
-
     let mut lines = Vec::with_capacity(room + 3);
     lines.push(Line::from(""));
-    for (index, &row) in OPTION_ROWS.iter().enumerate().skip(first).take(room) {
-        let is_cursor = index == app_state.options_cursor;
-        let label = format!(" {}", row.label());
-        // Each row is padded out to the full width, so the cursor reads as a
-        // bar, as it does in the panels.
-        let line = if is_cursor && app_state.options_editing {
-            let typed = app_state.options_input.cursor_spans(cursor_style, cursor_style.add_modifier(Modifier::REVERSED));
-            let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
-            let gap = row_width.saturating_sub(display_width(&label) + typed_width + 1);
-            let mut spans = vec![Span::styled(label, cursor_style), Span::styled(" ".repeat(gap), cursor_style)];
-            spans.extend(typed);
-            spans.push(Span::styled(" ", cursor_style));
-            Line::from(spans)
-        } else {
-            let value = app_state.options.value(row);
-            // A long terminal command gives way from the left, keeping the end
-            // of it - usually where the arguments that matter are.
-            let room = row_width.saturating_sub(display_width(&label) + 3);
-            let value = if display_width(&value) > room {
-                let tail: String = value.chars().rev().take(room.saturating_sub(1)).collect::<Vec<_>>().into_iter().rev().collect();
-                format!("…{}", tail)
-            } else {
-                value
-            };
-            let gap = row_width.saturating_sub(display_width(&label) + display_width(&value) + 1);
-            let text = format!("{}{}{} ", label, " ".repeat(gap), value);
-            if is_cursor {
-                Line::from(Span::styled(text, cursor_style))
-            } else {
-                Line::from(vec![
-                    Span::styled(format!("{}{}", label, " ".repeat(gap)), style_dir()),
-                    Span::styled(format!("{} ", value), style_columns()),
-                ])
-            }
-        };
-        lines.push(line);
-    }
+    lines.extend(list.into_iter().skip(first).take(room));
 
-    let hint = if app_state.options_editing {
-        "Enter - Save    Esc - Cancel    {} - directory"
-    } else {
+    let hint = if !app_state.options_editing {
         "↑↓ - Move    Enter/←→ - Change    Esc - Close"
+    } else if OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::Editor {
+        "Enter - Save    Esc - Cancel    {} - file"
+    } else {
+        "Enter - Save    Esc - Cancel    {} - directory"
     };
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(hint, style_columns())).centered());
 
     f.render_widget(Paragraph::new(lines), inner);
+}
+
+/// One row of the options list, padded out to the full width so the cursor
+/// reads as a bar, as it does in the panels.
+fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: bool, row_width: usize, cursor_style: Style) -> Line<'static> {
+    let label = format!("   {}", row.label());
+    if is_cursor && app_state.options_editing {
+        let typed = app_state.options_input.cursor_spans(cursor_style, cursor_style.add_modifier(Modifier::REVERSED));
+        let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+        let gap = row_width.saturating_sub(display_width(&label) + typed_width + 1);
+        let mut spans = vec![Span::styled(label, cursor_style), Span::styled(" ".repeat(gap), cursor_style)];
+        spans.extend(typed);
+        spans.push(Span::styled(" ", cursor_style));
+        return Line::from(spans);
+    }
+
+    let value = app_state.options.value(row);
+    // A long command gives way from the left, keeping the end of it - usually
+    // where the arguments that matter are.
+    let room = row_width.saturating_sub(display_width(&label) + 3);
+    let value = if display_width(&value) > room {
+        let tail: String = value.chars().rev().take(room.saturating_sub(1)).collect::<Vec<_>>().into_iter().rev().collect();
+        format!("…{}", tail)
+    } else {
+        value
+    };
+    let gap = row_width.saturating_sub(display_width(&label) + display_width(&value) + 1);
+    if is_cursor {
+        Line::from(Span::styled(format!("{}{}{} ", label, " ".repeat(gap), value), cursor_style))
+    } else {
+        Line::from(vec![
+            Span::styled(format!("{}{}", label, " ".repeat(gap)), style_dir()),
+            Span::styled(format!("{} ", value), style_columns()),
+        ])
+    }
 }
 
 fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {

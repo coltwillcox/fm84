@@ -120,6 +120,9 @@ pub struct AppState {
     /// Set while a text option is being typed into; `options_input` holds it.
     pub options_editing: bool,
     pub options_input: TextInput,
+    /// A file F4 is handing to an external editor. The main loop runs it,
+    /// since only that can give the terminal up and take it back.
+    pub external_edit: Option<PathBuf>,
     pub is_f12_displayed: bool,
     pub preview: Option<PreviewState>,
     /// Editor clipboard. Internal, so it works in a bare TTY too.
@@ -323,7 +326,6 @@ pub struct Item {
     pub is_dir: bool,
     pub size: String,
     pub size_bytes: u64,
-    pub modified: String,
     pub modified_at: Option<SystemTime>,
     pub attributes: String,
 }
@@ -348,6 +350,7 @@ impl AppState {
             options_cursor: 0,
             options_editing: false,
             options_input: TextInput::new(),
+            external_edit: None,
             is_f12_displayed: false,
             preview: None,
             clipboard: String::new(),
@@ -444,7 +447,7 @@ impl AppState {
     pub fn options_change(&mut self, forward: bool) {
         let row = self.options_row();
         if row.is_text() {
-            self.options_input.set(self.options.terminal.clone());
+            self.options_input.set(self.options.text(row).to_string());
             self.options_editing = true;
             return;
         }
@@ -453,10 +456,11 @@ impl AppState {
     }
 
     pub fn options_commit_edit(&mut self) {
-        self.options.terminal = self.options_input.text.trim().to_string();
+        let row = self.options_row();
+        self.options.set_text(row, self.options_input.text.trim().to_string());
         self.options_editing = false;
         self.options_input.clear();
-        self.options_changed(OptionRow::Terminal);
+        self.options_changed(row);
     }
 
     pub fn options_cancel_edit(&mut self) {
@@ -1958,7 +1962,6 @@ mod tests {
             is_dir: false,
             size: String::new(),
             size_bytes: 0,
-            modified: String::new(),
             modified_at: None,
             attributes: String::new(),
         }

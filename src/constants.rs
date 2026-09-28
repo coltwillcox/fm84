@@ -72,3 +72,4 @@ pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;
 
 pub const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
+pub const DECIMAL_UNITS: [&str; 5] = ["B", "kB", "MB", "GB", "TB"];
