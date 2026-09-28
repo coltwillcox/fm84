@@ -32,6 +32,12 @@
 <br>
 <img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="400">
 <img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-3.png" width="400">
+<br>
+<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-4.png" width="400">
+<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-5.png" width="400">
+<br>
+<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-6.png" width="400">
+<img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-7.png" width="400">
 </div>
 
 ---
