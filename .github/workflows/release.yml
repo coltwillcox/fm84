@@ -8,12 +8,18 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-# The Linux images are pinned rather than left on ubuntu-latest, which moves to
-# Ubuntu 26 between 19 October and 19 November 2026. A released binary asks for
-# the glibc symbol versions of whatever built it - this one needs GLIBC_2.39,
-# which is what 24.04 ships - so letting the image drift would quietly raise the
-# minimum glibc for everyone downloading it, with no change to the code.
-# ubuntu-22.04 instead would run on older systems still; 26.04 when the time comes.
+# Every image is pinned rather than left on a -latest label. Those labels move
+# on their own - ubuntu-latest goes to Ubuntu 26 between 19 October and
+# 19 November 2026 - and what builds a release decides what the release needs.
+# A Linux binary asks for the glibc symbol versions of whatever built it; this
+# one needs GLIBC_2.39, which is what 24.04 ships, so drifting to a newer image
+# would quietly raise the minimum glibc for everyone downloading it, with no
+# change to the code. macOS and Windows are less exposed, but the same labels
+# have changed architecture and toolchain under people before now.
+#
+# These are what the -latest labels point at today, so pinning them changes
+# nothing except when it changes. Moving one is a deliberate edit from here:
+# ubuntu-22.04 reaches further back, ubuntu-26.04 when the time comes.
 
 jobs:
   build:
@@ -36,17 +42,17 @@ jobs:
 
           # macOS x86_64
           - target: x86_64-apple-darwin
-            os: macos-latest
+            os: macos-26
             archive: tar.gz
 
           # macOS ARM64 (Apple Silicon)
           - target: aarch64-apple-darwin
-            os: macos-latest
+            os: macos-26
             archive: tar.gz
 
           # Windows x86_64
           - target: x86_64-pc-windows-msvc
-            os: windows-latest
+            os: windows-2025
             archive: zip
 
     steps:
@@ -69,7 +75,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Prepare artifacts (Unix)
-        if: matrix.os != 'windows-latest'
+        if: matrix.os != 'windows-2025'
         run: |
           mkdir -p dist
           cp target/${{ matrix.target }}/release/fm84 dist/
@@ -78,7 +84,7 @@ jobs:
           tar -czvf ../fm84-${{ github.ref_name }}-${{ matrix.target }}.tar.gz *
 
       - name: Prepare artifacts (Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2025'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
