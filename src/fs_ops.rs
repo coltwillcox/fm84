@@ -808,9 +808,10 @@ fn copy_symlink(source: &Path, dest: &Path) -> Result<(), Error> {
     }
 }
 
-/// Copy file content without trying to preserve Unix permissions.
-/// This works across filesystems (e.g., ext4 to exFAT) where permission
-/// preservation would fail with EPERM.
+/// Copy a file's content, then its permissions - so a script or a program
+/// stays executable. Setting them is allowed to fail: on a filesystem with no
+/// Unix permissions (ext4 to exFAT, say) it would, with EPERM, and the copy
+/// itself is still good.
 ///
 /// The copy runs in COPY_CHUNK pieces so there is somewhere to report progress
 /// from and somewhere to notice a cancel. Each piece is still an io::copy, over
@@ -819,8 +820,10 @@ fn copy_symlink(source: &Path, dest: &Path) -> Result<(), Error> {
 fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<Transfer, Error> {
     // Links are recreated before this is reached, so what arrives here is the
     // entry itself. A pipe or a device would block the worker in open() or
-    // read forever, out of reach of Esc; cp -r refuses them too.
-    if !fs::symlink_metadata(source)?.is_file() {
+    // read forever, out of reach of Esc. cp -R recreates them instead of
+    // reading them; short of doing that, refusing is what is safe.
+    let metadata = fs::symlink_metadata(source)?;
+    if !metadata.is_file() {
         return Err(not_regular(source));
     }
     if !report(Step::Starting(source)) {
@@ -842,6 +845,7 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
             }
         };
         if copied == 0 {
+            let _ = fs::set_permissions(dest, metadata.permissions());
             return Ok(Transfer::Done);
         }
         if !report(Step::Advanced(copied)) {
@@ -880,6 +884,12 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
         }
     }
 
+    // Last, once everything is inside: a read-only directory given its mode
+    // first would refuse the files being copied into it. Allowed to fail, as
+    // for files.
+    if let Ok(metadata) = fs::metadata(source) {
+        let _ = fs::set_permissions(dest, metadata.permissions());
+    }
     Ok(Transfer::Done)
 }
 
@@ -1119,6 +1129,35 @@ mod transfer_tests {
         assert!(!is_cross_device(&Error::from_raw_os_error(libc::EEXIST)));
         assert!(!is_cross_device(&Error::from_raw_os_error(libc::ENOTEMPTY)));
         assert!(!is_cross_device(&Error::from_raw_os_error(libc::EACCES)));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_copy_keeps_its_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = |path: &Path| fs::metadata(path).unwrap().permissions().mode() & 0o7777;
+        let set = |path: &Path, mode: u32| fs::set_permissions(path, fs::Permissions::from_mode(mode)).unwrap();
+
+        let dir = scratch("modes");
+        let source = dir.join("src");
+        fs::create_dir(&source).unwrap();
+        fs::write(source.join("script"), "#!/bin/sh\n").unwrap();
+        set(&source.join("script"), 0o755);
+        fs::write(source.join("secret"), "x").unwrap();
+        set(&source.join("secret"), 0o600);
+        // Read-only, so its files have to be copied in before it gets its mode.
+        set(&source, 0o555);
+
+        let dest = dir.join("dst");
+        let mut report = |_: Step<'_>| true;
+        assert_eq!(copy_path(source.clone(), dest.clone(), true, &mut report).unwrap(), Transfer::Done);
+        assert_eq!(mode(&dest.join("script")), 0o755);
+        assert_eq!(mode(&dest.join("secret")), 0o600);
+        assert_eq!(mode(&dest), 0o555);
+
+        set(&source, 0o755);
+        set(&dest, 0o755);
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
