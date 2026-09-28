@@ -944,10 +944,26 @@ impl AppState {
                 total_lines_before: state.lines.len(),
                 cursor: (state.cursor_line, state.cursor_col),
             });
+        }
+    }
 
-            // Editing after undoing forks the history; the old branch is gone.
+    /// Settle the step push_undo recorded, once the action has run. One that
+    /// changed nothing - Backspace at the very start, Delete at the very end,
+    /// Ctrl+X with nothing selected - is dropped, so it neither costs an undo
+    /// that does nothing nor throws away the redo history. One that did change
+    /// something forks the history: editing after undoing loses the old branch.
+    fn finish_edit(&mut self) {
+        if let Some(state) = &mut self.editor_state {
+            let Some(step) = state.undo_stack.last() else {
+                return;
+            };
+            let unchanged = state.lines.len() == step.total_lines_before
+                && state.lines[step.first_line..step.first_line + step.before.len()] == step.before[..];
+            if unchanged {
+                state.undo_stack.pop();
+                return;
+            }
             state.redo_stack.clear();
-
             if state.undo_stack.len() > crate::constants::UNDO_LIMIT {
                 state.undo_stack.remove(0);
             }
@@ -1064,6 +1080,7 @@ impl AppState {
         if let Some(from) = self.delete_selection() {
             self.editor_rehighlight_from(from);
         }
+        self.finish_edit();
     }
 
     pub fn editor_paste(&mut self) {
@@ -1116,6 +1133,7 @@ impl AppState {
         if let Some(from) = rehighlight {
             self.editor_rehighlight_from(from);
         }
+        self.finish_edit();
     }
 
     /// Called before a cursor move: Shift extends the selection from where the
@@ -1234,6 +1252,7 @@ impl AppState {
         if let Some(from) = from {
             self.editor_rehighlight_from(from);
         }
+        self.finish_edit();
     }
 
     pub fn editor_backspace(&mut self) {
@@ -1248,6 +1267,7 @@ impl AppState {
         // With a selection, Backspace removes that rather than a character.
         if let Some(from) = self.delete_selection() {
             self.editor_rehighlight_from(from);
+            self.finish_edit();
             return;
         }
         let mut from = None;
@@ -1275,6 +1295,7 @@ impl AppState {
         if let Some(from) = from {
             self.editor_rehighlight_from(from);
         }
+        self.finish_edit();
     }
 
     pub fn editor_delete(&mut self) {
@@ -1290,6 +1311,7 @@ impl AppState {
 
         if let Some(from) = self.delete_selection() {
             self.editor_rehighlight_from(from);
+            self.finish_edit();
             return;
         }
         let mut from = None;
@@ -1312,6 +1334,7 @@ impl AppState {
         if let Some(from) = from {
             self.editor_rehighlight_from(from);
         }
+        self.finish_edit();
     }
 
     pub fn editor_enter(&mut self) {
@@ -1336,6 +1359,7 @@ impl AppState {
         if let Some(from) = from {
             self.editor_rehighlight_from(from);
         }
+        self.finish_edit();
     }
 
     pub fn editor_save(&mut self) -> Result<(), String> {
@@ -1972,6 +1996,56 @@ fn char_to_byte(s: &str, char_idx: usize) -> usize {
         .nth(char_idx)
         .map(|(i, _)| i)
         .unwrap_or(s.len())
+}
+
+#[cfg(test)]
+mod editor_tests {
+    use super::AppState;
+
+    fn editor_with(name: &str, text: &str) -> (AppState, std::path::PathBuf) {
+        let path = std::env::temp_dir().join(format!("fm84-{name}-{}.txt", std::process::id()));
+        std::fs::write(&path, text).unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        app_state.open_editor(path.clone()).unwrap();
+        (app_state, path)
+    }
+
+    fn stacks(app_state: &AppState) -> (usize, usize) {
+        let state = app_state.editor_state.as_ref().unwrap();
+        (state.undo_stack.len(), state.redo_stack.len())
+    }
+
+    #[test]
+    fn an_edit_that_changes_nothing_keeps_the_redo_history() {
+        let (mut app_state, path) = editor_with("noop", "ab\ncd");
+        // One real edit, undone, so there is something to redo.
+        app_state.editor_end();
+        app_state.editor_insert_char('x');
+        app_state.editor_undo();
+        assert_eq!(stacks(&app_state), (0, 1));
+
+        // Backspace at the very start, Delete at the very end, and Ctrl+X with
+        // nothing selected: none of them change the text.
+        app_state.editor_state.as_mut().unwrap().cursor_col = 0;
+        app_state.editor_backspace();
+        app_state.editor_cut();
+        {
+            let state = app_state.editor_state.as_mut().unwrap();
+            state.cursor_line = 1;
+            state.cursor_col = 2;
+        }
+        app_state.editor_delete();
+        assert_eq!(stacks(&app_state), (0, 1));
+        app_state.editor_redo();
+        assert_eq!(app_state.editor_state.as_ref().unwrap().lines, ["abx", "cd"]);
+
+        // A real edit still forks the history.
+        app_state.editor_undo();
+        app_state.editor_insert_char('y');
+        assert_eq!(stacks(&app_state), (1, 0));
+        std::fs::remove_file(path).unwrap();
+    }
 }
 
 #[cfg(test)]
