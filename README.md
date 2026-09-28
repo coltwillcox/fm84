@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.15.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.16.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -150,7 +150,12 @@ Grouped under four headings; the list scrolls on a short terminal.
 - 👁️ **Preview on startup** - start with F12's preview open
 
 **Appearance**
-- 🎨 **Theme** - Synthwave, Outrun, Vaporwave or High contrast, switched on the spot
+- 🎨 **Theme** - switched on the spot, 15 of them:
+  - fm84's own: **Synthwave**, **Outrun**, **Vaporwave**, **High contrast**
+  - dark: **Dracula**, **Monokai**, **Nord**, **Gruvbox Dark**, **Solarized Dark**, **Tokyo Night**, **Catppuccin Mocha**
+  - light: **Solarized Light**, **Gruvbox Light**, **Catppuccin Latte**, **GitHub Light**
+  - each brings its own background, gutter and syntax colours; on a light one, extension colours darken and pictures draw dark ink on the light background
+- 🖌️ **Background** - the theme's own, or the terminal's for a transparent or custom one. A light theme needs its own: on a dark terminal its text would all but vanish
 - 🔣 **Icons** - Nerd Font, Nerd Font Mono (drops the padding a wide glyph needs, so icons stay centred), or Plain letters for a terminal without a Nerd Font
 - 🕐 **Clock** - 24-hour, 12-hour, or off
 
@@ -275,7 +280,8 @@ tar -xzf fm84-v*.tar.gz
 </pre>
 </div>
 
-The default Synthwave palette channels pure 80s energy (F11 swaps it for Outrun, Vaporwave or High contrast):
+The default Synthwave palette channels pure 80s energy (F11 swaps it for any of 14 others, light ones included):
+- 🖤 **Black background** - `#000000`
 - 💜 **Violet borders** - `#743AD5`
 - 🔮 **Purple selections** - `#9400D3`
 - 💗 **Magenta directories** - `#FF00FF`

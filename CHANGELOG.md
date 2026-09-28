@@ -6,6 +6,21 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.16.0] - 2026-09-28
+
+### ✨ Added
+- 🎨 **Eleven more themes** - Dracula, Monokai, Nord, Gruvbox Dark, Solarized Dark, Tokyo Night and Catppuccin Mocha, and four light ones: Solarized Light, Gruvbox Light, Catppuccin Latte and GitHub Light, each from its scheme's published palette
+- 🖌️ **Themes paint their own background** - behind the panels, the popups and everything else, with a gutter to match in the viewer and the editor. F11's new **Background** row puts the terminal's back, for a transparent or custom one; a light theme needs its own
+- 🌗 **Light themes turn the rest round** - syntax highlighting takes a light scheme (Solarized's own for Solarized, InspiredGitHub or base16-ocean light otherwise), extension colours darken, and pictures in the viewer draw dark ink on the light background instead of bright on dark
+- 🧪 **Every theme is checked for contrast** - a test holds file names, directories, headings and the selected row's text to at least 3:1 against what they sit on, and every extension colour against every background
+
+### 🛠️ Changed
+- 🌌 **Synthwave, Outrun, Vaporwave and High contrast** now paint a background too - black for Synthwave and High contrast - where before they drew on the terminal's. Set **Background** to Terminal for the old look
+- 💗 **Vaporwave's rename highlight darkened**, where the text on it was too faint; **extension colours** are a shade lighter on dark backgrounds, so the blues still read on Nord's
+- 🖼️ **Transparent parts of a picture** are left blank, the viewer showing through, on light and dark backgrounds alike
+
+---
+
 ## [0.15.0] - 2026-09-28
 
 ### ✨ Added
