@@ -569,8 +569,14 @@ fn handle_rename(app_state: &mut AppState) {
             return;
         }
 
-        match rename_path(original_path, new_path) {
-            Ok(_) => app_state.reload_panel(app_state.is_left_active, Some(&new_name)),
+        match rename_path(original_path.clone(), new_path.clone()) {
+            Ok(_) => {
+                // A directory's size is kept by its path, which just changed.
+                if let Some(size) = app_state.dir_sizes.remove(&original_path) {
+                    app_state.dir_sizes.insert(new_path, size);
+                }
+                app_state.reload_panel(app_state.is_left_active, Some(&new_name));
+            }
             Err(e) => app_state.display_error(e.to_string()),
         }
 

@@ -1536,6 +1536,10 @@ impl AppState {
         self.reload_panel(true, None);
         self.reload_panel(false, None);
         self.clear_active_selections();
+        // Any directory size worked out before may now be wrong - the ones
+        // copied into, moved out of or deleted from, and every directory above
+        // them. Space works them out again.
+        self.dir_sizes.clear();
 
         // The offer to quit covered this job, and this job is over.
         self.quit_armed = false;
@@ -2045,6 +2049,31 @@ mod editor_tests {
         app_state.editor_insert_char('y');
         assert_eq!(stacks(&app_state), (1, 0));
         std::fs::remove_file(path).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod job_tests {
+    use super::AppState;
+
+    #[test]
+    fn a_finished_job_forgets_directory_sizes() {
+        let dir = std::env::temp_dir().join(format!("fm84-sizes-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("doomed"), vec![0u8; 100]).unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.dir_sizes.insert(dir.clone(), 100);
+        app_state.start_delete(vec![(dir.join("doomed"), false)]);
+        let started = std::time::Instant::now();
+        while app_state.job.is_some() {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "delete never finished");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
+        assert!(app_state.dir_sizes.is_empty());
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
 
