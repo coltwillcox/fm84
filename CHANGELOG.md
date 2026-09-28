@@ -6,6 +6,22 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.16.1] - 2026-09-28
+
+### 🐛 Fixed
+- 💥 **The editor no longer crashes after Ctrl+A and a delete** in a file longer than the screen - the scroll stayed at the end of what was now one line. The view also follows the cursor after a long paste, an undo or a redo, instead of leaving it off screen
+- 🧊 **Pipes and devices no longer freeze the app** - with the preview on, passing the cursor over a named pipe hung fm84 for good, and F3 and F4 did the same; F3 on `/dev/zero` read until memory ran out. Only regular files are opened now, and copying a pipe or a device is refused rather than left stuck where Esc could not reach it
+- 💾 **A failed save in the editor can be dismissed** - Esc went to the save prompt hidden behind the error, leaving discarding as the only way out. Esc or Enter now close the error and return to the edits, and answering the prompt with Y keeps the editor open when the save fails
+- ✂️ **A copy that fails partway removes its partial file**, as a cancelled one already did, rather than leaving a truncated file that looks finished
+- 📛 **Rename and create take a plain name** - `../x` or `sub/x` renamed or created in another directory
+- 🔤 **A rename that only changes case** works on case-insensitive filesystems, where "readme" to "README" was refused as already existing
+- 🚚 **A move falls back to copying only across filesystems** - error 17, taken for Windows' cross-device error, is "already exists" on Linux and macOS
+- ↩️ **Keys that change nothing keep the redo history** - Backspace at the start, Delete at the end or Ctrl+X with nothing selected no longer add an empty undo step and clear redo
+- 📂 **Directory sizes are forgotten after a copy, move or delete** instead of showing what a directory held before; a renamed directory keeps its size
+- 🔐 **Copies keep their permissions**, so a script or a program stays executable - where the filesystem cannot hold them, as on exFAT, the copy still goes ahead
+
+---
+
 ## [0.16.0] - 2026-09-28
 
 ### ✨ Added

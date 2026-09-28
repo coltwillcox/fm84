@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.16.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.16.1** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -64,10 +64,10 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 📝 File Operations
 - **F1** 💡 - Help/About
-- **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing)
+- **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing); a change of case alone works on macOS and Windows too
 - **F3** 👁️ - View files (text, hexdump, or images as ASCII art)
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, unsaved changes prompt, mouse click to position cursor)
-- **F5** 📋 - Copy to other panel (selected items or cursor item)
+- **F5** 📋 - Copy to other panel (selected items or cursor item), keeping permissions where the filesystem can hold them
 - **F6** 📦 - Move to other panel (selected items or cursor item)
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels, and a cancelled copy cleans up the half-written file. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
@@ -116,11 +116,11 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🖼️ **Bordered frame** with filename and modified indicator in title bar
 - 📄 **Full text editing** - cursor navigation, insert, delete
 - ✂️ **Select, cut, copy, paste** - Shift+arrows to select, Ctrl+A for all, Ctrl+X/C/V (or Ctrl+Insert, Shift+Insert, Shift+Delete)
-- ↩️ **Undo and redo** - Ctrl+Z, then Ctrl+Y or Ctrl+Shift+Z, 200 steps deep, one step per action rather than per keystroke burst
+- ↩️ **Undo and redo** - Ctrl+Z, then Ctrl+Y or Ctrl+Shift+Z, 200 steps deep, one step per action rather than per keystroke burst; a key that changes nothing costs no step
 - 📋 **System clipboard** - copies reach it over OSC 52, pastes arrive as bracketed paste, both without linking a clipboard library
 - 💾 **Save** - F2 or Ctrl+S
 - 📍 **Line/Column tracking** - always know where you are
-- ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close
+- ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close; a save that fails keeps the editor open, edits and all
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 - 🖱️ **Mouse click and drag** - click to position the cursor, drag to select
@@ -128,7 +128,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 👁️ Preview (F12)
 - 🪞 **Opposite panel** - shows the head of whatever the cursor is on, and follows it
 - 📁 **Directories** - item count instead of contents
-- 🪶 **Bounded** - reads at most 64 KiB, never prompts, never loads a whole file
+- 🪶 **Bounded** - reads at most 64 KiB, never prompts, never loads a whole file, and never opens a pipe or a device
 
 ### ⚙️ Options (F11)
 Grouped under four headings; the list scrolls on a short terminal.
@@ -171,7 +171,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 
 ### 📂 Directory Sizes
 - 📏 **Calculated on select** - press Space on a directory to calculate its size
-- 📌 **Persistent display** - sizes stay visible after deselecting
+- 📌 **Persistent display** - sizes stay visible after deselecting, until a copy, move or delete may have changed them
 
 ---
 
