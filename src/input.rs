@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::fs_ops::{copies_into_itself, create_directory, create_file, is_plain_name, path_exists, rename_path};
+use crate::fs_ops::{copies_into_itself, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use crate::display::tab_width;
 use ratatui::layout::Position;
@@ -560,8 +560,10 @@ fn handle_rename(app_state: &mut AppState) {
         new_path.push(&new_name);
 
         // rename() replaces the destination without a word. Equal paths mean the
-        // name was left alone, which is a no-op rather than a collision.
-        if new_path != original_path && path_exists(&new_path) {
+        // name was left alone, which is a no-op rather than a collision - and so
+        // does the same entry under another case, which on a case-insensitive
+        // filesystem is how "readme" becomes "README".
+        if new_path != original_path && path_exists(&new_path) && !is_same_entry(&original_path, &new_path) {
             app_state.display_error(format!("Already exists: {}", new_name));
             app_state.reset_rename();
             return;

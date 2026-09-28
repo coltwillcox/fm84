@@ -652,6 +652,33 @@ pub fn is_plain_name(name: &str) -> bool {
     )
 }
 
+/// True when two paths in the same directory name one entry: on a
+/// case-insensitive filesystem, "readme" and "README" do. Links are not
+/// followed - a symlink to a file is an entry of its own, and renaming the
+/// file over it would destroy it.
+#[cfg(unix)]
+pub fn is_same_entry(a: &Path, b: &Path) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    match (a.symlink_metadata(), b.symlink_metadata()) {
+        (Ok(a), Ok(b)) => a.dev() == b.dev() && a.ino() == b.ino(),
+        _ => false,
+    }
+}
+
+/// Windows has no stable file identity in std, but its directories are
+/// case-insensitive, so within one of them a name differing only in case is
+/// the same entry.
+#[cfg(windows)]
+pub fn is_same_entry(a: &Path, b: &Path) -> bool {
+    let name = |path: &Path| path.file_name().map(|name| name.to_string_lossy().to_lowercase());
+    a.parent() == b.parent() && name(a).is_some() && name(a) == name(b) && path_exists(a)
+}
+
+#[cfg(not(any(unix, windows)))]
+pub fn is_same_entry(a: &Path, b: &Path) -> bool {
+    a == b
+}
+
 /// True if anything occupies this path, including a dangling symlink - which
 /// Path::exists() reports as absent because it follows the link.
 pub fn path_exists(path: &Path) -> bool {
@@ -1062,6 +1089,22 @@ mod transfer_tests {
         for name in ["sub\\x", "C:x", "C:"] {
             assert!(!is_plain_name(name), "{name}");
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn an_entry_is_itself_and_nothing_else() {
+        let dir = scratch("same");
+        fs::write(dir.join("a"), "a").unwrap();
+        fs::write(dir.join("b"), "b").unwrap();
+        std::os::unix::fs::symlink(dir.join("a"), dir.join("link")).unwrap();
+
+        assert!(is_same_entry(&dir.join("a"), &dir.join("a")));
+        assert!(!is_same_entry(&dir.join("a"), &dir.join("b")));
+        // A link to a is an entry of its own; renaming a over it must be refused.
+        assert!(!is_same_entry(&dir.join("a"), &dir.join("link")));
+        assert!(!is_same_entry(&dir.join("a"), &dir.join("missing")));
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
