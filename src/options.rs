@@ -847,6 +847,15 @@ mod tests {
     }
 
     #[test]
+    fn a_config_that_never_heard_of_backgrounds_still_gets_them() {
+        // Parsing starts from the defaults, so a file written before the option
+        // existed picks it up rather than reading as "off".
+        let old = "show_hidden = true\nimage = fit\n";
+        assert!(Options::parse(old).image_backgrounds);
+        assert!(Options::default().image_backgrounds);
+    }
+
+    #[test]
     fn nonsense_leaves_the_default() {
         let options = Options::parse(
             "show_hidden = maybe\nsort = colour\nno equals sign\nunknown = 1\n\
