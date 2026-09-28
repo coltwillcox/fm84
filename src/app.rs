@@ -467,6 +467,7 @@ impl AppState {
     /// Keep a change: write it out, and reread the panels if it changes what
     /// they list. A failed write still leaves the change in place for this run.
     fn options_changed(&mut self, row: OptionRow) {
+        crate::display::apply(&self.options);
         if row.affects_listing() {
             self.reload_panel(true, None);
             self.reload_panel(false, None);
@@ -572,7 +573,7 @@ impl AppState {
             }
         };
 
-        if size > crate::constants::LARGE_FILE_SIZE {
+        if size > self.options.large_file_bytes() {
             self.large_file = Some(LargeFile { path: file_path, is_edit, size, dimensions: None });
             return;
         }
@@ -613,7 +614,8 @@ impl AppState {
 
     pub fn open_viewer(&mut self, file_path: PathBuf) -> Result<(), String> {
         use crate::viewer::load_file_content;
-        let state = load_file_content(&file_path).map_err(|e| e.to_string())?;
+        let mut state = load_file_content(&file_path).map_err(|e| e.to_string())?;
+        state.image_fill = self.options.image_fill;
         self.viewer_state = Some(state);
         self.is_f3_displayed = true;
         Ok(())
@@ -803,7 +805,6 @@ impl AppState {
     }
 
     pub fn open_editor(&mut self, file_path: PathBuf) -> Result<(), String> {
-        use crate::constants::MAX_HIGHLIGHT_SIZE;
         use crate::viewer::{highlight_all, is_binary_file};
 
         let file_size = std::fs::metadata(&file_path).map_err(|e| e.to_string())?.len();
@@ -834,7 +835,10 @@ impl AppState {
             lines.push(String::new());
         }
         let extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
-        let (highlighted_lines, line_states) = if file_size <= MAX_HIGHLIGHT_SIZE {
+        // The initial parse measures about 0.9s per megabyte, which is what the
+        // limit in F11 caps; editing stays fast afterwards regardless of length.
+        let limit = self.options.highlight_limit_bytes();
+        let (highlighted_lines, line_states) = if limit > 0 && file_size <= limit {
             highlight_all(&lines, extension)
         } else {
             // Rendering already falls back to plain text when these are empty.

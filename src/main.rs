@@ -1,5 +1,6 @@
 mod app;
 mod constants;
+mod display;
 mod fs_ops;
 mod input;
 mod options;
@@ -78,6 +79,7 @@ fn install_panic_hook() {
 
 fn run(terminal: &mut Tui) -> io::Result<()> {
     let mut app_state = AppState::new();
+    display::apply(&app_state.options);
 
     app_state.mounts = fs_ops::list_mounts();
     app_state.reload_panel(true, None);

@@ -76,7 +76,7 @@ pub fn printable_line(line: &str) -> String {
     let mut text = String::with_capacity(line.len());
     for character in line.chars() {
         if character == '\t' {
-            text.push_str(TAB_SPACES);
+            text.extend(std::iter::repeat_n(' ', crate::display::tab_width()));
         } else if character.is_control() {
             text.push('.');
         } else {
@@ -91,7 +91,7 @@ pub fn line_display_width(line: &str) -> usize {
     line.chars()
         .map(|character| {
             if character == '\t' {
-                TAB_SPACES.len()
+                crate::display::tab_width()
             } else {
                 UnicodeWidthChar::width(character).unwrap_or(0)
             }
@@ -101,7 +101,7 @@ pub fn line_display_width(line: &str) -> usize {
 
 pub fn color_for_extension(ext: &str) -> Color {
     if ext.is_empty() {
-        return COLOR_FILE;
+        return crate::display::palette().file;
     }
     // Simple hash of extension bytes.
     let hash: u32 = ext.bytes().fold(5381u32, |h, b| h.wrapping_mul(33).wrapping_add(b as u32));

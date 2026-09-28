@@ -1,7 +1,7 @@
 use crate::app::AppState;
 use crate::fs_ops::{copies_into_itself, create_directory, create_file, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
-use crate::constants::TAB_SPACES;
+use crate::display::tab_width;
 use ratatui::layout::Position;
 use ratatui::widgets::TableState;
 use std::io::Result;
@@ -1204,7 +1204,7 @@ fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: 
             if current_visual >= visual_col {
                 break;
             }
-            current_visual += if character == '\t' { TAB_SPACES.len() } else { 1 };
+            current_visual += if character == '\t' { tab_width() } else { 1 };
             char_col += 1;
         }
 
