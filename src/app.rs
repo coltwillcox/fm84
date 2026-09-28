@@ -1,6 +1,6 @@
 use crate::fs_ops::{
     Mount, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, list_mounts,
-    load_directory_rows, measure, move_path, nearest_existing_dir, rename_in_place,
+    load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place,
 };
 use crate::options::{OPTION_ROWS, OptionRow, Options};
 use crate::viewer::{ViewMode, ViewerState};
@@ -194,6 +194,8 @@ pub struct AppState {
     pub disk_right: Option<(u64, u64)>,
     /// Set while the prompt for an expensive file is up.
     pub large_file: Option<LargeFile>,
+    /// Set while asking whether a copy or move may write over what is there.
+    pub overwrite_prompt: Option<OverwritePrompt>,
     /// Set while a copy, move or delete is running on its own thread.
     pub job: Option<TransferJob>,
     /// F10 was pressed during a job. The job carries on; a second press is
@@ -260,6 +262,15 @@ enum JobUpdate {
     Starting(PathBuf),
     Advanced(u64),
     Finished(Result<Transfer, String>),
+}
+
+/// A copy or move held back because some of its names are taken, waiting for
+/// the answer to whether it may write over them.
+pub struct OverwritePrompt {
+    pub items: Vec<(PathBuf, PathBuf, bool)>,
+    pub is_copy: bool,
+    /// The destinations already taken, to name in the question.
+    pub taken: Vec<PathBuf>,
 }
 
 /// A file big enough to be worth asking about before it is opened.
@@ -405,6 +416,7 @@ impl AppState {
             disk_left: None,
             disk_right: None,
             large_file: None,
+            overwrite_prompt: None,
             job: None,
             quit_armed: false,
             drive_strip_left: Rect::default(),
@@ -1457,6 +1469,7 @@ impl AppState {
             || self.is_f8_displayed
             || self.is_editor_save_prompt
             || self.large_file.is_some()
+            || self.overwrite_prompt.is_some()
             || self.job.is_some()
     }
 
@@ -1489,9 +1502,11 @@ impl AppState {
         });
     }
 
-    pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
+    /// `overwrite` lets it write over names already taken: files replaced,
+    /// directories merged. Without it, one taken since the check is refused.
+    pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: bool) {
         let kind = if is_copy { TransferKind::Copy } else { TransferKind::Move };
-        self.start_job(kind, move |updates, cancel| run_transfer(items, is_copy, updates, cancel));
+        self.start_job(kind, move |updates, cancel| run_transfer(items, is_copy, overwrite, updates, cancel));
     }
 
     pub fn start_delete(&mut self, items: Vec<(PathBuf, bool)>) {
@@ -1938,10 +1953,13 @@ fn slot_at(slots: &[(u16, u16)], offset: u16) -> Option<usize> {
 /// Renames come first and on their own. A move within one filesystem is a
 /// rename, which takes no time and moves no bytes - measuring a large tree
 /// before doing it would hold up a transfer that was about to be instant.
-fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, updates: &Sender<JobUpdate>, cancel: &AtomicBool) {
+fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: bool, updates: &Sender<JobUpdate>, cancel: &AtomicBool) {
     let mut remaining = Vec::new();
     for (source, dest, is_dir) in items {
-        if !is_copy && rename_in_place(&source, &dest) {
+        // rename() replaces a file, or an empty directory, without a word, so
+        // it only goes over a taken name when that was asked for. A directory
+        // with anything in it refuses, and is merged by move_path instead.
+        if !is_copy && (overwrite || !path_exists(&dest)) && rename_in_place(&source, &dest) {
             continue;
         }
         remaining.push((source, dest, is_dir));
@@ -1963,7 +1981,7 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, updates: &S
         let result = if is_copy {
             copy_path(source, dest, is_dir, &mut report)
         } else {
-            move_path(source, dest, is_dir, &mut report)
+            move_path(source, dest, is_dir, overwrite, &mut report)
         };
         match result {
             Ok(Transfer::Done) => {}

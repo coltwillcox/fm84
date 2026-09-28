@@ -129,6 +129,17 @@ pub enum SizeUnits {
     Decimal,
 }
 
+/// What a copy or move does when a name it is writing is already taken.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum OnExisting {
+    /// Stop and ask, naming what is in the way.
+    Ask,
+    /// Replace files and merge directories without asking.
+    Overwrite,
+    /// Refuse the whole transfer, as fm84 always did.
+    Refuse,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Clock {
     Hours24,
@@ -159,6 +170,7 @@ pub struct Options {
     pub size_units: SizeUnits,
     pub confirm_delete: bool,
     pub confirm_copy_move: bool,
+    pub on_existing: OnExisting,
     /// The F9 command. Empty means pick one per platform, as before there was
     /// a choice; `{}` in it stands for the panel's directory.
     pub terminal: String,
@@ -202,6 +214,7 @@ impl Default for Options {
             size_units: SizeUnits::Binary,
             confirm_delete: true,
             confirm_copy_move: true,
+            on_existing: OnExisting::Ask,
             terminal: String::new(),
             editor: String::new(),
             remember_dirs: false,
@@ -235,6 +248,7 @@ pub enum OptionRow {
     SizeUnits,
     ConfirmDelete,
     ConfirmCopyMove,
+    OnExisting,
     Terminal,
     Editor,
     RememberDirs,
@@ -250,7 +264,7 @@ pub enum OptionRow {
     ImageDefault,
 }
 
-pub const OPTION_ROWS: [OptionRow; 26] = [
+pub const OPTION_ROWS: [OptionRow; 27] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -264,6 +278,7 @@ pub const OPTION_ROWS: [OptionRow; 26] = [
     OptionRow::SizeUnits,
     OptionRow::ConfirmDelete,
     OptionRow::ConfirmCopyMove,
+    OptionRow::OnExisting,
     OptionRow::Terminal,
     OptionRow::Editor,
     OptionRow::RememberDirs,
@@ -295,6 +310,7 @@ impl OptionRow {
             OptionRow::SizeUnits => "Size units",
             OptionRow::ConfirmDelete => "Confirm delete",
             OptionRow::ConfirmCopyMove => "Confirm copy and move",
+            OptionRow::OnExisting => "When destination exists",
             OptionRow::Terminal => "Terminal (F9)",
             OptionRow::Editor => "Editor (F4)",
             OptionRow::RememberDirs => "Remember directories",
@@ -374,6 +390,12 @@ impl Options {
             .to_string(),
             OptionRow::ConfirmDelete => on_off(self.confirm_delete),
             OptionRow::ConfirmCopyMove => on_off(self.confirm_copy_move),
+            OptionRow::OnExisting => match self.on_existing {
+                OnExisting::Ask => "Ask",
+                OnExisting::Overwrite => "Overwrite",
+                OnExisting::Refuse => "Refuse",
+            }
+            .to_string(),
             OptionRow::Terminal if self.terminal.is_empty() => "Automatic".to_string(),
             OptionRow::Terminal => self.terminal.clone(),
             OptionRow::Editor if self.editor.is_empty() => "Built-in".to_string(),
@@ -455,6 +477,10 @@ impl Options {
             }
             OptionRow::ConfirmDelete => self.confirm_delete = !self.confirm_delete,
             OptionRow::ConfirmCopyMove => self.confirm_copy_move = !self.confirm_copy_move,
+            OptionRow::OnExisting => {
+                let policies = [OnExisting::Ask, OnExisting::Overwrite, OnExisting::Refuse];
+                self.on_existing = step(&policies, self.on_existing, forward);
+            }
             OptionRow::RememberDirs => self.remember_dirs = !self.remember_dirs,
             OptionRow::PreviewOnStart => self.preview_on_start = !self.preview_on_start,
             OptionRow::Theme => {
@@ -544,6 +570,14 @@ impl Options {
                 }
                 "confirm_delete" => options.confirm_delete = flag(options.confirm_delete),
                 "confirm_copy_move" => options.confirm_copy_move = flag(options.confirm_copy_move),
+                "on_existing" => {
+                    options.on_existing = match value {
+                        "ask" => OnExisting::Ask,
+                        "overwrite" => OnExisting::Overwrite,
+                        "refuse" => OnExisting::Refuse,
+                        _ => options.on_existing,
+                    }
+                }
                 "terminal" => options.terminal = value.to_string(),
                 "editor" => options.editor = value.to_string(),
                 "remember_dirs" => options.remember_dirs = flag(options.remember_dirs),
@@ -637,6 +671,8 @@ impl Options {
              # Behaviour\n\
              confirm_delete = {}\n\
              confirm_copy_move = {}\n\
+             # ask, overwrite or refuse, when a copy or move finds its name taken.\n\
+             on_existing = {}\n\
              # Empty picks one automatically. {{}} stands for the directory.\n\
              terminal = {}\n\
              # Empty is the built-in editor. {{}} stands for the file, which otherwise goes last.\n\
@@ -672,6 +708,11 @@ impl Options {
             size_units,
             self.confirm_delete,
             self.confirm_copy_move,
+            match self.on_existing {
+                OnExisting::Ask => "ask",
+                OnExisting::Overwrite => "overwrite",
+                OnExisting::Refuse => "refuse",
+            },
             self.terminal,
             self.editor,
             self.remember_dirs,
@@ -771,6 +812,7 @@ mod tests {
             size_units: SizeUnits::Decimal,
             confirm_delete: false,
             confirm_copy_move: false,
+            on_existing: OnExisting::Overwrite,
             terminal: "kitty --directory {}".to_string(),
             editor: "nvim".to_string(),
             remember_dirs: true,
@@ -794,7 +836,7 @@ mod tests {
         let options = Options::parse(
             "show_hidden = maybe\nsort = colour\nno equals sign\nunknown = 1\n\
              tab_width = 0\ntab_width = lots\nlarge_file_mib = 0\nhighlight_limit_kib = -5\ntheme = beige\n\
-             clock = 25\ndate_format = roman\nsize_units = furlongs\n",
+             clock = 25\ndate_format = roman\nsize_units = furlongs\non_existing = sometimes\n",
         );
         assert_eq!(options, Options::default());
         assert_eq!(Options::parse(""), Options::default());

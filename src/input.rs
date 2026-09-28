@@ -1,5 +1,6 @@
-use crate::app::AppState;
-use crate::fs_ops::{copies_into_itself, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
+use crate::app::{AppState, OverwritePrompt};
+use crate::options::OnExisting;
+use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use crate::display::tab_width;
 use ratatui::layout::Position;
@@ -138,6 +139,13 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                             KeyCode::Left => app_state.options_change(false),
                             _ => {}
                         }
+                    }
+                } else if app_state.overwrite_prompt.is_some() {
+                    match key.code {
+                        KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => answer_overwrite(app_state, true),
+                        KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => answer_overwrite(app_state, false),
+                        KeyCode::F(10) => return Ok(false),
+                        _ => {}
                     }
                 } else if app_state.is_f8_displayed {
                     match key.code {
@@ -596,6 +604,7 @@ fn handle_esc(app_state: &mut AppState) {
     app_state.close_viewer();
     app_state.close_editor();
     app_state.reset_large_file();
+    app_state.overwrite_prompt = None;
 }
 
 fn handle_tab_switching(app_state: &mut AppState) {
@@ -1014,27 +1023,8 @@ fn toggle_copy(app_state: &mut AppState) {
 
 fn handle_copy_confirm(app_state: &mut AppState) {
     let items = std::mem::take(&mut app_state.copy_items);
-
-    // Check every destination before writing anything: bailing out partway
-    // through would leave some items copied and the rest not.
-    if let Some((_, dest, _)) = items.iter().find(|(_, dest, _)| path_exists(dest)) {
-        app_state.display_error(format!("Destination already exists: {}", dest.display()));
-        app_state.reset_copy();
-        return;
-    }
-
-    // A destination inside the source would be copied into itself, filling the
-    // disk. Refused alongside the check above, before anything has been written.
-    if let Some((source, _, _)) = items.iter().find(|(source, dest, _)| copies_into_itself(source, dest)) {
-        app_state.display_error(format!("Cannot copy \"{}\" into itself", source.display()));
-        app_state.reset_copy();
-        return;
-    }
-
-    // The work itself, the panel reload and the selections are all handled by
-    // the job as it finishes.
     app_state.reset_copy();
-    app_state.start_transfer(items, true);
+    submit_transfer(app_state, items, true);
 }
 
 fn toggle_move(app_state: &mut AppState) {
@@ -1086,25 +1076,43 @@ fn toggle_move(app_state: &mut AppState) {
 
 fn handle_move_confirm(app_state: &mut AppState) {
     let items = std::mem::take(&mut app_state.move_items);
-
-    // Check every destination before writing anything: bailing out partway
-    // through would leave some items moved and the rest not.
-    if let Some((_, dest, _)) = items.iter().find(|(_, dest, _)| path_exists(dest)) {
-        app_state.display_error(format!("Destination already exists: {}", dest.display()));
-        app_state.reset_move();
-        return;
-    }
-
-    // A destination inside the source would be copied into itself, filling the
-    // disk. Refused alongside the check above, before anything has been written.
-    if let Some((source, _, _)) = items.iter().find(|(source, dest, _)| copies_into_itself(source, dest)) {
-        app_state.display_error(format!("Cannot copy \"{}\" into itself", source.display()));
-        app_state.reset_move();
-        return;
-    }
-
     app_state.reset_move();
-    app_state.start_transfer(items, false);
+    submit_transfer(app_state, items, false);
+}
+
+/// Start a confirmed copy or move, once what it would write over is settled.
+/// Every destination is checked before anything is written: bailing out
+/// partway would leave some items done and the rest not. Names already taken
+/// go by F11's "When destination exists" - ask, overwrite, or refuse.
+fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
+    let taken = match check_destinations(&items) {
+        Ok(taken) => taken,
+        Err(message) => {
+            app_state.display_error(message);
+            return;
+        }
+    };
+    if taken.is_empty() {
+        // The work itself, the panel reload and the selections are all
+        // handled by the job as it finishes.
+        app_state.start_transfer(items, is_copy, false);
+        return;
+    }
+    match app_state.options.on_existing {
+        OnExisting::Overwrite => app_state.start_transfer(items, is_copy, true),
+        OnExisting::Refuse => app_state.display_error(format!("Destination already exists: {}", taken[0].display())),
+        OnExisting::Ask => app_state.overwrite_prompt = Some(OverwritePrompt { items, is_copy, taken }),
+    }
+}
+
+/// The answer to the overwrite question: yes starts the transfer, writing
+/// over what is there; no drops it.
+fn answer_overwrite(app_state: &mut AppState, overwrite: bool) {
+    if let Some(prompt) = app_state.overwrite_prompt.take()
+        && overwrite
+    {
+        app_state.start_transfer(prompt.items, prompt.is_copy, true);
+    }
 }
 
 fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {

@@ -781,6 +781,7 @@ pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
     // which doesn't follow links, so a link to a directory arrives false here
     // and would otherwise be handed to copy_file_content.
     if fs::symlink_metadata(&source)?.file_type().is_symlink() {
+        clear_for_link(&dest)?;
         copy_symlink(&source, &dest)?;
         Ok(Transfer::Done)
     } else if is_dir {
@@ -831,7 +832,19 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
     }
 
     let mut src_file = File::open(source)?;
-    let mut dst_file = File::create(dest)?;
+    // Only an overwrite, or a directory merged into another, finds something
+    // already here.
+    clear_link(dest)?;
+    let mut dst_file = match File::create(dest) {
+        Ok(file) => file,
+        // A read-only file in the way: removed and written afresh, as cp -f
+        // does. If the directory itself refuses, the remove fails too.
+        Err(e) if e.kind() == ErrorKind::PermissionDenied && dest.symlink_metadata().is_ok_and(|metadata| metadata.is_file()) => {
+            remove_file(dest)?;
+            File::create(dest)?
+        }
+        Err(e) => return Err(e),
+    };
     loop {
         let copied = match io::copy(&mut (&mut src_file).take(COPY_CHUNK), &mut dst_file) {
             Ok(copied) => copied,
@@ -872,6 +885,7 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
         // the link, so do the same.
         let file_type = entry.file_type()?;
         let outcome = if file_type.is_symlink() {
+            clear_for_link(&dest_path)?;
             copy_symlink(&entry_path, &dest_path)?;
             Transfer::Done
         } else if file_type.is_dir() {
@@ -893,34 +907,103 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
     Ok(Transfer::Done)
 }
 
-pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
+/// Move `source` to `dest`. With `overwrite`, whatever is at `dest` gives way:
+/// a file is replaced, and a directory moved onto a directory is merged into
+/// it - a rename cannot replace a directory that holds anything, so that is a
+/// copy into it followed by removing the source. Without it, a name that has
+/// been taken since the transfer was checked is refused rather than replaced.
+pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool, overwrite: bool, report: Report<'_>) -> Result<Transfer, Error> {
+    if let Ok(existing) = dest.symlink_metadata() {
+        if !overwrite {
+            return Err(Error::new(ErrorKind::AlreadyExists, format!("Destination already exists: {}", dest.display())));
+        }
+        if is_real_dir(&source) && existing.is_dir() {
+            return copy_then_delete(source, dest, is_dir, report);
+        }
+    }
+
     // Try rename first (fast, same filesystem)
     match rename(&source, &dest) {
         Ok(_) => Ok(Transfer::Done),
-        Err(e) => {
-            if is_cross_device(&e) {
-                // Cross-device move: copy then delete
-                if copy_path(source.clone(), dest.clone(), is_dir, report)? == Transfer::Cancelled {
-                    // The copy stopped partway, so the source has to stay.
-                    return Ok(Transfer::Cancelled);
-                }
+        Err(e) if is_cross_device(&e) => copy_then_delete(source, dest, is_dir, report),
+        Err(e) => Err(e),
+    }
+}
 
-                // Delete source - if this fails, the copy succeeded but source remains
-                if let Err(del_err) = delete_path(source, is_dir, &mut |_| true) {
-                    return Err(Error::new(
-                        del_err.kind(),
-                        format!(
-                            "Move partially complete: copied to {} but failed to delete source: {}",
-                            dest.display(),
-                            del_err
-                        ),
-                    ));
-                }
-                Ok(Transfer::Done)
-            } else {
-                Err(e)
-            }
+/// A move the slow way: copy, and remove the source only once the copy is
+/// whole. A cancel or an error on the way leaves the source where it was.
+fn copy_then_delete(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
+    if copy_path(source.clone(), dest.clone(), is_dir, report)? == Transfer::Cancelled {
+        // The copy stopped partway, so the source has to stay.
+        return Ok(Transfer::Cancelled);
+    }
+
+    // Delete source - if this fails, the copy succeeded but source remains
+    if let Err(del_err) = delete_path(source, is_dir, &mut |_| true) {
+        return Err(Error::new(
+            del_err.kind(),
+            format!("Move partially complete: copied to {} but failed to delete source: {}", dest.display(), del_err),
+        ));
+    }
+    Ok(Transfer::Done)
+}
+
+/// A directory itself, not a link to one.
+fn is_real_dir(path: &Path) -> bool {
+    path.symlink_metadata().is_ok_and(|metadata| metadata.is_dir())
+}
+
+/// What a copy or move would write over, checked for every item before any
+/// is started - bailing out partway would leave some done and the rest not.
+/// Returns the destinations already taken, for the caller to ask about or
+/// refuse. What no answer could make safe is an error instead: an item onto
+/// itself, which overwriting would empty before reading; a directory into
+/// itself, which never ends; and a file and a directory in each other's
+/// place, where replacing would throw away a whole tree.
+pub fn check_destinations(items: &[(PathBuf, PathBuf, bool)]) -> Result<Vec<PathBuf>, String> {
+    let mut taken = Vec::new();
+    for (source, dest, _) in items {
+        if !path_exists(dest) {
+            continue;
         }
+        if is_same_entry(source, dest) {
+            return Err(format!("\"{}\" is already there", source.display()));
+        }
+        match (is_real_dir(source), is_real_dir(dest)) {
+            (false, true) => return Err(format!("Cannot replace directory {} with a file", dest.display())),
+            (true, false) => return Err(format!("Cannot replace file {} with a directory", dest.display())),
+            _ => {}
+        }
+        taken.push(dest.clone());
+    }
+    // A destination inside the source would be copied into itself, filling the
+    // disk.
+    if let Some((source, _, _)) = items.iter().find(|(source, dest, _)| copies_into_itself(source, dest)) {
+        return Err(format!("Cannot copy \"{}\" into itself", source.display()));
+    }
+    Ok(taken)
+}
+
+/// Clear a link out of the way of a file about to be written at `dest`, so the
+/// write replaces the link instead of following it into whatever it points
+/// at. Anything else stays for the write to deal with.
+fn clear_link(dest: &Path) -> Result<(), Error> {
+    match dest.symlink_metadata() {
+        // A link to a directory is removed as a directory on Windows.
+        Ok(metadata) if metadata.file_type().is_symlink() => remove_file(dest).or_else(|_| remove_dir(dest)),
+        _ => Ok(()),
+    }
+}
+
+/// Make room at `dest` for a link about to be recreated there: a file or a
+/// link in the way goes. A directory does not - no link replaces a tree.
+fn clear_for_link(dest: &Path) -> Result<(), Error> {
+    match dest.symlink_metadata() {
+        Ok(metadata) if metadata.is_dir() => {
+            Err(Error::new(ErrorKind::AlreadyExists, format!("Cannot replace directory {} with a link", dest.display())))
+        }
+        Ok(_) => clear_link(dest).and_then(|()| if path_exists(dest) { remove_file(dest) } else { Ok(()) }),
+        Err(_) => Ok(()),
     }
 }
 
@@ -1317,6 +1400,97 @@ mod transfer_tests {
         assert!(!link.exists());
         assert!(target.join("keep.bin").exists(), "the link's target was followed");
 
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn destinations_are_checked_before_anything_is_written() {
+        let dir = scratch("check");
+        let (from, to) = (dir.join("from"), dir.join("to"));
+        fs::create_dir_all(from.join("tree")).unwrap();
+        fs::create_dir_all(to.join("tree")).unwrap();
+        for name in ["same", "new", "file-vs-dir"] {
+            fs::write(from.join(name), name).unwrap();
+        }
+        fs::write(to.join("same"), "old").unwrap();
+        fs::create_dir(to.join("file-vs-dir")).unwrap();
+        let item = |name: &str| (from.join(name), to.join(name), from.join(name).is_dir());
+
+        // Nothing in the way, and something in the way: the latter is reported.
+        assert_eq!(check_destinations(&[item("new")]).unwrap(), Vec::<PathBuf>::new());
+        assert_eq!(check_destinations(&[item("new"), item("same"), item("tree")]).unwrap(), [to.join("same"), to.join("tree")]);
+        // What overwriting could never make right.
+        assert!(check_destinations(&[item("file-vs-dir")]).unwrap_err().contains("Cannot replace directory"));
+        assert!(check_destinations(&[(to.join("tree"), from.join("same"), true)]).unwrap_err().contains("Cannot replace file"));
+        assert!(check_destinations(&[(from.join("same"), from.join("same"), false)]).unwrap_err().contains("already there"));
+        assert!(check_destinations(&[(from.clone(), from.join("inside"), true)]).unwrap_err().contains("into itself"));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_move_onto_a_directory_merges_into_it() {
+        let dir = scratch("merge");
+        let (source, dest) = (dir.join("src"), dir.join("dst"));
+        fs::create_dir_all(source.join("sub")).unwrap();
+        fs::write(source.join("clash"), "new").unwrap();
+        fs::write(source.join("sub").join("only-in-source"), "s").unwrap();
+        fs::create_dir_all(dest.join("sub")).unwrap();
+        fs::write(dest.join("clash"), "old").unwrap();
+        fs::write(dest.join("only-in-dest"), "d").unwrap();
+
+        let mut report = |_: Step<'_>| true;
+        // Refused unless asked for.
+        assert!(move_path(source.clone(), dest.clone(), true, false, &mut report).is_err());
+        assert!(source.exists());
+
+        assert_eq!(move_path(source.clone(), dest.clone(), true, true, &mut report).unwrap(), Transfer::Done);
+        assert!(!source.exists());
+        assert_eq!(fs::read_to_string(dest.join("clash")).unwrap(), "new");
+        assert_eq!(fs::read_to_string(dest.join("only-in-dest")).unwrap(), "d");
+        assert_eq!(fs::read_to_string(dest.join("sub").join("only-in-source")).unwrap(), "s");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_move_onto_a_file_replaces_it() {
+        let dir = scratch("replace");
+        fs::write(dir.join("a"), "new").unwrap();
+        fs::write(dir.join("b"), "old").unwrap();
+        let mut report = |_: Step<'_>| true;
+        assert_eq!(move_path(dir.join("a"), dir.join("b"), false, true, &mut report).unwrap(), Transfer::Done);
+        assert_eq!(fs::read_to_string(dir.join("b")).unwrap(), "new");
+        assert!(!dir.join("a").exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn overwriting_replaces_a_link_rather_than_writing_through_it() {
+        let dir = scratch("through");
+        fs::write(dir.join("precious"), "keep me").unwrap();
+        fs::write(dir.join("new"), "new").unwrap();
+        std::os::unix::fs::symlink(dir.join("precious"), dir.join("link")).unwrap();
+
+        let mut report = |_: Step<'_>| true;
+        copy_path(dir.join("new"), dir.join("link"), false, &mut report).unwrap();
+        assert_eq!(fs::read_to_string(dir.join("precious")).unwrap(), "keep me");
+        assert!(!dir.join("link").symlink_metadata().unwrap().file_type().is_symlink());
+        assert_eq!(fs::read_to_string(dir.join("link")).unwrap(), "new");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn overwriting_a_read_only_file_replaces_it() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = scratch("readonly");
+        fs::write(dir.join("new"), "new").unwrap();
+        fs::write(dir.join("locked"), "old").unwrap();
+        fs::set_permissions(dir.join("locked"), fs::Permissions::from_mode(0o444)).unwrap();
+
+        let mut report = |_: Step<'_>| true;
+        copy_path(dir.join("new"), dir.join("locked"), false, &mut report).unwrap();
+        assert_eq!(fs::read_to_string(dir.join("locked")).unwrap(), "new");
         fs::remove_dir_all(&dir).unwrap();
     }
 

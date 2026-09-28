@@ -156,6 +156,8 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             render_create_popup(f, area, app_state);
         } else if app_state.is_f8_displayed {
             render_delete_popup(f, area, app_state);
+        } else if let Some(prompt) = &app_state.overwrite_prompt {
+            render_overwrite_popup(f, area, prompt);
         }
     });
 }
@@ -1308,6 +1310,36 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         lines.push(Line::from(Span::styled(names.join(", "), style_file())));
     }
     lines.push(Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", style_columns())));
+    popup_body(f, popup_area, lines);
+}
+
+/// Asks whether a copy or move may write over the names it found taken.
+fn render_overwrite_popup(f: &mut ratatui::Frame<'_>, area: Rect, prompt: &crate::app::OverwritePrompt) {
+    let count = prompt.taken.len();
+    let popup_area = centered_rect(60, 30, area);
+    let verb = if prompt.is_copy { "Copy" } else { "Move" };
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {verb}: overwrite? "), style_title())).centered())
+        .borders(Borders::ALL)
+        .style(style_border());
+
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let name = |path: &std::path::PathBuf| path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
+    let mut lines = Vec::new();
+    if count == 1 {
+        lines.push(Line::from(Span::styled(format!("\"{}\" already exists", name(&prompt.taken[0])), style_title())));
+    } else {
+        lines.push(Line::from(Span::styled(format!("{count} items already exist"), style_title())));
+        let names: Vec<String> = prompt.taken.iter().map(name).collect();
+        lines.push(Line::from(Span::styled(names.join(", "), style_file())));
+    }
+    // What yes does to a directory is less obvious than what it does to a file.
+    if prompt.taken.iter().any(|path| path.is_dir()) {
+        lines.push(Line::from(Span::styled("Directories are merged, replacing what clashes inside", style_file())));
+    }
+    lines.push(Line::from(Span::styled("Y / Enter - Overwrite    N / Esc - Cancel", style_columns())));
     popup_body(f, popup_area, lines);
 }
 
