@@ -888,10 +888,7 @@ pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
     match rename(&source, &dest) {
         Ok(_) => Ok(Transfer::Done),
         Err(e) => {
-            // Check for cross-device error:
-            // - EXDEV (18) on Linux/macOS/Unix
-            // - ERROR_NOT_SAME_DEVICE (17) on Windows
-            if matches!(e.raw_os_error(), Some(17) | Some(18)) {
+            if is_cross_device(&e) {
                 // Cross-device move: copy then delete
                 if copy_path(source.clone(), dest.clone(), is_dir, report)? == Transfer::Cancelled {
                     // The copy stopped partway, so the source has to stay.
@@ -915,6 +912,13 @@ pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
             }
         }
     }
+}
+
+/// True for the error a rename gives across filesystems: EXDEV on Unix,
+/// ERROR_NOT_SAME_DEVICE on Windows. By kind rather than number - the two are
+/// 18 and 17, and 17 on Unix is EEXIST, which is no reason to copy anything.
+fn is_cross_device(error: &Error) -> bool {
+    error.kind() == ErrorKind::CrossesDevices
 }
 
 pub fn calculate_dir_size(path: &Path) -> Result<u64, Error> {
@@ -1105,6 +1109,16 @@ mod transfer_tests {
         assert!(!is_same_entry(&dir.join("a"), &dir.join("link")));
         assert!(!is_same_entry(&dir.join("a"), &dir.join("missing")));
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn only_a_cross_device_rename_falls_back_to_copying() {
+        assert!(is_cross_device(&Error::from_raw_os_error(libc::EXDEV)));
+        // 17, which the fallback used to take for Windows' cross-device error.
+        assert!(!is_cross_device(&Error::from_raw_os_error(libc::EEXIST)));
+        assert!(!is_cross_device(&Error::from_raw_os_error(libc::ENOTEMPTY)));
+        assert!(!is_cross_device(&Error::from_raw_os_error(libc::EACCES)));
     }
 
     #[test]
