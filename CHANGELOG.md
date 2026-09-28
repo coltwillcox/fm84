@@ -6,6 +6,14 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.18.0] - 2026-09-29
+
+### ✨ Added
+- 🎨 **Coloured backgrounds behind image characters** - each cell now sits on its own colour rather than the terminal's, so the dark parts of a picture keep their colour instead of losing it through the gaps in the glyphs. Measured against the colour each cell ought to show, the error drops by about 80% on a photograph. The character is lifted off its own background - lighter on a dark cell, darker on a bright one - so it stays legible either way
+- ⚙️ **Image backgrounds** under F11, on by default. Off sends less to the terminal, which is worth having over a slow link: with the theme painting its background the difference is about 16% of a frame, and about 56% when it is not, since nothing is sending a background per run in that case
+
+---
+
 ## [0.17.0] - 2026-09-28
 
 ### ✨ Added

@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.17.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.18.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -112,7 +112,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📊 **Line numbers** in the gutter (F11 can hide them)
 - 🔢 **Status bar** - filename, line count, file size, detected syntax
 - 🔢 **Hex view** - binaries open as a `hexdump -C`; `X` toggles hex for any file, so you can eyeball a BOM or CRLF endings
-- 🖼️ **Images as ASCII art** - PNG, JPEG, GIF, WebP and BMP drawn in colour; `X` cycles Image, Text and Hex, `F` switches between fitting the whole picture in, centred, and filling the viewer; which one a picture opens with is set under F11
+- 🖼️ **Images as ASCII art** - PNG, JPEG, GIF, WebP and BMP drawn in colour, each character on its own coloured background so the dark parts keep their colour; `X` cycles Image, Text and Hex, `F` switches between fitting the whole picture in, centred, and filling the viewer; which one a picture opens with, and whether backgrounds are drawn, is set under F11
 - 🔍 **Zoom** - `+` and `-` scale a picture from a quarter of the fitted size to four times it, keeping whatever is in the middle of the view in the middle
 - 🖱️ **Mouse selection** - drag to select, Ctrl+C to copy
 - 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
@@ -178,6 +178,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 - 🌈 **Highlight files up to** 256 KiB, 512 KiB or 2 MiB, or never
 - ❓ **Ask before opening over** 16, 64 or 256 MiB
 - 🖼️ **Images open as** Fit or Fill
+- 🎨 **Image backgrounds** - on or off. On, each character sits on its own colour, so the dark parts of a picture keep theirs instead of showing the terminal through the gaps in the glyphs. Off costs less to send, which matters over a slow link
 
 - ⌨️ **Up/Down** to move, **Enter**, **Space** or **Left/Right** to change, Enter again to save a typed command
 - 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it
