@@ -56,6 +56,10 @@ pub const IMAGE_MAX_DECODED: u64 = 256 * 1024 * 1024;
 // drawing is capped anyway - a step past that would change nothing on screen.
 pub const IMAGE_ZOOM_STEPS: [u16; 8] = [25, 50, 75, 100, 150, 200, 300, 400];
 pub const IMAGE_ZOOM_NORMAL: u16 = 100;
+// How far a character is pulled away from the colour behind it, when a picture
+// is drawn with backgrounds. Enough to read the glyph against its own cell
+// without washing the colour out.
+pub const IMAGE_GLYPH_CONTRAST: f64 = 0.45;
 
 // Bytes copied between progress reports. io::copy over a reader limited to this
 // keeps whatever fast copy path the platform has - measured at 2750 MiB/s

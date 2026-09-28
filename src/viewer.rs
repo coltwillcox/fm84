@@ -1,5 +1,5 @@
 use crate::constants::{
-    HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL,
+    HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_GLYPH_CONTRAST, IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL,
 };
 use image::DynamicImage;
 use image::imageops::FilterType;
@@ -72,6 +72,10 @@ pub struct ViewerState {
     /// The ASCII drawing of `image`, and the colour of each of its characters.
     pub image_lines: Vec<String>,
     pub image_colors: Vec<Vec<Color>>,
+    /// The colour behind each character. Empty when the option is off, in which
+    /// case the terminal shows through the gaps in the glyphs and the darker
+    /// parts of a picture lose their colour along with it.
+    pub image_backgrounds: Vec<Vec<Color>>,
     /// The width `image_lines` was last drawn at; 0 when not yet.
     pub image_columns: usize,
     /// Cover the whole viewer and scroll the overflow, rather than fit inside it.
@@ -132,6 +136,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
                 image_zoom: IMAGE_ZOOM_NORMAL,
                 image_lines: Vec::new(),
                 image_colors: Vec::new(),
+                image_backgrounds: Vec::new(),
             });
         }
 
@@ -154,6 +159,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
             image_zoom: IMAGE_ZOOM_NORMAL,
             image_lines: Vec::new(),
             image_colors: Vec::new(),
+            image_backgrounds: Vec::new(),
         });
     }
 
@@ -191,6 +197,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         image_zoom: IMAGE_ZOOM_NORMAL,
         image_lines: Vec::new(),
         image_colors: Vec::new(),
+        image_backgrounds: Vec::new(),
     })
 }
 
@@ -267,28 +274,68 @@ fn coarse(channel: u8) -> u8 {
 ///
 /// On a dark background a dense character is a bright one. On a light theme
 /// it is the other way round: ink is dark, so density stands for darkness.
-pub fn image_to_ascii(image: &DynamicImage, columns: usize, rows: usize) -> (Vec<String>, Vec<Vec<Color>>) {
-    image_to_ascii_on(image, columns, rows, crate::display::light_background())
+pub fn image_to_ascii(
+    image: &DynamicImage,
+    columns: usize,
+    rows: usize,
+    backgrounds: bool,
+) -> (Vec<String>, Vec<Vec<Color>>, Vec<Vec<Color>>) {
+    image_to_ascii_on(image, columns, rows, crate::display::light_background(), backgrounds)
 }
 
-fn image_to_ascii_on(image: &DynamicImage, columns: usize, rows: usize, light: bool) -> (Vec<String>, Vec<Vec<Color>>) {
+fn image_to_ascii_on(
+    image: &DynamicImage,
+    columns: usize,
+    rows: usize,
+    light: bool,
+    backgrounds: bool,
+) -> (Vec<String>, Vec<Vec<Color>>, Vec<Vec<Color>>) {
     let (columns, rows) = (columns.max(1) as u32, rows.max(1) as u32);
     let small = image.resize_exact(columns, rows, FilterType::Triangle).to_rgba8();
 
-    small
-        .rows()
-        .map(|row| {
-            row.map(|pixel| {
-                let [red, green, blue, alpha] = pixel.0;
-                let luma = 0.299 * red as f64 + 0.587 * green as f64 + 0.114 * blue as f64;
-                let ink = if light { 255.0 - luma } else { luma };
-                let level = ink * alpha as f64 / 255.0 / 255.0;
-                let character = IMAGE_RAMP[(level * (IMAGE_RAMP.len() - 1) as f64).round() as usize] as char;
-                (character, Color::Rgb(coarse(red), coarse(green), coarse(blue)))
-            })
-            .unzip()
-        })
-        .unzip()
+    let mut lines = Vec::with_capacity(rows as usize);
+    let mut inks = Vec::with_capacity(rows as usize);
+    let mut backs = Vec::with_capacity(rows as usize);
+
+    for row in small.rows() {
+        let mut line = String::with_capacity(columns as usize);
+        let mut ink_row = Vec::with_capacity(columns as usize);
+        let mut back_row = Vec::with_capacity(columns as usize);
+
+        for pixel in row {
+            let [red, green, blue, alpha] = pixel.0;
+            let luma = 0.299 * red as f64 + 0.587 * green as f64 + 0.114 * blue as f64;
+            let ink = if light { 255.0 - luma } else { luma };
+            let level = ink * alpha as f64 / 255.0 / 255.0;
+            line.push(IMAGE_RAMP[(level * (IMAGE_RAMP.len() - 1) as f64).round() as usize] as char);
+
+            let colour = [coarse(red), coarse(green), coarse(blue)];
+            if backgrounds {
+                // The cell's own colour goes behind, so it reads right whatever
+                // the glyph covers, and the glyph is pulled away from it far
+                // enough to stay legible - lighter on a dark pixel, darker on a
+                // bright one, so neither end of the picture flattens out.
+                let shift = |value: u8| {
+                    let value = value as f64;
+                    let lifted =
+                        if luma < 128.0 { value + (255.0 - value) * IMAGE_GLYPH_CONTRAST } else { value * (1.0 - IMAGE_GLYPH_CONTRAST) };
+                    lifted.round() as u8
+                };
+                ink_row.push(Color::Rgb(shift(colour[0]), shift(colour[1]), shift(colour[2])));
+                back_row.push(Color::Rgb(colour[0], colour[1], colour[2]));
+            } else {
+                ink_row.push(Color::Rgb(colour[0], colour[1], colour[2]));
+            }
+        }
+
+        lines.push(line);
+        inks.push(ink_row);
+        if backgrounds {
+            backs.push(back_row);
+        }
+    }
+
+    (lines, inks, backs)
 }
 
 /// The head of a file, capped in both bytes and lines. Reads lossily so a cut
@@ -623,22 +670,57 @@ mod image_tests {
 
     #[test]
     fn ramp_ends_map_to_black_and_white() {
-        assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 255]), 4, 2, false).0[0], "    ");
-        assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 255]), 4, 2, false).0[0], "@@@@");
+        assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 255]), 4, 2, false, false).0[0], "    ");
+        assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 255]), 4, 2, false, false).0[0], "@@@@");
     }
 
     #[test]
     fn a_light_background_turns_the_ramp_round() {
-        assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 255]), 4, 2, true).0[0], "@@@@");
-        assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 255]), 4, 2, true).0[0], "    ");
+        assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 255]), 4, 2, true, false).0[0], "@@@@");
+        assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 255]), 4, 2, true, false).0[0], "    ");
     }
 
     #[test]
     fn transparent_is_left_blank() {
         for light in [false, true] {
-            assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 0]), 4, 2, light).0[0], "    ");
-            assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 0]), 4, 2, light).0[0], "    ");
+            assert_eq!(image_to_ascii_on(&solid(4, 4, [255, 255, 255, 0]), 4, 2, light, false).0[0], "    ");
+            assert_eq!(image_to_ascii_on(&solid(4, 4, [0, 0, 0, 0]), 4, 2, light, false).0[0], "    ");
         }
+    }
+
+    #[test]
+    fn backgrounds_carry_the_cell_colour() {
+        let red = [200u8, 40, 60, 255];
+        let want = Color::Rgb(coarse(200), coarse(40), coarse(60));
+
+        // Off: nothing behind the characters, and the character itself carries
+        // the colour, exactly as before.
+        let (_, inks, backs) = image_to_ascii_on(&solid(4, 4, red), 4, 2, false, false);
+        assert!(backs.is_empty());
+        assert_eq!(inks[0][0], want);
+
+        // On: the cell's own colour goes behind it, so the colour is right
+        // whatever the glyph happens to cover.
+        let (_, inks, backs) = image_to_ascii_on(&solid(4, 4, red), 4, 2, false, true);
+        assert_eq!(backs.len(), inks.len());
+        assert_eq!(backs[0].len(), inks[0].len());
+        assert_eq!(backs[0][0], want);
+        // And the glyph is moved off it, or there would be nothing to see.
+        assert_ne!(inks[0][0], backs[0][0]);
+    }
+
+    #[test]
+    fn a_glyph_lifts_off_a_dark_cell_and_sinks_into_a_bright_one() {
+        let level = |colour: Color| match colour {
+            Color::Rgb(red, green, blue) => red as u32 + green as u32 + blue as u32,
+            _ => unreachable!("image cells are always true colour"),
+        };
+
+        let (_, inks, backs) = image_to_ascii_on(&solid(2, 2, [20, 20, 20, 255]), 2, 1, false, true);
+        assert!(level(inks[0][0]) > level(backs[0][0]), "a dark cell needs a lighter glyph");
+
+        let (_, inks, backs) = image_to_ascii_on(&solid(2, 2, [240, 240, 240, 255]), 2, 1, false, true);
+        assert!(level(inks[0][0]) < level(backs[0][0]), "a bright cell needs a darker glyph");
     }
 
     #[test]
@@ -647,7 +729,7 @@ mod image_tests {
         let (columns, rows) = image_size_for(&square, 40, 40, false, IMAGE_ZOOM_NORMAL);
         assert_eq!((columns, rows), (40, 20));
 
-        let (lines, colors) = image_to_ascii_on(&square, columns, rows, false);
+        let (lines, colors, _) = image_to_ascii_on(&square, columns, rows, false, false);
         assert_eq!(lines.len(), 20);
         assert!(lines.iter().all(|line| line.chars().count() == 40));
         assert_eq!(colors.len(), 20);
@@ -685,7 +767,7 @@ mod image_tests {
                     columns <= width && rows <= height,
                     "{image_width}x{image_height} fit in {width}x{height}: {columns}x{rows}"
                 );
-                let drawn = image_to_ascii_on(&image, columns, rows, false).0;
+                let drawn = image_to_ascii_on(&image, columns, rows, false, false).0;
                 assert_eq!(drawn.len(), rows);
             }
         }
@@ -710,7 +792,7 @@ mod image_tests {
                 // thing that could put the blow-up back.
                 for zoom in IMAGE_ZOOM_STEPS {
                     let (columns, rows) = image_size_for(&image, width, height, fill, zoom);
-                    let (lines, colors) = image_to_ascii_on(&image, columns, rows, false);
+                    let (lines, colors, _) = image_to_ascii_on(&image, columns, rows, false, false);
                     let cells = columns * lines.len();
                     assert!(
                         cells <= budget,

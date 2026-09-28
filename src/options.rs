@@ -195,6 +195,11 @@ pub struct Options {
     pub large_file_mib: u64,
     /// Whether a picture opens filling the viewer rather than fitting inside it.
     pub image_fill: bool,
+    /// Colour each character's background as well as the character itself. A
+    /// glyph alone leaves dark parts of a picture showing the terminal through
+    /// the gaps, so they lose their colour entirely; a background keeps it, at
+    /// the cost of roughly twice the escape sequences per frame.
+    pub image_backgrounds: bool,
 }
 
 impl Default for Options {
@@ -228,6 +233,7 @@ impl Default for Options {
             highlight_limit_kib: 512,
             large_file_mib: 64,
             image_fill: false,
+            image_backgrounds: true,
         }
     }
 }
@@ -262,9 +268,10 @@ pub enum OptionRow {
     HighlightLimit,
     LargeFile,
     ImageDefault,
+    ImageBackgrounds,
 }
 
-pub const OPTION_ROWS: [OptionRow; 27] = [
+pub const OPTION_ROWS: [OptionRow; 28] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -292,6 +299,7 @@ pub const OPTION_ROWS: [OptionRow; 27] = [
     OptionRow::HighlightLimit,
     OptionRow::LargeFile,
     OptionRow::ImageDefault,
+    OptionRow::ImageBackgrounds,
 ];
 
 impl OptionRow {
@@ -324,6 +332,7 @@ impl OptionRow {
             OptionRow::HighlightLimit => "Highlight files up to",
             OptionRow::LargeFile => "Ask before opening over",
             OptionRow::ImageDefault => "Images open as",
+            OptionRow::ImageBackgrounds => "Image backgrounds",
         }
     }
 
@@ -425,6 +434,7 @@ impl Options {
             },
             OptionRow::LargeFile => format!("{} MiB", self.large_file_mib),
             OptionRow::ImageDefault => if self.image_fill { "Fill" } else { "Fit" }.to_string(),
+            OptionRow::ImageBackgrounds => on_off(self.image_backgrounds),
         }
     }
 
@@ -504,6 +514,7 @@ impl Options {
             }
             OptionRow::LargeFile => self.large_file_mib = step(&LARGE_FILE_LIMITS_MIB, self.large_file_mib, forward),
             OptionRow::ImageDefault => self.image_fill = !self.image_fill,
+            OptionRow::ImageBackgrounds => self.image_backgrounds = !self.image_backgrounds,
             OptionRow::Terminal | OptionRow::Editor => {}
         }
     }
@@ -618,6 +629,7 @@ impl Options {
                         _ => options.image_fill,
                     }
                 }
+                "image_backgrounds" => options.image_backgrounds = flag(options.image_backgrounds),
                 _ => {}
             }
         }
@@ -694,7 +706,8 @@ impl Options {
              # Zero turns syntax highlighting off.\n\
              highlight_limit_kib = {}\n\
              large_file_mib = {}\n\
-             image = {}\n",
+             image = {}\n\
+             image_backgrounds = {}\n",
             self.show_hidden,
             sort,
             self.sort_descending,
@@ -726,6 +739,7 @@ impl Options {
             self.highlight_limit_kib,
             self.large_file_mib,
             if self.image_fill { "fill" } else { "fit" },
+            self.image_backgrounds,
         )
     }
 }
@@ -826,6 +840,7 @@ mod tests {
             highlight_limit_kib: 0,
             large_file_mib: 256,
             image_fill: true,
+            image_backgrounds: false,
         };
         assert_eq!(Options::parse(&options.serialize()), options);
         assert_eq!(Options::parse(&Options::default().serialize()), Options::default());

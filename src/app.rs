@@ -648,6 +648,7 @@ impl AppState {
     /// so the caller can draw again.
     pub fn fit_viewer_image(&mut self) -> bool {
         let (width, height) = (self.viewer_viewport_width, self.viewer_viewport_height);
+        let backgrounds = self.options.image_backgrounds;
         let Some(state) = &mut self.viewer_state else {
             return false;
         };
@@ -660,12 +661,16 @@ impl AppState {
         let (columns, rows) = crate::viewer::image_size_for(image, width, height, state.image_fill, state.image_zoom);
         // Rows as well as columns: a picture squashed to fit is one column wide
         // whatever the viewer's height, so only the row count shows the change.
-        if columns == state.image_columns && rows == state.image_lines.len() {
+        // The backgrounds too, since turning them on or off redraws the same
+        // size - whether they are filled is the record of which way it was made.
+        let drawn_with_backgrounds = !state.image_backgrounds.is_empty();
+        if columns == state.image_columns && rows == state.image_lines.len() && backgrounds == drawn_with_backgrounds {
             return false;
         }
 
         let (was_columns, was_rows) = (state.image_columns, state.image_lines.len());
-        (state.image_lines, state.image_colors) = crate::viewer::image_to_ascii(image, columns, rows);
+        (state.image_lines, state.image_colors, state.image_backgrounds) =
+            crate::viewer::image_to_ascii(image, columns, rows, backgrounds);
         state.total_lines = state.line_count();
         state.image_columns = columns;
         // Hold whatever was in the middle of the pane in the middle of it. A

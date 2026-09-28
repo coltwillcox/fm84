@@ -617,7 +617,9 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
                     let text = viewer_state.line_text(index);
                     let width = text.chars().count();
                     let mut spans = match viewer_state.image_colors.get(index) {
-                        Some(colors) if viewer_state.mode == ViewMode::Image => colored_spans(&text, colors),
+                        Some(colors) if viewer_state.mode == ViewMode::Image => {
+                            colored_spans(&text, colors, viewer_state.image_backgrounds.get(index).map(Vec::as_slice))
+                        }
                         _ => vec![Span::styled(text, style_file())],
                     };
 
@@ -654,21 +656,33 @@ fn centered(area: Rect, width: usize, height: usize) -> Rect {
 }
 
 /// A line of image characters, one span per run of the same colour.
-fn colored_spans(text: &str, colors: &[ratatui::style::Color]) -> Vec<Span<'static>> {
+fn colored_spans(text: &str, colors: &[ratatui::style::Color], backgrounds: Option<&[ratatui::style::Color]>) -> Vec<Span<'static>> {
+    // A run has to agree on both colours, so a background breaks one wherever
+    // either changes. Since the background is derived from the same pixel, that
+    // is the same place the foreground already broke.
+    let paint = |(fg, bg): (ratatui::style::Color, Option<ratatui::style::Color>)| match bg {
+        Some(bg) => Style::new().fg(fg).bg(bg),
+        None => Style::new().fg(fg),
+    };
+
     let mut spans = Vec::new();
     let mut run = String::new();
-    let mut run_color = None;
-    for (character, &color) in text.chars().zip(colors) {
+    let mut run_color: Option<(ratatui::style::Color, Option<ratatui::style::Color>)> = None;
+    for (index, character) in text.chars().enumerate() {
+        let Some(&color) = colors.get(index) else {
+            break;
+        };
+        let pair = (color, backgrounds.and_then(|row| row.get(index)).copied());
         if let Some(previous) = run_color
-            && previous != color
+            && previous != pair
         {
-            spans.push(Span::styled(std::mem::take(&mut run), Style::new().fg(previous)));
+            spans.push(Span::styled(std::mem::take(&mut run), paint(previous)));
         }
-        run_color = Some(color);
+        run_color = Some(pair);
         run.push(character);
     }
-    if let Some(color) = run_color {
-        spans.push(Span::styled(run, Style::new().fg(color)));
+    if let Some(pair) = run_color {
+        spans.push(Span::styled(run, paint(pair)));
     }
     spans
 }
