@@ -27,7 +27,9 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                 if let KeyCode::Char(c) = key.code
                     && control != alt
                 {
-                    let in_editor = app_state.is_f4_displayed && !app_state.is_editor_save_prompt;
+                    // Not behind a popup: an error or the save prompt covers the
+                    // text, and an edit made there could not be seen.
+                    let in_editor = app_state.is_f4_displayed && !app_state.is_editor_save_prompt && !app_state.is_error_displayed;
                     if control {
                         match c {
                             's' if in_editor => {
@@ -199,15 +201,27 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(10) => return Ok(false),
                         _ => {}
                     }
+                } else if app_state.is_error_displayed && app_state.is_f4_displayed {
+                    // An error over the editor - a save that failed. Dismissing it
+                    // goes back to the edits, which are all still there; the keys
+                    // that would otherwise reach the editor or the save prompt
+                    // behind it do nothing while it covers them.
+                    match key.code {
+                        KeyCode::Esc | KeyCode::Enter => app_state.reset_error(),
+                        KeyCode::F(10) => return Ok(false),
+                        _ => {}
+                    }
                 } else if app_state.is_editor_save_prompt {
                     match key.code {
                         KeyCode::Char('y') | KeyCode::Char('Y') => {
-                            // Save and close
-                            if let Err(e) = app_state.editor_save() {
-                                app_state.display_error(e);
-                            }
+                            // Save and close - unless the save fails, in which case
+                            // closing would throw the edits away. The editor stays,
+                            // with the error over it.
                             app_state.is_editor_save_prompt = false;
-                            app_state.close_editor();
+                            match app_state.editor_save() {
+                                Ok(()) => app_state.close_editor(),
+                                Err(e) => app_state.display_error(e),
+                            }
                         }
                         KeyCode::Char('n') | KeyCode::Char('N') => {
                             // Discard and close
@@ -363,7 +377,9 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
             // Bracketed paste: the terminal hands over the system clipboard as
             // one event instead of a burst of keystrokes.
             Event::Paste(text) => {
-                if app_state.is_f4_displayed && !app_state.is_editor_save_prompt {
+                if app_state.is_error_displayed {
+                    // Nothing behind an error takes it.
+                } else if app_state.is_f4_displayed && !app_state.is_editor_save_prompt {
                     app_state.editor_insert_text(&text);
                 } else if app_state.is_f2_displayed {
                     for character in text.chars().filter(|character| !character.is_control()) {
