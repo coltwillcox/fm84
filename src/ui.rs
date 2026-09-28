@@ -131,7 +131,7 @@ fn mount_icon(kind: crate::fs_ops::MountKind) -> &'static str {
     }
 }
 
-/// One panel's row of drive icons: the mount it is on is bracketed, and while
+/// One panel's row of drive icons: the mount it is on sits in a block of colour, and while
 /// that panel is choosing, the candidate is highlighted and named. Also returns
 /// the column each icon starts at and how wide it is, measured from the text
 /// actually drawn, so a click cannot land anywhere but where it looks.
@@ -146,22 +146,21 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16,
     let mut slots = Vec::with_capacity(app_state.mounts.len());
     let mut column = 1; // past the space the strip opens with
     for (index, mount) in app_state.mounts.iter().enumerate() {
+        // A block of colour marks the mount this panel is on, and a brighter
+        // one the candidate while choosing - drawn like the row under a
+        // panel's cursor, with its foreground and pair of backgrounds. Every
+        // slot is the same width, so switching drives moves nothing but the
+        // block, and all of it is clickable. Nerd Font glyphs count as one
+        // cell but draw across two, so each icon gets a blank cell after it
+        // to spill into - otherwise it sits half a cell right of centre.
         let style = if Some(index) == picking {
-            STYLE_TITLE.bg(COLOR_SELECTED_BACKGROUND)
+            Style::new().fg(COLOR_SELECTED_FOREGROUND).bg(COLOR_SELECTED_BACKGROUND)
         } else if Some(index) == current {
-            STYLE_TITLE
+            Style::new().fg(COLOR_SELECTED_FOREGROUND).bg(COLOR_SELECTED_BACKGROUND_INACTIVE)
         } else {
             STYLE_DIR_DARK
         };
-        // Brackets mark the mount this panel is on. Every other icon holds the
-        // same four columns open, so switching drives moves nothing but the
-        // brackets - and a click still lands on the icon it looks like, since
-        // the slot is measured from whichever of the two was drawn.
-        let text = if Some(index) == current {
-            format!("[ {} ]", mount_icon(mount.kind))
-        } else {
-            format!("  {}  ", mount_icon(mount.kind))
-        };
+        let text = format!("  {}   ", mount_icon(mount.kind));
         let width = display_width(&text) as u16;
         slots.push((column, width));
         column += width;
