@@ -1367,6 +1367,12 @@ impl AppState {
             let content = state.lines.join(state.line_ending);
             std::fs::write(&state.file_path, content).map_err(|e| e.to_string())?;
             state.modified = false;
+            // Rewriting a file leaves its directory's mtime alone - only adding,
+            // removing or renaming entries moves that - so the refresh that
+            // watches it never notices, and the panels would go on showing the
+            // size from before the edit. Either of them may be showing the file.
+            self.reload_panel(true, None);
+            self.reload_panel(false, None);
         }
         Ok(())
     }
@@ -2018,6 +2024,31 @@ mod editor_tests {
     fn stacks(app_state: &AppState) -> (usize, usize) {
         let state = app_state.editor_state.as_ref().unwrap();
         (state.undo_stack.len(), state.redo_stack.len())
+    }
+
+    #[test]
+    fn saving_updates_the_size_the_panels_show() {
+        let dir = std::env::temp_dir().join(format!("fm84-save-size-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("notes.txt");
+        std::fs::write(&path, "ab").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        app_state.dir_left = dir.clone();
+        app_state.dir_right = dir.clone();
+        app_state.reload_panel(true, None);
+        app_state.reload_panel(false, None);
+        let size = |children: &[super::Item]| children.iter().find(|item| item.name_full == "notes.txt").unwrap().size_bytes;
+        assert_eq!(size(&app_state.children_left), 2);
+
+        app_state.open_editor(path.clone()).unwrap();
+        app_state.editor_insert_text("more text");
+        app_state.editor_save().unwrap();
+        assert_eq!(size(&app_state.children_left), 11);
+        assert_eq!(size(&app_state.children_right), 11);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
