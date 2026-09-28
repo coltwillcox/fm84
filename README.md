@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.14.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.14.2** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -55,7 +55,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
 - 🔗 **Symlinked directories** - listed and entered like the real thing
-- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on is bracketed, and removable and optical media get their own icons
+- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons
 
 ### 🔍 Quick Search
 - 🔎 **Type-ahead search** - just start typing to find files

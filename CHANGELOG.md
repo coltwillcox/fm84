@@ -6,6 +6,16 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.14.2] - 2026-09-28
+
+### 🛠️ Changed
+- 💿 **The drive a panel is on sits in a block of colour** rather than brackets - drawn like the row under a panel's cursor, cyan on the inactive selection colour, turning to the active selection colour while that panel is choosing. The whole block is clickable, and every icon holds the same width open, so switching drives moves nothing but the block
+
+### 🐛 Fixed
+- 💿 **Drive icons sit centred** - Nerd Font glyphs draw two cells wide while counting as one, so each icon now keeps a blank cell after it to spill into rather than sitting half a cell to the right
+
+---
+
 ## [0.14.1] - 2026-09-28
 
 ### ✨ Added
