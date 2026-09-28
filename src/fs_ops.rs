@@ -629,6 +629,18 @@ fn delete_dir_recursive(path: &Path, report: Report<'_>) -> Result<Transfer, Err
     remove_one(path, true, report)
 }
 
+/// True for an ordinary file, following a symlink to one. Pipes, sockets and
+/// devices are not, and nothing should open them to read: opening a named pipe
+/// waits for a writer that may never come, and a device like /dev/zero reports
+/// a size of nothing and then never ends.
+pub fn is_regular_file(path: &Path) -> bool {
+    fs::metadata(path).is_ok_and(|metadata| metadata.is_file())
+}
+
+fn not_regular(path: &Path) -> Error {
+    Error::new(ErrorKind::InvalidInput, format!("Not a regular file: {}", path.display()))
+}
+
 /// True if anything occupies this path, including a dangling symlink - which
 /// Path::exists() reports as absent because it follows the link.
 pub fn path_exists(path: &Path) -> bool {
@@ -767,6 +779,12 @@ fn copy_symlink(source: &Path, dest: &Path) -> Result<(), Error> {
 /// a reader limited to the chunk rather than a buffer of our own, which is what
 /// keeps the platform's fast path - copy_file_range on Linux.
 fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<Transfer, Error> {
+    // Links are recreated before this is reached, so what arrives here is the
+    // entry itself. A pipe or a device would block the worker in open() or
+    // read forever, out of reach of Esc; cp -r refuses them too.
+    if !fs::symlink_metadata(source)?.is_file() {
+        return Err(not_regular(source));
+    }
     if !report(Step::Starting(source)) {
         return Ok(Transfer::Cancelled);
     }
@@ -957,6 +975,43 @@ mod transfer_tests {
         }
         // A fragment left behind would sit there looking like a finished copy.
         assert!(!dest.exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A named pipe with no writer: anything that opens it to read blocks, so a
+    /// test that reaches one hangs rather than fails.
+    #[cfg(unix)]
+    fn fifo(path: &Path) {
+        use std::os::unix::ffi::OsStrExt;
+        let name = std::ffi::CString::new(path.as_os_str().as_bytes()).unwrap();
+        assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn special_files_are_never_opened() {
+        let dir = scratch("fifo");
+        let pipe = dir.join("pipe");
+        fifo(&pipe);
+
+        assert!(!is_regular_file(&pipe));
+        assert!(!is_regular_file(Path::new("/dev/zero")));
+        assert!(!is_regular_file(&dir));
+        fs::write(dir.join("plain"), "x").unwrap();
+        assert!(is_regular_file(&dir.join("plain")));
+
+        assert_eq!(crate::viewer::load_preview(&pipe, 1024, 10), ["Not a regular file"]);
+        assert!(crate::viewer::load_file_content(&pipe).is_err());
+        assert!(crate::viewer::load_file_content(Path::new("/dev/zero")).is_err());
+
+        // Alone, and inside a directory being copied.
+        let mut report = |_: Step<'_>| true;
+        assert!(copy_path(pipe.clone(), dir.join("pipe-copy"), false, &mut report).is_err());
+        let tree = dir.join("tree");
+        fs::create_dir(&tree).unwrap();
+        fifo(&tree.join("pipe"));
+        assert!(copy_path(tree, dir.join("tree-copy"), true, &mut report).is_err());
+
         fs::remove_dir_all(&dir).unwrap();
     }
 

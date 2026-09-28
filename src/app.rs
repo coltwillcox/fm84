@@ -570,6 +570,12 @@ impl AppState {
     /// that loading it will stall for a noticeable while.
     pub fn request_open(&mut self, file_path: PathBuf, is_edit: bool) {
         let size = match std::fs::metadata(&file_path) {
+            // A pipe, socket or device: opening one to read can block for good,
+            // and /dev/zero would pass the size check below and never end.
+            Ok(metadata) if !metadata.is_file() => {
+                self.display_error(format!("Not a regular file: {}", file_path.display()));
+                return;
+            }
             Ok(metadata) => metadata.len(),
             Err(e) => {
                 self.display_error(e.to_string());

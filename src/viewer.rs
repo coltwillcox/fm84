@@ -101,7 +101,11 @@ pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
 
 pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
     // Get metadata once (single stat syscall)
-    let file_size = std::fs::metadata(path)?.len();
+    let metadata = std::fs::metadata(path)?;
+    if !metadata.is_file() {
+        return Err(Error::new(std::io::ErrorKind::InvalidInput, format!("Not a regular file: {}", path.display())));
+    }
+    let file_size = metadata.len();
 
     // Check binary first
     if is_binary_file(path)? {
@@ -290,6 +294,11 @@ fn image_to_ascii_on(image: &DynamicImage, columns: usize, rows: usize, light: b
 /// The head of a file, capped in both bytes and lines. Reads lossily so a cut
 /// multi-byte character at the cap can't fail the whole preview.
 pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Vec<String> {
+    // Checked first: the preview follows the cursor, so opening a named pipe
+    // here would freeze the app just for passing over one.
+    if !crate::fs_ops::is_regular_file(path) {
+        return vec!["Not a regular file".to_string()];
+    }
     if is_binary_file(path).unwrap_or(false) {
         return vec!["Binary file".to_string()];
     }
