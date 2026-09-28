@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.14.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.14.1** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -55,7 +55,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
 - 🔗 **Symlinked directories** - listed and entered like the real thing
-- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; removable and optical media get their own icons
+- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on is bracketed, and removable and optical media get their own icons
 
 ### 🔍 Quick Search
 - 🔎 **Type-ahead search** - just start typing to find files
@@ -64,14 +64,14 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 📝 File Operations
 - **F1** 💡 - Help/About
-- **F2** ✏️ - Rename files & folders
+- **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing)
 - **F3** 👁️ - View files (text, hexdump, or images as ASCII art)
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, unsaved changes prompt, mouse click to position cursor)
 - **F5** 📋 - Copy to other panel (selected items or cursor item)
 - **F6** 📦 - Move to other panel (selected items or cursor item)
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels, and a cancelled copy cleans up the half-written file. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
-- **F7** 📂 - Create new directories (**Shift+F4** for an empty file)
+- **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
 - **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation and progress)
 - **F9** 💻 - Open external terminal in current directory
 - **F10** 🚪 - Exit to the void

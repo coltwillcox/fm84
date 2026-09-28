@@ -131,7 +131,7 @@ fn mount_icon(kind: crate::fs_ops::MountKind) -> &'static str {
     }
 }
 
-/// One panel's row of drive icons: the mount it is on stands out, and while
+/// One panel's row of drive icons: the mount it is on is bracketed, and while
 /// that panel is choosing, the candidate is highlighted and named. Also returns
 /// the column each icon starts at and how wide it is, measured from the text
 /// actually drawn, so a click cannot land anywhere but where it looks.
@@ -153,7 +153,15 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16,
         } else {
             STYLE_DIR_DARK
         };
-        let text = format!("{} ", mount_icon(mount.kind));
+        // Brackets mark the mount this panel is on. Every other icon holds the
+        // same four columns open, so switching drives moves nothing but the
+        // brackets - and a click still lands on the icon it looks like, since
+        // the slot is measured from whichever of the two was drawn.
+        let text = if Some(index) == current {
+            format!("[ {} ]", mount_icon(mount.kind))
+        } else {
+            format!("  {}  ", mount_icon(mount.kind))
+        };
         let width = display_width(&text) as u16;
         slots.push((column, width));
         column += width;

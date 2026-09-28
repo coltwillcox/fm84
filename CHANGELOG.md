@@ -6,6 +6,17 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.14.1] - 2026-09-28
+
+### ✨ Added
+- ⌨️ **Home and End while typing a name** - in the rename box and the create box, which had arrows, Backspace and Delete but no way to reach either end in one go
+
+### 🛠️ Changed
+- 💿 **The drive a panel is on is bracketed** - `[ icon ]` rather than colour alone, so it reads at a glance and without relying on the palette. The brackets take room that every other icon holds open, so switching drives moves nothing but the brackets, and the whole bracketed cell is clickable
+- 🖼️ **Screenshots sit in a grid** in the README rather than one above another
+
+---
+
 ## [0.14.0] - 2026-09-25
 
 ### ✨ Added
