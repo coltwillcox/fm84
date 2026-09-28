@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.16.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.17.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -69,6 +69,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, unsaved changes prompt, mouse click to position cursor)
 - **F5** 📋 - Copy to other panel (selected items or cursor item), keeping permissions where the filesystem can hold them
 - **F6** 📦 - Move to other panel (selected items or cursor item)
+- ♻️ **Names already taken** - F5 and F6 ask before writing over them: files are replaced, directories merged. F11 can make it overwrite or refuse without asking
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels, and a cancelled copy cleans up the half-written file. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
@@ -144,6 +145,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 
 **Behaviour**
 - 🗑️ **Confirm delete** and ✅ **Confirm copy and move** - turn off to skip the question
+- ♻️ **When destination exists** - Ask, Overwrite (files replaced, directories merged) or Refuse. A file never replaces a directory or the other way round, and nothing is copied onto itself
 - 💻 **Terminal (F9)** - any command, `{}` standing for the directory; left empty, one is picked for you
 - 📝 **Editor (F4)** - an external editor such as `nvim` or `hx`, which gets the terminal until it exits; `{}` stands for the file, which otherwise goes last. Left empty, the built-in editor opens
 - 📍 **Remember directories** - reopen both panels where they were when fm84 last quit

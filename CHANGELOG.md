@@ -6,6 +6,18 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.17.0] - 2026-09-28
+
+### ✨ Added
+- ♻️ **Overwriting on copy and move** - a name already taken at the destination no longer stops the transfer outright. F5 and F6 ask first, naming what is in the way: yes replaces files and merges directories, replacing only what clashes inside them. F11's new **When destination exists** makes that Overwrite without asking, or Refuse as before
+  - 🛡️ Refused whatever the setting: a file in place of a directory or the other way round, which would throw a tree away, and an item onto itself, which overwriting would empty before reading it
+  - 🔗 A link at the destination is replaced, never written through into whatever it points at, and a read-only file in the way is replaced as `cp -f` would
+
+### 🐛 Fixed
+- 📏 **Saving in the editor updates the size the panels show** - rewriting a file leaves its directory's modification time alone, so the refresh that watches for changes never reread it, and the old size stayed until something else changed there
+
+---
+
 ## [0.16.1] - 2026-09-28
 
 ### 🐛 Fixed
