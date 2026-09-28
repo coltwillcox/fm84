@@ -8,6 +8,13 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+# The Linux images are pinned rather than left on ubuntu-latest, which moves to
+# Ubuntu 26 between 19 October and 19 November 2026. A released binary asks for
+# the glibc symbol versions of whatever built it - this one needs GLIBC_2.39,
+# which is what 24.04 ships - so letting the image drift would quietly raise the
+# minimum glibc for everyone downloading it, with no change to the code.
+# ubuntu-22.04 instead would run on older systems still; 26.04 when the time comes.
+
 jobs:
   build:
     name: Build ${{ matrix.target }}
@@ -18,12 +25,12 @@ jobs:
         include:
           # Linux x86_64
           - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+            os: ubuntu-24.04
             archive: tar.gz
 
           # Linux ARM64
           - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
+            os: ubuntu-24.04
             archive: tar.gz
             cross: true
 
@@ -88,7 +95,7 @@ jobs:
   release:
     name: Create Release
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
