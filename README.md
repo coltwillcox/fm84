@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.14.2** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.15.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -72,8 +72,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels, and a cancelled copy cleans up the half-written file. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
-- **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation and progress)
-- **F9** 💻 - Open external terminal in current directory
+- **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation - which F11 can turn off - and progress)
+- **F9** 💻 - Open external terminal in current directory (which one is set under F11)
 - **F10** 🚪 - Exit to the void
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
 - 🖱️ **Double-click** - open directories or view files
@@ -88,6 +88,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 🧱 Columns
 - 📋 **Name, Ext, Size, Modified, Attributes** - permissions written the way `ls -l` writes them
 - 📐 **Priority when space runs short** - columns drop from the right, Name always stays and keeps the leftover width
+- 🎛️ **Your choice of them** - F11 turns each one off, and sets how dates and sizes are written
 
 ### 📊 Status Bar
 - 📈 **Panel stats** - selected/total file count and size shown per panel
@@ -96,20 +97,21 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 🎨 Viewer (F3)
 - 🖼️ **Bordered frame** with filename title bar
-- 📊 **Line numbers** in the gutter
+- 📊 **Line numbers** in the gutter (F11 can hide them)
 - 🔢 **Status bar** - filename, line count, file size, detected syntax
 - 🔢 **Hex view** - binaries open as a `hexdump -C`; `X` toggles hex for any file, so you can eyeball a BOM or CRLF endings
-- 🖼️ **Images as ASCII art** - PNG, JPEG, GIF, WebP and BMP drawn in colour; `X` cycles Image, Text and Hex, `F` switches between fitting the whole picture in, centred, and filling the viewer
+- 🖼️ **Images as ASCII art** - PNG, JPEG, GIF, WebP and BMP drawn in colour; `X` cycles Image, Text and Hex, `F` switches between fitting the whole picture in, centred, and filling the viewer; which one a picture opens with is set under F11
 - 🔍 **Zoom** - `+` and `-` scale a picture from a quarter of the fitted size to four times it, keeping whatever is in the middle of the view in the middle
 - 🖱️ **Mouse selection** - drag to select, Ctrl+C to copy
 - 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
-- ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory, and before decoding a picture that needs over 256 MiB of it - a few hundred KB of PNG can unpack to hundreds of MB
+- ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory (16 or 256 under F11), and before decoding a picture that needs over 256 MiB of it - a few hundred KB of PNG can unpack to hundreds of MB
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 
 ### ✍️ Editor (F4)
 - 🌈 **Syntax highlighting** for Rust, Python, JS, TS, JSON, TOML, YAML, Markdown, Shell, C/C++, HTML, CSS
 - ⚡ **Incremental highlighting** - typing re-parses from the edited line, so speed doesn't fall off in long files
+- 📏 **Highlighting limit** - files over 512 KiB open as plain text, since the first parse takes about 0.9s per MB; F11 moves it to 256 KiB or 2 MiB, or turns highlighting off
 - ↩️ **Line endings preserved** - a CRLF file stays CRLF when saved
 - 🖼️ **Bordered frame** with filename and modified indicator in title bar
 - 📄 **Full text editing** - cursor navigation, insert, delete
@@ -127,6 +129,40 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🪞 **Opposite panel** - shows the head of whatever the cursor is on, and follows it
 - 📁 **Directories** - item count instead of contents
 - 🪶 **Bounded** - reads at most 64 KiB, never prompts, never loads a whole file
+
+### ⚙️ Options (F11)
+Grouped under four headings; the list scrolls on a short terminal.
+
+**Panels**
+- 🙈 **Show hidden files** - dotfiles, or on Windows anything with the hidden attribute
+- 🔃 **Sort by** Name, Extension, Size or Modified, **ascending or descending**
+- 📁 **Directories first** - or mixed in among the files
+- 🔠 **Case-sensitive sort** - off by default, so `readme` and `README` sit together
+- 🧱 **Ext, Size, Modified and Attributes columns** - each on or off; with Ext off, Name shows the whole file name
+- 📅 **Date format** - `dd/mm/yy`, `yyyy-mm-dd`, or relative (`3 h ago`)
+- 📏 **Size units** - KiB (1024) or kB (1000), everywhere a size is shown
+
+**Behaviour**
+- 🗑️ **Confirm delete** and ✅ **Confirm copy and move** - turn off to skip the question
+- 💻 **Terminal (F9)** - any command, `{}` standing for the directory; left empty, one is picked for you
+- 📝 **Editor (F4)** - an external editor such as `nvim` or `hx`, which gets the terminal until it exits; `{}` stands for the file, which otherwise goes last. Left empty, the built-in editor opens
+- 📍 **Remember directories** - reopen both panels where they were when fm84 last quit
+- 👁️ **Preview on startup** - start with F12's preview open
+
+**Appearance**
+- 🎨 **Theme** - Synthwave, Outrun, Vaporwave or High contrast, switched on the spot
+- 🔣 **Icons** - Nerd Font, Nerd Font Mono (drops the padding a wide glyph needs, so icons stay centred), or Plain letters for a terminal without a Nerd Font
+- 🕐 **Clock** - 24-hour, 12-hour, or off
+
+**Viewer and editor**
+- ⇥ **Tab width** - 2, 4 or 8 columns, in the Viewer, the Editor and the preview
+- 📊 **Line numbers** - on or off, in the Viewer and the Editor
+- 🌈 **Highlight files up to** 256 KiB, 512 KiB or 2 MiB, or never
+- ❓ **Ask before opening over** 16, 64 or 256 MiB
+- 🖼️ **Images open as** Fit or Fill
+
+- ⌨️ **Up/Down** to move, **Enter**, **Space** or **Left/Right** to change, Enter again to save a typed command
+- 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it
 
 ### 📂 Directory Sizes
 - 📏 **Calculated on select** - press Space on a directory to calculate its size
@@ -149,16 +185,16 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 | `F1` | Help |
 | `F2` | Rename |
 | `F3` | View file |
-| `F4` | Edit file |
+| `F4` | Edit file (built-in, or the editor set under F11) |
 | `F5` | Copy to other panel |
 | `F6` | Move to other panel |
 | `F7` | Create directory |
 | `Shift+F4` | Create empty file |
 | `F8` / `Delete` | Delete (selected items or cursor item) |
 | `Esc` | Cancel a running copy, move or delete |
-| `F9` | Open terminal |
+| `F9` | Open terminal (the one set under F11, if any) |
 | `F10` | Quit (twice during an operation) |
-| `F11` | Options |
+| `F11` | Options - panels, behaviour, appearance, viewer and editor |
 | `F12` | Preview cursor file in other panel |
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
 | `X` | Toggle hex view; cycle Image, Text, Hex for images (in Viewer) |
@@ -239,7 +275,7 @@ tar -xzf fm84-v*.tar.gz
 </pre>
 </div>
 
-The color palette channels pure 80s energy:
+The default Synthwave palette channels pure 80s energy (F11 swaps it for Outrun, Vaporwave or High contrast):
 - 💜 **Violet borders** - `#743AD5`
 - 🔮 **Purple selections** - `#9400D3`
 - 💗 **Magenta directories** - `#FF00FF`

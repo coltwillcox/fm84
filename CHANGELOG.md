@@ -6,6 +6,35 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.15.0] - 2026-09-28
+
+### ✨ Added
+- ⚙️ **Options under F11** - what was an "Under construction" placeholder is now a list, grouped under Panels, Behaviour, Appearance and Viewer and editor, that you move through with the arrows and change with Enter, Space or Left/Right, saved as you go to `~/.config/fm84/config` (`$XDG_CONFIG_HOME`, or `%APPDATA%` on Windows). The file is plain `key = value` lines, and a line that makes no sense leaves that setting at its default rather than stopping fm84 from starting
+  - 🙈 **Show hidden files** - dotfiles, or the hidden attribute on Windows
+  - 🔃 **Sort by** Name, Extension, Size or Modified, ascending or descending, with the name settling ties. Extension ascending is the default, which is the order fm84 always used
+  - 📁 **Directories first** - on, as always, or off to mix them in among the files
+  - 🔠 **Case-sensitive sort** - off, as always, or on to put `README` before `apple`
+  - 🧱 **Ext, Size, Modified and Attributes columns** - each can be turned off, leaving Name the room. With no Ext column, Name shows the whole file name, so `Cargo.lock` and `Cargo.toml` no longer read the same - which also covers a panel too narrow for it
+  - 📅 **Date format** - `dd/mm/yy` as before, `yyyy-mm-dd`, or relative (`3 h ago`). Dates are now written out as they are drawn, so a relative one keeps up without a reload, and the Modified column sizes itself to the format
+  - 📏 **Size units** - KiB (1024), as before, or kB (1000), everywhere a size appears
+  - ✅ **Confirm copy and move** - off sends F5 and F6 straight to the transfer; the checks for an existing destination and for copying a directory into itself still run
+  - 📝 **Editor (F4)** - an external editor, handed the terminal until it exits, after which both panels are reread. `{}` stands for the file, which otherwise goes last. Left empty, the built-in editor opens as before
+  - 📍 **Remember directories** - reopen both panels where they were at the last quit, kept in `session` beside the config. A directory that has gone since opens its nearest surviving parent
+  - 👁️ **Preview on startup** - start with F12's preview open
+  - 🕐 **Clock** - 24-hour as before, 12-hour, or off
+  - 🗑️ **Confirm delete** - off sends F8 straight to the delete
+  - 🔣 **Icons** - Nerd Font, Nerd Font Mono, or Plain. Mono drops the blank cell each drive icon keeps for a wide glyph, which in a Mono font would push it off centre; Plain uses letters and `/` for a terminal with no Nerd Font at all
+  - 💻 **Terminal (F9)** - a command of your own, split on spaces, with `{}` standing for the directory. Left empty, the terminal is picked as before
+  - 🎨 **Theme** - Synthwave, as it always was, or Outrun (orange and hot pink), Vaporwave (pastels) or High contrast. It changes on the spot, behind the dialog
+  - ⇥ **Tab width** - 2, 4 or 8, wherever tabs are expanded: the viewer, the editor, where a click lands in it, and the preview
+  - 📊 **Line numbers** - off hides the gutter in the viewer and the editor, and clicks in the editor still land on the character under the pointer
+  - 🌈 **Highlight files up to** 256 KiB, 512 KiB (the old fixed limit) or 2 MiB, or Off for plain text always
+  - ❓ **Ask before opening over** 16, 64 (the old fixed limit) or 256 MiB
+  - 🖼️ **Images open as** Fit, as before, or Fill
+  - 📜 **The list scrolls** when the terminal is too short for all of it, keeping the highlighted row in view
+
+---
+
 ## [0.14.2] - 2026-09-28
 
 ### 🛠️ Changed
