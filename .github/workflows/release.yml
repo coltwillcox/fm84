@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -80,7 +80,7 @@ jobs:
           Compress-Archive -Path dist/* -DestinationPath fm84-${{ github.ref_name }}-${{ matrix.target }}.zip
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fm84-${{ matrix.target }}
           path: fm84-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }}
@@ -94,13 +94,13 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: FM84 ${{ github.ref_name }}
           draft: false
