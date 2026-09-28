@@ -2,6 +2,7 @@ use crate::fs_ops::{
     Mount, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, list_mounts,
     load_directory_rows, measure, move_path, nearest_existing_dir, rename_in_place,
 };
+use crate::options::{OPTION_ROWS, OptionRow, Options};
 use crate::viewer::{ViewMode, ViewerState};
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
@@ -112,6 +113,13 @@ pub struct AppState {
     pub is_error_displayed: bool,
     pub is_f1_displayed: bool,
     pub is_f11_displayed: bool,
+    /// What F11 sets, as loaded from the config file at startup.
+    pub options: Options,
+    /// The row the options popup has highlighted.
+    pub options_cursor: usize,
+    /// Set while a text option is being typed into; `options_input` holds it.
+    pub options_editing: bool,
+    pub options_input: TextInput,
     pub is_f12_displayed: bool,
     pub preview: Option<PreviewState>,
     /// Editor clipboard. Internal, so it works in a bare TTY too.
@@ -316,6 +324,7 @@ pub struct Item {
     pub size: String,
     pub size_bytes: u64,
     pub modified: String,
+    pub modified_at: Option<SystemTime>,
     pub attributes: String,
 }
 
@@ -335,6 +344,10 @@ impl AppState {
             is_error_displayed,
             is_f1_displayed: false,
             is_f11_displayed: false,
+            options: Options::load(),
+            options_cursor: 0,
+            options_editing: false,
+            options_input: TextInput::new(),
             is_f12_displayed: false,
             preview: None,
             clipboard: String::new(),
@@ -410,6 +423,57 @@ impl AppState {
     pub fn reset_error(&mut self) {
         self.is_error_displayed = false;
         self.error_message.clear();
+    }
+
+    pub fn close_options(&mut self) {
+        self.is_f11_displayed = false;
+        self.options_editing = false;
+        self.options_input.clear();
+    }
+
+    fn options_row(&self) -> OptionRow {
+        OPTION_ROWS[self.options_cursor.min(OPTION_ROWS.len() - 1)]
+    }
+
+    pub fn options_move(&mut self, down: bool) {
+        let count = OPTION_ROWS.len();
+        self.options_cursor = if down { (self.options_cursor + 1) % count } else { (self.options_cursor + count - 1) % count };
+    }
+
+    /// Step the highlighted option, or start typing into it if it is text.
+    pub fn options_change(&mut self, forward: bool) {
+        let row = self.options_row();
+        if row.is_text() {
+            self.options_input.set(self.options.terminal.clone());
+            self.options_editing = true;
+            return;
+        }
+        self.options.cycle(row, forward);
+        self.options_changed(row);
+    }
+
+    pub fn options_commit_edit(&mut self) {
+        self.options.terminal = self.options_input.text.trim().to_string();
+        self.options_editing = false;
+        self.options_input.clear();
+        self.options_changed(OptionRow::Terminal);
+    }
+
+    pub fn options_cancel_edit(&mut self) {
+        self.options_editing = false;
+        self.options_input.clear();
+    }
+
+    /// Keep a change: write it out, and reread the panels if it changes what
+    /// they list. A failed write still leaves the change in place for this run.
+    fn options_changed(&mut self, row: OptionRow) {
+        if row.affects_listing() {
+            self.reload_panel(true, None);
+            self.reload_panel(false, None);
+        }
+        if let Err(e) = self.options.save() {
+            self.display_error(format!("Cannot save options: {}", e));
+        }
     }
 
     pub fn reset_create(&mut self) {
@@ -1539,7 +1603,7 @@ impl AppState {
             })
         };
 
-        match load_directory_rows(&dir) {
+        match load_directory_rows(&dir, &self.options) {
             Ok(items) => {
                 let selected = if is_left { &mut self.selected_left } else { &mut self.selected_right };
                 prune_selection(selected, &items);
@@ -1891,6 +1955,7 @@ mod tests {
             size: String::new(),
             size_bytes: 0,
             modified: String::new(),
+            modified_at: None,
             attributes: String::new(),
         }
     }

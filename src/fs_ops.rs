@@ -1,5 +1,6 @@
 use crate::app::Item;
 use crate::constants::COPY_CHUNK;
+use crate::options::{Options, SortKey};
 use crate::utils::format_size;
 use chrono::Local;
 use std::env;
@@ -71,7 +72,21 @@ fn format_attributes(_metadata: &fs::Metadata, _is_dir: bool, _is_symlink: bool)
     String::new()
 }
 
-pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
+/// Hidden the way the platform means it: a leading dot, or on Windows the
+/// hidden attribute, which is what Explorer goes by.
+#[cfg(windows)]
+fn is_hidden(_name: &str, metadata: Option<&fs::Metadata>) -> bool {
+    use std::os::windows::fs::MetadataExt;
+    const HIDDEN: u32 = 0x0000_0002;
+    metadata.is_some_and(|metadata| metadata.file_attributes() & HIDDEN != 0)
+}
+
+#[cfg(not(windows))]
+fn is_hidden(name: &str, _metadata: Option<&fs::Metadata>) -> bool {
+    name.starts_with('.')
+}
+
+pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, Error> {
     let entries: Vec<_> = read_dir(path)?
         .filter_map(|entry| entry.ok())
         .collect();
@@ -89,6 +104,7 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
             size: String::new(),
             size_bytes: 0,
             modified: String::new(),
+            modified_at: None,
             attributes: String::new(),
         });
     }
@@ -109,12 +125,15 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
         };
         let is_dir = metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false);
         let name_full = entry_path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        if !options.show_hidden && is_hidden(&name_full, metadata.as_ref()) {
+            continue;
+        }
         let name = if is_dir { name_full.clone() } else { entry_path.file_stem().and_then(|n| n.to_str()).unwrap_or("").to_string() };
         let extension = if is_dir { String::new() } else { entry_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_string() };
         let size_bytes = if is_dir { 0 } else { metadata.as_ref().map(|m| m.len()).unwrap_or(0) };
         let size = if is_dir { "<DIR>".to_string() } else { format_size(size_bytes) };
-        let modified = metadata.as_ref()
-            .and_then(|m| m.modified().ok())
+        let modified_at = metadata.as_ref().and_then(|m| m.modified().ok());
+        let modified = modified_at
             .map(|t| {
                 let dt: chrono::DateTime<Local> = t.into();
                 dt.format("%d/%m/%y %H:%M").to_string()
@@ -134,24 +153,37 @@ pub fn load_directory_rows(path: &Path) -> Result<Vec<Item>, Error> {
             size,
             size_bytes,
             modified,
+            modified_at,
             attributes,
         });
     }
 
     // Sort items on already-computed fields (no stat syscalls during sort)
     let sort_start = usize::from(has_parent);
-    children[sort_start..].sort_by(|a, b| match (a.is_dir, b.is_dir) {
-        (true, false) => std::cmp::Ordering::Less,
-        (false, true) => std::cmp::Ordering::Greater,
-        (true, true) => a.name_full.to_lowercase().cmp(&b.name_full.to_lowercase()),
-        (false, false) => {
-            a.extension.to_lowercase().cmp(&b.extension.to_lowercase()).then_with(|| {
-                a.name_full.to_lowercase().cmp(&b.name_full.to_lowercase())
-            })
-        }
-    });
+    children[sort_start..].sort_by(|a, b| compare_rows(a, b, options));
 
     Ok(children)
+}
+
+/// Directories before files whichever way the rest runs, then the chosen key,
+/// with the name settling ties so equal sizes or dates still list steadily.
+fn compare_rows(a: &Item, b: &Item, options: &Options) -> std::cmp::Ordering {
+    use std::cmp::Ordering;
+
+    match (a.is_dir, b.is_dir) {
+        (true, false) => return Ordering::Less,
+        (false, true) => return Ordering::Greater,
+        _ => {}
+    }
+
+    let name = || a.name_full.to_lowercase().cmp(&b.name_full.to_lowercase());
+    let order = match options.sort_key {
+        SortKey::Name => name(),
+        SortKey::Extension => a.extension.to_lowercase().cmp(&b.extension.to_lowercase()).then_with(name),
+        SortKey::Size => a.size_bytes.cmp(&b.size_bytes).then_with(name),
+        SortKey::Modified => a.modified_at.cmp(&b.modified_at).then_with(name),
+    };
+    if options.sort_descending { order.reverse() } else { order }
 }
 
 /// What kind of place a mount is, so the UI can pick an icon for it.

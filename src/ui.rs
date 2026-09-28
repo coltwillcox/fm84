@@ -1,5 +1,6 @@
 use crate::app::{AppState, TransferKind};
 use crate::constants::*;
+use crate::options::{IconStyle, OPTION_ROWS};
 use crate::utils::*;
 use crate::viewer::ViewMode;
 use chrono::Local;
@@ -98,7 +99,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         } else if app_state.is_f1_displayed {
             render_help_popup(f, area);
         } else if app_state.is_f11_displayed {
-            render_options_popup(f, area);
+            render_options_popup(f, area, app_state);
         } else if app_state.is_f5_displayed {
             render_copy_move_popup(f, area, app_state, true);
         } else if app_state.is_f6_displayed {
@@ -120,8 +121,17 @@ fn panel_split(area: Rect) -> std::rc::Rc<[Rect]> {
         .split(area)
 }
 
-fn mount_icon(kind: crate::fs_ops::MountKind) -> &'static str {
+fn mount_icon(kind: crate::fs_ops::MountKind, style: IconStyle) -> &'static str {
     use crate::fs_ops::MountKind;
+    if style == IconStyle::Plain {
+        return match kind {
+            MountKind::Home => "~",
+            MountKind::Disk => "D",
+            MountKind::Removable => "U",
+            MountKind::Network => "N",
+            MountKind::Optical => "O",
+        };
+    }
     match kind {
         MountKind::Home => ICON_HOME,
         MountKind::Disk => ICON_DRIVE,
@@ -129,6 +139,21 @@ fn mount_icon(kind: crate::fs_ops::MountKind) -> &'static str {
         MountKind::Network => ICON_NETWORK,
         MountKind::Optical => ICON_OPTICAL,
     }
+}
+
+/// The icon cell of a file row. Plain marks directories the way MC does and
+/// leaves files blank; the brackets and colours already tell them apart.
+fn row_icon(is_dir: bool, style: IconStyle) -> &'static str {
+    match (style, is_dir) {
+        (IconStyle::Plain, true) => "/",
+        (IconStyle::Plain, false) => " ",
+        (_, true) => ICON_FOLDER,
+        (_, false) => ICON_FILE,
+    }
+}
+
+fn logo_icon(style: IconStyle) -> &'static str {
+    if style == IconStyle::Plain { "84" } else { ICON_LOGO }
 }
 
 /// One panel's row of drive icons: the mount it is on sits in a block of colour, and while
@@ -151,8 +176,9 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16,
         // panel's cursor, with its foreground and pair of backgrounds. Every
         // slot is the same width, so switching drives moves nothing but the
         // block, and all of it is clickable. Nerd Font glyphs count as one
-        // cell but draw across two, so each icon gets a blank cell after it
-        // to spill into - otherwise it sits half a cell right of centre.
+        // cell but most fonts draw them across two, so there each icon gets a
+        // blank cell after it to spill into - otherwise it sits half a cell
+        // right of centre. Mono fonts and plain letters fit in the one.
         let style = if Some(index) == picking {
             Style::new().fg(COLOR_SELECTED_FOREGROUND).bg(COLOR_SELECTED_BACKGROUND)
         } else if Some(index) == current {
@@ -160,7 +186,9 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16,
         } else {
             STYLE_DIR_DARK
         };
-        let text = format!("  {}   ", mount_icon(mount.kind));
+        let icon_style = app_state.options.icon_style;
+        let spill = if icon_style.is_wide() { " " } else { "" };
+        let text = format!("  {}  {}", mount_icon(mount.kind, icon_style), spill);
         let width = display_width(&text) as u16;
         slots.push((column, width));
         column += width;
@@ -177,7 +205,7 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16,
 
 fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
     let cached_clock = app_state.cached_clock.as_str();
-    let logo = Span::styled(format!(" {} ", ICON_LOGO), STYLE_TITLE);
+    let logo = Span::styled(format!(" {} ", logo_icon(app_state.options.icon_style)), STYLE_TITLE);
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), STYLE_TITLE);
     let clock = Span::styled(cached_clock, STYLE_TITLE);
 
@@ -343,7 +371,7 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
         let is_selected = selected_set.contains(&child.name_full);
 
         // Keep original icon, change color if selected
-        let icon = if child.is_dir { ICON_FOLDER } else { ICON_FILE };
+        let icon = row_icon(child.is_dir, app_state.options.icon_style);
         let file_color = color_for_extension(&child.extension);
         let text_color = if is_selected {
             COLOR_SELECTED_MARKER
@@ -1046,8 +1074,11 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     f.render_widget(help_para, inner);
 }
 
-fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
-    let popup_area = centered_rect(50, 25, area);
+fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+    // A border row each side, a blank row above and below the list, and two
+    // for the key hint under it.
+    let width = 60.min(area.width as usize);
+    let popup_area = centered(area, width, OPTION_ROWS.len() + 6);
     let popup_block = Block::default()
         .title(Line::from(Span::styled(" Options ", STYLE_TITLE)).centered())
         .borders(Borders::ALL)
@@ -1056,14 +1087,59 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     f.render_widget(Clear::default(), popup_area);
     f.render_widget(popup_block, popup_area);
 
-    popup_body(
-        f,
-        popup_area,
-        vec![
-            Line::from(Span::styled("Under construction", STYLE_TITLE)),
-            Line::from(Span::styled("Esc - Close", STYLE_COLUMNS)),
-        ],
-    );
+    let inner = popup_inner(popup_area);
+    let row_width = inner.width as usize;
+    let cursor_style = Style::new().fg(COLOR_SELECTED_FOREGROUND).bg(COLOR_SELECTED_BACKGROUND).add_modifier(Modifier::BOLD);
+
+    let mut lines = Vec::with_capacity(OPTION_ROWS.len() + 3);
+    lines.push(Line::from(""));
+    for (index, &row) in OPTION_ROWS.iter().enumerate() {
+        let is_cursor = index == app_state.options_cursor;
+        let label = format!(" {}", row.label());
+        // Each row is padded out to the full width, so the cursor reads as a
+        // bar, as it does in the panels.
+        let line = if is_cursor && app_state.options_editing {
+            let typed = app_state.options_input.cursor_spans(cursor_style, cursor_style.add_modifier(Modifier::REVERSED));
+            let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+            let gap = row_width.saturating_sub(display_width(&label) + typed_width + 1);
+            let mut spans = vec![Span::styled(label, cursor_style), Span::styled(" ".repeat(gap), cursor_style)];
+            spans.extend(typed);
+            spans.push(Span::styled(" ", cursor_style));
+            Line::from(spans)
+        } else {
+            let value = app_state.options.value(row);
+            // A long terminal command gives way from the left, keeping the end
+            // of it - usually where the arguments that matter are.
+            let room = row_width.saturating_sub(display_width(&label) + 3);
+            let value = if display_width(&value) > room {
+                let tail: String = value.chars().rev().take(room.saturating_sub(1)).collect::<Vec<_>>().into_iter().rev().collect();
+                format!("…{}", tail)
+            } else {
+                value
+            };
+            let gap = row_width.saturating_sub(display_width(&label) + display_width(&value) + 1);
+            let text = format!("{}{}{} ", label, " ".repeat(gap), value);
+            if is_cursor {
+                Line::from(Span::styled(text, cursor_style))
+            } else {
+                Line::from(vec![
+                    Span::styled(format!("{}{}", label, " ".repeat(gap)), STYLE_DIR),
+                    Span::styled(format!("{} ", value), STYLE_COLUMNS),
+                ])
+            }
+        };
+        lines.push(line);
+    }
+
+    let hint = if app_state.options_editing {
+        "Enter - Save    Esc - Cancel    {} - directory"
+    } else {
+        "↑↓ - Move    Enter/←→ - Change    Esc - Close"
+    };
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(hint, STYLE_COLUMNS)).centered());
+
+    f.render_widget(Paragraph::new(lines), inner);
 }
 
 fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {

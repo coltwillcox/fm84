@@ -2,6 +2,7 @@ mod app;
 mod constants;
 mod fs_ops;
 mod input;
+mod options;
 mod ui;
 mod utils;
 mod viewer;

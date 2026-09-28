@@ -107,10 +107,35 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         _ => {}
                     }
                 } else if app_state.is_f11_displayed {
-                    match key.code {
-                        KeyCode::Esc | KeyCode::F(11) => app_state.is_f11_displayed = false,
-                        KeyCode::F(10) => return Ok(false),
-                        _ => {}
+                    if app_state.is_error_displayed {
+                        // A failed save; the dialog stays open behind it.
+                        if key.code == KeyCode::Esc {
+                            app_state.reset_error();
+                        }
+                    } else if app_state.options_editing {
+                        match key.code {
+                            KeyCode::Esc => app_state.options_cancel_edit(),
+                            KeyCode::Enter => app_state.options_commit_edit(),
+                            KeyCode::F(10) => return Ok(false),
+                            KeyCode::Char(to_insert) => app_state.options_input.insert(to_insert),
+                            KeyCode::Backspace => app_state.options_input.backspace(),
+                            KeyCode::Delete => app_state.options_input.delete_forward(),
+                            KeyCode::Left => app_state.options_input.move_left(),
+                            KeyCode::Right => app_state.options_input.move_right(),
+                            KeyCode::Home => app_state.options_input.move_home(),
+                            KeyCode::End => app_state.options_input.move_end(),
+                            _ => {}
+                        }
+                    } else {
+                        match key.code {
+                            KeyCode::Esc | KeyCode::F(11) => app_state.close_options(),
+                            KeyCode::F(10) => return Ok(false),
+                            KeyCode::Up => app_state.options_move(false),
+                            KeyCode::Down => app_state.options_move(true),
+                            KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Right => app_state.options_change(true),
+                            KeyCode::Left => app_state.options_change(false),
+                            _ => {}
+                        }
                     }
                 } else if app_state.is_f8_displayed {
                     match key.code {
@@ -437,7 +462,11 @@ fn toggle_options(app_state: &mut AppState) {
     if app_state.is_error_displayed || app_state.is_f1_displayed {
         return;
     }
-    app_state.is_f11_displayed = !app_state.is_f11_displayed;
+    if app_state.is_f11_displayed {
+        app_state.close_options();
+    } else {
+        app_state.is_f11_displayed = true;
+    }
 }
 
 fn toggle_rename(app_state: &mut AppState) {
@@ -528,7 +557,7 @@ fn handle_rename(app_state: &mut AppState) {
 fn handle_esc(app_state: &mut AppState) {
     app_state.reset_error();
     app_state.is_f1_displayed = false;
-    app_state.is_f11_displayed = false;
+    app_state.close_options();
     app_state.reset_rename();
     app_state.reset_create();
     app_state.reset_delete();
@@ -678,6 +707,9 @@ fn toggle_delete(app_state: &mut AppState) {
         }
 
         app_state.delete_items = items;
+        if !app_state.options.confirm_delete {
+            handle_delete_confirm(app_state);
+        }
     } else {
         app_state.reset_delete();
     }
@@ -801,11 +833,43 @@ fn open_terminal(app_state: &mut AppState) {
     }
 
     let dir = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
-    let result = spawn_detached_terminal(dir);
+    let command = app_state.options.terminal.trim();
+    let result = if command.is_empty() { spawn_detached_terminal(dir) } else { spawn_configured_terminal(command, dir) };
     if let Err(e) = result {
         app_state.display_error(format!("Cannot open terminal: {}", e));
     }
 }
+
+/// The terminal named in F11. Split on whitespace, with `{}` standing for the
+/// directory in case the terminal wants it as an argument; it is started in
+/// the directory either way.
+fn spawn_configured_terminal(command: &str, dir: &std::path::Path) -> std::io::Result<()> {
+    let dir_text = dir.to_string_lossy();
+    let mut parts = command.split_whitespace().map(|part| part.replace("{}", &dir_text));
+    let program = parts.next().ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "Empty terminal command"))?;
+    let mut process = Command::new(program);
+    process.args(parts).current_dir(dir).stdout(Stdio::null()).stderr(Stdio::null());
+    detach(&mut process);
+    process.spawn()?;
+    Ok(())
+}
+
+/// Keep a started terminal alive after fm84 exits, and out of its signals.
+#[cfg(unix)]
+fn detach(process: &mut Command) {
+    use std::os::unix::process::CommandExt;
+    process.process_group(0);
+}
+
+#[cfg(windows)]
+fn detach(process: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
+    process.creation_flags(CREATE_NEW_PROCESS_GROUP);
+}
+
+#[cfg(not(any(unix, windows)))]
+fn detach(_process: &mut Command) {}
 
 #[cfg(target_os = "macos")]
 fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
