@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::fs_ops::{copies_into_itself, create_directory, create_file, path_exists, rename_path};
+use crate::fs_ops::{copies_into_itself, create_directory, create_file, is_plain_name, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use crate::display::tab_width;
 use ratatui::layout::Position;
@@ -547,6 +547,12 @@ fn handle_rename(app_state: &mut AppState) {
             app_state.reset_rename();
             return;
         }
+        // A rename stays in its directory; moving is F6.
+        if !is_plain_name(&new_name) {
+            app_state.display_error(format!("Not a plain file name: {}", new_name));
+            app_state.reset_rename();
+            return;
+        }
 
         let mut original_path = parent_path.clone();
         original_path.push(item.name_full.clone());
@@ -744,6 +750,13 @@ fn handle_delete_confirm(app_state: &mut AppState) {
 
 fn handle_create_confirm(app_state: &mut AppState) {
     if app_state.create_input.text.is_empty() {
+        app_state.reset_create();
+        return;
+    }
+
+    // Made in the directory on show, not in one named by the path typed.
+    if !is_plain_name(&app_state.create_input.text) {
+        app_state.display_error(format!("Not a plain file name: {}", app_state.create_input.text));
         app_state.reset_create();
         return;
     }

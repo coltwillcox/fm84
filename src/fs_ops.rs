@@ -641,6 +641,17 @@ fn not_regular(path: &Path) -> Error {
     Error::new(ErrorKind::InvalidInput, format!("Not a regular file: {}", path.display()))
 }
 
+/// True for a name that stays in the directory it is given in: one plain
+/// component, so not "." or "..", and no separator - "../x" or "sub/x" would
+/// rename or create somewhere else entirely.
+pub fn is_plain_name(name: &str) -> bool {
+    let mut components = Path::new(name).components();
+    matches!(
+        (components.next(), components.next()),
+        (Some(std::path::Component::Normal(only)), None) if only == name
+    )
+}
+
 /// True if anything occupies this path, including a dangling symlink - which
 /// Path::exists() reports as absent because it follows the link.
 pub fn path_exists(path: &Path) -> bool {
@@ -1037,6 +1048,20 @@ mod transfer_tests {
         assert!(copy_path(source.to_path_buf(), dest.clone(), false, &mut report).is_err());
         assert!(!path_exists(&dest));
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_plain_name_stays_where_it_is_put() {
+        for name in ["notes.txt", ".hidden", "with space", "ünïcode", "a.b.c"] {
+            assert!(is_plain_name(name), "{name}");
+        }
+        for name in ["", ".", "..", "../x", "sub/x", "x/", "/x", "./x"] {
+            assert!(!is_plain_name(name), "{name}");
+        }
+        #[cfg(windows)]
+        for name in ["sub\\x", "C:x", "C:"] {
+            assert!(!is_plain_name(name), "{name}");
+        }
     }
 
     #[test]
