@@ -6,6 +6,20 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.19.0] - 2026-09-29
+
+### ✨ Added
+- 🔎 **Two lines of detail under the panels**, in the space the F-key labels leave empty - the whole name however long the column had to clip it, the exact byte count with its thousands marked off rather than a rounded "9 MiB", the timestamp down to the second, `owner:group`, the permission bits, and where a symlink points, which was shown nowhere before. Gathered when the cursor moves rather than while drawing, so an unresponsive mount cannot hold up a frame
+- 📄 **Page Up and Page Down step through a folder's pictures** from inside the viewer, wrapping round at either end. Anything that is not a picture is stepped over, and what counts as one is settled by reading each file's header rather than by its name
+- ⚡ **The pictures either side are read ahead** while one is open, so stepping through a folder does not stop to decode each one - a 27-megapixel photograph took about 50 ms to open and now arrives already decoded. The one just left is kept as it is. F11's new **Read pictures ahead** turns it off; on by default
+- 🖱️ **Drag a picture about with the mouse** in the viewer - it follows the pointer the way a sheet of paper follows a finger, moving both ways at once, which the arrow keys cannot. Each drag is measured from where the press landed, so a long one cannot creep from rounding
+
+### 🐛 Fixed
+- 💿 **Removable drives mounted under `/run/media` now appear** in the drive strip. udisks2 puts a USB stick there, and the filter that keeps the kernel's own mounts out of the strip was throwing that whole path away with them
+- ✏️ **F2 scrolls the rename field to keep the cursor in view** - typing or arrowing past the right edge of a long name left the cursor somewhere off the end of the box, so you were editing where you could not see
+
+---
+
 ## [0.18.1] - 2026-09-29
 
 ### 🐛 Fixed

@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.18.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.19.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -66,7 +66,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
 - 🔗 **Symlinked directories** - listed and entered like the real thing
-- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons
+- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`
 
 ### 🔍 Quick Search
 - 🔎 **Type-ahead search** - just start typing to find files
@@ -75,7 +75,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 📝 File Operations
 - **F1** 💡 - Help/About
-- **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing); a change of case alone works on macOS and Windows too
+- **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing, the field scrolling to keep the cursor in view on a long name); a change of case alone works on macOS and Windows too
 - **F3** 👁️ - View files (text, hexdump, or images as ASCII art)
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, unsaved changes prompt, mouse click to position cursor)
 - **F5** 📋 - Copy to other panel (selected items or cursor item), keeping permissions where the filesystem can hold them
@@ -107,12 +107,18 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 💽 **Disk usage** - a meter and used/total for each panel's filesystem, shortening then stepping aside on narrow terminals
 - 🎨 **Active/inactive styling** - active panel stats highlighted, inactive dimmed
 
+### 🔎 Detail Lines
+- 📋 **Two lines under the panels** - what the columns have no room for: the whole name however long, the exact byte count, the timestamp to the second, `owner:group`, the permission bits, and where a symlink points
+- ✂️ **Narrow terminals** - whole fields are given up from the right rather than cut mid-figure, and the name shortens from the front so the extension survives
+
 ### 🎨 Viewer (F3)
 - 🖼️ **Bordered frame** with filename title bar
 - 📊 **Line numbers** in the gutter (F11 can hide them)
 - 🔢 **Status bar** - filename, line count, file size, detected syntax
 - 🔢 **Hex view** - binaries open as a `hexdump -C`; `X` toggles hex for any file, so you can eyeball a BOM or CRLF endings
 - 🖼️ **Images as ASCII art** - PNG, JPEG, GIF, WebP and BMP drawn in colour, each character on its own coloured background so the dark parts keep their colour; `X` cycles Image, Text and Hex, `F` switches between fitting the whole picture in, centred, and filling the viewer; which one a picture opens with, and whether backgrounds are drawn, is set under F11
+- 📄 **Step through a folder's pictures** - PageUp and PageDown move to the next picture and the previous one, wrapping round and stepping over anything that is not one; the neighbours are decoded ahead so each arrives without a pause (F11 can turn that off)
+- 🖱️ **Drag a picture** - hold the mouse down on it and it follows the pointer, both directions at once
 - 🔍 **Zoom** - `+` and `-` scale a picture from a quarter of the fitted size to four times it, keeping whatever is in the middle of the view in the middle
 - 🖱️ **Mouse selection** - drag to select, Ctrl+C to copy
 - 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
@@ -179,6 +185,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 - ❓ **Ask before opening over** 16, 64 or 256 MiB
 - 🖼️ **Images open as** Fit or Fill
 - 🎨 **Image backgrounds** - on or off. On, each character sits on its own colour, so the dark parts of a picture keep theirs instead of showing the terminal through the gaps in the glyphs. Off costs less to send, which matters over a slow link
+- ⚡ **Read pictures ahead** - decode the pictures either side of the one open, so PageUp and PageDown do not wait for each. Costs a few megabytes and a thread that wakes only while a picture is open
 
 - ⌨️ **Up/Down** to move, **Enter**, **Space** or **Left/Right** to change, Enter again to save a typed command
 - 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it
@@ -218,6 +225,8 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
 | `X` | Toggle hex view; cycle Image, Text, Hex for images (in Viewer) |
 | `F` | Fit or fill an image (in Viewer) |
+| `PageUp` / `PageDown` | Previous / next picture in the folder (in Viewer) |
+| `Drag` | Move a picture about (in Viewer) |
 | `+` / `-` | Zoom an image in or out (in Viewer) |
 | `Shift`+arrows | Select text (in Editor) |
 | `Ctrl+A` | Select all (in Editor) |
