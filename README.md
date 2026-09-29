@@ -119,6 +119,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🖼️ **Images as ASCII art** - PNG, JPEG, GIF, WebP and BMP drawn in colour, each character on its own coloured background so the dark parts keep their colour; `X` cycles Image, Text and Hex, `F` switches between fitting the whole picture in, centred, and filling the viewer; which one a picture opens with, and whether backgrounds are drawn, is set under F11
 - 📄 **Step through a folder's pictures** - PageUp and PageDown move to the next picture and the previous one, wrapping round and stepping over anything that is not one; the neighbours are decoded ahead so each arrives without a pause (F11 can turn that off)
 - 🖱️ **Drag a picture** - hold the mouse down on it and it follows the pointer, both directions at once
+- 📐 **True proportions** - the shape of a picture is worked out from the size of your terminal's cells, which it is asked for, rather than from an assumption about them; a terminal that will not say gets the usual 2:1
 - 🔍 **Zoom** - `+` and `-` scale a picture from a quarter of the fitted size to four times it, keeping whatever is in the middle of the view in the middle
 - 🖱️ **Mouse selection** - drag to select, Ctrl+C to copy
 - 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
@@ -146,7 +147,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 👁️ Preview (F12)
 - 🪞 **Opposite panel** - shows the head of whatever the cursor is on, and follows it
 - 📁 **Directories** - item count instead of contents
-- 🪶 **Bounded** - reads at most 64 KiB, never prompts, never loads a whole file, and never opens a pipe or a device
+- 🔢 **Binaries as a hexdump** - no longer just "Binary file": the head of it in hex with the printable characters beside it, at 16, 8 or 4 bytes a row depending on how much room the pane has
+- 🪶 **Bounded** - reads at most 64 KiB of a text file and 4 KiB of a binary, never prompts, never loads a whole file, and never opens a pipe or a device
 
 ### ⚙️ Options (F11)
 Grouped under four headings; the list scrolls on a short terminal.
