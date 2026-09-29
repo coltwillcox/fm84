@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.19.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.20.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -92,7 +92,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🖱️ **Mouse scroll** - scroll content in Viewer, Editor, and file panels
 
 ### 🔄 Live Panels
-- 👀 **Automatic refresh** - panels notice when their directory changes on disk and reread themselves
+- 👀 **Automatic refresh** - panels notice when their directory changes on disk and reread themselves, and the preview and the detail lines are gathered again with them
 - ⌨️ **Ctrl+R** - force an immediate reload of both panels
 - 🧭 **Vanished directories** - if the open directory is deleted, the panel climbs to the nearest surviving parent
 - 🤫 **Stays out of the way** - never reloads while a dialog, Viewer or Editor is open

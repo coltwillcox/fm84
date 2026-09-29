@@ -6,20 +6,28 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
-## [0.19.0] - 2026-09-29
+## [0.20.0] - 2026-09-29
 
 ### ✨ Added
-- 🔎 **Two lines of detail under the panels**, in the space the F-key labels leave empty - the whole name however long the column had to clip it, the exact byte count with its thousands marked off rather than a rounded "9 MiB", the timestamp down to the second, `owner:group`, the permission bits, and where a symlink points, which was shown nowhere before. Gathered when the cursor moves rather than while drawing, so an unresponsive mount cannot hold up a frame
-- 📄 **Page Up and Page Down step through a folder's pictures** from inside the viewer, wrapping round at either end. Anything that is not a picture is stepped over, and what counts as one is settled by reading each file's header rather than by its name
-- ⚡ **The pictures either side are read ahead** while one is open, so stepping through a folder does not stop to decode each one - a 27-megapixel photograph took about 50 ms to open and now arrives already decoded. The one just left is kept as it is. F11's new **Read pictures ahead** turns it off; on by default
 - 🔢 **The preview shows a binary as a hexdump** rather than the words "Binary file" - the head of it in hex with the printable characters beside it, which is enough to tell a PNG from a zip or spot an ELF header without opening anything. The row is laid out to the pane: sixteen bytes where there is room, then eight, then eight without the offset, then four, so it still says something in half of an 80-column terminal. Built from the same row the viewer's hex mode uses
-- 🖱️ **Drag a picture about with the mouse** in the viewer - it follows the pointer the way a sheet of paper follows a finger, moving both ways at once, which the arrow keys cannot. Each drag is measured from where the press landed, so a long one cannot creep from rounding
 
 ### 🐛 Fixed
 - 🖼️ **Pictures are no longer stretched vertically** - the viewer worked out how many rows a picture came to by assuming every terminal's cells were exactly twice as tall as they were wide. Real ones are not: Victor Mono at 13pt in kitty measures 9x25, which drew every picture 39% too tall. The cell is now measured from the size the terminal reports in pixels beside its size in cells, and a 2:1 image comes out 2:1 on screen. A terminal that reports nothing, or something that is plainly not a cell, still gets the old assumption
 - 🔤 **Files whose names are not valid UTF-8 can be used again** - a name is bytes on Unix, and one from an old archive, a foreign disk or a Windows-formatted stick often is not text this machine can read. Such a name was kept only as `to_string_lossy` left it, replacement characters and all, and every path built from it named a file that was not there: the entry listed with an empty Name column, and viewing, editing, entering, renaming, copying, moving and deleting all answered "No such file or directory". Entries now carry the name the filesystem gave, which every operation is built from, and the name shown falls back to a lossy reading of it rather than to nothing
 - 🛡️ **A file name can no longer drive your terminal** - names went to the screen as they were, and a name can hold anything but `/` and NUL. One carrying an escape sequence recoloured the display and shifted every column after it; one holding a tab moved the cursor and let the row beneath bleed through. Control characters in a name are now drawn as dots, as the viewer has always drawn them in a file's contents, wherever a name appears: the rows, the detail lines, the preview, the titles, the path bar and every popup
 - 🔄 **The preview and the detail lines follow a file that changes under the cursor** - both held what they gathered until the cursor moved to something else, so a file saved in the editor, written over by a copy or changed by another program went on showing its old size, timestamp and first lines while the panel beside them showed the new ones. A reread now gathers both again
+
+---
+
+## [0.19.0] - 2026-09-29
+
+### ✨ Added
+- 🔎 **Two lines of detail under the panels**, in the space the F-key labels leave empty - the whole name however long the column had to clip it, the exact byte count with its thousands marked off rather than a rounded "9 MiB", the timestamp down to the second, `owner:group`, the permission bits, and where a symlink points, which was shown nowhere before. Gathered when the cursor moves rather than while drawing, so an unresponsive mount cannot hold up a frame
+- 📄 **Page Up and Page Down step through a folder's pictures** from inside the viewer, wrapping round at either end. Anything that is not a picture is stepped over, and what counts as one is settled by reading each file's header rather than by its name
+- ⚡ **The pictures either side are read ahead** while one is open, so stepping through a folder does not stop to decode each one - a 27-megapixel photograph took about 50 ms to open and now arrives already decoded. The one just left is kept as it is. F11's new **Read pictures ahead** turns it off; on by default
+- 🖱️ **Drag a picture about with the mouse** in the viewer - it follows the pointer the way a sheet of paper follows a finger, moving both ways at once, which the arrow keys cannot. Each drag is measured from where the press landed, so a long one cannot creep from rounding
+
+### 🐛 Fixed
 - 💿 **Removable drives mounted under `/run/media` now appear** in the drive strip. udisks2 puts a USB stick there, and the filter that keeps the kernel's own mounts out of the strip was throwing that whole path away with them
 - ✏️ **F2 scrolls the rename field to keep the cursor in view** - typing or arrowing past the right edge of a long name left the cursor somewhere off the end of the box, so you were editing where you could not see
 
