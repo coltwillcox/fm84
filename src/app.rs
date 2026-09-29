@@ -862,6 +862,47 @@ impl AppState {
         }
     }
 
+    /// Step to the next picture in the panel this one was opened from, or to
+    /// the one before it. Anything that is not a picture is stepped over and
+    /// the walk wraps round, so a folder of photographs can be gone through
+    /// without leaving the viewer.
+    pub fn viewer_step_image(&mut self, forward: bool) {
+        let Some(showing) = self.viewer_state.as_ref().map(|state| state.file_path.clone()) else {
+            return;
+        };
+        let (children, dir) =
+            if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
+
+        let files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir).map(|item| dir.join(&item.name_full)).collect();
+        let Some(at) = files.iter().position(|path| *path == showing) else {
+            return;
+        };
+
+        // Which of them are pictures is settled by reading each header, not by
+        // the name: that is how the viewer decides everywhere else, and it
+        // costs a fraction of a millisecond a file.
+        let total = files.len();
+        let found = (1..=total).find_map(|step| {
+            let index = if forward { (at + step) % total } else { (at + total - step) % total };
+            crate::viewer::image_cost(&files[index]).map(|_| index)
+        });
+
+        let Some(index) = found.filter(|&index| files[index] != showing) else {
+            return;
+        };
+
+        // Carry across how it is being looked at, so a folder can be stepped
+        // through at one zoom rather than starting over on every picture.
+        let carried = self.viewer_state.as_ref().map(|state| (state.image_fill, state.image_zoom));
+        self.request_open(files[index].clone(), false);
+        if let Some(state) = &mut self.viewer_state
+            && let Some((fill, zoom)) = carried
+        {
+            state.image_fill = fill;
+            state.image_zoom = zoom;
+        }
+    }
+
     /// True while the viewer is showing a picture, where dragging moves the
     /// picture rather than selecting the characters it is drawn from.
     pub fn viewer_shows_image(&self) -> bool {

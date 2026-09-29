@@ -196,8 +196,23 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::Up => app_state.viewer_scroll_up(),
                         KeyCode::Left => app_state.viewer_scroll_left(),
                         KeyCode::Right => app_state.viewer_scroll_right(),
-                        KeyCode::PageDown => app_state.viewer_page_down(),
-                        KeyCode::PageUp => app_state.viewer_page_up(),
+                        // On a picture these step through the folder; there is
+                        // nothing to page down when the whole of it is on screen,
+                        // and the arrows and the mouse still move it when not.
+                        KeyCode::PageDown => {
+                            if app_state.viewer_shows_image() {
+                                app_state.viewer_step_image(true);
+                            } else {
+                                app_state.viewer_page_down();
+                            }
+                        }
+                        KeyCode::PageUp => {
+                            if app_state.viewer_shows_image() {
+                                app_state.viewer_step_image(false);
+                            } else {
+                                app_state.viewer_page_up();
+                            }
+                        }
                         KeyCode::Home => app_state.viewer_home(),
                         KeyCode::End => app_state.viewer_end(),
                         _ => {}
