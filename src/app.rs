@@ -92,7 +92,56 @@ impl TextInput {
         }
     }
 
-    /// Returns styled spans with a block cursor at the cursor position.
+    /// Styled spans with a block cursor, windowed to `width` columns so the
+    /// cursor stays in view. A name longer than the field it is typed into
+    /// would otherwise run past the edge and be clipped there, taking the
+    /// cursor with it: you would be typing somewhere you could not see.
+    pub fn cursor_spans_within(&self, width: usize, text_style: Style, cursor_style: Style) -> Vec<Span<'static>> {
+        if width == 0 {
+            return Vec::new();
+        }
+
+        let cell = |character: char| crate::utils::display_width(&character.to_string()).max(1);
+        let characters: Vec<char> = self.text.chars().collect();
+        let cursor = self.cursor.min(characters.len());
+        let at_cursor = characters.get(cursor).copied().unwrap_or(' ');
+
+        // A cursor past the end still needs a cell of its own to sit in.
+        let whole: usize = characters.iter().map(|&c| cell(c)).sum::<usize>() + 1;
+
+        // Everything fits: start at the beginning. Otherwise scroll so the
+        // cursor is at the right-hand edge, which is where typing keeps it.
+        let mut first = 0;
+        if whole > width {
+            let mut used = cell(at_cursor);
+            first = cursor;
+            while first > 0 && used + cell(characters[first - 1]) <= width {
+                first -= 1;
+                used += cell(characters[first]);
+            }
+        }
+
+        let before: String = characters[first..cursor].iter().collect();
+        let mut used = crate::utils::display_width(&before) + cell(at_cursor);
+        let mut after = String::new();
+        for &character in characters.iter().skip(cursor + 1) {
+            let this = cell(character);
+            if used + this > width {
+                break;
+            }
+            used += this;
+            after.push(character);
+        }
+
+        vec![
+            Span::styled(before, text_style),
+            Span::styled(at_cursor.to_string(), cursor_style),
+            Span::styled(after, text_style),
+        ]
+    }
+
+    /// Styled spans with a block cursor at the cursor position, for a field
+    /// wide enough to hold whatever is typed into it.
     pub fn cursor_spans(&self, text_style: Style, cursor_style: Style) -> Vec<Span<'static>> {
         let byte_idx = self.byte_index();
         let before = self.text[..byte_idx].to_string();

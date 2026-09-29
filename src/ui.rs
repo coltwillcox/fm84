@@ -89,6 +89,18 @@ fn visible_columns(options: &Options, panel_width: u16) -> Vec<Column> {
     columns
 }
 
+/// What the Name column is left with. It is a Fill(1), so it gets whatever the
+/// icon, the columns beside it, the spacing between them and the panel's left
+/// border have not taken. The rename box needs the figure to keep its cursor in
+/// view; `visible_columns` already counts the same three columns per entry.
+fn name_width(options: &Options, panel_width: u16) -> u16 {
+    let mut used = 3; // icon plus the gap after it
+    for column in visible_columns(options, panel_width) {
+        used += column.width(options) + 3;
+    }
+    panel_width.saturating_sub(used + 1) // the panel's left border
+}
+
 pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppState) {
     // Update cached clock
     let current_time = match app_state.options.clock {
@@ -354,7 +366,8 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     let header = make_header_row(&columns);
 
     // Build only visible rows for left panel
-    let (rows_left, offset_left) = build_viewport_rows(app_state, true, viewport_height, &columns);
+    let field = name_width(&app_state.options, chunks[0].width);
+    let (rows_left, offset_left) = build_viewport_rows(app_state, true, viewport_height, &columns, field);
     let mut state_left_view = TableState::default();
     state_left_view.select(app_state.state_left.selected().map(|s| s.saturating_sub(offset_left)));
 
@@ -375,7 +388,7 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     f.render_widget(separator_vertical, chunks[1]);
 
     // Build only visible rows for right panel
-    let (rows_right, offset_right) = build_viewport_rows(app_state, false, viewport_height, &columns);
+    let (rows_right, offset_right) = build_viewport_rows(app_state, false, viewport_height, &columns, field);
     let mut state_right_view = TableState::default();
     state_right_view.select(app_state.state_right.selected().map(|s| s.saturating_sub(offset_right)));
 
@@ -402,7 +415,13 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
 }
 
 /// Build only the rows visible in the viewport, returns (rows, start_offset)
-fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: &[Column]) -> (Vec<Row<'static>>, usize) {
+fn build_viewport_rows(
+    app_state: &AppState,
+    is_left: bool,
+    viewport_height: usize,
+    columns: &[Column],
+    name_width: u16,
+) -> (Vec<Row<'static>>, usize) {
     let children = if is_left { &app_state.children_left } else { &app_state.children_right };
     let state = if is_left { &app_state.state_left } else { &app_state.state_right };
     let selected_set = if is_left { &app_state.selected_left } else { &app_state.selected_right };
@@ -465,8 +484,10 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
         let (name_cell, extension) = if is_renaming_current_item {
             // REVERSED survives Table row_highlight_style override
             let cursor_style = text_style.add_modifier(Modifier::REVERSED);
+            // The brackets around a directory sit inside the same column.
+            let field = name_width as usize - (dir_prefix.len() + dir_suffix.len()).min(name_width as usize);
             let mut spans = vec![Span::styled(dir_prefix, bracket_style)];
-            spans.extend(app_state.rename_input.cursor_spans(text_style, cursor_style));
+            spans.extend(app_state.rename_input.cursor_spans_within(field, text_style, cursor_style));
             spans.push(Span::styled(dir_suffix, bracket_style));
             (Cell::from(Line::from(spans)), String::new())
         } else {

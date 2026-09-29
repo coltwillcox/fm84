@@ -1115,11 +1115,10 @@ fn answer_overwrite(app_state: &mut AppState, overwrite: bool) {
     }
 }
 
+/// A click on the panels. Popups are turned away before the event gets this
+/// far, and the viewer and editor are picked off by the caller; a second list
+/// of them here is what let a transfer's popup be clicked straight through.
 fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
-    // Popups are turned away before the event gets this far, and the viewer and
-    // editor are picked off by the caller. A second list of them here is what
-    // let a transfer's popup be clicked straight through.
-
     // Cancel F2 rename mode if active
     if app_state.is_f2_displayed {
         app_state.reset_rename();
