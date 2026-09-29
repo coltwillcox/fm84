@@ -49,6 +49,20 @@ pub fn format_modified(time: std::time::SystemTime, format: crate::options::Date
     }
 }
 
+/// A byte count with its thousands marked off, so a long figure can be read at
+/// a glance rather than counted.
+pub fn grouped(value: u64) -> String {
+    let digits = value.to_string();
+    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
+    for (index, digit) in digits.chars().enumerate() {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+            out.push(' ');
+        }
+        out.push(digit);
+    }
+    out
+}
+
 /// Ask the terminal to put `text` on the system clipboard (OSC 52). Terminals
 /// without support ignore it, and it travels over SSH, which is why this is
 /// preferred to linking a platform clipboard library.

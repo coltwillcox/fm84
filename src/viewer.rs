@@ -222,14 +222,14 @@ pub fn image_cost(path: &Path) -> Option<((u32, u32), u64)> {
     Some(((width, height), u64::from(width) * u64::from(height) * 4))
 }
 
-/// Decode an image by its content, not its extension, along with the status bar
-/// label for it. None for anything that is not an image this build can read.
 /// Decode a picture from a file, for reading one ahead off the main thread.
 /// None for anything that is not a picture this build can read.
 pub fn decode_image(path: &Path) -> Option<(DynamicImage, String)> {
     load_image(&std::fs::read(path).ok()?)
 }
 
+/// Decode an image by its content, not its extension, along with the status bar
+/// label for it. None for anything that is not an image this build can read.
 fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
     let format = image::guess_format(bytes).ok()?;
     let image = image::load_from_memory_with_format(bytes, format).ok()?;

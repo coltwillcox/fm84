@@ -104,6 +104,7 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
         // Both before the draw, so the frame shows the newest it could: a cursor
         // move shows its preview, and a transfer its latest count, rather than
         // whatever they were an iteration ago.
+        app_state.refresh_cursor_detail();
         app_state.refresh_preview();
         app_state.poll_transfer();
         app_state.image_cache.collect();

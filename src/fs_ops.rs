@@ -1014,9 +1014,6 @@ pub fn check_destinations(items: &[(PathBuf, PathBuf, bool)]) -> Result<Vec<Path
     Ok(taken)
 }
 
-/// Clear a link out of the way of a file about to be written at `dest`, so the
-/// write replaces the link instead of following it into whatever it points
-/// at. Anything else stays for the write to deal with.
 /// A file to write into beside `dest`, for when something is already there.
 /// Same directory, so the rename that finishes the copy is atomic and cannot
 /// half-replace anything; a temporary elsewhere would have to be copied back
@@ -1035,6 +1032,9 @@ fn temp_beside(dest: &Path) -> Result<(PathBuf, File), Error> {
     Err(Error::new(ErrorKind::AlreadyExists, format!("Cannot make room beside {}", dest.display())))
 }
 
+/// Clear a link out of the way of a file about to be written at `dest`, so the
+/// write replaces the link instead of following it into whatever it points
+/// at. Anything else stays for the write to deal with.
 fn clear_link(dest: &Path) -> Result<(), Error> {
     match dest.symlink_metadata() {
         // A link to a directory is removed as a directory on Windows.
@@ -1600,4 +1600,60 @@ mod transfer_tests {
         assert!(!rename_in_place(&dest, Path::new("/proc/fm84-cannot-go-here")));
         fs::remove_dir_all(&dir).unwrap();
     }
+}
+
+/// The parts of an entry the columns have no room for: its exact size, the
+/// second on its timestamp, who owns it, and where it points if it is a link.
+pub struct Description {
+    pub size_bytes: Option<u64>,
+    pub modified: Option<std::time::SystemTime>,
+    pub owner: String,
+    pub attributes: String,
+    /// Where a symlink points. Listed but never shown until now, and it is the
+    /// one thing about a link worth knowing.
+    pub link: Option<String>,
+}
+
+/// Look one entry up. Costs a stat and, for a link, a readlink - which is why
+/// it is done when the cursor moves rather than on the way to drawing a frame.
+pub fn describe(path: &Path, is_dir: bool) -> Option<Description> {
+    let metadata = fs::symlink_metadata(path).ok()?;
+    let is_symlink = metadata.file_type().is_symlink();
+    // A link's own size is the length of the path it holds, which tells nobody
+    // anything; follow it for the figure. A broken one has no figure at all,
+    // and saying 31 bytes would be worse than saying nothing.
+    let followed = if is_symlink { fs::metadata(path).ok() } else { None };
+    let size_bytes = if is_symlink { followed.as_ref().map(|target| target.len()) } else { (!is_dir).then_some(metadata.len()) };
+
+    Some(Description {
+        size_bytes,
+        modified: metadata.modified().ok(),
+        owner: owner_of(&metadata),
+        // The link's own bits, as ls -l writes them, not the target's.
+        attributes: format_attributes(&metadata, is_dir, is_symlink),
+        link: is_symlink.then(|| fs::read_link(path).ok()).flatten().map(|target| target.display().to_string()),
+    })
+}
+
+/// Who owns it, by name where the system can say and by number where it cannot.
+#[cfg(unix)]
+fn owner_of(metadata: &fs::Metadata) -> String {
+    use std::os::unix::fs::MetadataExt;
+    let (uid, gid) = (metadata.uid(), metadata.gid());
+
+    // SAFETY: both return a pointer into storage the C library owns, valid
+    // until the next call on this thread; the name is copied out before then.
+    // Only ever called from the thread that draws, so there is no next call.
+    let name = |pointer: *const libc::c_char| -> Option<String> {
+        (!pointer.is_null()).then(|| unsafe { std::ffi::CStr::from_ptr(pointer) }.to_string_lossy().into_owned())
+    };
+    let user = unsafe { libc::getpwuid(uid).as_ref() }.and_then(|entry| name(entry.pw_name));
+    let group = unsafe { libc::getgrgid(gid).as_ref() }.and_then(|entry| name(entry.gr_name));
+
+    format!("{}:{}", user.unwrap_or_else(|| uid.to_string()), group.unwrap_or_else(|| gid.to_string()))
+}
+
+#[cfg(not(unix))]
+fn owner_of(_metadata: &fs::Metadata) -> String {
+    String::new()
 }

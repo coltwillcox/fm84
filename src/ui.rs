@@ -147,6 +147,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         }
         render_bottom_panel(f, chunks_main[3], app_state);
         render_fkey_bar(f, chunks_main[4]);
+        render_detail(f, chunks_main[4].inner(Margin { vertical: 0, horizontal: 2 }), app_state);
 
         if app_state.job.is_some() {
             render_transfer_popup(f, area, app_state);
@@ -1076,6 +1077,89 @@ const FKEY_LABELS: [&str; 12] = [
     " F11 Options ",
     " F12 Preview ",
 ];
+
+/// The two rows inside the bottom block, which the F-key labels leave empty.
+/// They spell out what the columns cannot hold: the whole name however long,
+/// the exact byte count rather than a rounded one, the second on the timestamp,
+/// who owns it, and where a symlink points - which is shown nowhere else.
+fn render_detail(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+    let Some(detail) = &app_state.cursor_detail else {
+        return;
+    };
+    if area.height < 2 || detail.name.is_empty() {
+        return;
+    }
+
+    const NAME_MIN: usize = 16;
+    let room = area.width as usize;
+    let gap = "   ";
+
+    // Every part after the first is preceded by a gap, so its cost is its own
+    // width plus that.
+    let cost = |parts: &[(&str, Style)]| -> usize {
+        parts.iter().filter(|(text, _)| !text.is_empty()).map(|(text, _)| display_width(text) + gap.len()).sum()
+    };
+    let spans = |parts: &[(&str, Style)], lead: bool| -> Vec<Span<'static>> {
+        let mut out: Vec<Span<'static>> = Vec::new();
+        for (text, style) in parts.iter().filter(|(text, _)| !text.is_empty()) {
+            let before = if out.is_empty() && !lead { "" } else { gap };
+            out.push(Span::styled(format!("{before}{text}"), *style));
+        }
+        out
+    };
+
+    // The figures go from the end when the row is too narrow, the way the F-key
+    // bar drops labels, so what survives is the name rather than a timestamp.
+    // What is left of the row goes to the name, shortened from the front to
+    // keep its end, where the extension and whatever tells two near-identical
+    // names apart both live.
+    let mut figures: Vec<(&str, Style)> = vec![(&detail.size, style_file()), (&detail.modified, style_columns())];
+    while !figures.is_empty() && NAME_MIN + cost(&figures) > room {
+        figures.pop();
+    }
+    let mut first = vec![Span::styled(tail_of(&detail.name, room.saturating_sub(cost(&figures))), style_title())];
+    first.extend(spans(&figures, true));
+
+    let owner: Vec<(&str, Style)> = vec![(&detail.owner, style_columns()), (&detail.attributes, style_file())];
+    let mut second = spans(&owner, false);
+    if let Some(link) = &detail.link {
+        let arrow = format!("{gap}\u{2192} ");
+        let left = room.saturating_sub(cost(&owner) + display_width(&arrow));
+        if left >= 4 {
+            second.push(Span::styled(format!("{arrow}{}", tail_of(link, left)), style_dir()));
+        }
+    }
+
+    for (offset, row_spans) in [(0, first), (1, second)] {
+        let row = Rect::new(area.x, area.y + offset, area.width, 1);
+        f.render_widget(Paragraph::new(Line::from(row_spans)), row);
+    }
+}
+
+/// The last `room` columns of a name, marking the cut. Shortening from the
+/// front keeps the end, which is where the extension is and usually where two
+/// near-identical names differ.
+fn tail_of(text: &str, room: usize) -> String {
+    if display_width(text) <= room {
+        return text.to_string();
+    }
+    if room <= 3 {
+        return ".".repeat(room);
+    }
+
+    let mut kept: Vec<char> = Vec::new();
+    let mut used = 3; // the dots standing in for what was cut
+    for character in text.chars().rev() {
+        let width = display_width(&character.to_string()).max(1);
+        if used + width > room {
+            break;
+        }
+        used += width;
+        kept.push(character);
+    }
+    kept.reverse();
+    format!("...{}", kept.into_iter().collect::<String>())
+}
 
 fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect) {
     let mut block_bottom = Block::default()

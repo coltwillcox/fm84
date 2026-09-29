@@ -250,6 +250,8 @@ pub struct AppState {
     pub job: Option<TransferJob>,
     /// Pictures read around the one on screen, while F11 leaves it on.
     pub image_cache: ImageCache,
+    /// The entry under the cursor, spelled out under the panels.
+    pub cursor_detail: Option<CursorDetail>,
     /// F10 was pressed during a job. The job carries on; a second press is
     /// what leaves. Cleared when the job ends, so it only ever covers one.
     pub quit_armed: bool,
@@ -405,6 +407,20 @@ impl ImageCache {
     }
 }
 
+/// What the two lines under the panels say about the entry the cursor is on.
+/// Held rather than worked out while drawing, because gathering it stats the
+/// file, and a stat on an unresponsive mount would take the whole frame with it.
+pub struct CursorDetail {
+    /// What it describes, so it is only gathered again when the cursor moves.
+    pub path: Option<PathBuf>,
+    pub name: String,
+    pub size: String,
+    pub modified: String,
+    pub owner: String,
+    pub attributes: String,
+    pub link: Option<String>,
+}
+
 /// A file big enough to be worth asking about before it is opened.
 pub struct LargeFile {
     pub path: PathBuf,
@@ -551,6 +567,7 @@ impl AppState {
             overwrite_prompt: None,
             job: None,
             image_cache: ImageCache::default(),
+            cursor_detail: None,
             quit_armed: false,
             drive_strip_left: Rect::default(),
             drive_strip_right: Rect::default(),
@@ -2035,6 +2052,54 @@ impl AppState {
             return None;
         }
         Some((dir.join(&item.name_full), item.name_full.clone(), item.is_dir))
+    }
+
+    /// Gather what the detail lines say, when the cursor has moved to something
+    /// else. Same shape as the preview below it, and for the same reason.
+    pub fn refresh_cursor_detail(&mut self) {
+        let target = self.cursor_target();
+        let path = target.as_ref().map(|(path, _, _)| path.clone());
+        if self.cursor_detail.as_ref().is_some_and(|detail| detail.path == path) {
+            return;
+        }
+
+        let Some((path, name, is_dir)) = target else {
+            self.cursor_detail = Some(CursorDetail {
+                path: None,
+                name: String::new(),
+                size: String::new(),
+                modified: String::new(),
+                owner: String::new(),
+                attributes: String::new(),
+                link: None,
+            });
+            return;
+        };
+
+        let described = crate::fs_ops::describe(&path, is_dir);
+        self.cursor_detail = Some(CursorDetail {
+            name,
+            // The exact count, since the column rounds it to something like
+            // "9 MiB" and the difference is the point of showing it again.
+            size: described
+                .as_ref()
+                .and_then(|described| described.size_bytes)
+                .map(|bytes| format!("{} bytes", crate::utils::grouped(bytes)))
+                .unwrap_or_default(),
+            // To the second, which the column has no room for either.
+            modified: described
+                .as_ref()
+                .and_then(|described| described.modified)
+                .map(|at| {
+                    let at: chrono::DateTime<chrono::Local> = at.into();
+                    at.format("%d/%m/%y %H:%M:%S").to_string()
+                })
+                .unwrap_or_default(),
+            owner: described.as_ref().map(|described| described.owner.clone()).unwrap_or_default(),
+            attributes: described.as_ref().map(|described| described.attributes.clone()).unwrap_or_default(),
+            link: described.and_then(|described| described.link),
+            path: Some(path),
+        });
     }
 
     /// Keep the preview pointed at whatever the cursor is on. Reads only when
