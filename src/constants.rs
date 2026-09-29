@@ -50,6 +50,17 @@ pub const IMAGE_MAX_OVERFLOW: usize = 4;
 // the decoder's own 512 MB ceiling, so the question is asked while there is
 // still an answer - beyond that it refuses outright and the file opens as hex.
 pub const IMAGE_MAX_DECODED: u64 = 256 * 1024 * 1024;
+// How many times taller a terminal cell is than it is wide, for a terminal that
+// will not say. A picture's proportions are kept by drawing half as many rows as
+// columns, so the figure has to come from somewhere; 2 is what an ordinary
+// monospace cell comes to, and what fm84 assumed for every terminal until it
+// learned to ask.
+pub const CELL_ASPECT_FALLBACK: f64 = 2.0;
+// What a reported cell ratio has to fall inside to be believed. Outside it the
+// terminal is reporting something other than a cell - a tmux pane's pixel size
+// is its whole window's, and some report the window in place of the cell - and
+// a picture drawn to it would be worse than one drawn to the assumption.
+pub const CELL_ASPECT_RANGE: std::ops::RangeInclusive<f64> = 1.0..=4.0;
 // The sizes + and - step through, as a percentage of the Fit or Fill size.
 // A ladder rather than a constant factor, so the figure on the status bar is
 // always a round one. The top of it is IMAGE_MAX_OVERFLOW, which is where the

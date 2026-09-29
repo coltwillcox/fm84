@@ -1,5 +1,6 @@
 use crate::constants::{
-    HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_GLYPH_CONTRAST, IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL,
+    CELL_ASPECT_FALLBACK, CELL_ASPECT_RANGE, HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_GLYPH_CONTRAST, IMAGE_MAX_OVERFLOW,
+    IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL,
 };
 use image::DynamicImage;
 use image::imageops::FilterType;
@@ -248,8 +249,13 @@ fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
 /// Fit keeps the whole picture inside it; fill covers it, overflowing in one
 /// direction; `zoom` then scales whichever of the two is the baseline.
 pub fn image_size_for(image: &DynamicImage, width: usize, height: usize, fill: bool, zoom: u16) -> (usize, usize) {
+    image_size_on(image, width, height, fill, zoom, cell_aspect())
+}
+
+/// The same, for a cell `cell` times taller than it is wide.
+fn image_size_on(image: &DynamicImage, width: usize, height: usize, fill: bool, zoom: u16, cell: f64) -> (usize, usize) {
     // The width at which the drawing is exactly `height` rows tall.
-    let full_height = height as f64 * 2.0 * image.width() as f64 / image.height().max(1) as f64;
+    let full_height = height as f64 * cell * image.width() as f64 / image.height().max(1) as f64;
     let base = if fill { width.max(full_height.ceil() as usize) } else { width.min(full_height.floor() as usize) };
     let columns = base * zoom as usize / IMAGE_ZOOM_NORMAL as usize;
     // Covering the width of a one-pixel-wide strip means a drawing 102,400 rows
@@ -261,7 +267,7 @@ pub fn image_size_for(image: &DynamicImage, width: usize, height: usize, fill: b
     let overflow = IMAGE_MAX_OVERFLOW as f64;
     let columns = columns.min(width * IMAGE_MAX_OVERFLOW).min((full_height * overflow).ceil() as usize).max(1);
 
-    let rows = aspect_rows(image, columns);
+    let rows = aspect_rows_on(image, columns, cell);
     // Fit overflows only for a picture more than twice as tall as the viewer
     // per column of its width - past 100:1 in a typical pane - where even a
     // single column is too wide to keep the proportions. Squash it into the
@@ -271,11 +277,29 @@ pub fn image_size_for(image: &DynamicImage, width: usize, height: usize, fill: b
     if !fill && zoom <= IMAGE_ZOOM_NORMAL && rows > height { (columns, height.max(1)) } else { (columns, rows) }
 }
 
-/// Rows that keep the picture's proportions at `columns` wide. A terminal cell
-/// is about twice as tall as it is wide, so a square image draws half as many
-/// rows as it has columns.
-fn aspect_rows(image: &DynamicImage, columns: usize) -> usize {
-    (image.height() as f64 * columns as f64 / image.width().max(1) as f64 / 2.0).round().max(1.0) as usize
+/// Rows that keep the picture's proportions at `columns` wide, on a cell `cell`
+/// times taller than it is wide: a square image draws that many times fewer
+/// rows than it has columns.
+fn aspect_rows_on(image: &DynamicImage, columns: usize, cell: f64) -> usize {
+    (image.height() as f64 * columns as f64 / image.width().max(1) as f64 / cell).round().max(1.0) as usize
+}
+
+/// How many times taller this terminal's cells are than they are wide, which is
+/// what turns a picture's proportions into rows and columns.
+///
+/// Terminals report their size in pixels alongside their size in cells, and the
+/// two together give the cell. Assuming 2 instead - an ordinary monospace cell,
+/// and what fm84 did until now - stretches a picture by however far the real
+/// cell is from that: Victor Mono at 13pt in kitty measures 9x25, so every
+/// picture came out 39% too tall. Costs one ioctl, on the way to a redraw that
+/// is about to resample the whole image.
+fn cell_aspect() -> f64 {
+    crossterm::terminal::window_size()
+        .ok()
+        .filter(|size| size.rows > 0 && size.columns > 0 && size.width > 0 && size.height > 0)
+        .map(|size| (f64::from(size.height) / f64::from(size.rows)) / (f64::from(size.width) / f64::from(size.columns)))
+        .filter(|ratio| CELL_ASPECT_RANGE.contains(ratio))
+        .unwrap_or(CELL_ASPECT_FALLBACK)
 }
 
 /// A colour channel with its low bits dropped, landing in the middle of the
@@ -671,6 +695,13 @@ mod image_tests {
     use crate::constants::{IMAGE_MAX_DECODED, IMAGE_ZOOM_NORMAL, IMAGE_ZOOM_STEPS};
     use image::{Rgba, RgbaImage};
 
+    /// Sizes as an ordinary 2:1 cell gives them. The tests below are written
+    /// around that ratio, and the terminal a test run happens to be watched
+    /// from is no business of theirs.
+    fn image_size_for(image: &DynamicImage, width: usize, height: usize, fill: bool, zoom: u16) -> (usize, usize) {
+        image_size_on(image, width, height, fill, zoom, CELL_ASPECT_FALLBACK)
+    }
+
     fn solid(width: u32, height: u32, pixel: [u8; 4]) -> DynamicImage {
         DynamicImage::ImageRgba8(RgbaImage::from_pixel(width, height, Rgba(pixel)))
     }
@@ -753,6 +784,36 @@ mod image_tests {
         assert!(colors.iter().flatten().all(|color| *color == Color::Rgb(coarse(128), coarse(128), coarse(128))));
         // A very wide image still keeps one row.
         assert_eq!(image_size_for(&solid(1000, 1, [0, 0, 0, 255]), 10, 10, false, IMAGE_ZOOM_NORMAL).1, 1);
+    }
+
+    /// A drawing keeps the picture's shape on whatever cell the terminal has,
+    /// not only on the 2:1 one fm84 used to assume. Measured as the drawing's
+    /// shape on screen - columns of cells that wide, rows of cells that tall -
+    /// against the picture's own.
+    #[test]
+    fn keeps_proportions_on_any_cell() {
+        for cell in [1.0, 1.6, 2.0, 2.4, 2.78, 3.5] {
+            for (width, height) in [(400u32, 300u32), (100, 100), (192, 108), (60, 90)] {
+                let image = solid(width, height, [128, 128, 128, 255]);
+                let (columns, rows) = image_size_on(&image, 120, 40, false, IMAGE_ZOOM_NORMAL, cell);
+                let drawn = columns as f64 / (rows as f64 * cell);
+                let wanted = f64::from(width) / f64::from(height);
+                // A row is a coarse unit: at 40 rows one of them is 2.5% of the
+                // height, and the count is rounded to a whole one.
+                assert!(
+                    (drawn / wanted - 1.0).abs() < 0.05,
+                    "{width}x{height} on a {cell} cell drew {columns}x{rows}, shape {drawn:.3} against {wanted:.3}"
+                );
+            }
+        }
+    }
+
+    /// A terminal that says nothing useful about its cells leaves the drawing
+    /// where it always was.
+    #[test]
+    fn cell_aspect_is_believable() {
+        let ratio = cell_aspect();
+        assert!(CELL_ASPECT_RANGE.contains(&ratio), "{ratio}");
     }
 
     #[test]
