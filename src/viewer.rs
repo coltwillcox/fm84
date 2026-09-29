@@ -107,7 +107,11 @@ pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
     }
 }
 
-pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
+/// Read a file into the viewer. `decoded` is a picture somebody has already
+/// decoded, from the cache that reads ahead while a folder is stepped through,
+/// and skips the slow part. The file is still read either way, since hex mode
+/// and the text fallback want the bytes and reading them is quick beside it.
+pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -> Result<ViewerState, Error> {
     // Get metadata once (single stat syscall)
     let metadata = std::fs::metadata(path)?;
     if !metadata.is_file() {
@@ -120,7 +124,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         let bytes = std::fs::read(path)?;
         // An image opens as ASCII art, drawn once the viewer width is known.
         // Anything that fails to decode is shown as the binary it is.
-        if let Some((image, syntax_name)) = load_image(&bytes) {
+        if let Some((image, syntax_name)) = decoded.or_else(|| load_image(&bytes)) {
             return Ok(ViewerState {
                 file_path: path.to_path_buf(),
                 content_lines: Vec::new(),
@@ -220,6 +224,12 @@ pub fn image_cost(path: &Path) -> Option<((u32, u32), u64)> {
 
 /// Decode an image by its content, not its extension, along with the status bar
 /// label for it. None for anything that is not an image this build can read.
+/// Decode a picture from a file, for reading one ahead off the main thread.
+/// None for anything that is not a picture this build can read.
+pub fn decode_image(path: &Path) -> Option<(DynamicImage, String)> {
+    load_image(&std::fs::read(path).ok()?)
+}
+
 fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
     let format = image::guess_format(bytes).ok()?;
     let image = image::load_from_memory_with_format(bytes, format).ok()?;
@@ -873,7 +883,7 @@ mod image_tests {
         let text = dir.join("notes.txt");
         std::fs::write(&text, "hello\n").unwrap();
 
-        let mut state = load_file_content(&png).unwrap();
+        let mut state = load_file_content(&png, None).unwrap();
         let mut seen = vec![state.mode];
         for _ in 0..3 {
             state.mode = state.next_mode();
@@ -881,7 +891,7 @@ mod image_tests {
         }
         assert_eq!(seen, [ViewMode::Image, ViewMode::Text, ViewMode::Hex, ViewMode::Image]);
 
-        let mut state = load_file_content(&text).unwrap();
+        let mut state = load_file_content(&text, None).unwrap();
         let mut seen = vec![state.mode];
         for _ in 0..2 {
             state.mode = state.next_mode();

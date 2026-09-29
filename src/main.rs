@@ -106,6 +106,7 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
         // whatever they were an iteration ago.
         app_state.refresh_preview();
         app_state.poll_transfer();
+        app_state.image_cache.collect();
         render_ui(terminal, &mut app_state);
         // An image fits the width the viewer was just drawn at, so a new width
         // means drawing again now rather than on the next event.

@@ -3,13 +3,14 @@ use crate::fs_ops::{
     load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place,
 };
 use crate::options::{OPTION_ROWS, OptionRow, Options};
+use image::DynamicImage;
 use crate::viewer::{ViewMode, ViewerState};
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
 use ratatui::text::Span;
 use ratatui::widgets::TableState;
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
@@ -247,6 +248,8 @@ pub struct AppState {
     pub overwrite_prompt: Option<OverwritePrompt>,
     /// Set while a copy, move or delete is running on its own thread.
     pub job: Option<TransferJob>,
+    /// Pictures read around the one on screen, while F11 leaves it on.
+    pub image_cache: ImageCache,
     /// F10 was pressed during a job. The job carries on; a second press is
     /// what leaves. Cleared when the job ends, so it only ever covers one.
     pub quit_armed: bool,
@@ -320,6 +323,86 @@ pub struct OverwritePrompt {
     pub is_copy: bool,
     /// The destinations already taken, to name in the question.
     pub taken: Vec<PathBuf>,
+}
+
+/// What a read-ahead delivers: the picture and the label the status bar shows
+/// for it, or nothing if the file turned out not to be one after all.
+type Decoded = Option<(DynamicImage, String)>;
+
+/// Pictures decoded around the one being looked at, so stepping through a
+/// folder does not stop to decode each one.
+///
+/// Only the decoded picture is held, never the file's bytes: decoding is the
+/// slow part, and a decoded picture is capped at IMAGE_MAX_SIDE, so two of
+/// them come to a few megabytes however large the files were. The one just
+/// left costs nothing to keep - it is already decoded - and the one ahead is
+/// read on a thread, so a slow disk never shows up as a pause.
+#[derive(Default)]
+pub struct ImageCache {
+    ready: Vec<(PathBuf, DynamicImage, String)>,
+    /// The read that is running, and where it will arrive.
+    pending: Option<(PathBuf, Receiver<Decoded>)>,
+    /// Which way the last step went, so the right side is read ahead.
+    forward: bool,
+}
+
+impl ImageCache {
+    /// Both neighbours at most: one behind, one ahead.
+    const KEEP: usize = 2;
+
+    fn take(&mut self, path: &Path) -> Option<(DynamicImage, String)> {
+        let at = self.ready.iter().position(|(held, _, _)| held == path)?;
+        let (_, image, label) = self.ready.remove(at);
+        Some((image, label))
+    }
+
+    fn keep(&mut self, path: PathBuf, image: DynamicImage, label: String) {
+        self.ready.retain(|(held, _, _)| *held != path);
+        self.ready.push((path, image, label));
+        while self.ready.len() > Self::KEEP {
+            self.ready.remove(0);
+        }
+    }
+
+    fn holds(&self, path: &Path) -> bool {
+        self.ready.iter().any(|(held, _, _)| held == path)
+            || self.pending.as_ref().is_some_and(|(wanted, _)| wanted == path)
+    }
+
+    /// Start reading one, unless it is already here or on its way.
+    fn request(&mut self, path: PathBuf) {
+        if self.holds(&path) {
+            return;
+        }
+        let (sender, receiver) = mpsc::channel();
+        let wanted = path.clone();
+        std::thread::spawn(move || {
+            let _ = sender.send(crate::viewer::decode_image(&wanted));
+        });
+        self.pending = Some((path, receiver));
+    }
+
+    /// Take delivery of anything that has finished. Called once a frame.
+    pub fn collect(&mut self) {
+        let Some((path, receiver)) = &self.pending else {
+            return;
+        };
+        match receiver.try_recv() {
+            Ok(Some((image, label))) => {
+                let path = path.clone();
+                self.pending = None;
+                self.keep(path, image, label);
+            }
+            // Not a picture after all, or the thread is gone: stop waiting.
+            Ok(None) | Err(TryRecvError::Disconnected) => self.pending = None,
+            Err(TryRecvError::Empty) => {}
+        }
+    }
+
+    fn clear(&mut self) {
+        self.ready.clear();
+        self.pending = None;
+    }
 }
 
 /// A file big enough to be worth asking about before it is opened.
@@ -467,6 +550,7 @@ impl AppState {
             large_file: None,
             overwrite_prompt: None,
             job: None,
+            image_cache: ImageCache::default(),
             quit_armed: false,
             drive_strip_left: Rect::default(),
             drive_strip_right: Rect::default(),
@@ -684,11 +768,24 @@ impl AppState {
     }
 
     pub fn open_viewer(&mut self, file_path: PathBuf) -> Result<(), String> {
-        use crate::viewer::load_file_content;
-        let mut state = load_file_content(&file_path).map_err(|e| e.to_string())?;
+        let decoded = if self.options.image_prefetch { self.image_cache.take(&file_path) } else { None };
+        let mut state = crate::viewer::load_file_content(&file_path, decoded).map_err(|e| e.to_string())?;
         state.image_fill = self.options.image_fill;
+
+        // Only once the new one is in hand: a load that failed used to leave
+        // what was open alone, and should go on doing so. The picture being
+        // replaced is already decoded, so keeping it costs nothing and makes
+        // stepping back as quick as stepping on.
+        if self.options.image_prefetch
+            && let Some(previous) = self.viewer_state.take()
+            && let Some(image) = previous.image
+        {
+            self.image_cache.keep(previous.file_path, image, previous.syntax_name);
+        }
+
         self.viewer_state = Some(state);
         self.is_f3_displayed = true;
+        self.read_ahead();
         Ok(())
     }
 
@@ -764,6 +861,9 @@ impl AppState {
     pub fn close_viewer(&mut self) {
         self.is_f3_displayed = false;
         self.viewer_state = None;
+        // Nothing is going to be stepped to now, and these are the only thing
+        // in the app holding decoded pictures.
+        self.image_cache.clear();
     }
 
     pub fn viewer_scroll_down(&mut self) {
@@ -870,36 +970,55 @@ impl AppState {
         let Some(showing) = self.viewer_state.as_ref().map(|state| state.file_path.clone()) else {
             return;
         };
-        let (children, dir) =
-            if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
-
-        let files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir).map(|item| dir.join(&item.name_full)).collect();
-        let Some(at) = files.iter().position(|path| *path == showing) else {
-            return;
-        };
-
-        // Which of them are pictures is settled by reading each header, not by
-        // the name: that is how the viewer decides everywhere else, and it
-        // costs a fraction of a millisecond a file.
-        let total = files.len();
-        let found = (1..=total).find_map(|step| {
-            let index = if forward { (at + step) % total } else { (at + total - step) % total };
-            crate::viewer::image_cost(&files[index]).map(|_| index)
-        });
-
-        let Some(index) = found.filter(|&index| files[index] != showing) else {
+        let Some(going_to) = self.image_neighbour(&showing, forward) else {
             return;
         };
 
         // Carry across how it is being looked at, so a folder can be stepped
         // through at one zoom rather than starting over on every picture.
         let carried = self.viewer_state.as_ref().map(|state| (state.image_fill, state.image_zoom));
-        self.request_open(files[index].clone(), false);
+        self.image_cache.forward = forward;
+        self.request_open(going_to, false);
         if let Some(state) = &mut self.viewer_state
             && let Some((fill, zoom)) = carried
         {
             state.image_fill = fill;
             state.image_zoom = zoom;
+        }
+    }
+
+    /// The picture before or after `showing` in the panel it came from, wrapping
+    /// round. Which files are pictures is settled by reading each header, not by
+    /// the name: that is how the viewer decides everywhere else, and it costs a
+    /// fraction of a millisecond a file.
+    fn image_neighbour(&self, showing: &Path, forward: bool) -> Option<PathBuf> {
+        let (children, dir) =
+            if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
+        let files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir).map(|item| dir.join(&item.name_full)).collect();
+        let at = files.iter().position(|path| path == showing)?;
+
+        let total = files.len();
+        (1..=total)
+            .find_map(|step| {
+                let index = if forward { (at + step) % total } else { (at + total - step) % total };
+                crate::viewer::image_cost(&files[index]).map(|_| index)
+            })
+            .map(|index| files[index].clone())
+            .filter(|path| path != showing)
+    }
+
+    /// Start reading the picture on the far side of this one, in whichever
+    /// direction the last step went. Nothing happens if F11 has it off, or if
+    /// what is open is not a picture.
+    fn read_ahead(&mut self) {
+        if !self.options.image_prefetch || !self.viewer_shows_image() {
+            return;
+        }
+        let Some(showing) = self.viewer_state.as_ref().map(|state| state.file_path.clone()) else {
+            return;
+        };
+        if let Some(next) = self.image_neighbour(&showing, self.image_cache.forward) {
+            self.image_cache.request(next);
         }
     }
 
@@ -919,10 +1038,10 @@ impl AppState {
         }
     }
 
-    /// Drag it. The picture follows the pointer the way a sheet of paper
-    /// follows a finger on it: moving right brings what was off to the left
-    /// into view, so the offset goes the other way. Both offsets move at once,
-    /// which is the whole point of doing this with the mouse.
+    /// Move the picture taken hold of above. It follows the pointer the way a
+    /// sheet of paper follows a finger on it: moving right brings what was off
+    /// to the left into view, so the offset goes the other way. Both offsets
+    /// move at once, which is the whole point of doing this with the mouse.
     pub fn viewer_pan_to(&mut self, column: u16, row: u16) {
         let (width, height) = (self.viewer_viewport_width, self.viewer_viewport_height);
         if let Some(state) = &mut self.viewer_state

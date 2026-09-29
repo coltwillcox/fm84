@@ -200,6 +200,10 @@ pub struct Options {
     /// the gaps, so they lose their colour entirely; a background keeps it, at
     /// the cost of roughly twice the escape sequences per frame.
     pub image_backgrounds: bool,
+    /// Decode the pictures either side of the one being looked at, so stepping
+    /// through a folder does not wait for each one. Costs a few megabytes and
+    /// a thread that wakes only while a picture is open.
+    pub image_prefetch: bool,
 }
 
 impl Default for Options {
@@ -234,6 +238,7 @@ impl Default for Options {
             large_file_mib: 64,
             image_fill: false,
             image_backgrounds: true,
+            image_prefetch: true,
         }
     }
 }
@@ -269,9 +274,10 @@ pub enum OptionRow {
     LargeFile,
     ImageDefault,
     ImageBackgrounds,
+    ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 28] = [
+pub const OPTION_ROWS: [OptionRow; 29] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -300,6 +306,7 @@ pub const OPTION_ROWS: [OptionRow; 28] = [
     OptionRow::LargeFile,
     OptionRow::ImageDefault,
     OptionRow::ImageBackgrounds,
+    OptionRow::ImagePrefetch,
 ];
 
 impl OptionRow {
@@ -333,6 +340,7 @@ impl OptionRow {
             OptionRow::LargeFile => "Ask before opening over",
             OptionRow::ImageDefault => "Images open as",
             OptionRow::ImageBackgrounds => "Image backgrounds",
+            OptionRow::ImagePrefetch => "Read pictures ahead",
         }
     }
 
@@ -435,6 +443,7 @@ impl Options {
             OptionRow::LargeFile => format!("{} MiB", self.large_file_mib),
             OptionRow::ImageDefault => if self.image_fill { "Fill" } else { "Fit" }.to_string(),
             OptionRow::ImageBackgrounds => on_off(self.image_backgrounds),
+            OptionRow::ImagePrefetch => on_off(self.image_prefetch),
         }
     }
 
@@ -515,6 +524,7 @@ impl Options {
             OptionRow::LargeFile => self.large_file_mib = step(&LARGE_FILE_LIMITS_MIB, self.large_file_mib, forward),
             OptionRow::ImageDefault => self.image_fill = !self.image_fill,
             OptionRow::ImageBackgrounds => self.image_backgrounds = !self.image_backgrounds,
+            OptionRow::ImagePrefetch => self.image_prefetch = !self.image_prefetch,
             OptionRow::Terminal | OptionRow::Editor => {}
         }
     }
@@ -630,6 +640,7 @@ impl Options {
                     }
                 }
                 "image_backgrounds" => options.image_backgrounds = flag(options.image_backgrounds),
+                "image_prefetch" => options.image_prefetch = flag(options.image_prefetch),
                 _ => {}
             }
         }
@@ -707,7 +718,8 @@ impl Options {
              highlight_limit_kib = {}\n\
              large_file_mib = {}\n\
              image = {}\n\
-             image_backgrounds = {}\n",
+             image_backgrounds = {}\n\
+             image_prefetch = {}\n",
             self.show_hidden,
             sort,
             self.sort_descending,
@@ -740,6 +752,7 @@ impl Options {
             self.large_file_mib,
             if self.image_fill { "fill" } else { "fit" },
             self.image_backgrounds,
+            self.image_prefetch,
         )
     }
 }
@@ -841,6 +854,7 @@ mod tests {
             large_file_mib: 256,
             image_fill: true,
             image_backgrounds: false,
+            image_prefetch: false,
         };
         assert_eq!(Options::parse(&options.serialize()), options);
         assert_eq!(Options::parse(&Options::default().serialize()), Options::default());
