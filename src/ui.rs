@@ -542,16 +542,50 @@ fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::
         return;
     }
 
+    let room = inner.height as usize - 1;
+    let body = if preview.bytes.is_empty() {
+        preview.lines.iter().take(room).map(|line| line.replace('\t', &" ".repeat(tab_width()))).collect()
+    } else {
+        hex_preview(&preview.bytes, inner.width, room)
+    };
+
     let mut lines = vec![Line::from(Span::styled(format!(" {}", preview.label), style_columns()))];
-    lines.extend(
-        preview
-            .lines
-            .iter()
-            .take(inner.height as usize - 1)
-            .map(|line| Line::from(Span::styled(format!(" {}", line.replace('\t', &" ".repeat(tab_width()))), style_file()))),
-    );
+    lines.extend(body.into_iter().map(|line| Line::from(Span::styled(format!(" {line}"), style_file()))));
 
     f.render_widget(Paragraph::new(lines), inner);
+}
+
+/// The hexdump layouts the preview can fall back through, widest first: sixteen
+/// bytes a row as the viewer writes them, then eight, then eight with no offset
+/// at all - by then it is a third of the row - and finally four, which fits the
+/// narrowest panel fm84 will draw.
+///
+/// Four digits of offset throughout, where the viewer writes eight: a preview
+/// reads PREVIEW_HEX_BYTES and stops, so the other four would be zeroes in
+/// every row, and dropping them is what lets a 160-column terminal show all
+/// sixteen bytes.
+const PREVIEW_HEX_LAYOUTS: [(usize, usize); 4] = [(16, 4), (8, 4), (8, 0), (4, 0)];
+// Which holds only while a preview reads little enough to be offset in four.
+const _: () = assert!(crate::constants::PREVIEW_HEX_BYTES <= 0xffff);
+
+/// The head of a binary file as a hexdump, in the widest layout the pane holds.
+/// Laid out here rather than where the bytes were read, because a pane changes
+/// width without the cursor moving, and the cursor moving is what gathers a
+/// preview again.
+fn hex_preview(bytes: &[u8], width: u16, rows: usize) -> Vec<String> {
+    // Every preview line opens with a space.
+    let room = width.saturating_sub(1) as usize;
+    let (per_line, digits) = PREVIEW_HEX_LAYOUTS
+        .into_iter()
+        .find(|&(per_line, digits)| crate::viewer::hex_row_width(per_line, digits) <= room)
+        .unwrap_or(PREVIEW_HEX_LAYOUTS[PREVIEW_HEX_LAYOUTS.len() - 1]);
+
+    bytes
+        .chunks(per_line)
+        .take(rows)
+        .enumerate()
+        .map(|(index, chunk)| crate::viewer::hex_row(index * per_line, chunk, per_line, digits))
+        .collect()
 }
 
 fn make_header_row(columns: &[Column]) -> Row<'static> {
@@ -1674,6 +1708,30 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The hexdump takes the widest layout its pane holds and never runs past
+    /// it, at every width from one that fits nothing to one that fits the lot.
+    #[test]
+    fn hex_preview_fits_the_pane_it_is_given() {
+        let bytes: Vec<u8> = (0..=255u8).collect();
+        let mut seen = Vec::new();
+        for width in 1..100u16 {
+            let rows = hex_preview(&bytes, width, 4);
+            let widest = rows.iter().map(|row| row.chars().count()).max().unwrap();
+            // One column is the space every preview line opens with. The
+            // narrowest layout is wider than the narrowest pane, which is the
+            // one case where the text is left to be clipped.
+            if width > 1 + crate::viewer::hex_row_width(4, 0) as u16 {
+                assert!(widest < width as usize, "{width} columns held a {widest}-column row");
+            }
+            let bytes_shown: usize = rows.iter().map(|row| row.chars().filter(|c| *c == '|').count()).sum();
+            assert_eq!(bytes_shown, 8, "{width}: every row keeps its gutter");
+            seen.push((width, widest));
+        }
+        // Widest first, so a wider pane never shows less.
+        assert!(seen.windows(2).all(|pair| pair[0].1 <= pair[1].1), "{seen:?}");
+        assert_eq!(hex_preview(&bytes, 100, 4)[0].chars().count(), crate::viewer::hex_row_width(16, 4));
+    }
 
     #[test]
     fn centered_sits_in_the_middle_and_never_overflows() {

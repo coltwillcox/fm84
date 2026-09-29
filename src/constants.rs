@@ -83,6 +83,12 @@ pub const COPY_CHUNK: u64 = 1024 * 1024;
 // copies are small and a popup that appears and vanishes reads as a glitch.
 pub const TRANSFER_POPUP_DELAY: Duration = Duration::from_millis(150);
 
+// Hex digits in the offset a hexdump row opens with, which 4 GB of file fits in.
+pub const HEX_OFFSET_DIGITS: usize = 8;
+// How much of a binary file the preview reads for its hexdump. Enough to fill
+// the tallest pane at the widest row, and nothing there scrolls.
+pub const PREVIEW_HEX_BYTES: u64 = 4 * 1024;
+
 pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;
 

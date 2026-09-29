@@ -475,6 +475,9 @@ pub struct PreviewState {
     pub path: Option<PathBuf>,
     pub label: String,
     pub lines: Vec<String>,
+    /// The head of a binary file, laid out as a hexdump by whatever draws it.
+    /// Empty for everything else, which comes as lines.
+    pub bytes: Vec<u8>,
 }
 
 #[derive(Debug, Clone)]
@@ -2116,22 +2119,26 @@ impl AppState {
             return;
         }
 
-        let (label, lines) = match &target {
-            None => (String::new(), Vec::new()),
+        let (label, content) = match &target {
+            None => (String::new(), crate::viewer::Preview::Lines(Vec::new())),
             Some((path, name, true)) => {
                 let lines = match std::fs::read_dir(path) {
                     Ok(entries) => vec![format!("{} items", entries.count())],
                     Err(e) => vec![e.to_string()],
                 };
-                (name.clone(), lines)
+                (name.clone(), crate::viewer::Preview::Lines(lines))
             }
             Some((path, name, false)) => (
                 name.clone(),
                 crate::viewer::load_preview(path, crate::constants::PREVIEW_MAX_BYTES, crate::constants::PREVIEW_MAX_LINES),
             ),
         };
+        let (lines, bytes) = match content {
+            crate::viewer::Preview::Lines(lines) => (lines, Vec::new()),
+            crate::viewer::Preview::Bytes(bytes) => (Vec::new(), bytes),
+        };
 
-        self.preview = Some(PreviewState { path, label, lines });
+        self.preview = Some(PreviewState { path, label, lines, bytes });
     }
 
     pub fn clear_all_selections(&mut self) {

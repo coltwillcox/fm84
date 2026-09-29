@@ -1238,7 +1238,7 @@ mod transfer_tests {
         fs::write(dir.join("plain"), "x").unwrap();
         assert!(is_regular_file(&dir.join("plain")));
 
-        assert_eq!(crate::viewer::load_preview(&pipe, 1024, 10), ["Not a regular file"]);
+        assert!(matches!(crate::viewer::load_preview(&pipe, 1024, 10), crate::viewer::Preview::Lines(lines) if lines == ["Not a regular file"]));
         assert!(crate::viewer::load_file_content(&pipe, None).is_err());
         assert!(crate::viewer::load_file_content(Path::new("/dev/zero"), None).is_err());
 

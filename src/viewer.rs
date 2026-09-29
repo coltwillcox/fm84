@@ -1,6 +1,6 @@
 use crate::constants::{
-    CELL_ASPECT_FALLBACK, CELL_ASPECT_RANGE, HEX_BYTES_PER_LINE, HEX_LINE_WIDTH, IMAGE_COLOR_DROP_BITS, IMAGE_GLYPH_CONTRAST, IMAGE_MAX_OVERFLOW,
-    IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL,
+    CELL_ASPECT_FALLBACK, CELL_ASPECT_RANGE, HEX_BYTES_PER_LINE, HEX_OFFSET_DIGITS, IMAGE_COLOR_DROP_BITS, IMAGE_GLYPH_CONTRAST,
+    IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL, PREVIEW_HEX_BYTES,
 };
 use image::DynamicImage;
 use image::imageops::FilterType;
@@ -379,28 +379,44 @@ fn image_to_ascii_on(
     (lines, inks, backs)
 }
 
+/// What a preview has to show: the head of a file as lines, or as the bytes a
+/// binary one is made of.
+///
+/// The bytes are handed over as they are rather than laid out here, because how
+/// many of them a row can hold is the pane's business - and the pane can be
+/// resized without the cursor moving, which is the only thing that would gather
+/// a preview again.
+pub enum Preview {
+    Lines(Vec<String>),
+    Bytes(Vec<u8>),
+}
+
 /// The head of a file, capped in both bytes and lines. Reads lossily so a cut
 /// multi-byte character at the cap can't fail the whole preview.
-pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Vec<String> {
+pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Preview {
     // Checked first: the preview follows the cursor, so opening a named pipe
     // here would freeze the app just for passing over one.
     if !crate::fs_ops::is_regular_file(path) {
-        return vec!["Not a regular file".to_string()];
+        return Preview::Lines(vec!["Not a regular file".to_string()]);
     }
-    if is_binary_file(path).unwrap_or(false) {
-        return vec!["Binary file".to_string()];
-    }
+    let binary = is_binary_file(path).unwrap_or(false);
 
+    let unreadable = || Preview::Lines(vec!["Cannot read file".to_string()]);
     let Ok(file) = File::open(path) else {
-        return vec!["Cannot read file".to_string()];
+        return unreadable();
     };
 
+    // A binary is read as far as the hexdump can show and no further; a text
+    // file keeps its own cap, which the lines are then counted against.
     let mut buffer = Vec::new();
-    if file.take(max_bytes).read_to_end(&mut buffer).is_err() {
-        return vec!["Cannot read file".to_string()];
+    if file.take(if binary { PREVIEW_HEX_BYTES } else { max_bytes }).read_to_end(&mut buffer).is_err() {
+        return unreadable();
+    }
+    if binary {
+        return Preview::Bytes(buffer);
     }
 
-    String::from_utf8_lossy(&buffer).lines().take(max_lines).map(|line| line.to_string()).collect()
+    Preview::Lines(String::from_utf8_lossy(&buffer).lines().take(max_lines).map(|line| line.to_string()).collect())
 }
 
 impl ViewerState {
@@ -476,11 +492,24 @@ pub fn hex_line_count(bytes: &[u8]) -> usize {
 /// One `hexdump -C` row: offset, sixteen bytes split into two groups, then the
 /// printable characters. Short rows are padded so the gutter stays aligned.
 pub fn hex_line(offset: usize, bytes: &[u8]) -> String {
-    let mut text = String::with_capacity(HEX_LINE_WIDTH);
-    text.push_str(&format!("{offset:08x}  "));
+    hex_row(offset, bytes, HEX_BYTES_PER_LINE, HEX_OFFSET_DIGITS)
+}
 
-    for index in 0..HEX_BYTES_PER_LINE {
-        if index == HEX_BYTES_PER_LINE / 2 {
+/// The same row with `per_line` bytes on it, for a pane too narrow for sixteen.
+/// `digits` of 0 leaves the offset off altogether, which is what the narrowest
+/// layouts come down to - by then it is a third of the row.
+///
+/// The gap splitting the bytes in half goes with the offset. Both are there to
+/// count your way along a row by, and a row with no offset to count from has
+/// little use for the other.
+pub fn hex_row(offset: usize, bytes: &[u8], per_line: usize, digits: usize) -> String {
+    let mut text = String::with_capacity(hex_row_width(per_line, digits));
+    if digits > 0 {
+        text.push_str(&format!("{offset:0digits$x}  "));
+    }
+
+    for index in 0..per_line {
+        if digits > 0 && index == per_line / 2 {
             text.push(' ');
         }
         match bytes.get(index) {
@@ -495,6 +524,14 @@ pub fn hex_line(offset: usize, bytes: &[u8]) -> String {
     }
     text.push('|');
     text
+}
+
+/// Columns such a row takes: the offset and the two spaces after it, three
+/// columns a byte, the gap splitting them in half, and the gutter in its bars
+/// behind one more space.
+pub const fn hex_row_width(per_line: usize, digits: usize) -> usize {
+    let offset = if digits > 0 { digits + 2 + 1 } else { 0 };
+    offset + per_line * 3 + 2 + per_line + 1
 }
 
 pub fn detect_syntax(path: &Path) -> String {
@@ -620,6 +657,46 @@ fn syntect_to_ratatui_color(color: syntect::highlighting::Color) -> Color {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every hexdump layout measures what it says it does, and the viewer's own
+    /// still comes to the width the horizontal scroll is bounded by.
+    #[test]
+    fn hex_rows_measure_what_they_claim() {
+        let bytes: Vec<u8> = (0..=255u8).collect();
+        for (per_line, digits) in [(16, 8), (8, 4), (8, 0), (4, 0), (1, 8)] {
+            let full = hex_row(0, &bytes[..per_line], per_line, digits);
+            assert_eq!(full.chars().count(), hex_row_width(per_line, digits), "{per_line} bytes, {digits} digits: {full}");
+            // A short last row pads its bytes, so only the gutter is shorter.
+            let short = hex_row(0, &bytes[..1], per_line, digits);
+            assert_eq!(short.chars().count(), hex_row_width(per_line, digits) - (per_line - 1), "{short}");
+        }
+        assert_eq!(hex_row_width(HEX_BYTES_PER_LINE, HEX_OFFSET_DIGITS), crate::constants::HEX_LINE_WIDTH);
+        assert_eq!(hex_line(0, &bytes[..16]), hex_row(0, &bytes[..16], HEX_BYTES_PER_LINE, HEX_OFFSET_DIGITS));
+    }
+
+    /// A binary preview hands over bytes for the pane to lay out; a text one
+    /// still comes as lines.
+    #[test]
+    fn previews_binary_as_bytes_and_text_as_lines() {
+        let dir = std::env::temp_dir().join(format!("fm84-preview-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let binary = dir.join("binary");
+        std::fs::write(&binary, [0x7f, b'E', b'L', b'F', 0, 1, 2, 3]).unwrap();
+        let Preview::Bytes(bytes) = load_preview(&binary, 1024, 10) else {
+            panic!("a file with a null byte in it is a binary");
+        };
+        assert_eq!(bytes, [0x7f, b'E', b'L', b'F', 0, 1, 2, 3]);
+
+        let text = dir.join("text");
+        std::fs::write(&text, "one\ntwo\nthree\n").unwrap();
+        let Preview::Lines(lines) = load_preview(&text, 1024, 2) else {
+            panic!("text is still lines");
+        };
+        assert_eq!(lines, ["one", "two"]);
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 
     fn sample(count: usize) -> Vec<String> {
         let template = [
