@@ -173,11 +173,25 @@ pub fn extension_color(ext: &str, light: bool) -> Color {
     )
 }
 
+/// A name as it is safe to draw. A file name can hold any byte but '/' and NUL,
+/// escape sequences and tabs among them, and what a widget is given goes to the
+/// terminal as it is: a name carrying an escape sequence would recolour the
+/// screen, move the cursor or clear it, and a tab would shift everything drawn
+/// after it out of its column. Control characters become '.', as they do in the
+/// viewer, and one column stays one column so the layout still adds up.
+pub fn printable_name(name: &str) -> String {
+    if !name.chars().any(char::is_control) {
+        return name.to_string();
+    }
+    name.chars().map(|character| if character.is_control() { '.' } else { character }).collect()
+}
+
 /// Shorten a path to the last `n` columns, marking the cut with "...". Walks
 /// back a character at a time: slicing to a byte offset splits multi-byte
 /// characters and panics.
 pub fn limit_path_string(path: &Path, n: usize) -> String {
-    let path_string = path.display().to_string();
+    // A directory's own name is as free as a file's, and this is what draws it.
+    let path_string = printable_name(&path.display().to_string());
     if display_width(&path_string) <= n {
         return path_string;
     }

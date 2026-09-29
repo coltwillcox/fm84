@@ -275,7 +275,7 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16,
 
     // Name whichever is under consideration, else the one this panel is on.
     if let Some(mount) = picking.or(current).and_then(|index| app_state.mounts.get(index)) {
-        spans.push(Span::styled(format!(" {}", mount.label), style_columns()));
+        spans.push(Span::styled(format!(" {}", printable_name(&mount.label)), style_columns()));
     }
 
     (Line::from(spans), slots)
@@ -494,9 +494,9 @@ fn build_viewport_rows(
         } else {
             (Cell::from(Line::from(vec![
                 Span::styled(dir_prefix, bracket_style),
-                Span::styled(if has_ext_column { child.name.clone() } else { child.name_full.clone() }, text_style),
+                Span::styled(printable_name(if has_ext_column { &child.name } else { &child.name_full }), text_style),
                 Span::styled(dir_suffix, bracket_style),
-            ])), child.extension.clone())
+            ])), printable_name(&child.extension))
         };
 
         // Get size - for directories, show calculated size if available
@@ -549,7 +549,7 @@ fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::
         hex_preview(&preview.bytes, inner.width, room)
     };
 
-    let mut lines = vec![Line::from(Span::styled(format!(" {}", preview.label), style_columns()))];
+    let mut lines = vec![Line::from(Span::styled(format!(" {}", printable_name(&preview.label)), style_columns()))];
     lines.extend(body.into_iter().map(|line| Line::from(Span::styled(format!(" {line}"), style_file()))));
 
     f.render_widget(Paragraph::new(lines), inner);
@@ -604,7 +604,7 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
     if let Some(viewer_state) = &app_state.viewer_state {
         let filename = viewer_state.file_path.file_name()
             .and_then(|n| n.to_str())
-            .unwrap_or("Unknown");
+            .map_or_else(|| "Unknown".to_string(), printable_name);
         let prefix = if viewer_state.from_edit { "Edit" } else { "View" };
         let title = format!(" {}: {} ", prefix, filename);
 
@@ -800,7 +800,7 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
     let (viewport_height, content_area) = if let Some(editor_state) = &mut app_state.editor_state {
         let filename = editor_state.file_path.file_name()
             .and_then(|n| n.to_str())
-            .unwrap_or("Unknown");
+            .map_or_else(|| "Unknown".to_string(), printable_name);
         let modified = if editor_state.modified { " [Modified]" } else { "" };
         let title = format!(" Edit: {}{} ", filename, modified);
 
@@ -980,7 +980,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         if let Some(editor_state) = &app_state.editor_state {
             let filename = editor_state.file_path.file_name()
                 .and_then(|n| n.to_str())
-                .unwrap_or("Unknown");
+                .map_or_else(|| "Unknown".to_string(), printable_name);
             let modified = if editor_state.modified { " [Modified]" } else { "" };
             let name_seg = format!("{}{}", filename, modified);
             let pos_seg = format!("Ln {}, Col {}", editor_state.cursor_line + 1, editor_state.cursor_col + 1);
@@ -992,11 +992,11 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         if let Some(viewer_state) = &app_state.viewer_state {
             let filename = viewer_state.file_path.file_name()
                 .and_then(|n| n.to_str())
-                .unwrap_or("Unknown");
+                .map_or_else(|| "Unknown".to_string(), printable_name);
             let line_seg = format!("Line {}/{}", viewer_state.scroll_offset + 1, viewer_state.total_lines);
             let size_seg = format_size(viewer_state.file_size);
             let zoom_seg = format!("+/- Zoom {}%", viewer_state.image_zoom);
-            let mut segments = vec![filename, line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()];
+            let mut segments = vec![filename.as_str(), line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()];
             // Bracketed half is the view you are in. Omitted on the notice F4
             // raises for a binary, where there is nothing to toggle.
             if !viewer_state.from_edit {
@@ -1174,6 +1174,7 @@ fn render_detail(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
 /// front keeps the end, which is where the extension is and usually where two
 /// near-identical names differ.
 fn tail_of(text: &str, room: usize) -> String {
+    let text = &printable_name(text);
     if display_width(text) <= room {
         return text.to_string();
     }
@@ -1259,7 +1260,7 @@ fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut Ap
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    popup_body(f, popup_area, vec![Line::from(Span::styled(app_state.error_message.clone(), style_title()))]);
+    popup_body(f, popup_area, vec![Line::from(Span::styled(printable_name(&app_state.error_message), style_title()))]);
 }
 
 fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
@@ -1456,7 +1457,7 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
 
     let mut lines = Vec::new();
     if count == 1 {
-        lines.push(Line::from(Span::styled(format!("Delete \"{}\"?", app_state.delete_items[0].0), style_title())));
+        lines.push(Line::from(Span::styled(format!("Delete \"{}\"?", printable_name(&app_state.delete_items[0].0)), style_title())));
     } else {
         let names: Vec<&str> = app_state.delete_items.iter().map(|(name, _)| name.as_str()).collect();
         lines.push(Line::from(Span::styled(format!("Delete {count} items?"), style_title())));
@@ -1479,7 +1480,7 @@ fn render_overwrite_popup(f: &mut ratatui::Frame<'_>, area: Rect, prompt: &crate
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let name = |path: &std::path::PathBuf| path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
+    let name = |path: &std::path::PathBuf| path.file_name().map(|name| printable_name(&name.to_string_lossy())).unwrap_or_default();
     let mut lines = Vec::new();
     if count == 1 {
         lines.push(Line::from(Span::styled(format!("\"{}\" already exists", name(&prompt.taken[0])), style_title())));
@@ -1533,7 +1534,7 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let name = job.current.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let name = job.current.file_name().and_then(|n| n.to_str()).map_or_else(String::new, printable_name);
 
     // The counting pass runs before any bytes move, so there is a moment at the
     // start with nothing to measure against, and a rename has nothing to count.
@@ -1612,11 +1613,11 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
     let source_msg = if count == 1 {
         let source_name = items[0].0.file_name()
             .and_then(|n| n.to_str())
-            .unwrap_or("Unknown");
+            .map_or_else(|| "Unknown".to_string(), printable_name);
         format!("{} \"{}\"", verb, source_name)
     } else {
-        let names: Vec<&str> = items.iter()
-            .filter_map(|(src, _, _)| src.file_name().and_then(|n| n.to_str()))
+        let names: Vec<String> = items.iter()
+            .filter_map(|(src, _, _)| src.file_name().and_then(|n| n.to_str()).map(printable_name))
             .collect();
         format!("{} {} items: {}", verb, count, names.join(", "))
     };
@@ -1638,7 +1639,7 @@ fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &A
     let Some(large) = &app_state.large_file else {
         return;
     };
-    let name = large.path.file_name().and_then(|n| n.to_str()).unwrap_or("Unknown");
+    let name = large.path.file_name().and_then(|n| n.to_str()).map_or_else(|| "Unknown".to_string(), printable_name);
     let verb = if large.is_edit { "Edit" } else { "View" };
 
     let popup_area = centered_rect(60, 30, area);
@@ -1708,6 +1709,57 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A file name can hold anything but '/' and NUL - an escape sequence, a
+    /// tab, a bell - and what a widget is handed goes to the terminal as it is.
+    /// None of it may reach a cell: not in the row, the detail lines under it,
+    /// the preview beside it, the status bar, or a popup that names the entry.
+    #[test]
+    fn a_hostile_name_never_reaches_the_terminal() {
+        let dir = std::env::temp_dir().join(format!("fm84-hostile-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let nasty = "a\u{1b}[41;97mHACKED\u{1b}[0m\tbell\u{7}.txt";
+        std::fs::write(dir.join(nasty), "contents").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.is_f12_displayed = true;
+        app_state.open_dir(true, dir.clone(), Some(nasty));
+        app_state.refresh_cursor_detail();
+        app_state.refresh_preview();
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+
+        let mut clean = |app_state: &mut AppState, what: &str| {
+            render_ui(&mut terminal, app_state);
+            let dirty: Vec<String> = terminal
+                .backend()
+                .buffer()
+                .content()
+                .iter()
+                .filter(|cell| cell.symbol().chars().any(char::is_control))
+                .map(|cell| format!("{:?}", cell.symbol()))
+                .collect();
+            assert!(dirty.is_empty(), "{what} drew {dirty:?}");
+        };
+
+        clean(&mut app_state, "the panel");
+
+        app_state.is_f8_displayed = true;
+        app_state.delete_items = vec![(nasty.to_string(), false)];
+        clean(&mut app_state, "the delete popup");
+        app_state.is_f8_displayed = false;
+
+        app_state.is_f2_displayed = true;
+        app_state.rename_input.set(nasty.to_string());
+        clean(&mut app_state, "the rename field");
+        app_state.is_f2_displayed = false;
+
+        app_state.is_error_displayed = true;
+        app_state.error_message = format!("No such file or directory: {nasty}");
+        clean(&mut app_state, "the error popup");
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 
     /// The hexdump takes the widest layout its pane holds and never runs past
     /// it, at every width from one that fits nothing to one that fits the lot.

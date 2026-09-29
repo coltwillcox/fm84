@@ -101,6 +101,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📋 **Name, Ext, Size, Modified, Attributes** - permissions written the way `ls -l` writes them
 - 📐 **Priority when space runs short** - columns drop from the right, Name always stays and keeps the leftover width
 - 🎛️ **Your choice of them** - F11 turns each one off, and sets how dates and sizes are written
+- 🛡️ **Names neutralised** - a file name can hold anything but `/`, escape sequences and tabs included. They are drawn as dots rather than sent to the terminal, wherever a name appears: the rows, the detail lines, the preview, the titles and every popup
 
 ### 📊 Status Bar
 - 📈 **Panel stats** - selected/total file count and size shown per panel

@@ -134,10 +134,13 @@ impl TextInput {
             after.push(character);
         }
 
+        // A rename field is opened on the name that is there, and a name can
+        // hold anything; the width is unchanged, a control character standing
+        // in one column as the '.' that replaces it does.
         vec![
-            Span::styled(before, text_style),
-            Span::styled(at_cursor.to_string(), cursor_style),
-            Span::styled(after, text_style),
+            Span::styled(crate::utils::printable_name(&before), text_style),
+            Span::styled(crate::utils::printable_name(&at_cursor.to_string()), cursor_style),
+            Span::styled(crate::utils::printable_name(&after), text_style),
         ]
     }
 
@@ -152,9 +155,9 @@ impl TextInput {
         let after: String = chars.collect();
 
         vec![
-            Span::styled(before, text_style),
-            Span::styled(cursor_char.to_string(), cursor_style),
-            Span::styled(after, text_style),
+            Span::styled(crate::utils::printable_name(&before), text_style),
+            Span::styled(crate::utils::printable_name(&cursor_char.to_string()), cursor_style),
+            Span::styled(crate::utils::printable_name(&after), text_style),
         ]
     }
 }
