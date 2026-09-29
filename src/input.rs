@@ -587,7 +587,7 @@ fn handle_rename(app_state: &mut AppState) {
         }
 
         let mut original_path = parent_path.clone();
-        original_path.push(item.name_full.clone());
+        original_path.push(&item.name_os);
         let mut new_path = parent_path.clone();
         new_path.push(&new_name);
 
@@ -696,12 +696,12 @@ fn enter_directory_panel(app_state: &mut AppState) {
     }
 
     if item.is_dir {
-        let target = dir.join(&item.name);
+        let target = item.path_in(dir);
         app_state.open_dir(is_left, target, None);
         return;
     }
 
-    let file_path = dir.join(&item.name_full);
+    let file_path = item.path_in(dir);
     if let Err(e) = open_with_default(&file_path) {
         app_state.display_error(format!("Cannot open file: {}", e));
     }
@@ -744,10 +744,12 @@ fn toggle_delete(app_state: &mut AppState) {
         let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };
         let selected_set = if app_state.is_left_active { &app_state.selected_left } else { &app_state.selected_right };
 
-        let items: Vec<(String, bool)> = if !selected_set.is_empty() {
+        let dir = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
+
+        let items: Vec<(PathBuf, bool)> = if !selected_set.is_empty() {
             children.iter()
                 .filter(|item| item.name != ".." && selected_set.contains(&item.name_full))
-                .map(|item| (item.name_full.clone(), item.is_dir))
+                .map(|item| (item.path_in(dir), item.is_dir))
                 .collect()
         } else {
             let selected_index = if app_state.is_left_active { app_state.state_left.selected().unwrap_or(0) } else { app_state.state_right.selected().unwrap_or(0) };
@@ -757,7 +759,7 @@ fn toggle_delete(app_state: &mut AppState) {
                     app_state.is_f8_displayed = false;
                     return;
                 }
-                vec![(item.name_full.clone(), item.is_dir)]
+                vec![(item.path_in(dir), item.is_dir)]
             } else {
                 app_state.is_f8_displayed = false;
                 return;
@@ -779,9 +781,7 @@ fn toggle_delete(app_state: &mut AppState) {
 }
 
 fn handle_delete_confirm(app_state: &mut AppState) {
-    let parent_path = if app_state.is_left_active { app_state.dir_left.clone() } else { app_state.dir_right.clone() };
-    let items: Vec<(PathBuf, bool)> =
-        std::mem::take(&mut app_state.delete_items).into_iter().map(|(name, is_dir)| (parent_path.join(name), is_dir)).collect();
+    let items: Vec<(PathBuf, bool)> = std::mem::take(&mut app_state.delete_items);
 
     // The removals, the panel reload and the selections are all handled by the
     // job as it finishes, the same as a copy or a move.
@@ -852,7 +852,7 @@ fn handle_f3_view(app_state: &mut AppState) {
             &app_state.dir_right
         };
         let mut file_path = parent_path.clone();
-        file_path.push(&item.name_full);
+        file_path.push(&item.name_os);
 
         // Open viewer
         app_state.request_open(file_path, false);
@@ -890,7 +890,7 @@ fn handle_f4_edit(app_state: &mut AppState) {
             &app_state.dir_right
         };
         let mut file_path = parent_path.clone();
-        file_path.push(&item.name_full);
+        file_path.push(&item.name_os);
 
         // An external editor, when F11 names one; otherwise the built-in.
         if app_state.options.editor.trim().is_empty() {
@@ -1014,7 +1014,7 @@ fn toggle_copy(app_state: &mut AppState) {
         let items: Vec<(PathBuf, PathBuf, bool)> = if !selected_set.is_empty() {
             children.iter()
                 .filter(|item| item.name != ".." && selected_set.contains(&item.name_full))
-                .map(|item| (source_dir.join(&item.name_full), dest_dir.join(&item.name_full), item.is_dir))
+                .map(|item| (item.path_in(source_dir), item.path_in(dest_dir), item.is_dir))
                 .collect()
         } else {
             let selected_index = if app_state.is_left_active { app_state.state_left.selected().unwrap_or(0) } else { app_state.state_right.selected().unwrap_or(0) };
@@ -1024,7 +1024,7 @@ fn toggle_copy(app_state: &mut AppState) {
                     app_state.is_f5_displayed = false;
                     return;
                 }
-                vec![(source_dir.join(&item.name_full), dest_dir.join(&item.name_full), item.is_dir)]
+                vec![(item.path_in(source_dir), item.path_in(dest_dir), item.is_dir)]
             } else {
                 app_state.is_f5_displayed = false;
                 return;
@@ -1067,7 +1067,7 @@ fn toggle_move(app_state: &mut AppState) {
         let items: Vec<(PathBuf, PathBuf, bool)> = if !selected_set.is_empty() {
             children.iter()
                 .filter(|item| item.name != ".." && selected_set.contains(&item.name_full))
-                .map(|item| (source_dir.join(&item.name_full), dest_dir.join(&item.name_full), item.is_dir))
+                .map(|item| (item.path_in(source_dir), item.path_in(dest_dir), item.is_dir))
                 .collect()
         } else {
             let selected_index = if app_state.is_left_active { app_state.state_left.selected().unwrap_or(0) } else { app_state.state_right.selected().unwrap_or(0) };
@@ -1077,7 +1077,7 @@ fn toggle_move(app_state: &mut AppState) {
                     app_state.is_f6_displayed = false;
                     return;
                 }
-                vec![(source_dir.join(&item.name_full), dest_dir.join(&item.name_full), item.is_dir)]
+                vec![(item.path_in(source_dir), item.path_in(dest_dir), item.is_dir)]
             } else {
                 app_state.is_f6_displayed = false;
                 return;
@@ -1223,7 +1223,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
                     enter_directory_panel(app_state);
                 } else {
                     let dir = if clicked_left { &app_state.dir_left } else { &app_state.dir_right };
-                    let file_path = dir.join(&children[actual_index].name_full);
+                    let file_path = children[actual_index].path_in(dir);
                     if let Err(e) = open_with_default(&file_path) {
                         app_state.display_error(format!("Cannot open file: {}", e));
                     }

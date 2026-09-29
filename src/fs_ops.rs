@@ -2,6 +2,7 @@ use crate::app::Item;
 use crate::constants::COPY_CHUNK;
 use crate::options::{Options, SortKey};
 use crate::utils::format_size;
+use std::ffi::OsString;
 use std::env;
 use std::fs::{self, File, create_dir, read_dir, remove_dir, remove_file, rename};
 use std::io::{self, Error, ErrorKind, Read};
@@ -96,6 +97,7 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
     // Don't add ".." on root folder.
     if has_parent {
         children.push(Item {
+            name_os: OsString::from(".."),
             name_full: "..".to_string(),
             name: "..".to_string(),
             extension: String::new(),
@@ -122,12 +124,24 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
             entry.metadata().ok()
         };
         let is_dir = metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false);
-        let name_full = entry_path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let name_os = entry.file_name();
+        let name_full = name_os.to_string_lossy().into_owned();
         if !options.show_hidden && is_hidden(&name_full, metadata.as_ref()) {
             continue;
         }
-        let name = if is_dir { name_full.clone() } else { entry_path.file_stem().and_then(|n| n.to_str()).unwrap_or("").to_string() };
-        let extension = if is_dir { String::new() } else { entry_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_string() };
+        // Lossy like the name above, and for the same reason: a name that is
+        // not valid UTF-8 still has to be shown as something. to_str() gave
+        // None for those, which left the column blank.
+        let name = if is_dir {
+            name_full.clone()
+        } else {
+            entry_path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+        };
+        let extension = if is_dir {
+            String::new()
+        } else {
+            entry_path.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default()
+        };
         let size_bytes = if is_dir { 0 } else { metadata.as_ref().map(|m| m.len()).unwrap_or(0) };
         let size = if is_dir { "<DIR>".to_string() } else { format_size(size_bytes) };
         // Written out when drawn, in whichever format F11 names - and a
@@ -140,6 +154,7 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
             .unwrap_or_default();
 
         children.push(Item {
+            name_os,
             name_full,
             name,
             extension,

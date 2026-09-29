@@ -175,6 +175,12 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
     });
 }
 
+/// A path's last component, lossy where it has to be and with anything that
+/// would reach the terminal taken out of it.
+fn shown_name(path: &std::path::Path) -> String {
+    path.file_name().map(|name| printable_name(&name.to_string_lossy())).unwrap_or_default()
+}
+
 /// Fill an area with the theme's background, when F11 has it painted. Cells
 /// drawn over it keep it unless they set their own.
 fn paint_background(f: &mut ratatui::Frame<'_>, area: Rect) {
@@ -501,7 +507,7 @@ fn build_viewport_rows(
 
         // Get size - for directories, show calculated size if available
         let size = if child.is_dir && child.name != ".." {
-            if let Some(&calculated_size) = app_state.dir_sizes.get(&current_dir.join(&child.name_full)) {
+            if let Some(&calculated_size) = app_state.dir_sizes.get(&child.path_in(current_dir)) {
                 format_size(calculated_size)
             } else {
                 child.size.clone()
@@ -602,9 +608,7 @@ fn make_header_row(columns: &[Column]) -> Row<'static> {
 
 fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect) {
     if let Some(viewer_state) = &app_state.viewer_state {
-        let filename = viewer_state.file_path.file_name()
-            .and_then(|n| n.to_str())
-            .map_or_else(|| "Unknown".to_string(), printable_name);
+        let filename = shown_name(&viewer_state.file_path);
         let prefix = if viewer_state.from_edit { "Edit" } else { "View" };
         let title = format!(" {}: {} ", prefix, filename);
 
@@ -798,9 +802,7 @@ fn place_cursor(mut spans: Vec<Span<'static>>, column: usize, style: Style) -> V
 fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> usize {
     let line_numbers = app_state.options.line_numbers;
     let (viewport_height, content_area) = if let Some(editor_state) = &mut app_state.editor_state {
-        let filename = editor_state.file_path.file_name()
-            .and_then(|n| n.to_str())
-            .map_or_else(|| "Unknown".to_string(), printable_name);
+        let filename = shown_name(&editor_state.file_path);
         let modified = if editor_state.modified { " [Modified]" } else { "" };
         let title = format!(" Edit: {}{} ", filename, modified);
 
@@ -978,9 +980,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     if app_state.is_f4_displayed {
         // Show editor status
         if let Some(editor_state) = &app_state.editor_state {
-            let filename = editor_state.file_path.file_name()
-                .and_then(|n| n.to_str())
-                .map_or_else(|| "Unknown".to_string(), printable_name);
+            let filename = shown_name(&editor_state.file_path);
             let modified = if editor_state.modified { " [Modified]" } else { "" };
             let name_seg = format!("{}{}", filename, modified);
             let pos_seg = format!("Ln {}, Col {}", editor_state.cursor_line + 1, editor_state.cursor_col + 1);
@@ -990,9 +990,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     } else if app_state.is_f3_displayed {
         // Show viewer status
         if let Some(viewer_state) = &app_state.viewer_state {
-            let filename = viewer_state.file_path.file_name()
-                .and_then(|n| n.to_str())
-                .map_or_else(|| "Unknown".to_string(), printable_name);
+            let filename = shown_name(&viewer_state.file_path);
             let line_seg = format!("Line {}/{}", viewer_state.scroll_offset + 1, viewer_state.total_lines);
             let size_seg = format_size(viewer_state.file_size);
             let zoom_seg = format!("+/- Zoom {}%", viewer_state.image_zoom);
@@ -1024,7 +1022,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         let panel_stat = |children: &[crate::app::Item], selected_set: &std::collections::HashSet<String>, current_dir: &PathBuf, dir_sizes: &std::collections::HashMap<PathBuf, u64>| -> (String, String) {
             let item_size = |c: &crate::app::Item| -> u64 {
                 if c.is_dir {
-                    dir_sizes.get(&current_dir.join(&c.name_full)).copied().unwrap_or(0)
+                    dir_sizes.get(&c.path_in(current_dir)).copied().unwrap_or(0)
                 } else {
                     c.size_bytes
                 }
@@ -1457,9 +1455,9 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
 
     let mut lines = Vec::new();
     if count == 1 {
-        lines.push(Line::from(Span::styled(format!("Delete \"{}\"?", printable_name(&app_state.delete_items[0].0)), style_title())));
+        lines.push(Line::from(Span::styled(format!("Delete \"{}\"?", shown_name(&app_state.delete_items[0].0)), style_title())));
     } else {
-        let names: Vec<&str> = app_state.delete_items.iter().map(|(name, _)| name.as_str()).collect();
+        let names: Vec<String> = app_state.delete_items.iter().map(|(path, _)| shown_name(path)).collect();
         lines.push(Line::from(Span::styled(format!("Delete {count} items?"), style_title())));
         lines.push(Line::from(Span::styled(names.join(", "), style_file())));
     }
@@ -1480,7 +1478,7 @@ fn render_overwrite_popup(f: &mut ratatui::Frame<'_>, area: Rect, prompt: &crate
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let name = |path: &std::path::PathBuf| path.file_name().map(|name| printable_name(&name.to_string_lossy())).unwrap_or_default();
+    let name = |path: &std::path::PathBuf| shown_name(path);
     let mut lines = Vec::new();
     if count == 1 {
         lines.push(Line::from(Span::styled(format!("\"{}\" already exists", name(&prompt.taken[0])), style_title())));
@@ -1534,7 +1532,7 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let name = job.current.file_name().and_then(|n| n.to_str()).map_or_else(String::new, printable_name);
+    let name = shown_name(&job.current);
 
     // The counting pass runs before any bytes move, so there is a moment at the
     // start with nothing to measure against, and a rename has nothing to count.
@@ -1611,14 +1609,10 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
 
     // Source info
     let source_msg = if count == 1 {
-        let source_name = items[0].0.file_name()
-            .and_then(|n| n.to_str())
-            .map_or_else(|| "Unknown".to_string(), printable_name);
+        let source_name = shown_name(&items[0].0);
         format!("{} \"{}\"", verb, source_name)
     } else {
-        let names: Vec<String> = items.iter()
-            .filter_map(|(src, _, _)| src.file_name().and_then(|n| n.to_str()).map(printable_name))
-            .collect();
+        let names: Vec<String> = items.iter().map(|(src, _, _)| shown_name(src)).collect();
         format!("{} {} items: {}", verb, count, names.join(", "))
     };
     // Destination directory
@@ -1639,7 +1633,7 @@ fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &A
     let Some(large) = &app_state.large_file else {
         return;
     };
-    let name = large.path.file_name().and_then(|n| n.to_str()).map_or_else(|| "Unknown".to_string(), printable_name);
+    let name = shown_name(&large.path);
     let verb = if large.is_edit { "Edit" } else { "View" };
 
     let popup_area = centered_rect(60, 30, area);
@@ -1745,7 +1739,7 @@ mod tests {
         clean(&mut app_state, "the panel");
 
         app_state.is_f8_displayed = true;
-        app_state.delete_items = vec![(nasty.to_string(), false)];
+        app_state.delete_items = vec![(dir.join(nasty), false)];
         clean(&mut app_state, "the delete popup");
         app_state.is_f8_displayed = false;
 

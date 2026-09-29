@@ -9,6 +9,7 @@ use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
 use ratatui::text::Span;
 use ratatui::widgets::TableState;
+use std::ffi::OsString;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -200,7 +201,9 @@ pub struct AppState {
     pub rename_input: TextInput,
     pub create_input: TextInput,
     pub is_f8_displayed: bool,
-    pub delete_items: Vec<(String, bool)>,
+    /// What F8 is asking about, as paths: the name alone could not be joined
+    /// back to the file it came from when it is not valid UTF-8.
+    pub delete_items: Vec<(PathBuf, bool)>,
     pub search_input: String,
     pub cached_clock: String,
     pub cached_separator_height: u16,
@@ -485,6 +488,14 @@ pub struct PreviewState {
 
 #[derive(Debug, Clone)]
 pub struct Item {
+    /// The name the filesystem holds. On Unix that is bytes, which need not be
+    /// valid UTF-8 - a file from an old archive or a foreign disk often is not.
+    /// Every path an operation works on is built from this, never from the
+    /// strings beside it: those come from `to_string_lossy`, which puts a
+    /// replacement character where it could not read one, and a path joined
+    /// from that names a file that does not exist.
+    pub name_os: OsString,
+    /// The whole name as it is shown and sorted, searched and selected by.
     pub name_full: String,
     pub name: String,
     pub extension: String,
@@ -493,6 +504,13 @@ pub struct Item {
     pub size_bytes: u64,
     pub modified_at: Option<SystemTime>,
     pub attributes: String,
+}
+
+impl Item {
+    /// Where this entry is, inside the directory it was listed from.
+    pub fn path_in(&self, dir: &Path) -> PathBuf {
+        dir.join(&self.name_os)
+    }
 }
 
 impl AppState {
@@ -1017,7 +1035,7 @@ impl AppState {
     fn image_neighbour(&self, showing: &Path, forward: bool) -> Option<PathBuf> {
         let (children, dir) =
             if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
-        let files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir).map(|item| dir.join(&item.name_full)).collect();
+        let files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir).map(|item| item.path_in(dir)).collect();
         let at = files.iter().position(|path| path == showing)?;
 
         let total = files.len();
@@ -1704,7 +1722,7 @@ impl AppState {
                         selected_set.insert(item.name_full.clone());
 
                         if calculate_size && item.is_dir {
-                            let full_path = current_dir.join(&item.name_full);
+                            let full_path = item.path_in(current_dir);
                             match calculate_dir_size(&full_path) {
                                 Ok(size) => dir_size_result = Some((full_path, size)),
                                 Err(e) => error_msg = Some(format!("Cannot calculate size: {}", e)),
@@ -2067,7 +2085,7 @@ impl AppState {
         if item.name == ".." {
             return None;
         }
-        Some((dir.join(&item.name_full), item.name_full.clone(), item.is_dir))
+        Some((item.path_in(dir), item.name_full.clone(), item.is_dir))
     }
 
     /// Gather what the detail lines say, when the cursor has moved to something
@@ -2466,6 +2484,40 @@ mod tests {
     use crate::options::Options;
     use std::collections::HashSet;
 
+    /// A file name is bytes, and need not be valid UTF-8. The strings the
+    /// interface shows come from to_string_lossy, so joining one back together
+    /// names a file that is not there - every path has to come from the name
+    /// the filesystem gave.
+    #[cfg(unix)]
+    #[test]
+    fn a_name_that_is_not_utf8_still_names_its_file() {
+        use std::os::unix::ffi::OsStrExt;
+
+        let dir = std::env::temp_dir().join(format!("fm84-latin1-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        // "café.txt" as Latin-1 writes it, which is not valid UTF-8.
+        let raw = std::ffi::OsStr::from_bytes(b"caf\xe9.txt");
+        std::fs::write(dir.join(raw), "contents").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.open_dir(true, dir.clone(), None);
+        let item = app_state.children_left.iter().find(|item| item.name_full != "..").unwrap().clone();
+        // Blank until the stem was read lossily too, which left the column empty.
+        assert!(!item.name.is_empty());
+
+        let index = app_state.children_left.iter().position(|row| row.name_full == item.name_full).unwrap();
+        app_state.state_left.select(Some(index));
+        let (path, _, _) = app_state.cursor_target().unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "contents");
+        // What the name alone would have named, and what every operation used
+        // to be handed: a path with a replacement character in it, and nothing
+        // of that name on disk.
+        assert!(!dir.join(&item.name_full).exists());
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
     /// The preview and the detail lines hold what they gathered until the
     /// cursor moves, so a file that changes under a still cursor has to be
     /// picked up by the reread instead.
@@ -2498,6 +2550,7 @@ mod tests {
 
     fn row(name: &str) -> Item {
         Item {
+            name_os: name.into(),
             name_full: name.to_string(),
             name: name.to_string(),
             extension: String::new(),
