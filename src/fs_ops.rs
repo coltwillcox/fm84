@@ -240,7 +240,13 @@ fn parse_proc_mounts(table: &str) -> Vec<Mount> {
         // credentials, portals and gvfs under /run, and fusectl under /sys,
         // which a filesystem-type check alone would let through.
         const MACHINERY: [&str; 4] = ["/run", "/sys", "/proc", "/dev"];
-        if target == "/" || MACHINERY.iter().any(|prefix| target.starts_with(prefix)) {
+        // One branch of /run is not machinery: udisks2 mounts removable media
+        // under /run/media, which is where a stick plugged into a desktop
+        // actually turns up. The trailing slash keeps it to that directory
+        // rather than anything merely starting with the name.
+        const REMOVABLE_MEDIA: &str = "/run/media/";
+        let machinery = MACHINERY.iter().any(|prefix| target.starts_with(prefix)) && !target.starts_with(REMOVABLE_MEDIA);
+        if target == "/" || machinery {
             continue;
         }
 
@@ -335,6 +341,7 @@ gvfsd-fuse /run/user/1000/gvfs fuse.gvfsd-fuse rw,nosuid 0 0
 fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
 /dev/sdb1 /media/My\\040Backup ext4 rw,relatime 0 0
 /dev/sr0 /run/media/colt/AUDIO iso9660 ro,nosuid 0 0
+/dev/sdb1 /run/media/colt/ravage ntfs3 rw,nosuid 0 0
 /dev/sdc1 /media/stick vfat rw,nosuid 0 0";
 
     #[test]
@@ -344,9 +351,23 @@ fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
 
         assert_eq!(
             paths,
-            ["/boot", "/media/My Backup", "/media/stick", "/mnt/grimlock", "/mnt/laserbeak", "/mnt/pcloud", "/tmp"],
+            [
+                "/boot",
+                "/media/My Backup",
+                "/media/stick",
+                "/mnt/grimlock",
+                "/mnt/laserbeak",
+                "/mnt/pcloud",
+                "/run/media/colt/AUDIO",
+                "/run/media/colt/ravage",
+                "/tmp",
+            ],
             "should keep device-backed and user fuse mounts, sorted"
         );
+
+        // The rest of /run is still machinery: the portal and gvfs are fuse
+        // mounts, which the check below this would otherwise wave through.
+        assert!(!paths.iter().any(|path| path.starts_with("/run/user")));
 
         // Root is added by the caller, not here.
         assert!(!paths.iter().any(|p| p == "/"));
