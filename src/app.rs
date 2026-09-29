@@ -729,6 +729,7 @@ impl AppState {
         state.scroll_offset = recentre(state.scroll_offset, height, was_rows, rows);
         // Positions into the old drawing mean nothing in the new one.
         state.selection = None;
+        state.pan_from = None;
         true
     }
 
@@ -858,6 +859,40 @@ impl AppState {
 
         if let Some(e) = error {
             self.display_error(e);
+        }
+    }
+
+    /// True while the viewer is showing a picture, where dragging moves the
+    /// picture rather than selecting the characters it is drawn from.
+    pub fn viewer_shows_image(&self) -> bool {
+        self.viewer_state.as_ref().is_some_and(|state| state.mode == ViewMode::Image && !state.from_edit)
+    }
+
+    /// Take hold of a picture at the pointer, ready to drag it about.
+    pub fn viewer_pan_start(&mut self, column: u16, row: u16) {
+        let content = self.viewer_content_area;
+        if let Some(state) = &mut self.viewer_state
+            && content.contains(Position::new(column, row))
+        {
+            state.pan_from = Some(((column, row), (state.horizontal_offset, state.scroll_offset)));
+        }
+    }
+
+    /// Drag it. The picture follows the pointer the way a sheet of paper
+    /// follows a finger on it: moving right brings what was off to the left
+    /// into view, so the offset goes the other way. Both offsets move at once,
+    /// which is the whole point of doing this with the mouse.
+    pub fn viewer_pan_to(&mut self, column: u16, row: u16) {
+        let (width, height) = (self.viewer_viewport_width, self.viewer_viewport_height);
+        if let Some(state) = &mut self.viewer_state
+            && let Some(((from_column, from_row), (from_horizontal, from_vertical))) = state.pan_from
+        {
+            let moved_x = i64::from(column) - i64::from(from_column);
+            let moved_y = i64::from(row) - i64::from(from_row);
+            let furthest_x = state.image_columns.saturating_sub(width) as i64;
+            let furthest_y = state.total_lines.saturating_sub(height) as i64;
+            state.horizontal_offset = (from_horizontal as i64 - moved_x).clamp(0, furthest_x) as usize;
+            state.scroll_offset = (from_vertical as i64 - moved_y).clamp(0, furthest_y) as usize;
         }
     }
 

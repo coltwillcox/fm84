@@ -80,6 +80,10 @@ pub struct ViewerState {
     pub image_columns: usize,
     /// Cover the whole viewer and scroll the overflow, rather than fit inside it.
     pub image_fill: bool,
+    /// Where a drag to pan a picture began: the pointer, and the offsets it
+    /// started from. A press sets it, each drag measures against it, so the
+    /// picture cannot creep from rounding over a long drag.
+    pub pan_from: Option<((u16, u16), (usize, usize))>,
     /// What + and - have scaled the picture to, as a percentage of the Fit or
     /// Fill size, so those two keep deciding what 100% means.
     pub image_zoom: u16,
@@ -133,6 +137,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
                 image: Some(image),
                 image_columns: 0,
                 image_fill: false,
+                pan_from: None,
                 image_zoom: IMAGE_ZOOM_NORMAL,
                 image_lines: Vec::new(),
                 image_colors: Vec::new(),
@@ -156,6 +161,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
             image: None,
             image_columns: 0,
             image_fill: false,
+            pan_from: None,
             image_zoom: IMAGE_ZOOM_NORMAL,
             image_lines: Vec::new(),
             image_colors: Vec::new(),
@@ -194,6 +200,7 @@ pub fn load_file_content(path: &Path) -> Result<ViewerState, Error> {
         image: None,
         image_columns: 0,
         image_fill: false,
+        pan_from: None,
         image_zoom: IMAGE_ZOOM_NORMAL,
         image_lines: Vec::new(),
         image_colors: Vec::new(),

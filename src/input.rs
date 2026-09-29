@@ -407,7 +407,12 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     if app_state.is_f4_displayed {
                         handle_editor_click(app_state, mouse_event.column, mouse_event.row, false);
                     } else if app_state.is_f3_displayed {
-                        handle_viewer_click(app_state, mouse_event.column, mouse_event.row, false);
+                        // A picture is dragged about; anything else is selected.
+                        if app_state.viewer_shows_image() {
+                            app_state.viewer_pan_start(mouse_event.column, mouse_event.row);
+                        } else {
+                            handle_viewer_click(app_state, mouse_event.column, mouse_event.row, false);
+                        }
                     } else {
                         handle_mouse_click(app_state, mouse_event.column, mouse_event.row);
                     }
@@ -417,7 +422,11 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     if app_state.is_f4_displayed {
                         handle_editor_click(app_state, mouse_event.column, mouse_event.row, true);
                     } else if app_state.is_f3_displayed {
-                        handle_viewer_click(app_state, mouse_event.column, mouse_event.row, true);
+                        if app_state.viewer_shows_image() {
+                            app_state.viewer_pan_to(mouse_event.column, mouse_event.row);
+                        } else {
+                            handle_viewer_click(app_state, mouse_event.column, mouse_event.row, true);
+                        }
                     }
                 }
                 MouseEventKind::ScrollDown => {
