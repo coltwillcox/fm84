@@ -1956,6 +1956,16 @@ impl AppState {
             }
             Err(e) => self.display_error(e.to_string()),
         }
+
+        // Both of these keep what they gathered until the cursor moves to some
+        // other entry, which is what makes them cheap to hold. A reread is the
+        // other way the entry under the cursor changes - it was saved in the
+        // editor, written over by a copy, or changed by something else
+        // entirely - and neither would notice that on its own. Dropping them
+        // here has them gathered again before the next frame, since the loop
+        // refreshes both on its way to drawing one.
+        self.preview = None;
+        self.cursor_detail = None;
     }
 
     /// The panel and the mount under a click, when it landed on a drive icon.
@@ -2449,8 +2459,39 @@ mod job_tests {
 
 #[cfg(test)]
 mod tests {
-    use super::{Item, prune_selection, recentre, slot_at};
+    use super::{AppState, Item, prune_selection, recentre, slot_at};
+    use crate::options::Options;
     use std::collections::HashSet;
+
+    /// The preview and the detail lines hold what they gathered until the
+    /// cursor moves, so a file that changes under a still cursor has to be
+    /// picked up by the reread instead.
+    #[test]
+    fn a_reread_gathers_the_preview_and_the_detail_again() {
+        let dir = std::env::temp_dir().join(format!("fm84-reread-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("notes.txt"), "hello").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.is_f12_displayed = true;
+        app_state.open_dir(true, dir.clone(), Some("notes.txt"));
+        app_state.refresh_cursor_detail();
+        app_state.refresh_preview();
+        assert_eq!(app_state.cursor_detail.as_ref().unwrap().size, "5 bytes");
+        assert_eq!(app_state.preview.as_ref().unwrap().lines, ["hello"]);
+
+        // The file grows where it stands, and the panel rereads - which is
+        // what saving in the editor, or a copy landing on it, comes to.
+        std::fs::write(dir.join("notes.txt"), "hello, a longer file now").unwrap();
+        app_state.reload_panel(true, None);
+        app_state.refresh_cursor_detail();
+        app_state.refresh_preview();
+        assert_eq!(app_state.cursor_detail.as_ref().unwrap().size, "24 bytes");
+        assert_eq!(app_state.preview.as_ref().unwrap().lines, ["hello, a longer file now"]);
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 
     fn row(name: &str) -> Item {
         Item {
