@@ -1897,7 +1897,7 @@ impl AppState {
     /// Point a panel at `dir` and read it. The single way a panel's directory
     /// changes - navigation, and anything else that jumps somewhere. `select`
     /// names the entry to land on, otherwise the cursor goes to the top.
-    pub fn open_dir(&mut self, is_left: bool, dir: PathBuf, select: Option<&str>) {
+    pub fn open_dir(&mut self, is_left: bool, dir: PathBuf, select: Option<&std::ffi::OsStr>) {
         if is_left {
             self.dir_left = dir;
             self.selected_left.clear();
@@ -1916,7 +1916,7 @@ impl AppState {
     /// file just renamed or created. Otherwise the cursor keeps the *file* it
     /// was on rather than the row, since entries appearing or vanishing above
     /// shift every index below them; if that file is gone, the row is kept.
-    pub fn reload_panel(&mut self, is_left: bool, prefer: Option<&str>) {
+    pub fn reload_panel(&mut self, is_left: bool, prefer: Option<&std::ffi::OsStr>) {
         let dir = if is_left { self.dir_left.clone() } else { self.dir_right.clone() };
 
         // The directory may have been removed underneath us; climb to the
@@ -1953,8 +1953,10 @@ impl AppState {
         let wanted = if relocated {
             None
         } else {
-            prefer.map(str::to_string).or_else(|| {
-                children.get(previous_index).map(|item| item.name_full.clone())
+            // By the name the filesystem holds: two that are not valid UTF-8
+            // can read the same, and the cursor would land on the wrong one.
+            prefer.map(std::ffi::OsStr::to_os_string).or_else(|| {
+                children.get(previous_index).map(|item| item.name_os.clone())
             })
         };
 
@@ -1964,7 +1966,7 @@ impl AppState {
                 prune_selection(selected, &items);
 
                 let index = wanted
-                    .and_then(|name| items.iter().position(|item| item.name_full == name))
+                    .and_then(|name| items.iter().position(|item| item.name_os == name))
                     .unwrap_or(previous_index)
                     .min(items.len().saturating_sub(1));
 
@@ -2532,7 +2534,7 @@ mod tests {
         let mut app_state = AppState::new();
         app_state.options = Options::default();
         app_state.is_f12_displayed = true;
-        app_state.open_dir(true, dir.clone(), Some("notes.txt"));
+        app_state.open_dir(true, dir.clone(), Some("notes.txt".as_ref()));
         app_state.refresh_cursor_detail();
         app_state.refresh_preview();
         assert_eq!(app_state.cursor_detail.as_ref().unwrap().size, "5 bytes");

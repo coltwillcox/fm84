@@ -766,15 +766,75 @@ pub fn load_session() -> Option<(PathBuf, PathBuf)> {
 }
 
 pub fn save_session(left: &std::path::Path, right: &std::path::Path) -> io::Result<()> {
-    write_config_file("session", &format!("left = {}\nright = {}\n", left.display(), right.display()))
+    write_config_file("session", &format!("left = {}\nright = {}\n", escape_path(left), escape_path(right)))
+}
+
+/// A path as a session line holds it. `display()` would lose any name that is
+/// not valid UTF-8, and the reader trims each value, so spaces at either end
+/// would go too. Those bytes, control characters and `%` itself are written
+/// as `%XX`; everything else stays as it reads, so the file is still fine to
+/// look at and edit by hand.
+fn escape_path(path: &std::path::Path) -> String {
+    let escaped = |bytes: &[u8]| bytes.iter().map(|byte| format!("%{byte:02X}")).collect::<String>();
+
+    let mut out = String::new();
+    for chunk in path.as_os_str().as_encoded_bytes().utf8_chunks() {
+        for ch in chunk.valid().chars() {
+            if ch == '%' || ch.is_control() {
+                out.push_str(&escaped(ch.encode_utf8(&mut [0; 4]).as_bytes()));
+            } else {
+                out.push(ch);
+            }
+        }
+        out.push_str(&escaped(chunk.invalid()));
+    }
+
+    let start = out.len() - out.trim_start().len();
+    let end = start + out.trim().len();
+    format!("{}{}{}", escaped(&out.as_bytes()[..start]), &out[start..end], escaped(&out.as_bytes()[end..]))
+}
+
+/// The path escape_path wrote. A `%` not followed by two hex digits is kept
+/// as it is, so a session written before paths were escaped still reads.
+fn unescape_path(text: &str) -> PathBuf {
+    let bytes = text.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        let hex = bytes.get(index + 1..index + 3).and_then(|pair| std::str::from_utf8(pair).ok());
+        match (bytes[index], hex.and_then(|pair| u8::from_str_radix(pair, 16).ok())) {
+            (b'%', Some(byte)) => {
+                out.push(byte);
+                index += 3;
+            }
+            (byte, _) => {
+                out.push(byte);
+                index += 1;
+            }
+        }
+    }
+    path_from_bytes(out)
+}
+
+#[cfg(unix)]
+fn path_from_bytes(bytes: Vec<u8>) -> PathBuf {
+    use std::os::unix::ffi::OsStringExt;
+    PathBuf::from(std::ffi::OsString::from_vec(bytes))
+}
+
+/// Elsewhere a path is not arbitrary bytes, and a hand-edited file could hold
+/// anything, so it is read as text.
+#[cfg(not(unix))]
+fn path_from_bytes(bytes: Vec<u8>) -> PathBuf {
+    PathBuf::from(String::from_utf8_lossy(&bytes).into_owned())
 }
 
 fn parse_session(text: &str) -> Option<(PathBuf, PathBuf)> {
     let (mut left, mut right) = (None, None);
     for (key, value) in key_values(text) {
         match key {
-            "left" if !value.is_empty() => left = Some(PathBuf::from(value)),
-            "right" if !value.is_empty() => right = Some(PathBuf::from(value)),
+            "left" if !value.is_empty() => left = Some(unescape_path(value)),
+            "right" if !value.is_empty() => right = Some(unescape_path(value)),
             _ => {}
         }
     }
@@ -911,6 +971,26 @@ mod tests {
         assert_eq!((left, right), (PathBuf::from("/home/colt"), PathBuf::from("/tmp")));
         assert_eq!(parse_session("left = /home/colt\n"), None);
         assert_eq!(parse_session("left =\nright = /tmp\n"), None);
+    }
+
+    #[test]
+    fn a_session_path_comes_back_as_it_went() {
+        for path in ["/home/colt", " edged ", "/tmp/100%", "/tmp/tab\there", "/tmp/caf\u{e9}"] {
+            let line = format!("left = {}\nright = /\n", escape_path(std::path::Path::new(path)));
+            assert_eq!(parse_session(&line).unwrap().0, PathBuf::from(path), "{line:?}");
+        }
+        // Written before paths were escaped: a % with no hex after it is itself.
+        assert_eq!(unescape_path("/tmp/50%off"), PathBuf::from("/tmp/50%off"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_session_keeps_a_name_that_is_not_utf8() {
+        use std::os::unix::ffi::OsStrExt;
+        let path = std::path::Path::new(std::ffi::OsStr::from_bytes(b"/tmp/caf\xe9"));
+        let line = format!("left = {}\nright = /\n", escape_path(path));
+        assert_eq!(line, "left = /tmp/caf%E9\nright = /\n");
+        assert_eq!(parse_session(&line).unwrap().0, path);
     }
 
     #[test]

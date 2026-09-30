@@ -136,11 +136,11 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
 /// back. The command is split on whitespace; `{}` stands for the file, which
 /// otherwise goes on the end.
 fn run_external_editor(terminal: &mut Tui, app_state: &mut AppState, path: &std::path::Path) -> io::Result<()> {
-    let path_text = path.to_string_lossy();
     let command = app_state.options.editor.clone();
-    let mut parts: Vec<String> = command.split_whitespace().map(|part| part.replace("{}", &path_text)).collect();
+    let mut parts: Vec<std::ffi::OsString> =
+        command.split_whitespace().map(|part| utils::substitute(part, path.as_os_str())).collect();
     if !command.contains("{}") {
-        parts.push(path_text.into_owned());
+        parts.push(path.as_os_str().to_owned());
     }
     let program = parts.remove(0);
 
@@ -154,9 +154,9 @@ fn run_external_editor(terminal: &mut Tui, app_state: &mut AppState, path: &std:
     terminal.clear()?;
 
     match result {
-        Ok(status) if !status.success() => app_state.display_error(format!("{} exited with {}", program, status)),
+        Ok(status) if !status.success() => app_state.display_error(format!("{} exited with {}", program.display(), status)),
         Ok(_) => {}
-        Err(e) => app_state.display_error(format!("Cannot start {}: {}", program, e)),
+        Err(e) => app_state.display_error(format!("Cannot start {}: {}", program.display(), e)),
     }
     // The file has likely changed size, and the editor may have left a backup
     // or swap file beside it.

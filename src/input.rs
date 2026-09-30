@@ -573,6 +573,13 @@ fn handle_rename(app_state: &mut AppState) {
         }
 
         let new_name = app_state.rename_input.text.clone();
+        // The field opened on the name as shown, which for a name that is not
+        // valid UTF-8 is not the name itself. Left as it was, it would rename
+        // the file to its own lossy reading.
+        if new_name == item.name_full {
+            app_state.reset_rename();
+            return;
+        }
         // Nothing to rename to: treat it as a cancel, the way F7 treats an empty
         // name. Composing it would point at the parent directory instead.
         if new_name.is_empty() {
@@ -607,7 +614,7 @@ fn handle_rename(app_state: &mut AppState) {
                 if let Some(size) = app_state.dir_sizes.remove(&original_path) {
                     app_state.dir_sizes.insert(new_path, size);
                 }
-                app_state.reload_panel(app_state.is_left_active, Some(&new_name));
+                app_state.reload_panel(app_state.is_left_active, Some(new_name.as_ref()));
             }
             Err(e) => app_state.display_error(e.to_string()),
         }
@@ -670,7 +677,7 @@ fn navigate_up_panel(app_state: &mut AppState) {
     let dir = if is_left { &app_state.dir_left } else { &app_state.dir_right };
 
     // Land on the directory we just came out of.
-    let leaving = dir.file_name().map(|name| name.to_string_lossy().into_owned());
+    let leaving = dir.file_name().map(std::ffi::OsStr::to_os_string);
     let Some(parent) = dir.parent().map(Path::to_path_buf) else {
         return;
     };
@@ -717,7 +724,7 @@ fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
 
 #[cfg(target_os = "windows")]
 fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
-    Command::new("cmd").args(["/C", "start", "", &path.to_string_lossy()])
+    Command::new("cmd").args(["/C", "start", ""]).arg(path)
         .stdout(Stdio::null()).stderr(Stdio::null())
         .spawn()?;
     Ok(())
@@ -814,7 +821,7 @@ fn handle_create_confirm(app_state: &mut AppState) {
         create_file(new_dir_path)
     };
     match result {
-        Ok(_) => app_state.reload_panel(app_state.is_left_active, Some(&created)),
+        Ok(_) => app_state.reload_panel(app_state.is_left_active, Some(created.as_ref())),
         Err(e) => app_state.display_error(e.to_string()),
     }
 
@@ -918,8 +925,7 @@ fn open_terminal(app_state: &mut AppState) {
 /// directory in case the terminal wants it as an argument; it is started in
 /// the directory either way.
 fn spawn_configured_terminal(command: &str, dir: &std::path::Path) -> std::io::Result<()> {
-    let dir_text = dir.to_string_lossy();
-    let mut parts = command.split_whitespace().map(|part| part.replace("{}", &dir_text));
+    let mut parts = command.split_whitespace().map(|part| crate::utils::substitute(part, dir.as_os_str()));
     let program = parts.next().ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "Empty terminal command"))?;
     let mut process = Command::new(program);
     process.args(parts).current_dir(dir).stdout(Stdio::null()).stderr(Stdio::null());

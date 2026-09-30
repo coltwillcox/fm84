@@ -1718,7 +1718,7 @@ mod tests {
         let mut app_state = AppState::new();
         app_state.options = Options::default();
         app_state.is_f12_displayed = true;
-        app_state.open_dir(true, dir.clone(), Some(nasty));
+        app_state.open_dir(true, dir.clone(), Some(nasty.as_ref()));
         app_state.refresh_cursor_detail();
         app_state.refresh_preview();
         let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();

@@ -1,5 +1,6 @@
 use crate::constants::*;
 use ratatui::style::Color;
+use std::ffi::{OsStr, OsString};
 use std::io::{Write, stdout};
 use std::path::Path;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
@@ -59,6 +60,20 @@ pub fn grouped(value: u64) -> String {
             out.push(' ');
         }
         out.push(digit);
+    }
+    out
+}
+
+/// One word of a command from F11, with each `{}` in it standing for `value`.
+/// Built as an OsString rather than with str::replace, which would need the
+/// path as text: a name that is not valid UTF-8 would come out with a
+/// replacement character in it, naming a file that is not there.
+pub fn substitute(word: &str, value: &OsStr) -> OsString {
+    let mut pieces = word.split("{}");
+    let mut out = OsString::from(pieces.next().unwrap_or_default());
+    for piece in pieces {
+        out.push(value);
+        out.push(piece);
     }
     out
 }
@@ -237,5 +252,21 @@ mod format_tests {
         let time = SystemTime::UNIX_EPOCH + Duration::from_secs(2_000_000_000);
         assert_eq!(format_modified(time, DateFormat::Short, time).len(), 14);
         assert_eq!(format_modified(time, DateFormat::Iso, time).len(), 16);
+    }
+}
+
+#[cfg(all(test, unix))]
+mod substitute_tests {
+    use super::substitute;
+    use std::ffi::OsStr;
+    use std::os::unix::ffi::OsStrExt;
+
+    #[test]
+    fn a_path_goes_in_as_the_bytes_it_is() {
+        let path = OsStr::from_bytes(b"/tmp/caf\xe9.txt");
+        assert_eq!(substitute("{}", path), path);
+        assert_eq!(substitute("--file={}", path).as_bytes(), b"--file=/tmp/caf\xe9.txt");
+        assert_eq!(substitute("{}:{}", path).as_bytes(), b"/tmp/caf\xe9.txt:/tmp/caf\xe9.txt");
+        assert_eq!(substitute("nvim", path), "nvim");
     }
 }
