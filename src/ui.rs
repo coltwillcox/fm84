@@ -466,7 +466,7 @@ fn build_viewport_rows(
     for index in start..end {
         let child = &children[index];
         let is_renaming_current_item = is_renaming_current_side && (index == selected);
-        let is_selected = selected_set.contains(&child.name_full);
+        let is_selected = selected_set.contains(&child.name_os);
 
         // Keep original icon, change color if selected
         let icon = row_icon(child.is_dir, app_state.options.icon_style);
@@ -1019,7 +1019,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     } else {
         // Show panel stats: selected/total files and selected/total size
         // Returns (count_part, size_part) e.g. ("0/5", "1.2 KiB") or ("2/5", "800 B/1.2 KiB")
-        let panel_stat = |children: &[crate::app::Item], selected_set: &std::collections::HashSet<String>, current_dir: &PathBuf, dir_sizes: &std::collections::HashMap<PathBuf, u64>| -> (String, String) {
+        let panel_stat = |children: &[crate::app::Item], selected_set: &std::collections::HashSet<std::ffi::OsString>, current_dir: &PathBuf, dir_sizes: &std::collections::HashMap<PathBuf, u64>| -> (String, String) {
             let item_size = |c: &crate::app::Item| -> u64 {
                 if c.is_dir {
                     dir_sizes.get(&c.path_in(current_dir)).copied().unwrap_or(0)
@@ -1033,7 +1033,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             if selected_set.is_empty() {
                 (format!("0/{}", total_count), format_size(total_size))
             } else {
-                let is_selected = |c: &crate::app::Item| c.name != ".." && selected_set.contains(&c.name_full);
+                let is_selected = |c: &crate::app::Item| c.name != ".." && selected_set.contains(&c.name_os);
                 let sel_count = children.iter().filter(|c| is_selected(c)).count();
                 let sel_size: u64 = children.iter().filter(|c| is_selected(c)).map(item_size).sum();
                 (format!("{}/{}", sel_count, total_count), format!("{}/{}", format_size(sel_size), format_size(total_size)))

@@ -221,8 +221,10 @@ pub struct AppState {
     pub move_items: Vec<(PathBuf, PathBuf, bool)>,
     // Keyed by file name, not row index: a reload can re-sort the rows, and an
     // index would then point at a different file than the one the user picked.
-    pub selected_left: HashSet<String>,
-    pub selected_right: HashSet<String>,
+    // The name the filesystem holds, not the one shown: two names that are not
+    // valid UTF-8 can read the same, and picking one would pick both.
+    pub selected_left: HashSet<OsString>,
+    pub selected_right: HashSet<OsString>,
     pub dir_sizes: HashMap<PathBuf, u64>,
     pub last_click_time: Option<Instant>,
     pub last_click_pos: (u16, u16),
@@ -1718,8 +1720,8 @@ impl AppState {
                 if index < children.len() && children[index].name != ".." {
                     let item = &children[index];
 
-                    if !selected_set.remove(&item.name_full) {
-                        selected_set.insert(item.name_full.clone());
+                    if !selected_set.remove(&item.name_os) {
+                        selected_set.insert(item.name_os.clone());
 
                         if calculate_size && item.is_dir {
                             let full_path = item.path_in(current_dir);
@@ -2288,9 +2290,9 @@ fn run_delete(items: Vec<(PathBuf, bool)>, updates: &Sender<JobUpdate>, cancel: 
 /// is selected, and joins the next copy, move or delete. Worse, those read the
 /// selection *instead of* the cursor whenever it is not empty, so one such name
 /// quietly redirects the whole operation.
-fn prune_selection(selected: &mut HashSet<String>, items: &[Item]) {
-    let names: HashSet<&str> = items.iter().map(|item| item.name_full.as_str()).collect();
-    selected.retain(|name| names.contains(name.as_str()));
+fn prune_selection(selected: &mut HashSet<OsString>, items: &[Item]) {
+    let names: HashSet<&OsString> = items.iter().map(|item| &item.name_os).collect();
+    selected.retain(|name| names.contains(name));
 }
 
 /// Which of a strip's slots a column falls in, measured from the strip's left
@@ -2564,8 +2566,8 @@ mod tests {
 
     #[test]
     fn a_selection_outlives_a_re_sort_but_not_its_file() {
-        let mut selected: HashSet<String> =
-            ["one.txt", "two.txt"].iter().map(|name| name.to_string()).collect();
+        let mut selected: HashSet<std::ffi::OsString> =
+            ["one.txt", "two.txt"].iter().map(|name| name.into()).collect();
 
         // Re-sorted, renumbered: both files are still there, so both stay
         // selected. This is what keying by name rather than row is for.
@@ -2584,6 +2586,35 @@ mod tests {
         // An empty directory clears the lot.
         prune_selection(&mut selected, &[]);
         assert!(selected.is_empty());
+    }
+
+    /// Two names that are not valid UTF-8 can read the same once made
+    /// printable. Selecting one must not select the other, or the next delete
+    /// takes a file nobody picked.
+    #[cfg(unix)]
+    #[test]
+    fn names_that_read_alike_are_selected_apart() {
+        use std::os::unix::ffi::OsStrExt;
+
+        let dir = std::env::temp_dir().join(format!("fm84-alike-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        for raw in [&b"a\xfe"[..], &b"a\xff"[..]] {
+            std::fs::write(dir.join(std::ffi::OsStr::from_bytes(raw)), "").unwrap();
+        }
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.open_dir(true, dir.clone(), None);
+        let rows: Vec<Item> = app_state.children_left.iter().filter(|item| item.name != "..").cloned().collect();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].name_full, rows[1].name_full);
+
+        let index = app_state.children_left.iter().position(|row| row.name_os == rows[0].name_os).unwrap();
+        app_state.state_left.select(Some(index));
+        app_state.toggle_selection_no_size();
+        assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&rows[0].name_os]);
+
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
 

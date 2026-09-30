@@ -748,7 +748,7 @@ fn toggle_delete(app_state: &mut AppState) {
 
         let items: Vec<(PathBuf, bool)> = if !selected_set.is_empty() {
             children.iter()
-                .filter(|item| item.name != ".." && selected_set.contains(&item.name_full))
+                .filter(|item| item.name != ".." && selected_set.contains(&item.name_os))
                 .map(|item| (item.path_in(dir), item.is_dir))
                 .collect()
         } else {
@@ -1013,7 +1013,7 @@ fn toggle_copy(app_state: &mut AppState) {
 
         let items: Vec<(PathBuf, PathBuf, bool)> = if !selected_set.is_empty() {
             children.iter()
-                .filter(|item| item.name != ".." && selected_set.contains(&item.name_full))
+                .filter(|item| item.name != ".." && selected_set.contains(&item.name_os))
                 .map(|item| (item.path_in(source_dir), item.path_in(dest_dir), item.is_dir))
                 .collect()
         } else {
@@ -1066,7 +1066,7 @@ fn toggle_move(app_state: &mut AppState) {
 
         let items: Vec<(PathBuf, PathBuf, bool)> = if !selected_set.is_empty() {
             children.iter()
-                .filter(|item| item.name != ".." && selected_set.contains(&item.name_full))
+                .filter(|item| item.name != ".." && selected_set.contains(&item.name_os))
                 .map(|item| (item.path_in(source_dir), item.path_in(dest_dir), item.is_dir))
                 .collect()
         } else {
