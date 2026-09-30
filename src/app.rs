@@ -1669,12 +1669,13 @@ impl AppState {
     pub fn editor_save(&mut self) -> Result<(), String> {
         if let Some(state) = &mut self.editor_state {
             let content = state.lines.join(state.line_ending);
-            std::fs::write(&state.file_path, content).map_err(|e| e.to_string())?;
+            crate::fs_ops::save_file(&state.file_path, content.as_bytes()).map_err(|e| e.to_string())?;
             state.modified = false;
-            // Rewriting a file leaves its directory's mtime alone - only adding,
-            // removing or renaming entries moves that - so the refresh that
-            // watches it never notices, and the panels would go on showing the
-            // size from before the edit. Either of them may be showing the file.
+            // A save written in place leaves its directory's mtime alone - only
+            // adding, removing or renaming entries moves that - so the refresh
+            // that watches it never notices, and the panels would go on showing
+            // the size from before the edit. Either of them may be showing the
+            // file, and a link to it may be in a directory neither is watching.
             self.reload_panel(true, None);
             self.reload_panel(false, None);
         }

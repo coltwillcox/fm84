@@ -5,7 +5,7 @@ use crate::utils::format_size;
 use std::ffi::OsString;
 use std::env;
 use std::fs::{self, File, create_dir, read_dir, remove_dir, remove_file, rename};
-use std::io::{self, Error, ErrorKind, Read};
+use std::io::{self, Error, ErrorKind, Read, Write};
 use std::path::{Path, PathBuf};
 
 /// Permission bits as `ls -l` writes them. The mode comes from the metadata the
@@ -1029,6 +1029,88 @@ pub fn check_destinations(items: &[(PathBuf, PathBuf, bool)]) -> Result<Vec<Path
     Ok(taken)
 }
 
+/// Save `content` over the file at `path` so that a failure partway - a full
+/// disk, a device gone, fm84 killed - leaves the file as it was rather than
+/// truncated. Written straight over, the file is emptied the moment the write
+/// begins. Instead the bytes go to a temporary beside it, which is flushed to
+/// disk and then renamed into place, so the file is whole either way.
+///
+/// A rename puts a new file where the old one was, which is not always the
+/// same thing as changing it. Where the difference would show, the file is
+/// written in place as before:
+/// - it has other hard links, which would go on holding the old content;
+/// - its owner cannot be kept, as when editing someone else's file that the
+///   group may write to;
+/// - its directory cannot be added to, though the file itself can be written.
+pub fn save_file(path: &Path, content: &[u8]) -> Result<(), Error> {
+    // Through a link to the file it names: renaming over the link would put a
+    // regular file in its place and leave what it points at unedited.
+    let target = fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    let in_place = || fs::write(&target, content);
+
+    let Ok(metadata) = fs::metadata(&target) else {
+        // Gone since it was opened, so there is nothing to keep safe.
+        return in_place();
+    };
+    if !metadata.is_file() {
+        return Err(not_regular(&target));
+    }
+    // Asked of the file itself, since a rename needs only the directory: a
+    // read-only file would otherwise be replaced without a word. Opened
+    // without truncating, so asking changes nothing.
+    File::options().write(true).open(&target)?;
+    if has_other_links(&metadata) {
+        return in_place();
+    }
+
+    let (temp, mut file) = match temp_beside(&target) {
+        Ok(pair) => pair,
+        Err(e) if e.kind() == ErrorKind::PermissionDenied => return in_place(),
+        Err(e) => return Err(e),
+    };
+    if keep_owner(&file, &metadata).is_err() {
+        drop(file);
+        let _ = remove_file(&temp);
+        return in_place();
+    }
+    // After the owner, which can clear the setuid and setgid bits.
+    let written = file
+        .write_all(content)
+        .and_then(|()| file.set_permissions(metadata.permissions()))
+        .and_then(|()| file.sync_all());
+    drop(file);
+    if let Err(e) = written.and_then(|()| rename(&temp, &target)) {
+        let _ = remove_file(&temp);
+        return Err(e);
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+fn has_other_links(metadata: &fs::Metadata) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    metadata.nlink() > 1
+}
+
+#[cfg(not(unix))]
+fn has_other_links(_metadata: &fs::Metadata) -> bool {
+    false
+}
+
+/// Give the temporary the owner and group of the file it will replace. Only
+/// root may give a file away, but anyone may set what is already theirs, so
+/// this fails exactly when the rename would change who owns the file.
+#[cfg(unix)]
+fn keep_owner(file: &File, metadata: &fs::Metadata) -> Result<(), Error> {
+    use std::os::unix::fs::MetadataExt;
+    std::os::unix::fs::fchown(file, Some(metadata.uid()), Some(metadata.gid()))
+}
+
+#[cfg(not(unix))]
+fn keep_owner(_file: &File, _metadata: &fs::Metadata) -> Result<(), Error> {
+    Ok(())
+}
+
 /// A file to write into beside `dest`, for when something is already there.
 /// Same directory, so the rename that finishes the copy is atomic and cannot
 /// half-replace anything; a temporary elsewhere would have to be copied back
@@ -1116,6 +1198,68 @@ mod transfer_tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    #[test]
+    fn a_save_replaces_the_content_and_leaves_nothing_beside_it() {
+        let dir = scratch("save");
+        let file = dir.join("notes.txt");
+        fs::write(&file, "old and longer than the new").unwrap();
+
+        save_file(&file, b"new").unwrap();
+        assert_eq!(fs::read_to_string(&file).unwrap(), "new");
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1, "a temporary was left behind");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_save_keeps_the_mode_and_writes_through_a_link() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = scratch("save-link");
+        let file = dir.join("run.sh");
+        fs::write(&file, "echo old").unwrap();
+        fs::set_permissions(&file, fs::Permissions::from_mode(0o750)).unwrap();
+        std::os::unix::fs::symlink(&file, dir.join("link.sh")).unwrap();
+
+        save_file(&dir.join("link.sh"), b"echo new").unwrap();
+        assert!(fs::symlink_metadata(dir.join("link.sh")).unwrap().file_type().is_symlink());
+        assert_eq!(fs::read_to_string(&file).unwrap(), "echo new");
+        assert_eq!(fs::metadata(&file).unwrap().permissions().mode() & 0o777, 0o750);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_save_keeps_a_hard_link_joined() {
+        let dir = scratch("save-hardlink");
+        let file = dir.join("a.txt");
+        fs::write(&file, "old").unwrap();
+        fs::hard_link(&file, dir.join("b.txt")).unwrap();
+
+        save_file(&file, b"new").unwrap();
+        assert_eq!(fs::read_to_string(dir.join("b.txt")).unwrap(), "new");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_read_only_file_is_not_replaced() {
+        let dir = scratch("save-readonly");
+        let file = dir.join("locked.txt");
+        fs::write(&file, "old").unwrap();
+        let mut permissions = fs::metadata(&file).unwrap().permissions();
+        permissions.set_readonly(true);
+        fs::set_permissions(&file, permissions.clone()).unwrap();
+
+        // Root may write anything, so there is nothing to refuse.
+        if File::options().write(true).open(&file).is_err() {
+            assert!(save_file(&file, b"new").is_err());
+            assert_eq!(fs::read_to_string(&file).unwrap(), "old");
+        }
+        #[allow(clippy::permissions_set_readonly_false)]
+        permissions.set_readonly(false);
+        fs::set_permissions(&file, permissions).unwrap();
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
