@@ -1329,11 +1329,11 @@ impl AppState {
     }
 
     pub fn editor_scroll_up(&mut self) {
-        if let Some(state) = &mut self.editor_state {
-            if state.scroll_offset > 0 {
-                state.scroll_offset -= 1;
-                state.auto_scroll = false;
-            }
+        if let Some(state) = &mut self.editor_state
+            && state.scroll_offset > 0
+        {
+            state.scroll_offset -= 1;
+            state.auto_scroll = false;
         }
     }
 
@@ -1581,25 +1581,25 @@ impl AppState {
     }
 
     pub fn editor_cursor_up(&mut self) {
-        if let Some(state) = &mut self.editor_state {
-            if state.cursor_line > 0 {
-                state.cursor_line -= 1;
-                state.clamp_col();
-                if state.cursor_line < state.scroll_offset {
-                    state.scroll_offset = state.cursor_line;
-                }
+        if let Some(state) = &mut self.editor_state
+            && state.cursor_line > 0
+        {
+            state.cursor_line -= 1;
+            state.clamp_col();
+            if state.cursor_line < state.scroll_offset {
+                state.scroll_offset = state.cursor_line;
             }
         }
     }
 
     pub fn editor_cursor_down(&mut self) {
-        if let Some(state) = &mut self.editor_state {
-            if state.cursor_line < state.lines.len().saturating_sub(1) {
-                state.cursor_line += 1;
-                state.clamp_col();
-                if state.cursor_line >= state.scroll_offset + self.editor_viewport_height {
-                    state.scroll_offset = state.cursor_line - self.editor_viewport_height + 1;
-                }
+        if let Some(state) = &mut self.editor_state
+            && state.cursor_line < state.lines.len().saturating_sub(1)
+        {
+            state.cursor_line += 1;
+            state.clamp_col();
+            if state.cursor_line >= state.scroll_offset + self.editor_viewport_height {
+                state.scroll_offset = state.cursor_line - self.editor_viewport_height + 1;
             }
         }
     }
@@ -2259,11 +2259,11 @@ impl AppState {
 
     /// Take the highlighted drive; the panel jumps to that mount point.
     pub fn confirm_drive_picker(&mut self) {
-        if let Some((is_left, index)) = self.drive_picker.take() {
-            if let Some(mount) = self.mounts.get(index) {
-                let path = mount.path.clone();
-                self.open_dir(is_left, path, None);
-            }
+        if let Some((is_left, index)) = self.drive_picker.take()
+            && let Some(mount) = self.mounts.get(index)
+        {
+            let path = mount.path.clone();
+            self.open_dir(is_left, path, None);
         }
     }
 

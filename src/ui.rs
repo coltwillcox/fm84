@@ -321,7 +321,7 @@ fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppS
     }
 }
 
-fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &PathBuf, dir_right: &PathBuf, total_width: u16, is_left_active: bool) {
+fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &std::path::Path, dir_right: &std::path::Path, total_width: u16, is_left_active: bool) {
     let length_left = ((total_width as usize).saturating_sub(3)) / 2;
     let length_right = ((total_width as usize).saturating_sub(2)) / 2;
 
@@ -463,8 +463,7 @@ fn build_viewport_rows(
     // Cargo.toml would read the same.
     let has_ext_column = columns.contains(&Column::Ext);
 
-    for index in start..end {
-        let child = &children[index];
+    for (index, child) in children.iter().enumerate().take(end).skip(start) {
         let is_renaming_current_item = is_renaming_current_side && (index == selected);
         let is_selected = selected_set.contains(&child.name_os);
 
@@ -966,7 +965,7 @@ fn render_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, text: String, style
 /// in an Ambiguous-width glyph like ▓ would double it under a CJK locale.
 fn usage_meter(used: u64, total: u64) -> String {
     const CELLS: u64 = 5;
-    let filled = if total == 0 { 0 } else { (used.saturating_mul(CELLS) / total).min(CELLS) };
+    let filled = used.saturating_mul(CELLS).checked_div(total).unwrap_or(0).min(CELLS);
     "▪".repeat(filled as usize) + &"▫".repeat((CELLS - filled) as usize)
 }
 
@@ -1033,7 +1032,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
                 }
             };
             let total_count = children.iter().filter(|c| c.name != "..").count();
-            let total_size: u64 = children.iter().filter(|c| c.name != "..").map(|c| item_size(c)).sum();
+            let total_size: u64 = children.iter().filter(|c| c.name != "..").map(&item_size).sum();
 
             if selected_set.is_empty() {
                 (format!("0/{}", total_count), format_size(total_size))
