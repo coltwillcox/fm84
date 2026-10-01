@@ -2094,6 +2094,18 @@ impl AppState {
     /// changes - navigation, and anything else that jumps somewhere. `select`
     /// names the entry to land on, otherwise the cursor goes to the top.
     pub fn open_dir(&mut self, is_left: bool, dir: PathBuf, select: Option<&std::ffi::OsStr>) {
+        // A directory that is there but cannot be read - /root, to anyone
+        // else - is refused before the panel moves. Moved first, the panel
+        // went on listing the directory it left under the name of one it
+        // could not show, and every operation built its paths in the wrong
+        // place. One that is not there at all goes ahead, for the reload to
+        // climb from.
+        if dir.exists()
+            && let Err(e) = std::fs::read_dir(&dir)
+        {
+            self.display_error(format!("Cannot open {}: {}", dir.display(), e));
+            return;
+        }
         if is_left {
             self.dir_left = dir;
             self.selected_left.clear();
@@ -2175,7 +2187,14 @@ impl AppState {
                 }
                 self.record_dir_stamp(is_left);
             }
-            Err(e) => self.display_error(e.to_string()),
+            Err(e) => {
+                self.display_error(e.to_string());
+                // Taken as read all the same, so the refresh only tries again
+                // once the directory changes. Otherwise it found the stamp
+                // out of date every second and put the same error back up
+                // each time it was closed.
+                self.record_dir_stamp(is_left);
+            }
         }
 
         // Both of these keep what they gathered until the cursor moves to some
@@ -2800,6 +2819,57 @@ mod tests {
         wait(&mut app_state, &|app_state| app_state.job.is_none());
         assert!(app_state.error_message.starts_with("Copy cancelled"), "{}", app_state.error_message);
 
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A directory that cannot be read is refused, and the panel stays where
+    /// it was rather than moving there with nothing to show. The error is said
+    /// once: the refresh does not raise it again after it is closed.
+    #[cfg(unix)]
+    #[test]
+    fn an_unreadable_directory_is_refused_once() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("fm84-unreadable-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let locked = dir.join("locked");
+        std::fs::create_dir_all(&locked).unwrap();
+        std::fs::write(dir.join("here.txt"), "").unwrap();
+        std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
+        // Root reads anything, so there is nothing to refuse.
+        if std::fs::read_dir(&locked).is_ok() {
+            std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+            return std::fs::remove_dir_all(&dir).unwrap();
+        }
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.open_dir(true, dir.clone(), None);
+        let listed = app_state.children_left.len();
+
+        app_state.open_dir(true, locked.clone(), None);
+        assert!(app_state.is_error_displayed);
+        assert_eq!(app_state.dir_left, dir);
+        assert_eq!(app_state.children_left.len(), listed);
+
+        // Closed, and a refresh comes round: it stays closed.
+        app_state.reset_error();
+        app_state.last_refresh_check -= crate::constants::REFRESH_INTERVAL;
+        app_state.refresh_stale_panels();
+        assert!(!app_state.is_error_displayed);
+
+        // Gone unreadable while the panel is in it: said once, not every tick.
+        app_state.open_dir(true, locked.parent().unwrap().to_path_buf(), None);
+        std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+        app_state.open_dir(true, locked.clone(), None);
+        std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
+        app_state.reload_panel(true, None);
+        assert!(app_state.is_error_displayed);
+        app_state.reset_error();
+        app_state.last_refresh_check -= crate::constants::REFRESH_INTERVAL;
+        app_state.refresh_stale_panels();
+        assert!(!app_state.is_error_displayed);
+
+        std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
