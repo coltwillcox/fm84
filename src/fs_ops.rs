@@ -7,6 +7,7 @@ use std::env;
 use std::fs::{self, File, create_dir, read_dir, remove_dir, remove_file, rename};
 use std::io::{self, Error, ErrorKind, Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Permission bits as `ls -l` writes them. The mode comes from the metadata the
 /// listing already holds, so this costs no extra syscall.
@@ -1160,22 +1161,37 @@ fn is_cross_device(error: &Error) -> bool {
 }
 
 pub fn calculate_dir_size(path: &Path) -> Result<u64, Error> {
-    let mut total_size = 0u64;
+    walk_dir_size(path, &AtomicBool::new(false), &mut |_| {}).map(Option::unwrap_or_default)
+}
 
+/// Bytes in the files under `path`, links not followed. `found` is told each
+/// file's size as it is reached, so a long walk can show how far it has got,
+/// and `cancel` stops it between entries, which gives None.
+///
+/// Only `path` itself has to be readable. Anything inside that is not - a
+/// directory locked to its owner, a file gone mid-walk - counts as nothing,
+/// the way du carries on past what it cannot read rather than giving up.
+pub fn walk_dir_size(path: &Path, cancel: &AtomicBool, found: &mut dyn FnMut(u64)) -> Result<Option<u64>, Error> {
+    let mut total = 0u64;
     for entry in read_dir(path)? {
-        let entry = entry?;
+        if cancel.load(Ordering::Relaxed) {
+            return Ok(None);
+        }
+        let Ok(entry) = entry else { continue };
         // file_type() uses readdir's d_type on Linux - no extra stat syscall
-        if entry.file_type()?.is_dir() {
-            // Continue on subdirectory errors, just skip that dir
-            if let Ok(size) = calculate_dir_size(&entry.path()) {
-                total_size += size;
+        let Ok(file_type) = entry.file_type() else { continue };
+        if file_type.is_dir() {
+            match walk_dir_size(&entry.path(), cancel, found) {
+                Ok(Some(size)) => total += size,
+                Ok(None) => return Ok(None),
+                Err(_) => {}
             }
-        } else {
-            total_size += entry.metadata()?.len();
+        } else if let Ok(metadata) = entry.metadata() {
+            total += metadata.len();
+            found(metadata.len());
         }
     }
-
-    Ok(total_size)
+    Ok(Some(total))
 }
 
 #[cfg(test)]
@@ -1259,6 +1275,26 @@ mod transfer_tests {
         #[allow(clippy::permissions_set_readonly_false)]
         permissions.set_readonly(false);
         fs::set_permissions(&file, permissions).unwrap();
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_size_walk_counts_what_it_can_and_stops_when_asked() {
+        let dir = scratch("walk-size");
+        fs::write(dir.join("a.bin"), vec![0u8; 1000]).unwrap();
+        fs::create_dir(dir.join("sub")).unwrap();
+        fs::write(dir.join("sub").join("b.bin"), vec![0u8; 2500]).unwrap();
+
+        let mut reported = Vec::new();
+        let size = walk_dir_size(&dir, &AtomicBool::new(false), &mut |bytes| reported.push(bytes)).unwrap();
+        assert_eq!(size, Some(3500));
+        reported.sort();
+        assert_eq!(reported, [1000, 2500]);
+
+        // Cancelled before it starts, it finds nothing and says so.
+        assert_eq!(walk_dir_size(&dir, &AtomicBool::new(true), &mut |_| {}).unwrap(), None);
+        // The directory itself has to be there; a vanished one is an error.
+        assert!(walk_dir_size(&dir.join("gone"), &AtomicBool::new(false), &mut |_| {}).is_err());
         fs::remove_dir_all(&dir).unwrap();
     }
 

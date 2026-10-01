@@ -256,6 +256,8 @@ pub struct AppState {
     pub overwrite_prompt: Option<OverwritePrompt>,
     /// Set while a copy, move or delete is running on its own thread.
     pub job: Option<TransferJob>,
+    /// Directories Space is working out the size of, each on its own thread.
+    pub dir_sizing: Vec<DirSizing>,
     /// Pictures read around the one on screen, while F11 leaves it on.
     pub image_cache: ImageCache,
     /// The entry under the cursor, spelled out under the panels.
@@ -280,6 +282,27 @@ pub struct TransferJob {
     /// Set by Esc, read by the worker between entries.
     cancel: Arc<AtomicBool>,
     updates: Receiver<JobUpdate>,
+}
+
+/// A directory whose size Space asked for, being walked on its own thread.
+/// Not a TransferJob: nothing waits on it, so it has no popup and holds up
+/// nothing. The panels go on working while it counts, and the Size column
+/// shows how far it has got.
+///
+/// Off the UI thread because walking / or a large tree takes seconds, and
+/// on an unresponsive mount a single read_dir can take forever.
+pub struct DirSizing {
+    pub path: PathBuf,
+    /// Bytes found so far, for the Size column to show while it counts.
+    pub found: u64,
+    cancel: Arc<AtomicBool>,
+    updates: Receiver<SizeUpdate>,
+}
+
+enum SizeUpdate {
+    Found(u64),
+    /// None when cancelled.
+    Finished(Result<Option<u64>, String>),
 }
 
 /// Which of the three long jobs is running. They share a popup, a worker and a
@@ -592,6 +615,7 @@ impl AppState {
             large_file: None,
             overwrite_prompt: None,
             job: None,
+            dir_sizing: Vec::new(),
             image_cache: ImageCache::default(),
             cursor_detail: None,
             quit_armed: false,
@@ -1705,10 +1729,7 @@ impl AppState {
     }
 
     fn toggle_selection_inner(&mut self, calculate_size: bool) {
-        use crate::fs_ops::calculate_dir_size;
-
-        let mut error_msg: Option<String> = None;
-        let mut dir_size_result: Option<(PathBuf, u64)> = None;
+        let mut to_size: Option<PathBuf> = None;
 
         {
             let (state, children, selected_set, current_dir) = if self.is_left_active {
@@ -1725,11 +1746,7 @@ impl AppState {
                         selected_set.insert(item.name_os.clone());
 
                         if calculate_size && item.is_dir {
-                            let full_path = item.path_in(current_dir);
-                            match calculate_dir_size(&full_path) {
-                                Ok(size) => dir_size_result = Some((full_path, size)),
-                                Err(e) => error_msg = Some(format!("Cannot calculate size: {}", e)),
-                            }
+                            to_size = Some(item.path_in(current_dir));
                         }
                     }
                 }
@@ -1742,12 +1759,74 @@ impl AppState {
             }
         }
 
-        if let Some((path, size)) = dir_size_result {
-            self.dir_sizes.insert(path, size);
+        if let Some(path) = to_size {
+            self.start_dir_size(path);
         }
-        if let Some(msg) = error_msg {
-            self.display_error(msg);
+    }
+
+    /// Work out a directory's size on a thread of its own, unless that is
+    /// already under way.
+    pub fn start_dir_size(&mut self, path: PathBuf) {
+        if self.dir_sizing.iter().any(|sizing| sizing.path == path) {
+            return;
         }
+        let cancel = Arc::new(AtomicBool::new(false));
+        let (sender, updates) = mpsc::channel();
+        let (worker_path, worker_cancel) = (path.clone(), Arc::clone(&cancel));
+        std::thread::spawn(move || {
+            let (mut found, mut reported) = (0, Instant::now());
+            let result = crate::fs_ops::walk_dir_size(&worker_path, &worker_cancel, &mut |bytes| {
+                found += bytes;
+                if reported.elapsed() >= crate::constants::SIZE_PROGRESS_INTERVAL {
+                    reported = Instant::now();
+                    let _ = sender.send(SizeUpdate::Found(found));
+                }
+            });
+            let _ = sender.send(SizeUpdate::Finished(result.map_err(|e| e.to_string())));
+        });
+        self.dir_sizing.push(DirSizing { path, found: 0, cancel, updates });
+    }
+
+    /// Take what the sizing threads have sent since the last frame, keeping
+    /// each size that is finished.
+    pub fn poll_dir_sizes(&mut self) {
+        let mut finished = Vec::new();
+        self.dir_sizing.retain_mut(|sizing| loop {
+            match sizing.updates.try_recv() {
+                Ok(SizeUpdate::Found(found)) => sizing.found = found,
+                Ok(SizeUpdate::Finished(result)) => {
+                    finished.push((sizing.path.clone(), result));
+                    break false;
+                }
+                Err(TryRecvError::Empty) => break true,
+                // Gone without a word, which only happens if it panicked.
+                Err(TryRecvError::Disconnected) => break false,
+            }
+        });
+
+        for (path, result) in finished {
+            match result {
+                Ok(Some(size)) => {
+                    self.dir_sizes.insert(path, size);
+                }
+                Ok(None) => {}
+                Err(e) => self.display_error(format!("Cannot calculate size: {}", e)),
+            }
+        }
+    }
+
+    /// Stop every size still being worked out. Each thread notices between
+    /// entries; one stuck in a read on a dead mount is simply forgotten, and
+    /// whatever it finds is never asked for.
+    pub fn cancel_dir_sizes(&mut self) {
+        for sizing in self.dir_sizing.drain(..) {
+            sizing.cancel.store(true, Ordering::Relaxed);
+        }
+    }
+
+    /// The running total for a directory still being sized.
+    pub fn dir_size_so_far(&self, path: &Path) -> Option<u64> {
+        self.dir_sizing.iter().find(|sizing| sizing.path == path).map(|sizing| sizing.found)
     }
 
     /// True while a popup is covering the screen. What is behind one must sit
@@ -1852,8 +1931,10 @@ impl AppState {
         self.clear_active_selections();
         // Any directory size worked out before may now be wrong - the ones
         // copied into, moved out of or deleted from, and every directory above
-        // them. Space works them out again.
+        // them. Space works them out again. One still being counted may
+        // have walked through them halfway, so it goes too.
         self.dir_sizes.clear();
+        self.cancel_dir_sizes();
 
         // The offer to quit covered this job, and this job is over.
         self.quit_armed = false;
@@ -2549,6 +2630,40 @@ mod tests {
         app_state.refresh_preview();
         assert_eq!(app_state.cursor_detail.as_ref().unwrap().size, "24 bytes");
         assert_eq!(app_state.preview.as_ref().unwrap().lines, ["hello, a longer file now"]);
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Space sizes a directory on a thread, so the panel goes on answering
+    /// while it counts, and the size lands once the walk is done.
+    #[test]
+    fn space_sizes_a_directory_off_the_ui_thread() {
+        let dir = std::env::temp_dir().join(format!("fm84-sizing-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("sub")).unwrap();
+        std::fs::write(dir.join("sub").join("data.bin"), vec![0u8; 4096]).unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
+        app_state.toggle_selection();
+        assert_eq!(app_state.dir_sizing.len(), 1);
+
+        let started = std::time::Instant::now();
+        while !app_state.dir_sizing.is_empty() {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "sizing never finished");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_dir_sizes();
+        }
+        assert_eq!(app_state.dir_sizes.get(&dir.join("sub")), Some(&4096));
+
+        // Esc stops one under way, and nothing it finds is kept.
+        app_state.dir_sizes.clear();
+        app_state.start_dir_size(dir.join("sub"));
+        app_state.cancel_dir_sizes();
+        assert!(app_state.dir_sizing.is_empty());
+        app_state.poll_dir_sizes();
+        assert!(app_state.dir_sizes.is_empty());
 
         std::fs::remove_dir_all(&dir).unwrap();
     }

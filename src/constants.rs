@@ -82,6 +82,9 @@ pub const COPY_CHUNK: u64 = 1024 * 1024;
 // A transfer that finishes inside this shows no progress popup at all. Most
 // copies are small and a popup that appears and vanishes reads as a glitch.
 pub const TRANSFER_POPUP_DELAY: Duration = Duration::from_millis(150);
+// How often a directory being sized reports its running total. A walk finds
+// thousands of files a second, and a message for each would only be thrown away.
+pub const SIZE_PROGRESS_INTERVAL: Duration = Duration::from_millis(100);
 
 // Hex digits in the offset a hexdump row opens with, which 4 GB of file fits in.
 pub const HEX_OFFSET_DIGITS: usize = 8;

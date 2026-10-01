@@ -317,6 +317,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     match key.code {
                         KeyCode::Esc => {
                             app_state.search_clear();
+                            app_state.cancel_dir_sizes();
                             handle_esc(app_state);
                         }
                         // Alt+F1/F2 choose a drive per panel. Ctrl is an alias,

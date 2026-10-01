@@ -107,6 +107,7 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
         app_state.refresh_cursor_detail();
         app_state.refresh_preview();
         app_state.poll_transfer();
+        app_state.poll_dir_sizes();
         app_state.image_cache.collect();
         render_ui(terminal, &mut app_state);
         // An image fits the width the viewer was just drawn at, so a new width
