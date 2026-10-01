@@ -2063,6 +2063,45 @@ mod transfer_tests {
         fs::remove_dir_all(&dir).unwrap();
     }
 
+    /// Merging within one filesystem renames each entry into place rather
+    /// than copying it and deleting the source. A copy would be a new file
+    /// with a new inode; a rename keeps the one it had, and takes no time
+    /// however large the file.
+    #[cfg(unix)]
+    #[test]
+    fn a_merge_on_one_filesystem_renames_rather_than_copies() {
+        use std::os::unix::fs::MetadataExt;
+        let inode = |path: &Path| fs::symlink_metadata(path).unwrap().ino();
+
+        let dir = scratch("merge-rename");
+        let (source, dest) = (dir.join("src"), dir.join("dst"));
+        fs::create_dir_all(source.join("shared")).unwrap();
+        fs::create_dir_all(source.join("fresh")).unwrap();
+        fs::write(source.join("shared").join("big.bin"), vec![0u8; 4096]).unwrap();
+        fs::write(source.join("fresh").join("inner.txt"), "i").unwrap();
+        fs::write(source.join("clash"), "new").unwrap();
+        fs::create_dir_all(dest.join("shared")).unwrap();
+        fs::write(dest.join("shared").join("keep.txt"), "k").unwrap();
+        fs::write(dest.join("clash"), "old").unwrap();
+
+        let before = [
+            inode(&source.join("shared").join("big.bin")),
+            inode(&source.join("fresh")),
+            inode(&source.join("clash")),
+        ];
+        let mut report = |_: Step<'_>| true;
+        assert_eq!(move_path(source.clone(), dest.clone(), true, &mut report).unwrap(), Transfer::Done);
+
+        // A file inside a directory both sides have, a directory only the
+        // source has (moved whole), and a file replacing one in the way.
+        let after = [inode(&dest.join("shared").join("big.bin")), inode(&dest.join("fresh")), inode(&dest.join("clash"))];
+        assert_eq!(before, after);
+        assert_eq!(fs::read_to_string(dest.join("clash")).unwrap(), "new");
+        assert_eq!(fs::read_to_string(dest.join("shared").join("keep.txt")).unwrap(), "k");
+        assert!(!source.exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
     #[test]
     fn a_move_onto_a_file_replaces_it() {
         let dir = scratch("replace");
