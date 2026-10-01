@@ -79,7 +79,7 @@ jobs:
         run: |
           mkdir -p dist
           cp target/${{ matrix.target }}/release/fm84 dist/
-          cp README.md dist/
+          cp README.md LICENSE dist/
           cd dist
           tar -czvf ../fm84-${{ github.ref_name }}-${{ matrix.target }}.tar.gz *
 
@@ -89,7 +89,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path dist
           Copy-Item target/${{ matrix.target }}/release/fm84.exe dist/
-          Copy-Item README.md dist/
+          Copy-Item README.md, LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath fm84-${{ github.ref_name }}-${{ matrix.target }}.zip
 
       - name: Upload artifacts
