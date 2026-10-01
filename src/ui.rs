@@ -1,4 +1,4 @@
-use crate::app::{AppState, TransferKind};
+use crate::app::{AppState, PromptKind, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
 use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options};
@@ -23,6 +23,9 @@ fn style_file() -> Style { Style::new().fg(palette().file) }
 fn style_dir() -> Style { Style::new().fg(palette().directory) }
 fn style_dir_dark() -> Style { Style::new().fg(palette().directory_dark) }
 fn style_selection() -> Style { Style::new().bg(palette().selected_background_inactive) }
+// The other matches of a search. Marked rather than coloured, so it reads in
+// every theme and leaves the syntax colours underneath alone.
+fn style_match() -> Style { Style::new().add_modifier(Modifier::UNDERLINED | Modifier::BOLD) }
 
 /// The columns beside Name. Name is never dropped, so it is not one of them.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -676,16 +679,23 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
             // Both modes render from the same line text, so the selection and
             // the copy see exactly what is on screen.
             let selection = viewer_state.selected_range();
+            // Not on a picture, whose characters only happen to be letters.
+            let marking = app_state.find_shown && viewer_state.mode != ViewMode::Image;
+            let needle = marking.then(|| crate::find::Needle::new(&app_state.find_term)).flatten();
             let content_lines: Vec<Line> = (start..end)
                 .map(|index| {
                     let text = viewer_state.line_text(index);
                     let width = text.chars().count();
+                    let matches = needle.as_ref().map(|needle| needle.find_all(&text)).unwrap_or_default();
                     let mut spans = match viewer_state.image_colors.get(index) {
                         Some(colors) if viewer_state.mode == ViewMode::Image => {
                             colored_spans(&text, colors, viewer_state.image_backgrounds.get(index).map(Vec::as_slice))
                         }
                         _ => vec![Span::styled(text, style_file())],
                     };
+                    for (from, to) in matches {
+                        spans = overlay_range(spans, from, to, style_match());
+                    }
 
                     if let Some(((first_line, first_col), (last_line, last_col))) = selection
                         && (first_line..=last_line).contains(&index)
@@ -873,6 +883,7 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
         let has_highlighting = !editor_state.highlighted_lines.is_empty();
         let cursor_style = Style::default().fg(palette().selected_foreground).bg(palette().selected_background);
         let selection = editor_state.selection();
+        let needle = app_state.find_shown.then(|| crate::find::Needle::new(&app_state.find_term)).flatten();
         let mut content_lines: Vec<Line> = Vec::with_capacity(end - start);
 
         for (idx, line) in editor_state.lines[start..end].iter().enumerate() {
@@ -887,6 +898,10 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
                 } else {
                     vec![Span::styled(printable_line(line), style_file())]
                 };
+
+            for (from, to) in needle.as_ref().map(|needle| needle.find_all(line)).unwrap_or_default() {
+                spans = overlay_range(spans, visual_column(line, from), visual_column(line, to), style_match());
+            }
 
             if let Some(((first_line, first_col), (last_line, last_col))) = selection
                 && (first_line..=last_line).contains(&actual_line_idx)
@@ -946,6 +961,30 @@ fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments:
     f.render_widget(Paragraph::new(Line::from(spans)), area);
 }
 
+/// The find and go-to-line prompt, in the status bar's place: the label, what
+/// has been typed with the cursor in it, and the border run on to the corner.
+fn render_prompt_bar(f: &mut ratatui::Frame<'_>, area: Rect, label: &str, input: &crate::app::TextInput, style: Style) {
+    let text = printable_name(&input.text);
+    let characters: Vec<char> = text.chars().collect();
+    let cursor = input.cursor.min(characters.len());
+    let before: String = characters[..cursor].iter().collect();
+    let under: String = characters.get(cursor).map_or(" ".to_string(), char::to_string);
+    let after: String = characters.get(cursor + 1..).map_or(String::new(), |rest| rest.iter().collect());
+    let used = 2 + display_width(label) + display_width(&before) + display_width(&under) + display_width(&after) + 1 + 1;
+
+    let line = vec![
+        Span::styled("├─", style_border()),
+        Span::styled(label.to_string(), style),
+        Span::styled(before, style),
+        Span::styled(under, style.add_modifier(Modifier::REVERSED)),
+        Span::styled(after, style),
+        Span::styled(" ", style),
+        Span::styled("─".repeat((area.width as usize).saturating_sub(used)), style_border()),
+        Span::styled("┤", style_border()),
+    ];
+    f.render_widget(Paragraph::new(Line::from(line)), area);
+}
+
 fn render_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, text: String, style: Style) {
     let text_len = display_width(&text);
     let status_line = vec![
@@ -981,6 +1020,21 @@ fn disk_readout(usage: Option<(u64, u64)>, available: usize) -> Option<String> {
 fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
     let status_style = style_title().bg(palette().selected_background);
 
+    if app_state.is_f3_displayed || app_state.is_f4_displayed {
+        if let Some((kind, input)) = &app_state.prompt {
+            let label = match kind {
+                PromptKind::Find => " Find: ",
+                PromptKind::GoToLine => " Go to line: ",
+            };
+            render_prompt_bar(f, area, label, input, status_style);
+            return;
+        }
+        if let Some(note) = &app_state.find_note {
+            render_status_bar(f, area, format!(" {} ", printable_name(note)), status_style);
+            return;
+        }
+    }
+
     if app_state.is_f4_displayed {
         // Show editor status
         if let Some(editor_state) = &app_state.editor_state {
@@ -989,7 +1043,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             let name_seg = format!("{}{}", filename, modified);
             let pos_seg = format!("Ln {}, Col {}", editor_state.cursor_line + 1, editor_state.cursor_col + 1);
             let lines_seg = format!("{} lines", editor_state.lines.len());
-            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, "F2/Ctrl+S Save", "Ctrl+Z/Y Undo", "Esc Exit"]);
+            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, "F2/Ctrl+S Save", "Ctrl+F Find", "Ctrl+Z/Y Undo", "Esc Exit"]);
         }
     } else if app_state.is_f3_displayed {
         // Show viewer status
@@ -1012,6 +1066,8 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
                 if viewer_state.mode == ViewMode::Image {
                     segments.push(if viewer_state.image_fill { "F Fit [Fill]" } else { "F [Fit] Fill" });
                     segments.push(zoom_seg.as_str());
+                } else {
+                    segments.push("Ctrl+F Find");
                 }
             }
             render_segmented_status_bar(f, area, &segments);
@@ -1272,6 +1328,8 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F3 - View file (X text/hex/image)",
         "  F fit/fill, +/- zoom",
         "F4 - Edit file (Ctrl+S/F2 save)",
+        "  Ctrl+F find, F3/Shift+F3 next/prev",
+        "  Ctrl+G go to line",
         "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
         "  Shift+arrows select, Ctrl+A all",
         "F5 - Copy to other panel",

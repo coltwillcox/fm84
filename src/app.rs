@@ -215,6 +215,18 @@ pub struct AppState {
     pub is_f4_displayed: bool,
     pub editor_state: Option<EditorState>,
     pub editor_viewport_height: usize,
+    /// The line at the foot of the viewer or the editor, while it is asking
+    /// for something to find or a line to go to.
+    pub prompt: Option<(PromptKind, TextInput)>,
+    /// What Ctrl+F last looked for. Kept when the prompt closes, for F3 and
+    /// Shift+F3, and offered again the next time it opens.
+    pub find_term: String,
+    /// Whether the matches of find_term are marked on screen. On from the
+    /// first search until the viewer or editor closes.
+    pub find_shown: bool,
+    /// What the last search came to - "Not found", or that it went round the
+    /// end - shown in the status bar until the next key.
+    pub find_note: Option<String>,
     pub is_f5_displayed: bool,
     pub copy_items: Vec<(PathBuf, PathBuf, bool)>,
     pub is_f6_displayed: bool,
@@ -288,6 +300,13 @@ pub struct TransferJob {
     answers: Sender<Answer>,
     /// Entries left where they were, by Skip or Skip all, to say so at the end.
     pub skipped: u64,
+}
+
+/// What the prompt at the foot of the viewer or the editor is asking for.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum PromptKind {
+    Find,
+    GoToLine,
 }
 
 /// What the popup shows while the worker waits for an answer.
@@ -693,6 +712,10 @@ impl AppState {
             is_f4_displayed: false,
             editor_state: None,
             editor_viewport_height: 0,
+            prompt: None,
+            find_term: String::new(),
+            find_shown: false,
+            find_note: None,
             is_f5_displayed: false,
             copy_items: Vec::new(),
             is_f6_displayed: false,
@@ -1030,6 +1053,7 @@ impl AppState {
     pub fn close_viewer(&mut self) {
         self.is_f3_displayed = false;
         self.viewer_state = None;
+        self.close_find();
         // Nothing is going to be stepped to now, and these are the only thing
         // in the app holding decoded pictures.
         self.image_cache.clear();
@@ -1308,6 +1332,153 @@ impl AppState {
     pub fn close_editor(&mut self) {
         self.is_f4_displayed = false;
         self.editor_state = None;
+        self.close_find();
+    }
+
+    /// The prompt and the marks go with the file they were for. The term is
+    /// kept, to be offered again.
+    fn close_find(&mut self) {
+        self.prompt = None;
+        self.find_shown = false;
+        self.find_note = None;
+    }
+
+    /// Ask for something to find, or a line to go to. Find opens on the last
+    /// term, so Enter alone looks for it again.
+    pub fn open_prompt(&mut self, kind: PromptKind) {
+        if !self.can_find() {
+            return;
+        }
+        let mut input = TextInput::new();
+        if kind == PromptKind::Find {
+            input.set(self.find_term.clone());
+        }
+        self.prompt = Some((kind, input));
+    }
+
+    /// Only text can be searched or numbered: not a picture, and not the notice
+    /// F4 raises on a binary file.
+    fn can_find(&self) -> bool {
+        if self.is_f4_displayed {
+            return self.editor_state.is_some();
+        }
+        self.viewer_state.as_ref().is_some_and(|state| !state.from_edit && state.mode != ViewMode::Image)
+    }
+
+    /// Enter on the prompt: look for what was typed, or go to the line.
+    pub fn confirm_prompt(&mut self) {
+        let Some((kind, input)) = self.prompt.take() else {
+            return;
+        };
+        match kind {
+            PromptKind::Find => {
+                if input.text.is_empty() {
+                    // Nothing to look for, so nothing to mark either.
+                    self.find_shown = false;
+                    return;
+                }
+                self.find_term = input.text;
+                self.find(true, true);
+            }
+            PromptKind::GoToLine => match input.text.trim().parse::<usize>() {
+                Ok(number) => self.go_to_line(number),
+                Err(_) if input.text.trim().is_empty() => {}
+                Err(_) => self.find_note = Some(format!("Not a line number: {}", input.text.trim())),
+            },
+        }
+    }
+
+    /// Move to the next match of find_term, or the previous one, selecting it.
+    /// `fresh` is a new search from the prompt, which may find the match the
+    /// cursor is already on; F3 and Shift+F3 go on past it.
+    pub fn find(&mut self, forward: bool, fresh: bool) {
+        let Some(needle) = crate::find::Needle::new(&self.find_term) else {
+            // F3 with nothing looked for yet asks what to look for.
+            self.open_prompt(PromptKind::Find);
+            return;
+        };
+        if !self.can_find() {
+            return;
+        }
+        self.find_shown = true;
+
+        let found = if self.is_f4_displayed {
+            self.editor_find(&needle, forward, fresh)
+        } else {
+            self.viewer_find(&needle, forward, fresh)
+        };
+        self.find_note = match found {
+            None => Some(format!("Not found: {}", self.find_term)),
+            Some(true) => Some(if forward { "Wrapped to the top" } else { "Wrapped to the bottom" }.to_string()),
+            Some(false) => None,
+        };
+    }
+
+    /// Some(wrapped) when a match was found and selected.
+    fn editor_find(&mut self, needle: &crate::find::Needle, forward: bool, fresh: bool) -> Option<bool> {
+        let height = self.editor_viewport_height.max(1);
+        let state = self.editor_state.as_mut()?;
+        let cursor = (state.cursor_line, state.cursor_col);
+        let start = state.selection().map_or(cursor, |(start, _)| start);
+        // A match is selected from its start to the cursor at its end, so on
+        // from the cursor is past it and back from its start is before it.
+        let from = if forward && !fresh { cursor } else { start };
+
+        let lines = &state.lines;
+        let found = crate::find::search(needle, lines.len(), |index| lines[index].clone(), from, forward)?;
+        state.selection_anchor = Some((found.line, found.start));
+        state.cursor_line = found.line;
+        state.cursor_col = found.end;
+        state.auto_scroll = true;
+        if found.line < state.scroll_offset || found.line >= state.scroll_offset + height {
+            state.scroll_offset = found.line.saturating_sub(height / 3);
+        }
+        Some(found.wrapped)
+    }
+
+    fn viewer_find(&mut self, needle: &crate::find::Needle, forward: bool, fresh: bool) -> Option<bool> {
+        let (height, width) = (self.viewer_viewport_height.max(1), self.viewer_viewport_width.max(1));
+        let state = self.viewer_state.as_mut()?;
+        // From the match on screen when there is one, and otherwise from the
+        // top of what is showing.
+        let from = match state.selected_range() {
+            Some((_, end)) if forward && !fresh => end,
+            Some((start, _)) => start,
+            None => (state.scroll_offset, 0),
+        };
+
+        let found = crate::find::search(needle, state.line_count(), |index| state.line_text(index), from, forward)?;
+        state.selection = Some(((found.line, found.start), (found.line, found.end)));
+        if found.line < state.scroll_offset || found.line >= state.scroll_offset + height {
+            let max = state.total_lines.saturating_sub(height);
+            state.scroll_offset = found.line.saturating_sub(height / 3).min(max);
+        }
+        if found.start < state.horizontal_offset || found.end > state.horizontal_offset + width {
+            state.horizontal_offset = found.start.saturating_sub(width / 4);
+        }
+        Some(found.wrapped)
+    }
+
+    /// Ctrl+G: put the cursor on the start of a line, counted from 1. A number
+    /// past the end goes to the last line. In the viewer the line goes to the
+    /// top, as far as the end of the file allows.
+    pub fn go_to_line(&mut self, number: usize) {
+        if self.is_f4_displayed {
+            let height = self.editor_viewport_height.max(1);
+            if let Some(state) = &mut self.editor_state {
+                let line = number.clamp(1, state.lines.len().max(1)) - 1;
+                state.selection_anchor = None;
+                state.cursor_line = line;
+                state.cursor_col = 0;
+                state.auto_scroll = true;
+                if line < state.scroll_offset || line >= state.scroll_offset + height {
+                    state.scroll_offset = line.saturating_sub(height / 3);
+                }
+            }
+        } else if let Some(state) = &mut self.viewer_state {
+            let line = number.clamp(1, state.total_lines.max(1)) - 1;
+            state.scroll_offset = line.min(state.total_lines.saturating_sub(self.viewer_viewport_height));
+        }
     }
 
     /// Re-highlight the file from `from` downward. Cheap: the cached state lets
@@ -2583,6 +2754,111 @@ mod editor_tests {
         app_state.options = crate::options::Options::default();
         app_state.open_editor(path.clone()).unwrap();
         (app_state, path)
+    }
+
+    /// Type into the prompt as a user would, and press Enter.
+    fn answer_prompt(app_state: &mut AppState, kind: super::PromptKind, text: &str) {
+        app_state.open_prompt(kind);
+        let input = &mut app_state.prompt.as_mut().unwrap().1;
+        input.clear();
+        text.chars().for_each(|c| input.insert(c));
+        app_state.confirm_prompt();
+    }
+
+    fn selected(app_state: &AppState) -> Option<((usize, usize), (usize, usize))> {
+        app_state.editor_state.as_ref().unwrap().selection()
+    }
+
+    #[test]
+    fn find_selects_each_match_in_turn_and_wraps() {
+        let (mut app_state, path) = editor_with("find", "alpha beta\nBETA\ngamma beta\n");
+        app_state.editor_viewport_height = 10;
+
+        // F3 before anything was looked for asks what to look for.
+        app_state.find(true, false);
+        assert_eq!(app_state.prompt.as_ref().map(|(kind, _)| *kind), Some(super::PromptKind::Find));
+        app_state.prompt = None;
+
+        answer_prompt(&mut app_state, super::PromptKind::Find, "beta");
+        assert_eq!(selected(&app_state), Some(((0, 6), (0, 10))));
+        assert!(app_state.find_shown);
+        assert_eq!(app_state.find_note, None);
+
+        app_state.find(true, false);
+        assert_eq!(selected(&app_state), Some(((1, 0), (1, 4))), "lower case finds any case");
+        app_state.find(true, false);
+        assert_eq!(selected(&app_state), Some(((2, 6), (2, 10))));
+        app_state.find(true, false);
+        assert_eq!(selected(&app_state), Some(((0, 6), (0, 10))));
+        assert_eq!(app_state.find_note.as_deref(), Some("Wrapped to the top"));
+
+        app_state.find(false, false);
+        assert_eq!(selected(&app_state), Some(((2, 6), (2, 10))));
+        assert_eq!(app_state.find_note.as_deref(), Some("Wrapped to the bottom"));
+
+        // The prompt offers the last term again, and a miss moves nothing.
+        app_state.open_prompt(super::PromptKind::Find);
+        assert_eq!(app_state.prompt.as_ref().unwrap().1.text, "beta");
+        app_state.prompt = None;
+        answer_prompt(&mut app_state, super::PromptKind::Find, "BETAMAX");
+        assert_eq!(selected(&app_state), Some(((2, 6), (2, 10))));
+        assert_eq!(app_state.find_note.as_deref(), Some("Not found: BETAMAX"));
+
+        // Closing the editor takes the marks with it, and keeps the term.
+        app_state.close_editor();
+        assert!(!app_state.find_shown);
+        assert_eq!(app_state.find_term, "BETAMAX");
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn go_to_line_puts_the_cursor_on_it_and_keeps_inside_the_file() {
+        let text: String = (1..=100).map(|n| format!("line {n}\n")).collect();
+        let (mut app_state, path) = editor_with("goto", &text);
+        app_state.editor_viewport_height = 10;
+
+        answer_prompt(&mut app_state, super::PromptKind::GoToLine, "42");
+        let state = app_state.editor_state.as_ref().unwrap();
+        assert_eq!((state.cursor_line, state.cursor_col), (41, 0));
+        assert!(state.scroll_offset <= 41 && 41 < state.scroll_offset + 10, "the line is on screen");
+
+        answer_prompt(&mut app_state, super::PromptKind::GoToLine, "100000");
+        assert_eq!(app_state.editor_state.as_ref().unwrap().cursor_line, 100, "the last line");
+        answer_prompt(&mut app_state, super::PromptKind::GoToLine, "0");
+        assert_eq!(app_state.editor_state.as_ref().unwrap().cursor_line, 0);
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn the_viewer_finds_and_goes_to_lines_too() {
+        let path = std::env::temp_dir().join(format!("fm84-view-find-{}.txt", std::process::id()));
+        let text: String = (1..=50).map(|n| if n == 30 { "\tthe needle\n".to_string() } else { format!("hay {n}\n") }).collect();
+        std::fs::write(&path, text).unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        app_state.open_viewer(path.clone()).unwrap();
+        app_state.viewer_viewport_height = 10;
+        app_state.viewer_viewport_width = 40;
+
+        answer_prompt(&mut app_state, super::PromptKind::Find, "needle");
+        let state = app_state.viewer_state.as_ref().unwrap();
+        // Columns as drawn, with the tab opened out, so the selection and the
+        // copy line up with the screen.
+        let start = crate::display::tab_width() + 4;
+        assert_eq!(state.selected_range(), Some(((29, start), (29, start + 6))));
+        assert_eq!(state.selected_text().as_deref(), Some("needle"));
+        assert!(state.scroll_offset <= 29 && 29 < state.scroll_offset + 10);
+
+        answer_prompt(&mut app_state, super::PromptKind::GoToLine, "5");
+        assert_eq!(app_state.viewer_state.as_ref().unwrap().scroll_offset, 4);
+        answer_prompt(&mut app_state, super::PromptKind::GoToLine, "50");
+        // As far down as End goes, which leaves the last screenful showing.
+        app_state.viewer_end();
+        let end = app_state.viewer_state.as_ref().unwrap().scroll_offset;
+        app_state.viewer_home();
+        answer_prompt(&mut app_state, super::PromptKind::GoToLine, "50");
+        assert_eq!(app_state.viewer_state.as_ref().unwrap().scroll_offset, end, "no further than the end allows");
+        std::fs::remove_file(path).unwrap();
     }
 
     fn stacks(app_state: &AppState) -> (usize, usize) {

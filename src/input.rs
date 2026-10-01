@@ -1,4 +1,4 @@
-use crate::app::{Answer, AppState, OverwritePrompt};
+use crate::app::{Answer, AppState, OverwritePrompt, PromptKind};
 use crate::options::OnExisting;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
@@ -17,6 +17,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
             // release too would run each action twice, and toggles would cancel
             // themselves out. Repeat is kept so held keys still work.
             Event::Key(key) if key.kind != KeyEventKind::Release => {
+                // What the last search came to stays up until the next key.
+                app_state.find_note = None;
                 // A character carrying Ctrl or Alt is a chord, not text. Only
                 // Ctrl+S is bound, so drop the rest instead of letting them fall
                 // through as typed characters - they would otherwise land in the
@@ -30,9 +32,16 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                 {
                     // Not behind a popup: an error or the save prompt covers the
                     // text, and an edit made there could not be seen.
-                    let in_editor = app_state.is_f4_displayed && !app_state.is_editor_save_prompt && !app_state.is_error_displayed;
+                    // Nor under the find prompt, where keys are for the prompt.
+                    let in_editor = app_state.is_f4_displayed
+                        && !app_state.is_editor_save_prompt
+                        && !app_state.is_error_displayed
+                        && app_state.prompt.is_none();
+                    let in_viewer = app_state.is_f3_displayed && !app_state.is_error_displayed && app_state.prompt.is_none();
                     if control {
                         match c {
+                            'f' if in_editor || in_viewer => app_state.open_prompt(PromptKind::Find),
+                            'g' if in_editor || in_viewer => app_state.open_prompt(PromptKind::GoToLine),
                             's' if in_editor => {
                                 if let Err(e) = app_state.editor_save() {
                                     app_state.display_error(e);
@@ -181,21 +190,30 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::End => app_state.create_input.move_end(),
                         _ => {}
                     }
+                } else if let Some((kind, input)) = app_state.prompt.as_mut() {
+                    // Find or go to line, at the foot of the viewer or editor.
+                    match key.code {
+                        KeyCode::Esc => app_state.prompt = None,
+                        KeyCode::Enter => app_state.confirm_prompt(),
+                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::Char(c) if *kind == PromptKind::GoToLine && !c.is_ascii_digit() => {}
+                        KeyCode::Char(c) => input.insert(c),
+                        KeyCode::Backspace => input.backspace(),
+                        KeyCode::Delete => input.delete_forward(),
+                        KeyCode::Left => input.move_left(),
+                        KeyCode::Right => input.move_right(),
+                        KeyCode::Home => input.move_home(),
+                        KeyCode::End => input.move_end(),
+                        _ => {}
+                    }
                 } else if app_state.is_f3_displayed {
                     match key.code {
+                        // Esc is the one way out, of the viewer and of the
+                        // notice F4 raises on a binary alike.
                         KeyCode::Esc => handle_esc(app_state),
-                        // Each key closes only what it opened: F3 the viewer,
-                        // F4 the notice it raises on a binary. Esc closes either.
-                        KeyCode::F(3) => {
-                            if app_state.viewer_state.as_ref().is_some_and(|state| !state.from_edit) {
-                                app_state.close_viewer();
-                            }
-                        }
-                        KeyCode::F(4) => {
-                            if app_state.viewer_state.as_ref().is_some_and(|state| state.from_edit) {
-                                app_state.close_viewer();
-                            }
-                        }
+                        // F3 and Shift+F3 step through the matches, as in most
+                        // editors - so F3 here cannot also close the viewer.
+                        KeyCode::F(3) => app_state.find(!key.modifiers.contains(KeyModifiers::SHIFT), false),
                         KeyCode::Char('x') | KeyCode::Char('X') => app_state.viewer_next_mode(),
                         KeyCode::Char('f') | KeyCode::Char('F') => app_state.viewer_toggle_fill(),
                         // Zoom a picture. The unshifted keys count too, so it is
@@ -276,7 +294,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     // selection is dropped.
                     let extend = key.modifiers.contains(KeyModifiers::SHIFT);
                     match key.code {
-                        KeyCode::Esc | KeyCode::F(4) => {
+                        KeyCode::Esc => {
                             if app_state.editor_is_modified() {
                                 app_state.is_editor_save_prompt = true;
                             } else {
@@ -290,6 +308,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                             }
                         }
                         KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(3) => app_state.find(!extend, false),
                         KeyCode::Up => { app_state.editor_prepare_move(extend); app_state.editor_cursor_up(); }
                         KeyCode::Down => { app_state.editor_prepare_move(extend); app_state.editor_cursor_down(); }
                         KeyCode::Left => { app_state.editor_prepare_move(extend); app_state.editor_cursor_left(); }
@@ -414,6 +433,11 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
             Event::Paste(text) => {
                 if app_state.is_error_displayed {
                     // Nothing behind an error takes it.
+                } else if let Some((_, input)) = app_state.prompt.as_mut() {
+                    // One line: a pasted newline would end it, so none go in.
+                    for character in text.chars().filter(|character| !character.is_control()) {
+                        input.insert(character);
+                    }
                 } else if app_state.is_f4_displayed && !app_state.is_editor_save_prompt {
                     app_state.editor_insert_text(&text);
                 } else if app_state.is_f2_displayed {

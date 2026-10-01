@@ -1,6 +1,7 @@
 mod app;
 mod constants;
 mod display;
+mod find;
 mod fs_ops;
 mod input;
 mod options;
