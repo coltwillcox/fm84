@@ -627,41 +627,52 @@ pub fn delete_path(path: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Tr
         .map(|metadata| metadata.file_type().is_symlink())
         .unwrap_or(false);
 
-    if is_dir && !is_symlink {
-        delete_dir_recursive(&path, report)
-    } else {
-        remove_one(&path, false, report)
-    }
+    let outcome = if is_dir && !is_symlink { delete_dir_recursive(&path, report)? } else { remove_one(&path, false, report)? };
+    Ok(outcome.into())
 }
 
 /// Remove one entry, announcing it first so the popup can name it, and counting
-/// it once it is gone.
-fn remove_one(path: &Path, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
-    if !report(Step::Starting(path)) {
-        return Ok(Transfer::Cancelled);
+/// it once it is dealt with - removed, or skipped when it would not go.
+fn remove_one(path: &Path, is_dir: bool, report: Report<'_>) -> Result<Outcome, Error> {
+    if !report.step(Step::Starting(path)) {
+        return Ok(Outcome::Cancelled);
     }
-    if is_dir { remove_dir(path)? } else { remove_file(path)? }
-    report(Step::Advanced(1));
-    Ok(Transfer::Done)
+    let removed = attempt(path, report, |_| if is_dir { remove_dir(path) } else { remove_file(path) })?;
+    report.step(Step::Advanced(1));
+    Ok(if removed.is_some() { Outcome::Done } else { Outcome::Skipped })
 }
 
-fn delete_dir_recursive(path: &Path, report: Report<'_>) -> Result<Transfer, Error> {
-    for entry in read_dir(path)? {
-        let entry = entry?;
+fn delete_dir_recursive(path: &Path, report: Report<'_>) -> Result<Outcome, Error> {
+    let Some(entries) = attempt(path, report, |_| read_dir(path))? else {
+        return Ok(Outcome::Skipped);
+    };
+    let mut skipped = false;
+    for entry in entries {
+        let Some((entry, file_type)) = next_entry(path, entry, report)? else {
+            skipped = true;
+            continue;
+        };
         let entry_path = entry.path();
 
         // file_type() describes the entry itself, so a link to a directory is a
         // link here and is unlinked rather than followed into.
-        let outcome = if entry.file_type()?.is_dir() {
+        let outcome = if file_type.is_dir() {
             delete_dir_recursive(&entry_path, &mut *report)?
         } else {
             remove_one(&entry_path, false, &mut *report)?
         };
-        if outcome == Transfer::Cancelled {
-            return Ok(Transfer::Cancelled);
+        match outcome {
+            Outcome::Cancelled => return Ok(Outcome::Cancelled),
+            Outcome::Skipped => skipped = true,
+            Outcome::Done => {}
         }
     }
 
+    // Something inside was left where it was, so the directory has to stay
+    // too. Trying would only ask about it again, as "Directory not empty".
+    if skipped {
+        return Ok(Outcome::Skipped);
+    }
     // The directory itself, now that it is empty.
     remove_one(path, true, report)
 }
@@ -751,9 +762,89 @@ pub enum Transfer {
     Cancelled,
 }
 
-/// Takes progress and answers whether to carry on. Returning false stops the
-/// transfer at the next chunk or file, whichever comes first.
-pub type Report<'a> = &'a mut dyn FnMut(Step<'_>) -> bool;
+/// How one entry went, inside a walk. Skipped tells the directory around it
+/// that something in it was left where it was: a delete then keeps the
+/// directory, and a move keeps the source directory.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Outcome {
+    Done,
+    Skipped,
+    Cancelled,
+}
+
+/// A walk with entries skipped still finished: what was skipped was answered
+/// for, one at a time, as it came up.
+impl From<Outcome> for Transfer {
+    fn from(outcome: Outcome) -> Self {
+        match outcome {
+            Outcome::Cancelled => Transfer::Cancelled,
+            Outcome::Done | Outcome::Skipped => Transfer::Done,
+        }
+    }
+}
+
+/// What to do about an entry that could not be dealt with.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Reply {
+    /// Try the same thing again - after freeing some space, say, or
+    /// remounting a drive.
+    Retry,
+    /// Leave this entry where it is and go on with the rest.
+    Skip,
+    /// Stop the whole job, passing the error up.
+    Abort,
+}
+
+/// Follows a running transfer.
+pub trait Progress {
+    /// Takes progress and answers whether to carry on. Returning false stops
+    /// the transfer at the next chunk or file, whichever comes first.
+    fn step(&mut self, step: Step<'_>) -> bool;
+
+    /// `path` could not be copied, moved or removed, for `error`. Asked once
+    /// for each failure. Left alone, the first one ends the job.
+    fn failed(&mut self, _path: &Path, _error: &Error) -> Reply {
+        Reply::Abort
+    }
+}
+
+/// A closure is a Progress that never answers for a failure, which is all a
+/// caller wants when it has nobody to ask.
+impl<F: FnMut(Step<'_>) -> bool> Progress for F {
+    fn step(&mut self, step: Step<'_>) -> bool {
+        self(step)
+    }
+}
+
+pub type Report<'a> = &'a mut dyn Progress;
+
+/// Do `op` for `path`, and when it fails ask what next: try it again, leave
+/// this entry where it is (None), or give up with the error.
+fn attempt<T>(path: &Path, report: Report<'_>, mut op: impl FnMut(Report<'_>) -> Result<T, Error>) -> Result<Option<T>, Error> {
+    loop {
+        match op(&mut *report) {
+            Ok(value) => return Ok(Some(value)),
+            Err(error) => match report.failed(path, &error) {
+                Reply::Retry => {}
+                Reply::Skip => return Ok(None),
+                Reply::Abort => return Err(error),
+            },
+        }
+    }
+}
+
+/// The next entry of a listing and what kind it is, or None when reading it
+/// failed and the answer was to go on past it. Retry is taken as Skip here:
+/// the listing has moved on, and there is no asking it for the same entry.
+fn next_entry(dir: &Path, entry: Result<fs::DirEntry, Error>, report: Report<'_>) -> Result<Option<(fs::DirEntry, fs::FileType)>, Error> {
+    match entry.and_then(|entry| entry.file_type().map(|file_type| (entry, file_type))) {
+        Ok(pair) => Ok(Some(pair)),
+        Err(error) => match report.failed(dir, &error) {
+            Reply::Abort => Err(error),
+            Reply::Retry | Reply::Skip => Ok(None),
+        },
+    }
+}
 
 /// Move by renaming, which only works within one filesystem. True if it did;
 /// the caller copies instead when it did not. Kept separate from move_path so
@@ -817,15 +908,36 @@ pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
     // cp -r. is_dir can't decide this: it comes from DirEntry::metadata(),
     // which doesn't follow links, so a link to a directory arrives false here
     // and would otherwise be handed to copy_file_content.
-    if fs::symlink_metadata(&source)?.file_type().is_symlink() {
-        clear_for_link(&dest)?;
-        copy_symlink(&source, &dest)?;
-        Ok(Transfer::Done)
+    let Some(metadata) = attempt(&source, report, |_| fs::symlink_metadata(&source))? else {
+        return Ok(Transfer::Done);
+    };
+    let outcome = if metadata.file_type().is_symlink() {
+        copy_link(&source, &dest, report)?
     } else if is_dir {
-        copy_dir_recursive(&source, &dest, report)
+        copy_dir_recursive(&source, &dest, report)?
     } else {
-        copy_file_content(&source, &dest, report)
-    }
+        copy_file(&source, &dest, report)?
+    };
+    Ok(outcome.into())
+}
+
+/// Recreate a link, asking about it if that fails.
+fn copy_link(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome, Error> {
+    let copied = attempt(source, report, |_| {
+        clear_for_link(dest)?;
+        copy_symlink(source, dest)
+    })?;
+    Ok(if copied.is_some() { Outcome::Done } else { Outcome::Skipped })
+}
+
+/// Copy a file, asking about it if that fails. A retry starts the file over:
+/// copy_file_content has cleared away what it wrote before failing.
+fn copy_file(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome, Error> {
+    Ok(match attempt(source, report, |report| copy_file_content(source, dest, report))? {
+        Some(Transfer::Done) => Outcome::Done,
+        Some(Transfer::Cancelled) => Outcome::Cancelled,
+        None => Outcome::Skipped,
+    })
 }
 
 /// Recreate a symlink at the destination, pointing where the original pointed.
@@ -864,7 +976,7 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
     if !metadata.is_file() {
         return Err(not_regular(source));
     }
-    if !report(Step::Starting(source)) {
+    if !report.step(Step::Starting(source)) {
         return Ok(Transfer::Cancelled);
     }
 
@@ -907,7 +1019,7 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
             }
             return Ok(Transfer::Done);
         }
-        if !report(Step::Advanced(copied)) {
+        if !report.step(Step::Advanced(copied)) {
             // What is on disk is half a file that will never be finished.
             // Left alone it would sit there looking like a complete copy.
             drop(dst_file);
@@ -917,11 +1029,20 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
     }
 }
 
-fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<Transfer, Error> {
-    fs::create_dir_all(dest)?;
+fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome, Error> {
+    if attempt(dest, report, |_| fs::create_dir_all(dest))?.is_none() {
+        return Ok(Outcome::Skipped);
+    }
+    let Some(entries) = attempt(source, report, |_| read_dir(source))? else {
+        return Ok(Outcome::Skipped);
+    };
 
-    for entry in read_dir(source)? {
-        let entry = entry?;
+    let mut skipped = false;
+    for entry in entries {
+        let Some((entry, file_type)) = next_entry(source, entry, report)? else {
+            skipped = true;
+            continue;
+        };
         let entry_path = entry.path();
         let dest_path = dest.join(entry.file_name());
 
@@ -929,18 +1050,17 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
         // link, copying the target's contents - and a link pointing at an
         // ancestor recurses until the path outgrows PATH_MAX. cp -r recreates
         // the link, so do the same.
-        let file_type = entry.file_type()?;
         let outcome = if file_type.is_symlink() {
-            clear_for_link(&dest_path)?;
-            copy_symlink(&entry_path, &dest_path)?;
-            Transfer::Done
+            copy_link(&entry_path, &dest_path, &mut *report)?
         } else if file_type.is_dir() {
             copy_dir_recursive(&entry_path, &dest_path, &mut *report)?
         } else {
-            copy_file_content(&entry_path, &dest_path, &mut *report)?
+            copy_file(&entry_path, &dest_path, &mut *report)?
         };
-        if outcome == Transfer::Cancelled {
-            return Ok(Transfer::Cancelled);
+        match outcome {
+            Outcome::Cancelled => return Ok(Outcome::Cancelled),
+            Outcome::Skipped => skipped = true,
+            Outcome::Done => {}
         }
     }
 
@@ -950,48 +1070,98 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
     if let Ok(metadata) = fs::metadata(source) {
         let _ = fs::set_permissions(dest, metadata.permissions());
     }
-    Ok(Transfer::Done)
+    Ok(if skipped { Outcome::Skipped } else { Outcome::Done })
 }
 
 /// Move `source` to `dest`. With `overwrite`, whatever is at `dest` gives way:
 /// a file is replaced, and a directory moved onto a directory is merged into
-/// it - a rename cannot replace a directory that holds anything, so that is a
-/// copy into it followed by removing the source. Without it, a name that has
-/// been taken since the transfer was checked is refused rather than replaced.
-pub fn move_path(source: PathBuf, dest: PathBuf, is_dir: bool, overwrite: bool, report: Report<'_>) -> Result<Transfer, Error> {
+/// it - a rename cannot replace a directory that holds anything, so that goes
+/// entry by entry. Without it, a name that has been taken since the transfer
+/// was checked is refused rather than replaced.
+pub fn move_path(source: PathBuf, dest: PathBuf, overwrite: bool, report: Report<'_>) -> Result<Transfer, Error> {
     if let Ok(existing) = dest.symlink_metadata() {
         if !overwrite {
             return Err(Error::new(ErrorKind::AlreadyExists, format!("Destination already exists: {}", dest.display())));
         }
         if is_real_dir(&source) && existing.is_dir() {
-            return copy_then_delete(source, dest, is_dir, report);
+            return Ok(move_across(&source, &dest, report)?.into());
         }
     }
 
     // Try rename first (fast, same filesystem)
-    match rename(&source, &dest) {
-        Ok(_) => Ok(Transfer::Done),
-        Err(e) if is_cross_device(&e) => copy_then_delete(source, dest, is_dir, report),
+    let renamed = attempt(&source, report, |_| match rename(&source, &dest) {
+        Ok(()) => Ok(true),
+        Err(e) if is_cross_device(&e) => Ok(false),
         Err(e) => Err(e),
+    })?;
+    match renamed {
+        Some(true) | None => Ok(Transfer::Done),
+        Some(false) => Ok(move_across(&source, &dest, report)?.into()),
     }
 }
 
-/// A move the slow way: copy, and remove the source only once the copy is
-/// whole. A cancel or an error on the way leaves the source where it was.
-fn copy_then_delete(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
-    if copy_path(source.clone(), dest.clone(), is_dir, report)? == Transfer::Cancelled {
-        // The copy stopped partway, so the source has to stay.
-        return Ok(Transfer::Cancelled);
+/// Move what one rename could not: across filesystems, or into a directory
+/// already there. Entry by entry, each source removed only once its copy is
+/// whole - so a skip, a cancel or an error partway leaves every entry either
+/// moved or where it was, and never gone from both. A directory with anything
+/// skipped inside stays behind, holding what was not moved.
+fn move_across(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome, Error> {
+    let Some(metadata) = attempt(source, report, |_| fs::symlink_metadata(source))? else {
+        return Ok(Outcome::Skipped);
+    };
+
+    // Within one filesystem - merging into a directory already there - a
+    // rename does it at once: a file replaces the one in the way, and a
+    // directory goes whole when nothing is in its way. Across filesystems it
+    // fails at once, and costs nothing to try.
+    if rename(source, dest).is_ok() {
+        if !metadata.is_dir() {
+            let bytes = if metadata.file_type().is_symlink() { 0 } else { metadata.len() };
+            if !report.step(Step::Starting(source)) || !report.step(Step::Advanced(bytes)) {
+                return Ok(Outcome::Cancelled);
+            }
+        }
+        return Ok(Outcome::Done);
     }
 
-    // Delete source - if this fails, the copy succeeded but source remains
-    if let Err(del_err) = delete_path(source, is_dir, &mut |_| true) {
-        return Err(Error::new(
-            del_err.kind(),
-            format!("Move partially complete: copied to {} but failed to delete source: {}", dest.display(), del_err),
-        ));
+    if !metadata.is_dir() {
+        let copied = if metadata.file_type().is_symlink() {
+            copy_link(source, dest, report)?
+        } else {
+            copy_file(source, dest, report)?
+        };
+        if copied != Outcome::Done {
+            return Ok(copied);
+        }
+        let removed = attempt(source, report, |_| remove_file(source))?;
+        return Ok(if removed.is_some() { Outcome::Done } else { Outcome::Skipped });
     }
-    Ok(Transfer::Done)
+
+    if attempt(dest, report, |_| fs::create_dir_all(dest))?.is_none() {
+        return Ok(Outcome::Skipped);
+    }
+    let Some(entries) = attempt(source, report, |_| read_dir(source))? else {
+        return Ok(Outcome::Skipped);
+    };
+    let mut skipped = false;
+    for entry in entries {
+        let Some((entry, _)) = next_entry(source, entry, report)? else {
+            skipped = true;
+            continue;
+        };
+        match move_across(&entry.path(), &dest.join(entry.file_name()), &mut *report)? {
+            Outcome::Cancelled => return Ok(Outcome::Cancelled),
+            Outcome::Skipped => skipped = true,
+            Outcome::Done => {}
+        }
+    }
+    if skipped {
+        return Ok(Outcome::Skipped);
+    }
+
+    let _ = fs::set_permissions(dest, metadata.permissions());
+    let removed = attempt(source, report, |_| remove_dir(source))?;
+    Ok(if removed.is_some() { Outcome::Done } else { Outcome::Skipped })
 }
 
 /// A directory itself, not a link to one.
@@ -1420,6 +1590,160 @@ mod transfer_tests {
         assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
     }
 
+    /// Answers every failure the same way, and remembers what it was asked about.
+    struct Answering {
+        reply: Reply,
+        asked: Vec<PathBuf>,
+    }
+
+    impl Answering {
+        fn new(reply: Reply) -> Self {
+            Answering { reply, asked: Vec::new() }
+        }
+    }
+
+    impl Progress for Answering {
+        fn step(&mut self, _step: Step<'_>) -> bool {
+            true
+        }
+
+        fn failed(&mut self, path: &Path, _error: &Error) -> Reply {
+            self.asked.push(path.to_path_buf());
+            self.reply
+        }
+    }
+
+    /// A directory nothing can be added to or removed from. None when running
+    /// as root, which the permissions do not stop.
+    #[cfg(unix)]
+    fn locked(dir: &Path) -> Option<()> {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(dir, fs::Permissions::from_mode(0o555)).unwrap();
+        if File::create(dir.join(".probe")).is_ok() {
+            let _ = remove_file(dir.join(".probe"));
+            unlock(dir);
+            return None;
+        }
+        Some(())
+    }
+
+    #[cfg(unix)]
+    fn unlock(dir: &Path) {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(dir, fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_skipped_pipe_leaves_the_rest_of_the_copy_whole() {
+        let dir = scratch("skip-pipe");
+        let tree = dir.join("tree");
+        fs::create_dir_all(tree.join("sub")).unwrap();
+        fs::write(tree.join("a.txt"), "a").unwrap();
+        fifo(&tree.join("pipe"));
+        fs::write(tree.join("sub").join("b.txt"), "b").unwrap();
+
+        let mut progress = Answering::new(Reply::Skip);
+        let dest = dir.join("copy");
+        assert_eq!(copy_path(tree.clone(), dest.clone(), true, &mut progress).unwrap(), Transfer::Done);
+        assert_eq!(progress.asked, [tree.join("pipe")]);
+        assert_eq!(fs::read_to_string(dest.join("a.txt")).unwrap(), "a");
+        assert_eq!(fs::read_to_string(dest.join("sub").join("b.txt")).unwrap(), "b");
+        assert!(!path_exists(&dest.join("pipe")));
+
+        // Abort ends it with the error, as a failure always did before.
+        let mut progress = Answering::new(Reply::Abort);
+        assert!(copy_path(tree, dir.join("aborted"), true, &mut progress).is_err());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_skipped_delete_keeps_only_what_holds_it() {
+        let dir = scratch("skip-delete");
+        let tree = dir.join("tree");
+        fs::create_dir_all(tree.join("locked")).unwrap();
+        fs::create_dir_all(tree.join("open")).unwrap();
+        fs::write(tree.join("locked").join("stuck.txt"), "").unwrap();
+        fs::write(tree.join("open").join("free.txt"), "").unwrap();
+        fs::write(tree.join("top.txt"), "").unwrap();
+        if locked(&tree.join("locked")).is_none() {
+            return fs::remove_dir_all(&dir).unwrap();
+        }
+
+        let mut progress = Answering::new(Reply::Skip);
+        assert_eq!(delete_path(tree.clone(), true, &mut progress).unwrap(), Transfer::Done);
+        // Asked about the one file, and not again about the directories that
+        // cannot go because it is still in them.
+        assert_eq!(progress.asked, [tree.join("locked").join("stuck.txt")]);
+        assert!(path_exists(&tree.join("locked").join("stuck.txt")));
+        assert!(!path_exists(&tree.join("open")));
+        assert!(!path_exists(&tree.join("top.txt")));
+
+        unlock(&tree.join("locked"));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_retry_tries_the_same_entry_again() {
+        struct UnlockThenRetry(PathBuf, u32);
+        impl Progress for UnlockThenRetry {
+            fn step(&mut self, _step: Step<'_>) -> bool {
+                true
+            }
+            fn failed(&mut self, _path: &Path, _error: &Error) -> Reply {
+                // What the user would do between seeing the error and pressing R.
+                unlock(&self.0);
+                self.1 += 1;
+                Reply::Retry
+            }
+        }
+
+        let dir = scratch("retry");
+        fs::create_dir(dir.join("locked")).unwrap();
+        fs::write(dir.join("locked").join("file"), "").unwrap();
+        if locked(&dir.join("locked")).is_none() {
+            return fs::remove_dir_all(&dir).unwrap();
+        }
+
+        let mut progress = UnlockThenRetry(dir.join("locked"), 0);
+        assert_eq!(delete_path(dir.join("locked"), true, &mut progress).unwrap(), Transfer::Done);
+        assert_eq!(progress.1, 1);
+        assert!(!path_exists(&dir.join("locked")));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A move merging into a directory goes entry by entry, and one it cannot
+    /// take from its source stays there, copied but not removed, rather than
+    /// gone from both.
+    #[cfg(unix)]
+    #[test]
+    fn a_skipped_move_leaves_the_source_of_what_it_skipped() {
+        let dir = scratch("skip-move");
+        let source = dir.join("a");
+        fs::create_dir_all(source.join("locked")).unwrap();
+        fs::write(source.join("locked").join("stuck.txt"), "stuck").unwrap();
+        fs::write(source.join("free.txt"), "free").unwrap();
+        let dest = dir.join("b");
+        fs::create_dir_all(dest.join("locked")).unwrap();
+        fs::write(dest.join("locked").join("other.txt"), "").unwrap();
+        if locked(&source.join("locked")).is_none() {
+            return fs::remove_dir_all(&dir).unwrap();
+        }
+
+        let mut progress = Answering::new(Reply::Skip);
+        assert_eq!(move_path(source.clone(), dest.clone(), true, &mut progress).unwrap(), Transfer::Done);
+        assert_eq!(progress.asked, [source.join("locked").join("stuck.txt")]);
+        assert_eq!(fs::read_to_string(dest.join("free.txt")).unwrap(), "free");
+        assert!(!path_exists(&source.join("free.txt")));
+        assert_eq!(fs::read_to_string(source.join("locked").join("stuck.txt")).unwrap(), "stuck");
+        assert_eq!(fs::read_to_string(dest.join("locked").join("stuck.txt")).unwrap(), "stuck");
+
+        unlock(&source.join("locked"));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
     #[cfg(unix)]
     #[test]
     fn special_files_are_never_opened() {
@@ -1728,10 +2052,10 @@ mod transfer_tests {
 
         let mut report = |_: Step<'_>| true;
         // Refused unless asked for.
-        assert!(move_path(source.clone(), dest.clone(), true, false, &mut report).is_err());
+        assert!(move_path(source.clone(), dest.clone(), false, &mut report).is_err());
         assert!(source.exists());
 
-        assert_eq!(move_path(source.clone(), dest.clone(), true, true, &mut report).unwrap(), Transfer::Done);
+        assert_eq!(move_path(source.clone(), dest.clone(), true, &mut report).unwrap(), Transfer::Done);
         assert!(!source.exists());
         assert_eq!(fs::read_to_string(dest.join("clash")).unwrap(), "new");
         assert_eq!(fs::read_to_string(dest.join("only-in-dest")).unwrap(), "d");
@@ -1745,7 +2069,7 @@ mod transfer_tests {
         fs::write(dir.join("a"), "new").unwrap();
         fs::write(dir.join("b"), "old").unwrap();
         let mut report = |_: Step<'_>| true;
-        assert_eq!(move_path(dir.join("a"), dir.join("b"), false, true, &mut report).unwrap(), Transfer::Done);
+        assert_eq!(move_path(dir.join("a"), dir.join("b"), true, &mut report).unwrap(), Transfer::Done);
         assert_eq!(fs::read_to_string(dir.join("b")).unwrap(), "new");
         assert!(!dir.join("a").exists());
         fs::remove_dir_all(&dir).unwrap();

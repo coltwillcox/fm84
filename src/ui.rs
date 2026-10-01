@@ -1514,6 +1514,10 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
     let Some(job) = &app_state.job else {
         return;
     };
+    if let Some(problem) = &job.problem {
+        render_job_problem(f, area, job.kind, problem, app_state.quit_armed);
+        return;
+    }
     let elapsed = job.started.elapsed();
     if elapsed < TRANSFER_POPUP_DELAY {
         return;
@@ -1583,6 +1587,42 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
     ];
     f.render_widget(
         Paragraph::new(lines).alignment(Alignment::Center),
+        popup_area.inner(Margin { vertical: 1, horizontal: 2 }),
+    );
+}
+
+/// An entry a copy, move or delete could not deal with. Shown at once,
+/// whatever the delay on the progress popup: the job is stopped until it is
+/// answered.
+fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind, problem: &crate::app::JobProblem, quit_armed: bool) {
+    let title = match kind {
+        TransferKind::Copy => " Cannot copy ",
+        TransferKind::Move => " Cannot move ",
+        TransferKind::Delete => " Cannot delete ",
+    };
+    let popup_area = centered_rect(60, 30, area);
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .style(style_border());
+
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let hint = "R - Retry    S - Skip    A - Skip all    Esc - Abort";
+    let mut lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(shown_name(&problem.path), style_title())),
+        Line::from(""),
+        Line::from(Span::styled(printable_name(&problem.message), style_columns())),
+        Line::from(""),
+        Line::from(Span::styled(hint, style_file())),
+    ];
+    if quit_armed {
+        lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));
+    }
+    f.render_widget(
+        Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }),
         popup_area.inner(Margin { vertical: 1, horizontal: 2 }),
     );
 }

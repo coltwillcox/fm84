@@ -1,4 +1,4 @@
-use crate::app::{AppState, OverwritePrompt};
+use crate::app::{Answer, AppState, OverwritePrompt};
 use crate::options::OnExisting;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
@@ -60,7 +60,18 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     return Ok(true);
                 }
 
-                if app_state.job.is_some() {
+                if let Some(job) = app_state.job.as_mut().filter(|job| job.problem.is_some()) {
+                    // An entry that failed, waiting on what to do about it.
+                    match key.code {
+                        KeyCode::Char('r') | KeyCode::Char('R') => job.answer(Answer::Retry),
+                        KeyCode::Char('s') | KeyCode::Char('S') => job.answer(Answer::Skip),
+                        KeyCode::Char('a') | KeyCode::Char('A') => job.answer(Answer::SkipAll),
+                        KeyCode::Esc => app_state.cancel_transfer(),
+                        KeyCode::F(10) if app_state.quit_armed => return Ok(false),
+                        KeyCode::F(10) => app_state.quit_armed = true,
+                        _ => {}
+                    }
+                } else if app_state.job.is_some() {
                     // Only these two mean anything while a transfer runs;
                     // anything else would act on panels about to be reread.
                     match key.code {

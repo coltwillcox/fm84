@@ -1,5 +1,5 @@
 use crate::fs_ops::{
-    Mount, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, list_mounts,
+    Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, list_mounts,
     load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place,
 };
 use crate::options::{OPTION_ROWS, OptionRow, Options};
@@ -282,6 +282,28 @@ pub struct TransferJob {
     /// Set by Esc, read by the worker between entries.
     cancel: Arc<AtomicBool>,
     updates: Receiver<JobUpdate>,
+    /// An entry the worker could not deal with, waiting on Retry, Skip, Skip
+    /// all or Abort. The worker sits still until it hears which.
+    pub problem: Option<JobProblem>,
+    answers: Sender<Answer>,
+    /// Entries left where they were, by Skip or Skip all, to say so at the end.
+    pub skipped: u64,
+}
+
+/// What the popup shows while the worker waits for an answer.
+pub struct JobProblem {
+    pub path: PathBuf,
+    pub message: String,
+}
+
+/// The answer to a JobProblem, sent back to the worker.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Answer {
+    Retry,
+    Skip,
+    /// Skip this one and every failure after it without asking.
+    SkipAll,
+    Abort,
 }
 
 /// A directory whose size Space asked for, being walked on its own thread.
@@ -338,6 +360,13 @@ impl TransferJob {
     pub fn is_cancelling(&self) -> bool {
         self.cancel.load(Ordering::Relaxed)
     }
+
+    /// Answer the problem on screen, letting the worker go on.
+    pub fn answer(&mut self, answer: Answer) {
+        if self.problem.take().is_some() {
+            let _ = self.answers.send(answer);
+        }
+    }
 }
 
 /// What the worker sends back. Bytes are per chunk rather than a running total,
@@ -346,7 +375,80 @@ enum JobUpdate {
     Total(u64),
     Starting(PathBuf),
     Advanced(u64),
+    /// Stuck on this entry until an Answer comes back.
+    Problem(JobProblem),
+    /// One more entry left where it was.
+    Skipped,
     Finished(Result<Transfer, String>),
+}
+
+/// The worker's side of a job: passes progress to the UI, and when an entry
+/// fails, asks there what to do and waits for the answer.
+struct JobProgress<'a> {
+    updates: &'a Sender<JobUpdate>,
+    cancel: &'a AtomicBool,
+    answers: &'a Receiver<Answer>,
+    skip_all: bool,
+    /// Set once the answer was Abort, so the error it ends the job with is
+    /// reported as the cancel it was rather than as a failure all over again.
+    aborted: bool,
+}
+
+impl<'a> JobProgress<'a> {
+    fn new(updates: &'a Sender<JobUpdate>, cancel: &'a AtomicBool, answers: &'a Receiver<Answer>) -> Self {
+        JobProgress { updates, cancel, answers, skip_all: false, aborted: false }
+    }
+
+    /// The message that ends the job, given how its last item came out.
+    fn finish(&self, outcome: Result<Transfer, std::io::Error>) {
+        let outcome = match outcome {
+            Err(_) if self.aborted => Ok(Transfer::Cancelled),
+            outcome => outcome.map_err(|e| e.to_string()),
+        };
+        let _ = self.updates.send(JobUpdate::Finished(outcome));
+    }
+}
+
+impl Progress for JobProgress<'_> {
+    fn step(&mut self, step: Step<'_>) -> bool {
+        let update = match step {
+            Step::Starting(path) => JobUpdate::Starting(path.to_path_buf()),
+            Step::Advanced(amount) => JobUpdate::Advanced(amount),
+        };
+        // A closed channel means the UI has gone, which is its own reason to stop.
+        self.updates.send(update).is_ok() && !self.cancel.load(Ordering::Relaxed)
+    }
+
+    fn failed(&mut self, path: &Path, error: &std::io::Error) -> Reply {
+        // Esc pressed before this came up already said to stop.
+        if self.cancel.load(Ordering::Relaxed) {
+            self.aborted = true;
+            return Reply::Abort;
+        }
+        let answer = if self.skip_all {
+            Answer::Skip
+        } else {
+            let problem = JobProblem { path: path.to_path_buf(), message: error.to_string() };
+            // Nobody left to ask, or nobody answering, is an Abort.
+            if self.updates.send(JobUpdate::Problem(problem)).is_err() {
+                Answer::Abort
+            } else {
+                self.answers.recv().unwrap_or(Answer::Abort)
+            }
+        };
+        match answer {
+            Answer::Retry => Reply::Retry,
+            Answer::Skip | Answer::SkipAll => {
+                self.skip_all |= answer == Answer::SkipAll;
+                let _ = self.updates.send(JobUpdate::Skipped);
+                Reply::Skip
+            }
+            Answer::Abort => {
+                self.aborted = true;
+                Reply::Abort
+            }
+        }
+    }
 }
 
 /// A copy or move held back because some of its names are taken, waiting for
@@ -1856,12 +1958,13 @@ impl AppState {
     /// Hand a long job to a worker thread and start following it.
     fn start_job<F>(&mut self, kind: TransferKind, work: F)
     where
-        F: FnOnce(&Sender<JobUpdate>, &AtomicBool) + Send + 'static,
+        F: FnOnce(JobProgress<'_>) + Send + 'static,
     {
         let cancel = Arc::new(AtomicBool::new(false));
         let (sender, updates) = mpsc::channel();
+        let (answers, worker_answers) = mpsc::channel();
         let worker_cancel = Arc::clone(&cancel);
-        std::thread::spawn(move || work(&sender, &worker_cancel));
+        std::thread::spawn(move || work(JobProgress::new(&sender, &worker_cancel, &worker_answers)));
 
         self.job = Some(TransferJob {
             kind,
@@ -1871,6 +1974,9 @@ impl AppState {
             started: Instant::now(),
             cancel,
             updates,
+            problem: None,
+            answers,
+            skipped: 0,
         });
     }
 
@@ -1878,18 +1984,20 @@ impl AppState {
     /// directories merged. Without it, one taken since the check is refused.
     pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: bool) {
         let kind = if is_copy { TransferKind::Copy } else { TransferKind::Move };
-        self.start_job(kind, move |updates, cancel| run_transfer(items, is_copy, overwrite, updates, cancel));
+        self.start_job(kind, move |progress| run_transfer(items, is_copy, overwrite, progress));
     }
 
     pub fn start_delete(&mut self, items: Vec<(PathBuf, bool)>) {
-        self.start_job(TransferKind::Delete, move |updates, cancel| run_delete(items, updates, cancel));
+        self.start_job(TransferKind::Delete, move |progress| run_delete(items, progress));
     }
 
     /// Ask a running transfer to stop. It ends at the next chunk or file, so
     /// the job stays up for a moment afterwards rather than vanishing at once.
+    /// One waiting on a problem is answered Abort, which is the same thing.
     pub fn cancel_transfer(&mut self) {
-        if let Some(job) = &self.job {
+        if let Some(job) = &mut self.job {
             job.cancel.store(true, Ordering::Relaxed);
+            job.answer(Answer::Abort);
         }
     }
 
@@ -1906,6 +2014,8 @@ impl AppState {
                 Ok(JobUpdate::Total(amount)) => job.total = Some(amount),
                 Ok(JobUpdate::Starting(path)) => job.current = path,
                 Ok(JobUpdate::Advanced(amount)) => job.done += amount,
+                Ok(JobUpdate::Problem(problem)) => job.problem = Some(problem),
+                Ok(JobUpdate::Skipped) => job.skipped += 1,
                 Ok(JobUpdate::Finished(result)) => {
                     finished = Some(result);
                     break;
@@ -1940,6 +2050,10 @@ impl AppState {
         self.quit_armed = false;
 
         match result {
+            Ok(Transfer::Done) if job.skipped > 0 => {
+                let entries = if job.skipped == 1 { "entry" } else { "entries" };
+                self.display_error(format!("{} finished, {} {entries} skipped", job.kind.title(), job.skipped))
+            }
             Ok(Transfer::Done) => {}
             Ok(Transfer::Cancelled) => {
                 let far = match job.kind {
@@ -2340,28 +2454,16 @@ fn detect_line_ending(content: &str) -> &'static str {
 /// The worker thread behind a delete. The count comes first so the bar has a
 /// denominator; walking the tree twice costs a second pass of readdir, which is
 /// cheap beside the removals themselves.
-fn run_delete(items: Vec<(PathBuf, bool)>, updates: &Sender<JobUpdate>, cancel: &AtomicBool) {
-    let _ = updates.send(JobUpdate::Total(count_entries(&items)));
-
-    let mut report = |step: Step<'_>| {
-        let update = match step {
-            Step::Starting(path) => JobUpdate::Starting(path.to_path_buf()),
-            Step::Advanced(amount) => JobUpdate::Advanced(amount),
-        };
-        updates.send(update).is_ok() && !cancel.load(Ordering::Relaxed)
-    };
+fn run_delete(items: Vec<(PathBuf, bool)>, mut progress: JobProgress<'_>) {
+    let _ = progress.updates.send(JobUpdate::Total(count_entries(&items)));
 
     for (path, is_dir) in items {
-        match delete_path(path, is_dir, &mut report) {
+        match delete_path(path, is_dir, &mut progress) {
             Ok(Transfer::Done) => {}
-            outcome => {
-                let _ = updates.send(JobUpdate::Finished(outcome.map_err(|e| e.to_string())));
-                return;
-            }
+            outcome => return progress.finish(outcome),
         }
     }
-
-    let _ = updates.send(JobUpdate::Finished(Ok(Transfer::Done)));
+    progress.finish(Ok(Transfer::Done));
 }
 
 /// Drop selections whose file is no longer there.
@@ -2391,7 +2493,7 @@ fn slot_at(slots: &[(u16, u16)], offset: u16) -> Option<usize> {
 /// Renames come first and on their own. A move within one filesystem is a
 /// rename, which takes no time and moves no bytes - measuring a large tree
 /// before doing it would hold up a transfer that was about to be instant.
-fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: bool, updates: &Sender<JobUpdate>, cancel: &AtomicBool) {
+fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: bool, mut progress: JobProgress<'_>) {
     let mut remaining = Vec::new();
     for (source, dest, is_dir) in items {
         // rename() replaces a file, or an empty directory, without a word, so
@@ -2404,33 +2506,20 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: 
     }
 
     // Only what is actually going to be copied needs counting.
-    let _ = updates.send(JobUpdate::Total(measure(&remaining)));
-
-    let mut report = |step: Step<'_>| {
-        let update = match step {
-            Step::Starting(path) => JobUpdate::Starting(path.to_path_buf()),
-            Step::Advanced(amount) => JobUpdate::Advanced(amount),
-        };
-        // A closed channel means the UI has gone, which is its own reason to stop.
-        updates.send(update).is_ok() && !cancel.load(Ordering::Relaxed)
-    };
+    let _ = progress.updates.send(JobUpdate::Total(measure(&remaining)));
 
     for (source, dest, is_dir) in remaining {
         let result = if is_copy {
-            copy_path(source, dest, is_dir, &mut report)
+            copy_path(source, dest, is_dir, &mut progress)
         } else {
-            move_path(source, dest, is_dir, overwrite, &mut report)
+            move_path(source, dest, overwrite, &mut progress)
         };
         match result {
             Ok(Transfer::Done) => {}
-            outcome => {
-                let _ = updates.send(JobUpdate::Finished(outcome.map_err(|e| e.to_string())));
-                return;
-            }
+            outcome => return progress.finish(outcome),
         }
     }
-
-    let _ = updates.send(JobUpdate::Finished(Ok(Transfer::Done)));
+    progress.finish(Ok(Transfer::Done));
 }
 
 /// Where a scroll offset belongs after the drawing changed size, so that the
@@ -2664,6 +2753,52 @@ mod tests {
         assert!(app_state.dir_sizing.is_empty());
         app_state.poll_dir_sizes();
         assert!(app_state.dir_sizes.is_empty());
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A copy that meets an entry it cannot copy stops and asks. Skipped, the
+    /// rest goes on, and the end says how many were left.
+    #[cfg(unix)]
+    #[test]
+    fn a_job_asks_about_a_failure_and_goes_on_when_told_to_skip() {
+        let dir = std::env::temp_dir().join(format!("fm84-ask-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let tree = dir.join("tree");
+        std::fs::create_dir_all(&tree).unwrap();
+        std::fs::write(tree.join("a.txt"), "a").unwrap();
+        let pipe = std::ffi::CString::new(tree.join("pipe").to_str().unwrap()).unwrap();
+        assert_eq!(unsafe { libc::mkfifo(pipe.as_ptr(), 0o600) }, 0);
+        std::fs::write(tree.join("z.txt"), "z").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.start_transfer(vec![(tree.clone(), dir.join("copy"), true)], true, false);
+
+        let started = std::time::Instant::now();
+        let wait = |app_state: &mut AppState, done: &dyn Fn(&AppState) -> bool| {
+            while !done(app_state) {
+                assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never got there");
+                std::thread::sleep(std::time::Duration::from_millis(5));
+                app_state.poll_transfer();
+            }
+        };
+        wait(&mut app_state, &|app_state| app_state.job.as_ref().is_some_and(|job| job.problem.is_some()));
+        assert_eq!(app_state.job.as_ref().unwrap().problem.as_ref().unwrap().path, tree.join("pipe"));
+
+        app_state.job.as_mut().unwrap().answer(super::Answer::Skip);
+        wait(&mut app_state, &|app_state| app_state.job.is_none());
+        assert_eq!(app_state.error_message, "Copy finished, 1 entry skipped");
+        assert!(dir.join("copy").join("a.txt").exists());
+        assert!(dir.join("copy").join("z.txt").exists());
+
+        // Esc on the question stops the job there, and says it was cancelled
+        // rather than reporting the failure it was asked about.
+        app_state.start_transfer(vec![(tree.clone(), dir.join("again"), true)], true, false);
+        wait(&mut app_state, &|app_state| app_state.job.as_ref().is_some_and(|job| job.problem.is_some()));
+        app_state.cancel_transfer();
+        wait(&mut app_state, &|app_state| app_state.job.is_none());
+        assert!(app_state.error_message.starts_with("Copy cancelled"), "{}", app_state.error_message);
 
         std::fs::remove_dir_all(&dir).unwrap();
     }
