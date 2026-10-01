@@ -19,9 +19,10 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
             Event::Key(key) if key.kind != KeyEventKind::Release => {
                 // What the last search came to stays up until the next key.
                 app_state.find_note = None;
+
                 // A character carrying Ctrl or Alt is a chord, not text. Only
-                // Ctrl+S is bound, so drop the rest instead of letting them fall
-                // through as typed characters - they would otherwise land in the
+                // the chords below are bound, so drop the rest instead of letting
+                // them fall through as typed characters - they would otherwise land in the
                 // file being edited, in a filename, or on a yes/no prompt.
                 // AltGr reports as Ctrl+Alt on Windows and does produce text
                 // (@, EUR, ...), so a chord is a lone Ctrl or a lone Alt.

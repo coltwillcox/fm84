@@ -869,7 +869,7 @@ fn write_config_file(name: &str, contents: &str) -> io::Result<()> {
 
 /// `%APPDATA%\fm84\<name>` on Windows, `$XDG_CONFIG_HOME/fm84/<name>` or
 /// `~/.config/fm84/<name>` everywhere else.
-fn config_path(name: &str) -> Option<PathBuf> {
+pub fn config_path(name: &str) -> Option<PathBuf> {
     let non_empty = |name: &str| std::env::var_os(name).filter(|value| !value.is_empty()).map(PathBuf::from);
     let base = if cfg!(windows) {
         non_empty("APPDATA")?

@@ -163,6 +163,13 @@ impl TextInput {
     }
 }
 
+/// What the prompt at the foot of the viewer or the editor is asking for.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum PromptKind {
+    Find,
+    GoToLine,
+}
+
 pub struct AppState {
     pub is_error_displayed: bool,
     pub is_f1_displayed: bool,
@@ -302,50 +309,6 @@ pub struct TransferJob {
     pub skipped: u64,
 }
 
-/// What the prompt at the foot of the viewer or the editor is asking for.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum PromptKind {
-    Find,
-    GoToLine,
-}
-
-/// What the popup shows while the worker waits for an answer.
-pub struct JobProblem {
-    pub path: PathBuf,
-    pub message: String,
-}
-
-/// The answer to a JobProblem, sent back to the worker.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Answer {
-    Retry,
-    Skip,
-    /// Skip this one and every failure after it without asking.
-    SkipAll,
-    Abort,
-}
-
-/// A directory whose size Space asked for, being walked on its own thread.
-/// Not a TransferJob: nothing waits on it, so it has no popup and holds up
-/// nothing. The panels go on working while it counts, and the Size column
-/// shows how far it has got.
-///
-/// Off the UI thread because walking / or a large tree takes seconds, and
-/// on an unresponsive mount a single read_dir can take forever.
-pub struct DirSizing {
-    pub path: PathBuf,
-    /// Bytes found so far, for the Size column to show while it counts.
-    pub found: u64,
-    cancel: Arc<AtomicBool>,
-    updates: Receiver<SizeUpdate>,
-}
-
-enum SizeUpdate {
-    Found(u64),
-    /// None when cancelled.
-    Finished(Result<Option<u64>, String>),
-}
-
 /// Which of the three long jobs is running. They share a popup, a worker and a
 /// way out, and differ only in what they count and what they are called.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -386,6 +349,22 @@ impl TransferJob {
             let _ = self.answers.send(answer);
         }
     }
+}
+
+/// What the popup shows while the worker waits for an answer.
+pub struct JobProblem {
+    pub path: PathBuf,
+    pub message: String,
+}
+
+/// The answer to a JobProblem, sent back to the worker.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Answer {
+    Retry,
+    Skip,
+    /// Skip this one and every failure after it without asking.
+    SkipAll,
+    Abort,
 }
 
 /// What the worker sends back. Bytes are per chunk rather than a running total,
@@ -477,6 +456,27 @@ pub struct OverwritePrompt {
     pub is_copy: bool,
     /// The destinations already taken, to name in the question.
     pub taken: Vec<PathBuf>,
+}
+
+/// A directory whose size Space asked for, being walked on its own thread.
+/// Not a TransferJob: nothing waits on it, so it has no popup and holds up
+/// nothing. The panels go on working while it counts, and the Size column
+/// shows how far it has got.
+///
+/// Off the UI thread because walking / or a large tree takes seconds, and
+/// on an unresponsive mount a single read_dir can take forever.
+pub struct DirSizing {
+    pub path: PathBuf,
+    /// Bytes found so far, for the Size column to show while it counts.
+    pub found: u64,
+    cancel: Arc<AtomicBool>,
+    updates: Receiver<SizeUpdate>,
+}
+
+enum SizeUpdate {
+    Found(u64),
+    /// None when cancelled.
+    Finished(Result<Option<u64>, String>),
 }
 
 /// What a read-ahead delivers: the picture and the label the status bar shows

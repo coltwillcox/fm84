@@ -1,4 +1,5 @@
 mod app;
+mod cli;
 mod constants;
 mod display;
 mod find;
@@ -27,6 +28,21 @@ type Tui = Terminal<CrosstermBackend<Stdout>>;
 fn main() -> Result<()> {
     color_eyre::install()?;
 
+    // Before the terminal check, so `fm84 --version` works in a pipe or a
+    // script, where there is no terminal to take.
+    let (left, right) = match cli::parse(std::env::args_os().skip(1)) {
+        Ok(cli::Command::Help) => {
+            println!("{}", cli::help());
+            return Ok(());
+        }
+        Ok(cli::Command::Version) => {
+            println!("{}", cli::version());
+            return Ok(());
+        }
+        Ok(cli::Command::Run { left, right }) => (start_dir(left), start_dir(right)),
+        Err(message) => usage_error(&message),
+    };
+
     // Launched from a .desktop entry with no terminal, raw mode fails with a
     // bare ENXIO that nobody sees. Say what is wrong instead.
     if !stdout().is_terminal() {
@@ -42,13 +58,33 @@ fn main() -> Result<()> {
     install_panic_hook();
 
     let mut terminal = init_terminal()?;
-    let run_result = run(&mut terminal);
+    let run_result = run(&mut terminal, left, right);
     let restore_result = restore_terminal();
 
     // Report what went wrong in the app before any trouble tearing the terminal down.
     run_result?;
     restore_result?;
     Ok(())
+}
+
+/// A directory from the command line, checked before the terminal is taken
+/// so a mistyped one is said plainly in the shell. Made absolute but not
+/// resolved, so a path through a symlink shows as it was typed.
+fn start_dir(dir: Option<std::path::PathBuf>) -> Option<std::path::PathBuf> {
+    let dir = dir?;
+    match std::path::absolute(&dir) {
+        Ok(absolute) if absolute.is_dir() => Some(absolute),
+        Ok(_) => usage_error(&format!("not a directory: {}", dir.display())),
+        Err(e) => usage_error(&format!("cannot use {}: {}", dir.display(), e)),
+    }
+}
+
+/// Say what was wrong with the command line, and stop. Exit status 2, as
+/// most tools give for a usage error.
+fn usage_error(message: &str) -> ! {
+    eprintln!("fm84: {message}");
+    eprintln!("Try 'fm84 --help' for more information.");
+    std::process::exit(2);
 }
 
 fn init_terminal() -> io::Result<Tui> {
@@ -83,7 +119,9 @@ fn install_panic_hook() {
     }));
 }
 
-fn run(terminal: &mut Tui) -> io::Result<()> {
+/// `left` and `right` are the directories the command line named, which win
+/// over the remembered ones.
+fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::path::PathBuf>) -> io::Result<()> {
     let mut app_state = AppState::new();
     display::apply(&app_state.options);
 
@@ -93,6 +131,12 @@ fn run(terminal: &mut Tui) -> io::Result<()> {
         && let Some((left, right)) = options::load_session()
     {
         app_state.dir_left = left;
+        app_state.dir_right = right;
+    }
+    if let Some(left) = left {
+        app_state.dir_left = left;
+    }
+    if let Some(right) = right {
         app_state.dir_right = right;
     }
     app_state.is_f12_displayed = app_state.options.preview_on_start;
