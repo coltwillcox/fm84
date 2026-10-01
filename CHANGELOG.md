@@ -6,6 +6,18 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.22.0] - 2026-10-02
+
+### ✨ Added
+- 🔎 **Find in the viewer and the editor** - Ctrl+F asks what to look for, offering the last thing looked for so Enter alone repeats it. F3 goes to the next match and Shift+F3 to the previous one, round the ends of the file, saying so when they wrap and when there is nothing to find. Every match on screen is underlined and the current one selected - ready for Ctrl+C in the viewer, and replaced by typing in the editor. A term all in lower case matches either case; one with a capital in it matches exactly. In hex view it searches the dump as it is drawn
+- 🔢 **Go to line** - Ctrl+G and a number, in the viewer and the editor. Past the end goes to the last line
+- ⌨️ **Command line** - `fm84 [LEFT [RIGHT]]` opens the panels in those directories, ahead of any remembered ones; `--help` shows the usage and where the config lives, and `--version` the version, both without needing a terminal. An unknown option or a directory that is not there is said in the shell, with exit status 2, before anything starts
+
+### 🛠️ Changed
+- ⎋ **Esc closes the viewer and the editor**, and F3 and F4 no longer do - F3 is the next match now, and closing on the key that opened it meant one press too many shut the file. The editor still asks about unsaved changes on the way out
+
+---
+
 ## [0.21.0] - 2026-10-01
 
 ### ✨ Added

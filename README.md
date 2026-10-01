@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.21.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.22.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -77,8 +77,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 📝 File Operations
 - **F1** 💡 - Help/About
 - **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing, the field scrolling to keep the cursor in view on a long name); a change of case alone works on macOS and Windows too
-- **F3** 👁️ - View files (text, hexdump, or images as ASCII art)
-- **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, unsaved changes prompt, mouse click to position cursor)
+- **F3** 👁️ - View files (text, hexdump, or images as ASCII art); Esc closes the viewer, F3 inside it finds the next match
+- **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, Esc to close with an unsaved changes prompt, mouse click to position cursor)
 - **F5** 📋 - Copy to other panel (selected items or cursor item), keeping permissions where the filesystem can hold them
 - **F6** 📦 - Move to other panel (selected items or cursor item)
 - ♻️ **Names already taken** - F5 and F6 ask before writing over them: files are replaced, directories merged. F11 can make it overwrite or refuse without asking
@@ -126,6 +126,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📐 **True proportions** - the shape of a picture is worked out from the size of your terminal's cells, which it is asked for, rather than from an assumption about them; a terminal that will not say gets the usual 2:1
 - 🔍 **Zoom** - `+` and `-` scale a picture from a quarter of the fitted size to four times it, keeping whatever is in the middle of the view in the middle
 - 🖱️ **Mouse selection** - drag to select, Ctrl+C to copy
+- 🔎 **Find** - Ctrl+F asks what to look for, F3 and Shift+F3 go to the next and previous match, round the ends of the file. Every match on screen is underlined and the current one selected, ready for Ctrl+C. Lower case matches either case, a capital only itself. In hex view it searches the dump as shown
+- 🔢 **Go to line** - Ctrl+G, then the number
 - 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
 - ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory (16 or 256 under F11), and before decoding a picture that needs over 256 MiB of it - a few hundred KB of PNG can unpack to hundreds of MB
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
@@ -143,6 +145,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📋 **System clipboard** - copies reach it over OSC 52, pastes arrive as bracketed paste, both without linking a clipboard library
 - 💾 **Save** - F2 or Ctrl+S, written beside the file and swapped in whole, so a full disk or a crash mid-save leaves the old file rather than half of the new one; links, permissions and owner are kept
 - 📍 **Line/Column tracking** - always know where you are
+- 🔎 **Find and go to line** - Ctrl+F, F3 / Shift+F3 and Ctrl+G, as in the Viewer; the match found is selected, so typing replaces it
 - ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close; a save that fails keeps the editor open, edits and all
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
@@ -214,7 +217,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `Home` / `End` | Jump to first / last item |
 | `PageUp` / `PageDown` | Page navigation |
 | `[a-z0-9]` | Quick search |
-| `Esc` | Clear search / Close dialogs / Stop directory sizing |
+| `Esc` | Clear search / Close dialogs, the Viewer and the Editor / Stop directory sizing |
 | `F1` | Help |
 | `F2` | Rename |
 | `F3` | View file |
@@ -242,6 +245,9 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `Ctrl+Z` | Undo (in Editor) |
 | `Ctrl+Y` / `Ctrl+Shift+Z` | Redo (in Editor) |
 | `Ctrl+C` | Copy selection (in Viewer) |
+| `Ctrl+F` | Find (in Viewer and Editor) |
+| `F3` / `Shift+F3` | Next / previous match (in Viewer and Editor) |
+| `Ctrl+G` | Go to line (in Viewer and Editor) |
 | `Space` / `Insert` | Select/deselect file |
 | `Ctrl+R` | Reload both panels |
 | `Scroll` | Scroll content (panels, Viewer, Editor) |
@@ -261,6 +267,18 @@ cargo build --release
 # 🚀 Launch into the neon grid
 cargo run --release
 ```
+
+### ⌨️ Command line
+
+```bash
+fm84                 # panels where you left them (or the current directory)
+fm84 ~/Music         # left panel in ~/Music
+fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
+fm84 --help          # usage, and where the config lives
+fm84 --version       # fm84 0.22.0
+```
+
+A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
 
 *Debug builds compile dependencies optimised too, so a plain `cargo run` still decodes images at full speed. The first debug build takes a little longer for it.*
 
@@ -342,5 +360,5 @@ Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.21.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.22.0 ▄▀▄▀▄▀</code>
 </p>
