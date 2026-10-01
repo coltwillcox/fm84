@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.20.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.21.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -66,6 +66,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
 - 🔗 **Symlinked directories** - listed and entered like the real thing
+- 🔒 **Directories you cannot read** - refused with the reason, and the panel stays where it was
 - 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`
 
 ### 🔍 Quick Search
@@ -82,6 +83,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F6** 📦 - Move to other panel (selected items or cursor item)
 - ♻️ **Names already taken** - F5 and F6 ask before writing over them: files are replaced, directories merged. F11 can make it overwrite or refuse without asking
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels, and a cancelled copy cleans up the half-written file. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
+- 🧯 **One bad entry doesn't sink the job** - a file that will not copy, move or delete (a socket, a pipe, a permission refused, a disk full) stops the job and asks: **R** retry, **S** skip, **A** skip all, **Esc** abort. A skipped entry is left where it was, and a directory holding one stays with it, so a move never leaves anything gone from both sides. The end says how many were skipped
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
 - **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation - which F11 can turn off - and progress)
@@ -101,7 +103,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📋 **Name, Ext, Size, Modified, Attributes** - permissions written the way `ls -l` writes them
 - 📐 **Priority when space runs short** - columns drop from the right, Name always stays and keeps the leftover width
 - 🎛️ **Your choice of them** - F11 turns each one off, and sets how dates and sizes are written
-- 🔤 **Any name the filesystem allows** - a name that is not valid UTF-8 is shown as near as it can be read and still opens, renames, copies and deletes as itself; operations work from the name the filesystem holds, never from what it looked like on screen
+- 🔤 **Any name the filesystem allows** - a name that is not valid UTF-8 is shown as near as it can be read and still opens, renames, copies and deletes as itself; operations work from the name the filesystem holds, never from what it looked like on screen - selection, the F4 and F9 commands and remembered directories included
 - 🛡️ **Names neutralised** - a file name can hold anything but `/`, escape sequences and tabs included. They are drawn as dots rather than sent to the terminal, wherever a name appears: the rows, the detail lines, the preview, the titles and every popup
 
 ### 📊 Status Bar
@@ -139,7 +141,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ✂️ **Select, cut, copy, paste** - Shift+arrows to select, Ctrl+A for all, Ctrl+X/C/V (or Ctrl+Insert, Shift+Insert, Shift+Delete)
 - ↩️ **Undo and redo** - Ctrl+Z, then Ctrl+Y or Ctrl+Shift+Z, 200 steps deep, one step per action rather than per keystroke burst; a key that changes nothing costs no step
 - 📋 **System clipboard** - copies reach it over OSC 52, pastes arrive as bracketed paste, both without linking a clipboard library
-- 💾 **Save** - F2 or Ctrl+S
+- 💾 **Save** - F2 or Ctrl+S, written beside the file and swapped in whole, so a full disk or a crash mid-save leaves the old file rather than half of the new one; links, permissions and owner are kept
 - 📍 **Line/Column tracking** - always know where you are
 - ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close; a save that fails keeps the editor open, edits and all
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
@@ -196,6 +198,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 
 ### 📂 Directory Sizes
 - 📏 **Calculated on select** - press Space on a directory to calculate its size
+- 🧵 **Counted in the background** - the Size column shows the running total with a `…` while it counts, the panels keep answering, and Esc stops it; a slow disk or a huge tree no longer holds up the interface
 - 📌 **Persistent display** - sizes stay visible after deselecting, until a copy, move or delete may have changed them
 
 ---
@@ -211,7 +214,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `Home` / `End` | Jump to first / last item |
 | `PageUp` / `PageDown` | Page navigation |
 | `[a-z0-9]` | Quick search |
-| `Esc` | Clear search / Close dialogs |
+| `Esc` | Clear search / Close dialogs / Stop directory sizing |
 | `F1` | Help |
 | `F2` | Rename |
 | `F3` | View file |
@@ -222,6 +225,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `Shift+F4` | Create empty file |
 | `F8` / `Delete` | Delete (selected items or cursor item) |
 | `Esc` | Cancel a running copy, move or delete |
+| `R` / `S` / `A` | Retry / Skip / Skip all, when an entry in a copy, move or delete fails |
 | `F9` | Open terminal (the one set under F11, if any) |
 | `F10` | Quit (twice during an operation) |
 | `F11` | Options - panels, behaviour, appearance, viewer and editor |
@@ -331,10 +335,12 @@ The default Synthwave palette channels pure 80s energy (F11 swaps it for any of 
 
 *Ride free through the neon grid.*
 
+Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the notice.
+
 ---
 
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.12.1 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.21.0 ▄▀▄▀▄▀</code>
 </p>

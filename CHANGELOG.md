@@ -6,6 +6,24 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.21.0] - 2026-10-01
+
+### ✨ Added
+- 🧯 **A copy, move or delete asks when an entry fails** rather than stopping at it - a socket or a pipe in a tree being copied, a file that will not delete, a disk that fills. The job waits on **R** retry, **S** skip, **A** skip all or **Esc** abort, and says at the end how many were skipped. What is skipped stays where it was, and so does each directory holding it, so a delete keeps the path to it and a move keeps the source
+- 🧵 **Directory sizes are counted in the background** - Space on a directory used to walk it before the interface could answer again, which on `/`, a large tree or a network mount meant seconds of nothing, with Esc unheard. The Size column now shows the running total with a `…` while it counts, several can count at once, and Esc stops them. Anything unreadable inside counts as nothing rather than failing the whole size, the way `du` carries on
+
+### 🐛 Fixed
+- ✅ **Selecting a file no longer selects another that reads the same** - selections were kept by the name as shown, and two names that are not valid UTF-8 can show alike. Picking one picked both, and F8 deleted both
+- 🔤 **The rest of the lossy names are gone** - the external editor and the F9 terminal were handed the name as shown, opening a file that was not there; the cursor landed by it after a reread; remembered directories were saved by it and lost spaces at either end. F2 then Enter on an unchanged non-UTF-8 name renamed the file to its own lossy reading
+- 💾 **Saving in the editor cannot destroy the file** - it was emptied the moment the save began, so a full disk or a crash partway left a truncated file. The new content goes beside it and replaces it whole once written. Through a symlink, the file it points at is saved; a read-only file is still refused
+- 🔒 **A directory you cannot read no longer brings its error back every second** - entering `/root` moved the panel there while it went on listing the directory it came from, and the refresh found it changed each tick and raised the error again after every Esc. It is now refused, and the panel stays put
+- 🚚 **A move merging into a directory renames each entry** rather than copying everything and then deleting the source - instant on one filesystem, and across them each source goes only once its copy is whole
+
+### 🛠️ Changed
+- 📜 **Released under the MIT License**, with the notice in every release archive
+
+---
+
 ## [0.20.0] - 2026-09-29
 
 ### ✨ Added
