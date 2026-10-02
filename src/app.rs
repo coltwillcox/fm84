@@ -2291,6 +2291,30 @@ impl AppState {
         self.reload_panel(is_left, select);
     }
 
+    /// Ctrl+Left and Ctrl+Right, as in Total Commander: the arrow names the
+    /// panel, and it is sent to the directory under the cursor in the active
+    /// one. On `..` that is the parent, landing on the directory left; on a
+    /// file it is the directory the file is in, landing on the file. The focus
+    /// stays where it is. Pointed at the active panel itself, it simply goes in.
+    pub fn open_in_panel(&mut self, is_left: bool) {
+        let (children, state, dir) = if self.is_left_active {
+            (&self.children_left, &self.state_left, &self.dir_left)
+        } else {
+            (&self.children_right, &self.state_right, &self.dir_right)
+        };
+        let item = state.selected().and_then(|index| children.get(index));
+        let (target, select) = match item {
+            Some(item) if item.name == ".." => match dir.parent() {
+                Some(parent) => (parent.to_path_buf(), dir.file_name().map(std::ffi::OsStr::to_os_string)),
+                None => return,
+            },
+            Some(item) if item.is_dir => (item.path_in(dir), None),
+            Some(item) => (dir.clone(), Some(item.name_os.clone())),
+            None => (dir.clone(), None),
+        };
+        self.open_dir(is_left, target, select.as_deref());
+    }
+
     /// Reread one panel from disk. `prefer` names the entry to land on - the
     /// file just renamed or created. Otherwise the cursor keeps the *file* it
     /// was on rather than the row, since entries appearing or vanishing above
@@ -3146,6 +3170,50 @@ mod tests {
         assert!(!app_state.is_error_displayed);
 
         std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn ctrl_arrows_send_the_entry_under_the_cursor_to_a_panel() {
+        let dir = std::env::temp_dir().join(format!("fm84-open-in-panel-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("inner")).unwrap();
+        std::fs::write(dir.join("note.txt"), "").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.open_dir(true, dir.clone(), None);
+        app_state.open_dir(false, std::env::temp_dir(), None);
+        app_state.is_left_active = true;
+        let at = |app_state: &AppState, name: &str| app_state.children_left.iter().position(|item| item.name_full == name);
+        let cursor_right = |app_state: &AppState| {
+            app_state.state_right.selected().and_then(|index| app_state.children_right.get(index)).map(|item| item.name_full.clone())
+        };
+
+        // A directory: the other panel goes into it, and the focus stays.
+        app_state.state_left.select(at(&app_state, "inner"));
+        app_state.open_in_panel(false);
+        assert_eq!(app_state.dir_right, dir.join("inner"));
+        assert!(app_state.is_left_active);
+        assert_eq!(app_state.dir_left, dir);
+
+        // A file: the directory it is in, on the file.
+        app_state.state_left.select(at(&app_state, "note.txt"));
+        app_state.open_in_panel(false);
+        assert_eq!(app_state.dir_right, dir);
+        assert_eq!(cursor_right(&app_state).as_deref(), Some("note.txt"));
+
+        // The parent entry: the parent, on the directory left.
+        app_state.state_left.select(at(&app_state, ".."));
+        app_state.open_in_panel(false);
+        assert_eq!(app_state.dir_right, std::env::temp_dir());
+        assert_eq!(cursor_right(&app_state), dir.file_name().map(|name| name.to_string_lossy().into_owned()));
+
+        // Pointed at the active panel, it goes in there.
+        app_state.state_left.select(at(&app_state, "inner"));
+        app_state.open_in_panel(true);
+        assert_eq!(app_state.dir_left, dir.join("inner"));
+
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

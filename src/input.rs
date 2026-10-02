@@ -369,6 +369,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(11) => toggle_options(app_state),
                         KeyCode::F(12) => toggle_preview(app_state),
                         KeyCode::F(10) => return Ok(false),
+                        KeyCode::Left if key.modifiers.contains(KeyModifiers::CONTROL) => handle_panel_operation(app_state, |state| state.open_in_panel(true)),
+                        KeyCode::Right if key.modifiers.contains(KeyModifiers::CONTROL) => handle_panel_operation(app_state, |state| state.open_in_panel(false)),
                         KeyCode::Char(' ') => {
                             // Space toggles selection and moves to next item
                             app_state.toggle_selection();

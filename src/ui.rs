@@ -1341,6 +1341,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F10 - Quit",
         "F11 - Options (Alt+F1/F2 drives)",
         "F12 - Preview in other panel",
+        "Ctrl+Left/Right - Dir to that panel",
         "Space - Select/deselect file",
         "Ctrl+R - Reload both panels",
         "Type to search, Esc to clear",
