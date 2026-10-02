@@ -1,4 +1,4 @@
-use crate::app::{Answer, AppState, OverwritePrompt, PromptKind};
+use crate::app::{Answer, AppState, DriveHit, OverwritePrompt, PromptKind};
 use crate::options::OnExisting;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
@@ -502,6 +502,9 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         app_state.viewer_scroll_down();
                     } else if app_state.is_f4_displayed {
                         app_state.editor_scroll_down();
+                    } else if let Some(is_left) = app_state.drive_strip_at(mouse_event.column, mouse_event.row) {
+                        // Over a drive strip, the wheel moves it along.
+                        app_state.scroll_drive_strip(is_left, true);
                     } else {
                         handle_move_selection(app_state, |state, len| {
                             state.select(state.selected().map_or(Some(0), |i| Some((i + 1).min(len.saturating_sub(1)))));
@@ -513,6 +516,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         app_state.viewer_scroll_up();
                     } else if app_state.is_f4_displayed {
                         app_state.editor_scroll_up();
+                    } else if let Some(is_left) = app_state.drive_strip_at(mouse_event.column, mouse_event.row) {
+                        app_state.scroll_drive_strip(is_left, false);
                     } else {
                         handle_move_selection(app_state, |state, _len| {
                             state.select(state.selected().map_or(Some(0), |i| Some(i.saturating_sub(1))));
@@ -1210,11 +1215,18 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // A drive icon sends that panel to the mount, the same as picking one with
     // Alt+F1 or Alt+F2. Checked before the panels, since the strip sits above
     // them and a click there is never a click on a file.
-    if let Some((is_left, index)) = app_state.drive_at(column, row)
-        && let Some(path) = app_state.mounts.get(index).map(|mount| mount.path.clone())
-    {
-        app_state.is_left_active = is_left;
-        app_state.open_dir(is_left, path, None);
+    // The arrows at its ends move it along when not every drive fits.
+    if let Some((is_left, hit)) = app_state.drive_at(column, row) {
+        match hit {
+            DriveHit::Mount(index) => {
+                if let Some(path) = app_state.mounts.get(index).map(|mount| mount.path.clone()) {
+                    app_state.is_left_active = is_left;
+                    app_state.open_dir(is_left, path, None);
+                }
+            }
+            DriveHit::Back => app_state.scroll_drive_strip(is_left, false),
+            DriveHit::Forward => app_state.scroll_drive_strip(is_left, true),
+        }
         return;
     }
 

@@ -262,11 +262,9 @@ pub struct AppState {
     pub viewport_start_right: usize,
     pub editor_content_area: Rect,
     pub viewer_content_area: Rect,
-    // The drive strips as drawn, and where each icon sits along one. Both
-    // strips lay their icons out the same way, so one set of slots serves both.
-    pub drive_strip_left: Rect,
-    pub drive_strip_right: Rect,
-    pub drive_slots: Vec<(u16, u16)>,
+    // The drive strips as drawn, and which of the drives each one shows.
+    pub drive_strip_left: DriveStrip,
+    pub drive_strip_right: DriveStrip,
     // Directory mtimes as of the last load, so an external change can be spotted
     // without stat-ing every entry.
     pub dir_stamp_left: Option<SystemTime>,
@@ -462,6 +460,65 @@ pub struct OverwritePrompt {
     pub is_copy: bool,
     /// The destinations already taken, to name in the question.
     pub taken: Vec<PathBuf>,
+}
+
+/// One panel's row of drive icons, as last drawn. When there are more drives
+/// than fit, it shows a window onto them, with an arrow at either end that
+/// has more beyond it.
+#[derive(Default)]
+pub struct DriveStrip {
+    pub area: Rect,
+    /// The first drive shown.
+    pub first: usize,
+    /// How many are shown, from `first`.
+    pub visible: usize,
+    /// The drive the window last moved to show. When the one that matters -
+    /// the panel's own, or the candidate while choosing - is a different one,
+    /// the window follows it there; otherwise it stays where the arrows put
+    /// it, so scrolling to look is not undone on the next frame.
+    pub followed: Option<usize>,
+    /// Where each thing on the strip is drawn, in columns from `area.x`, and
+    /// what a click there does.
+    pub slots: Vec<(u16, u16)>,
+    pub hits: Vec<DriveHit>,
+}
+
+/// What a click on a drive strip lands on.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DriveHit {
+    Mount(usize),
+    Back,
+    Forward,
+}
+
+impl DriveStrip {
+    /// Settle which drives to show, `visible` of `count`, keeping `focus` in
+    /// view when it has moved since last time.
+    pub fn place(&mut self, count: usize, visible: usize, focus: Option<usize>) {
+        self.visible = visible.min(count);
+        if let Some(focus) = focus
+            && self.followed != Some(focus)
+        {
+            if focus < self.first {
+                self.first = focus;
+            } else if focus >= self.first + self.visible {
+                self.first = focus + 1 - self.visible;
+            }
+            self.followed = Some(focus);
+        }
+        // Drives can go away, and the window must not run past the end.
+        self.first = self.first.min(count - self.visible);
+    }
+
+    /// A page along, from the arrows or the wheel.
+    pub fn scroll(&mut self, count: usize, forward: bool) {
+        let page = self.visible.max(1);
+        self.first = if forward {
+            (self.first + page).min(count.saturating_sub(self.visible))
+        } else {
+            self.first.saturating_sub(page)
+        };
+    }
 }
 
 /// A directory whose size Space asked for, being walked on its own thread.
@@ -751,9 +808,8 @@ impl AppState {
             image_cache: ImageCache::default(),
             cursor_detail: None,
             quit_armed: false,
-            drive_strip_left: Rect::default(),
-            drive_strip_right: Rect::default(),
-            drive_slots: Vec::new(),
+            drive_strip_left: DriveStrip::default(),
+            drive_strip_right: DriveStrip::default(),
         }
     }
 
@@ -2459,23 +2515,37 @@ impl AppState {
         self.cursor_detail = None;
     }
 
-    /// The panel and the mount under a click, when it landed on a drive icon.
-    /// The strip runs the width of its half, so most of it is not an icon: a
-    /// click on the label beside them, or past the last one, is not a drive.
-    pub fn drive_at(&self, column: u16, row: u16) -> Option<(bool, usize)> {
+    /// Which panel's drive strip a position is on, if either.
+    pub fn drive_strip_at(&self, column: u16, row: u16) -> Option<bool> {
         let position = Position::new(column, row);
-        let is_left = if self.drive_strip_left.contains(position) {
-            true
-        } else if self.drive_strip_right.contains(position) {
-            false
+        if self.drive_strip_left.area.contains(position) {
+            Some(true)
+        } else if self.drive_strip_right.area.contains(position) {
+            Some(false)
         } else {
-            return None;
-        };
+            None
+        }
+    }
 
-        let strip = if is_left { self.drive_strip_left } else { self.drive_strip_right };
-        let offset = column - strip.x;
-        let index = slot_at(&self.drive_slots, offset)?;
-        (index < self.mounts.len()).then_some((is_left, index))
+    /// The panel and what a click landed on, when it was a drive icon or an
+    /// arrow. The strip runs the width of its half, so most of it is neither:
+    /// a click on the label beside them, or past the last one, is nothing.
+    pub fn drive_at(&self, column: u16, row: u16) -> Option<(bool, DriveHit)> {
+        let is_left = self.drive_strip_at(column, row)?;
+        let strip = if is_left { &self.drive_strip_left } else { &self.drive_strip_right };
+        let index = slot_at(&strip.slots, column - strip.area.x)?;
+        let hit = *strip.hits.get(index)?;
+        match hit {
+            DriveHit::Mount(mount) if mount >= self.mounts.len() => None,
+            _ => Some((is_left, hit)),
+        }
+    }
+
+    /// Move a panel's drive strip a page along, when not all of it fits.
+    pub fn scroll_drive_strip(&mut self, is_left: bool, forward: bool) {
+        let count = self.mounts.len();
+        let strip = if is_left { &mut self.drive_strip_left } else { &mut self.drive_strip_right };
+        strip.scroll(count, forward);
     }
 
     /// The mount a panel is sitting on: the longest one its directory is under.
@@ -2498,6 +2568,9 @@ impl AppState {
         }
         let current = self.current_mount(is_left).unwrap_or(0);
         self.drive_picker = Some((is_left, current));
+        // Into view, even if the strip was scrolled away from it.
+        let strip = if is_left { &mut self.drive_strip_left } else { &mut self.drive_strip_right };
+        strip.followed = None;
     }
 
     pub fn move_drive_picker(&mut self, forward: bool) {
@@ -3387,6 +3460,45 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
+
+    #[test]
+    fn the_drive_window_follows_the_focus_but_not_back_after_scrolling() {
+        use super::DriveStrip;
+        let mut strip = DriveStrip::default();
+
+        // Twelve drives, four shown: the panel's own, the ninth, is brought in.
+        strip.place(12, 4, Some(8));
+        assert_eq!((strip.first, strip.visible), (5, 4));
+
+        // Scrolled back to look, it stays there while the focus does not move.
+        strip.scroll(12, false);
+        assert_eq!(strip.first, 1);
+        strip.place(12, 4, Some(8));
+        assert_eq!(strip.first, 1);
+
+        // The focus moving - a candidate while choosing - brings it back.
+        strip.place(12, 4, Some(10));
+        assert_eq!(strip.first, 7);
+        strip.place(12, 4, Some(2));
+        assert_eq!(strip.first, 2);
+
+        // Pages stop at either end.
+        strip.scroll(12, true);
+        strip.scroll(12, true);
+        assert_eq!(strip.first, 8);
+        strip.scroll(12, false);
+        strip.scroll(12, false);
+        strip.scroll(12, false);
+        assert_eq!(strip.first, 0);
+
+        // Drives going away pull the window back within the end.
+        strip.first = 8;
+        strip.place(6, 4, Some(2));
+        assert_eq!(strip.first, 2);
+        // And with room for all, all show.
+        strip.place(3, 4, Some(0));
+        assert_eq!((strip.first, strip.visible), (0, 3));
+    }
 
     #[test]
     fn a_click_lands_on_the_icon_it_looks_like() {

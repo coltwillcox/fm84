@@ -244,20 +244,59 @@ fn logo_icon(style: IconStyle) -> &'static str {
 }
 
 /// One panel's row of drive icons: the mount it is on sits in a block of colour, and while
-/// that panel is choosing, the candidate is highlighted and named. Also returns
-/// the column each icon starts at and how wide it is, measured from the text
-/// actually drawn, so a click cannot land anywhere but where it looks.
-fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16, u16)>) {
+/// that panel is choosing, the candidate is highlighted and named. Records in
+/// the panel's DriveStrip the column each icon starts at and how wide it is,
+/// measured from the text actually drawn, so a click cannot land anywhere but
+/// where it looks.
+///
+/// When they do not all fit, it shows as many as do, with `<` and `>` at the
+/// ends while there are more that way - clicked, or under the wheel, they
+/// move a page along. The window follows the panel's own drive, and the
+/// candidate while choosing, so the keys reach every drive without them.
+fn drive_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> Line<'static> {
+    use crate::app::DriveHit;
+
     let current = app_state.current_mount(is_left);
     let picking = match app_state.drive_picker {
         Some((side, index)) if side == is_left => Some(index),
         _ => None,
     };
 
-    let mut spans = vec![Span::raw(" ")];
-    let mut slots = Vec::with_capacity(app_state.mounts.len());
-    let mut column = 1; // past the space the strip opens with
-    for (index, mount) in app_state.mounts.iter().enumerate() {
+    // Every slot is the same width, so the first says how many fit.
+    let icon_style = app_state.options.icon_style;
+    let spill = if icon_style.is_wide() { " " } else { "" };
+    let slot_width = display_width(&format!("  {}  {}", mount_icon(crate::fs_ops::MountKind::Disk, icon_style), spill));
+    let count = app_state.mounts.len();
+    let room = area.width as usize;
+    let overflows = 1 + count * slot_width > room;
+    // The arrows take two columns at each end, there or not, so the icons
+    // stay put as they come and go.
+    const ARROW: usize = 2;
+    let visible = if overflows { (room.saturating_sub(2 * ARROW) / slot_width).max(1) } else { count };
+
+    let strip = if is_left { &mut app_state.drive_strip_left } else { &mut app_state.drive_strip_right };
+    strip.area = area;
+    strip.place(count, visible, picking.or(current));
+    let (first, visible) = (strip.first, strip.visible);
+
+    let mut spans = Vec::new();
+    let mut slots = Vec::with_capacity(visible + 2);
+    let mut hits = Vec::with_capacity(visible + 2);
+    let mut column;
+    if overflows {
+        let back = first > 0;
+        spans.push(Span::styled(if back { " <" } else { "  " }, style_dir_dark()));
+        if back {
+            slots.push((0, ARROW as u16));
+            hits.push(DriveHit::Back);
+        }
+        column = ARROW as u16;
+    } else {
+        spans.push(Span::raw(" "));
+        column = 1; // past the space the strip opens with
+    }
+
+    for (index, mount) in app_state.mounts.iter().enumerate().skip(first).take(visible) {
         // A block of colour marks the mount this panel is on, and a brighter
         // one the candidate while choosing - drawn like the row under a
         // panel's cursor, with its foreground and pair of backgrounds. Every
@@ -273,13 +312,21 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16,
         } else {
             style_dir_dark()
         };
-        let icon_style = app_state.options.icon_style;
-        let spill = if icon_style.is_wide() { " " } else { "" };
         let text = format!("  {}  {}", mount_icon(mount.kind, icon_style), spill);
         let width = display_width(&text) as u16;
         slots.push((column, width));
+        hits.push(DriveHit::Mount(index));
         column += width;
         spans.push(Span::styled(text, style));
+    }
+
+    if overflows {
+        let forward = first + visible < count;
+        spans.push(Span::styled(if forward { "> " } else { "  " }, style_dir_dark()));
+        if forward {
+            slots.push((column, ARROW as u16));
+            hits.push(DriveHit::Forward);
+        }
     }
 
     // Name whichever is under consideration, else the one this panel is on.
@@ -287,7 +334,10 @@ fn drive_strip(app_state: &AppState, is_left: bool) -> (Line<'static>, Vec<(u16,
         spans.push(Span::styled(format!(" {}", printable_name(&mount.label)), style_columns()));
     }
 
-    (Line::from(spans), slots)
+    let strip = if is_left { &mut app_state.drive_strip_left } else { &mut app_state.drive_strip_right };
+    strip.slots = slots;
+    strip.hits = hits;
+    Line::from(spans)
 }
 
 fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
@@ -308,19 +358,16 @@ fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppS
 
     if inner.height > 0 && !app_state.mounts.is_empty() {
         let halves = panel_split(Rect { height: 1, ..inner });
-        let (left, slots) = drive_strip(app_state, true);
-        let (right, _) = drive_strip(app_state, false);
+        // Each strip hands its real geometry to the mouse handler, as the
+        // panels do.
+        let left = drive_strip(app_state, true, halves[0]);
+        let right = drive_strip(app_state, false, halves[2]);
         f.render_widget(Paragraph::new(left), halves[0]);
         f.render_widget(Paragraph::new(right), halves[2]);
-
-        // Hand the real geometry to the mouse handler, as the panels do.
-        app_state.drive_strip_left = halves[0];
-        app_state.drive_strip_right = halves[2];
-        app_state.drive_slots = slots;
     } else {
         // Nothing drawn this frame, so there is nothing to click either.
-        app_state.drive_strip_left = Rect::default();
-        app_state.drive_strip_right = Rect::default();
+        app_state.drive_strip_left.area = Rect::default();
+        app_state.drive_strip_right.area = Rect::default();
     }
 }
 
@@ -1811,6 +1858,49 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Too many drives for the half they are in: a window onto them, with
+    /// arrows that are there only while there is more that way, and every
+    /// click mapped to what is drawn under it.
+    #[test]
+    fn a_crowded_drive_strip_scrolls() {
+        use crate::app::DriveHit;
+        use crate::fs_ops::{Mount, MountKind};
+        let mut app_state = AppState::new();
+        app_state.options.icon_style = IconStyle::Plain;
+        app_state.dir_left = "/".into();
+        app_state.mounts = (0..12)
+            .map(|index| Mount { path: format!("/mnt/{index}").into(), label: format!("d{index}"), kind: MountKind::Disk })
+            .collect();
+        let area = Rect::new(0, 0, 30, 1);
+
+        // Plain icons are five columns a slot: 30, less 4 for arrows, holds 5.
+        drive_strip(&mut app_state, true, area);
+        let strip = &app_state.drive_strip_left;
+        assert_eq!((strip.first, strip.visible), (0, 5));
+        assert_eq!(strip.hits.first(), Some(&DriveHit::Mount(0)));
+        assert_eq!(strip.hits.last(), Some(&DriveHit::Forward));
+        assert_eq!(app_state.drive_at(1, 0), None); // no back arrow yet
+        assert_eq!(app_state.drive_at(2, 0), Some((true, DriveHit::Mount(0))));
+        assert_eq!(app_state.drive_at(27, 0), Some((true, DriveHit::Forward)));
+
+        // A page along, and the back arrow appears with the icons where they were.
+        app_state.scroll_drive_strip(true, true);
+        drive_strip(&mut app_state, true, area);
+        assert_eq!(app_state.drive_at(0, 0), Some((true, DriveHit::Back)));
+        assert_eq!(app_state.drive_at(2, 0), Some((true, DriveHit::Mount(5))));
+
+        // At the end, no forward arrow.
+        app_state.scroll_drive_strip(true, true);
+        drive_strip(&mut app_state, true, area);
+        assert_eq!(app_state.drive_strip_left.first, 7);
+        assert!(!app_state.drive_strip_left.hits.contains(&DriveHit::Forward));
+
+        // Room for all: no arrows and the old layout.
+        drive_strip(&mut app_state, true, Rect::new(0, 0, 80, 1));
+        assert_eq!(app_state.drive_strip_left.first, 0);
+        assert_eq!(app_state.drive_at(1, 0), Some((true, DriveHit::Mount(0))));
+    }
 
     /// A file name can hold anything but '/' and NUL - an escape sequence, a
     /// tab, a bell - and what a widget is handed goes to the terminal as it is.
