@@ -961,8 +961,9 @@ fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments:
     f.render_widget(Paragraph::new(Line::from(spans)), area);
 }
 
-/// The find and go-to-line prompt, in the status bar's place: the label, what
-/// has been typed with the cursor in it, and the border run on to the corner.
+/// The find, go-to-line and select prompt, in the status bar's place: the
+/// label, what has been typed with the cursor in it, and the border run on to
+/// the corner.
 fn render_prompt_bar(f: &mut ratatui::Frame<'_>, area: Rect, label: &str, input: &crate::app::TextInput, style: Style) {
     let text = printable_name(&input.text);
     let characters: Vec<char> = text.chars().collect();
@@ -1020,19 +1021,21 @@ fn disk_readout(usage: Option<(u64, u64)>, available: usize) -> Option<String> {
 fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
     let status_style = style_title().bg(palette().selected_background);
 
-    if app_state.is_f3_displayed || app_state.is_f4_displayed {
-        if let Some((kind, input)) = &app_state.prompt {
-            let label = match kind {
-                PromptKind::Find => " Find: ",
-                PromptKind::GoToLine => " Go to line: ",
-            };
-            render_prompt_bar(f, area, label, input, status_style);
-            return;
-        }
-        if let Some(note) = &app_state.find_note {
-            render_status_bar(f, area, format!(" {} ", printable_name(note)), status_style);
-            return;
-        }
+    if let Some((kind, input)) = &app_state.prompt {
+        let label = match kind {
+            PromptKind::Find => " Find: ",
+            PromptKind::GoToLine => " Go to line: ",
+            PromptKind::Select => " Select: ",
+            PromptKind::Deselect => " Deselect: ",
+        };
+        render_prompt_bar(f, area, label, input, status_style);
+        return;
+    }
+    if (app_state.is_f3_displayed || app_state.is_f4_displayed)
+        && let Some(note) = &app_state.find_note
+    {
+        render_status_bar(f, area, format!(" {} ", printable_name(note)), status_style);
+        return;
     }
 
     if app_state.is_f4_displayed {
@@ -1343,6 +1346,8 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F12 - Preview in other panel",
         "Ctrl+Left/Right - Dir to that panel",
         "Space - Select/deselect file",
+        "+/- select/deselect by pattern, * invert",
+        "  Alt+* invert with directories",
         "Ctrl+R - Reload both panels",
         "Type to search, Esc to clear",
     ];

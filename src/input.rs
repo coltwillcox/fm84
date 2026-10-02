@@ -39,7 +39,14 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         && !app_state.is_error_displayed
                         && app_state.prompt.is_none();
                     let in_viewer = app_state.is_f3_displayed && !app_state.is_error_displayed && app_state.prompt.is_none();
-                    if control {
+                    let in_panel = !app_state.is_modal_open() && app_state.prompt.is_none();
+                    // Alt+* inverts the directories as well as the files. Ctrl
+                    // is an alias for the terminals that can report it; most
+                    // send Ctrl+* as a bare * or not at all, while Alt arrives
+                    // anywhere.
+                    if c == '*' && in_panel {
+                        app_state.invert_selection(true);
+                    } else if control {
                         match c {
                             'f' if in_editor || in_viewer => app_state.open_prompt(PromptKind::Find),
                             'g' if in_editor || in_viewer => app_state.open_prompt(PromptKind::GoToLine),
@@ -192,7 +199,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         _ => {}
                     }
                 } else if let Some((kind, input)) = app_state.prompt.as_mut() {
-                    // Find or go to line, at the foot of the viewer or editor.
+                    // Find or go to line, at the foot of the viewer or editor,
+                    // or a pattern to select by, at the foot of the panels.
                     match key.code {
                         KeyCode::Esc => app_state.prompt = None,
                         KeyCode::Enter => app_state.confirm_prompt(),
@@ -379,6 +387,12 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                             // Insert toggles selection without calculating directory size
                             app_state.toggle_selection_no_size();
                         }
+                        // + and - select and deselect by a pattern, * inverts.
+                        // A name can start with -, so once a search is under
+                        // way the key goes on into that instead.
+                        KeyCode::Char('+') => app_state.open_select_prompt(true),
+                        KeyCode::Char('-') if app_state.search_input.is_empty() => app_state.open_select_prompt(false),
+                        KeyCode::Char('*') => app_state.invert_selection(false),
                         KeyCode::Char(c) if c.is_alphanumeric() || ".-_".contains(c) => {
                             app_state.search_add_char(c);
                         }

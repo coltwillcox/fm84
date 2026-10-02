@@ -44,7 +44,7 @@ impl Needle {
 /// Lower case one character for one character. A few have a lower case that
 /// is two (İ is i and a combining dot); those are left as they are, so that a
 /// column counted in the folded line is the same column in the real one.
-fn fold_char(c: char) -> char {
+pub fn fold_char(c: char) -> char {
     let mut lower = c.to_lowercase();
     match (lower.next(), lower.next()) {
         (Some(single), None) => single,

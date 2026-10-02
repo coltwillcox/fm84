@@ -4,6 +4,7 @@ mod constants;
 mod display;
 mod find;
 mod fs_ops;
+mod glob;
 mod input;
 mod options;
 mod ui;

@@ -163,11 +163,15 @@ impl TextInput {
     }
 }
 
-/// What the prompt at the foot of the viewer or the editor is asking for.
+/// What the prompt in the status bar is asking for: in the viewer or the
+/// editor, something to find or a line to go to; in a panel, a pattern to
+/// select or deselect by.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PromptKind {
     Find,
     GoToLine,
+    Select,
+    Deselect,
 }
 
 pub struct AppState {
@@ -222,9 +226,11 @@ pub struct AppState {
     pub is_f4_displayed: bool,
     pub editor_state: Option<EditorState>,
     pub editor_viewport_height: usize,
-    /// The line at the foot of the viewer or the editor, while it is asking
-    /// for something to find or a line to go to.
+    /// The line at the foot of the screen, while it is asking for something
+    /// to find, a line to go to or a pattern to select by.
     pub prompt: Option<(PromptKind, TextInput)>,
+    /// What + or - last selected by, offered again the next time.
+    pub select_pattern: String,
     /// What Ctrl+F last looked for. Kept when the prompt closes, for F3 and
     /// Shift+F3, and offered again the next time it opens.
     pub find_term: String,
@@ -713,6 +719,7 @@ impl AppState {
             editor_state: None,
             editor_viewport_height: 0,
             prompt: None,
+            select_pattern: "*".to_string(),
             find_term: String::new(),
             find_shown: false,
             find_note: None,
@@ -1385,6 +1392,55 @@ impl AppState {
                 Err(_) if input.text.trim().is_empty() => {}
                 Err(_) => self.find_note = Some(format!("Not a line number: {}", input.text.trim())),
             },
+            PromptKind::Select | PromptKind::Deselect => {
+                let Some(glob) = crate::glob::Glob::new(&input.text) else {
+                    return;
+                };
+                self.select_pattern = input.text;
+                self.select_by(&glob, kind == PromptKind::Select);
+            }
+        }
+    }
+
+    /// + and - in a panel: ask for a pattern, starting from the last one.
+    pub fn open_select_prompt(&mut self, select: bool) {
+        let mut input = TextInput::new();
+        input.set(self.select_pattern.clone());
+        self.prompt = Some((if select { PromptKind::Select } else { PromptKind::Deselect }, input));
+    }
+
+    /// Select, or deselect, every entry in the active panel the pattern
+    /// matches. No directory is sized: a pattern can take dozens at once, and
+    /// Space is there for the one that is wanted.
+    pub fn select_by(&mut self, glob: &crate::glob::Glob, select: bool) {
+        let (children, selected) = if self.is_left_active {
+            (&self.children_left, &mut self.selected_left)
+        } else {
+            (&self.children_right, &mut self.selected_right)
+        };
+        for item in children.iter().filter(|item| item.name != ".." && glob.matches(&item.name_full, item.is_dir)) {
+            if select {
+                selected.insert(item.name_os.clone());
+            } else {
+                selected.remove(&item.name_os);
+            }
+        }
+    }
+
+    /// The * key in a panel: every file selected is deselected and every other
+    /// one selected. Directories stay as they are, as + leaves them unless
+    /// asked: inverting a few picked files should not sweep every tree beside
+    /// them into the next delete. Alt+* asks, and inverts them too.
+    pub fn invert_selection(&mut self, with_dirs: bool) {
+        let (children, selected) = if self.is_left_active {
+            (&self.children_left, &mut self.selected_left)
+        } else {
+            (&self.children_right, &mut self.selected_right)
+        };
+        for item in children.iter().filter(|item| (with_dirs || !item.is_dir) && item.name != "..") {
+            if !selected.remove(&item.name_os) {
+                selected.insert(item.name_os.clone());
+            }
         }
     }
 
@@ -3229,6 +3285,53 @@ mod tests {
             modified_at: None,
             attributes: String::new(),
         }
+    }
+
+    #[test]
+    fn plus_minus_and_star_select_by_pattern() {
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        let directory = Item { is_dir: true, ..row("photos") };
+        app_state.children_left = vec![row(".."), directory, row("a.jpg"), row("B.JPG"), row("c.png"), row("notes.txt")];
+        let selected = |app_state: &AppState| {
+            let mut names: Vec<String> = app_state.selected_left.iter().map(|name| name.to_string_lossy().into_owned()).collect();
+            names.sort();
+            names
+        };
+
+        // Through the prompt, as + then typing then Enter does.
+        app_state.open_select_prompt(true);
+        app_state.prompt.as_mut().unwrap().1.set("*.jpg;*.png".to_string());
+        app_state.confirm_prompt();
+        assert_eq!(selected(&app_state), ["B.JPG", "a.jpg", "c.png"]);
+        assert_eq!(app_state.select_pattern, "*.jpg;*.png");
+
+        app_state.open_select_prompt(false);
+        app_state.prompt.as_mut().unwrap().1.set("?.png".to_string());
+        app_state.confirm_prompt();
+        assert_eq!(selected(&app_state), ["B.JPG", "a.jpg"]);
+
+        // Files are inverted; the directory and .. are left alone.
+        app_state.invert_selection(false);
+        assert_eq!(selected(&app_state), ["c.png", "notes.txt"]);
+        // Unless directories are asked for too.
+        app_state.invert_selection(true);
+        assert_eq!(selected(&app_state), ["B.JPG", "a.jpg", "photos"]);
+        app_state.invert_selection(true);
+        assert_eq!(selected(&app_state), ["c.png", "notes.txt"]);
+
+        // * takes files only, */ the directories.
+        app_state.select_by(&crate::glob::Glob::new("*").unwrap(), true);
+        assert_eq!(selected(&app_state), ["B.JPG", "a.jpg", "c.png", "notes.txt"]);
+        app_state.select_by(&crate::glob::Glob::new("*/").unwrap(), true);
+        assert_eq!(selected(&app_state), ["B.JPG", "a.jpg", "c.png", "notes.txt", "photos"]);
+
+        // An empty pattern does nothing and is not kept.
+        app_state.open_select_prompt(false);
+        app_state.prompt.as_mut().unwrap().1.set(String::new());
+        app_state.confirm_prompt();
+        assert_eq!(selected(&app_state).len(), 5);
+        assert_eq!(app_state.select_pattern, "?.png");
     }
 
     #[test]
