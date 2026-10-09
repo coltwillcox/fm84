@@ -1449,7 +1449,8 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F6 - Move to other panel",
         "F7 - Create directory",
         "Shift+F4 - Create file",
-        "F8 - Delete folder/file",
+        "F8 - Move to trash",
+        "  Shift+F8 delete permanently",
         "F9 - Open terminal",
         "F10 - Quit",
         "F11 - Options (Alt+F1/F2 drives)",
@@ -1618,11 +1619,14 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     let count = app_state.delete_items.len();
     let popup_area = centered_rect(60, 30, area);
 
+    // Which kind of delete it is, said plainly: one can be undone and the
+    // other cannot.
+    let verb = if app_state.delete_to_trash { "Move to trash" } else { "Delete" };
     let title = if count == 1 {
         let item_type = if app_state.delete_items[0].1 { "directory" } else { "file" };
-        format!(" Delete {} ", item_type)
+        format!(" {verb}: {item_type} ")
     } else {
-        format!(" Delete {} items ", count)
+        format!(" {verb}: {count} items ")
     };
 
     let popup_block = Block::default()
@@ -1634,12 +1638,17 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     f.render_widget(popup_block, popup_area);
 
     let mut lines = Vec::new();
+    let question = if app_state.delete_to_trash { "Move {} to the trash?" } else { "Delete {} permanently?" };
     if count == 1 {
-        lines.push(Line::from(Span::styled(format!("Delete \"{}\"?", shown_name(&app_state.delete_items[0].0)), style_title())));
+        let name = format!("\"{}\"", shown_name(&app_state.delete_items[0].0));
+        lines.push(Line::from(Span::styled(question.replace("{}", &name), style_title())));
     } else {
         let names: Vec<String> = app_state.delete_items.iter().map(|(path, _)| shown_name(path)).collect();
-        lines.push(Line::from(Span::styled(format!("Delete {count} items?"), style_title())));
+        lines.push(Line::from(Span::styled(question.replace("{}", &format!("{count} items")), style_title())));
         lines.push(Line::from(Span::styled(names.join(", "), style_file())));
+    }
+    if !app_state.delete_to_trash {
+        lines.push(Line::from(Span::styled("This cannot be undone", style_file())));
     }
     lines.push(Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", style_columns())));
     popup_body(f, popup_area, lines);
@@ -1705,6 +1714,7 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
             TransferKind::Copy => " Copying ".to_string(),
             TransferKind::Move => " Moving ".to_string(),
             TransferKind::Delete => " Deleting ".to_string(),
+            TransferKind::Trash => " Moving to trash ".to_string(),
         }
     };
     let popup_area = centered_rect(60, 30, area);
@@ -1736,6 +1746,9 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
     let detail = match (job.kind, job.total) {
         (TransferKind::Delete, Some(total)) if total > 0 => {
             format!("{} of {} entries    {hint}", job.done, total)
+        }
+        (TransferKind::Trash, Some(total)) if total > 0 => {
+            format!("{} of {} items    {hint}", job.done, total)
         }
         (_, Some(total)) if total > 0 => {
             let rate = job.done as f64 / elapsed.as_secs_f64().max(0.001);
@@ -1774,6 +1787,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Copy => " Cannot copy ",
         TransferKind::Move => " Cannot move ",
         TransferKind::Delete => " Cannot delete ",
+        TransferKind::Trash => " Cannot move to trash ",
     };
     let popup_area = centered_rect(60, 30, area);
     let popup_block = Block::default()
@@ -1793,6 +1807,10 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         Line::from(""),
         Line::from(Span::styled(hint, style_file())),
     ];
+    // What the trash will not take can still be deleted for good, on purpose.
+    if kind == TransferKind::Trash {
+        lines.push(Line::from(Span::styled("D - Delete permanently", style_file())));
+    }
     if quit_armed {
         lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));
     }

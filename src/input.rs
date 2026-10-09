@@ -1,4 +1,4 @@
-use crate::app::{Answer, AppState, OverwritePrompt, PromptKind};
+use crate::app::{Answer, AppState, OverwritePrompt, PromptKind, TransferKind};
 use crate::strip::StripHit;
 use crate::options::OnExisting;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
@@ -97,6 +97,10 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::Char('r') | KeyCode::Char('R') => job.answer(Answer::Retry),
                         KeyCode::Char('s') | KeyCode::Char('S') => job.answer(Answer::Skip),
                         KeyCode::Char('a') | KeyCode::Char('A') => job.answer(Answer::SkipAll),
+                        // Offered only for what the trash would not take.
+                        KeyCode::Char('d') | KeyCode::Char('D') if job.kind == TransferKind::Trash => {
+                            job.answer(Answer::Delete)
+                        }
                         KeyCode::Esc => app_state.cancel_transfer(),
                         KeyCode::F(10) if app_state.quit_armed => return Ok(false),
                         KeyCode::F(10) => app_state.quit_armed = true,
@@ -386,7 +390,10 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(5) => toggle_copy(app_state),
                         KeyCode::F(6) => toggle_move(app_state),
                         KeyCode::F(7) => toggle_create(app_state, true),
-                        KeyCode::F(8) | KeyCode::Delete => toggle_delete(app_state),
+                        // Shift deletes for good, whatever F11 says F8 does.
+                        KeyCode::F(8) | KeyCode::Delete => {
+                            toggle_delete(app_state, key.modifiers.contains(KeyModifiers::SHIFT))
+                        }
                         KeyCode::F(9) => open_terminal(app_state),
                         KeyCode::F(11) => toggle_options(app_state),
                         KeyCode::F(12) => toggle_preview(app_state),
@@ -828,10 +835,14 @@ fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
     Ok(())
 }
 
-fn toggle_delete(app_state: &mut AppState) {
+/// F8 or Delete, to the trash unless F11 says otherwise, and Shift+F8 or
+/// Shift+Delete for good. That one always asks first, whatever Confirm delete
+/// is set to: there is no getting it back.
+fn toggle_delete(app_state: &mut AppState, permanently: bool) {
     if app_state.is_error_displayed || app_state.is_f1_displayed {
         return;
     }
+    app_state.delete_to_trash = app_state.options.delete_to_trash && !permanently;
 
     app_state.is_f8_displayed = !app_state.is_f8_displayed;
 
@@ -867,7 +878,7 @@ fn toggle_delete(app_state: &mut AppState) {
         }
 
         app_state.delete_items = items;
-        if !app_state.options.confirm_delete {
+        if !app_state.options.confirm_delete && !permanently {
             handle_delete_confirm(app_state);
         }
     } else {
@@ -881,7 +892,11 @@ fn handle_delete_confirm(app_state: &mut AppState) {
     // The removals, the panel reload and the selections are all handled by the
     // job as it finishes, the same as a copy or a move.
     app_state.reset_delete();
-    app_state.start_delete(items);
+    if app_state.delete_to_trash {
+        app_state.start_trash(items);
+    } else {
+        app_state.start_delete(items);
+    }
 }
 
 fn handle_create_confirm(app_state: &mut AppState) {

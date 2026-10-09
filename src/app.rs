@@ -216,6 +216,8 @@ pub struct AppState {
     /// What F8 is asking about, as paths: the name alone could not be joined
     /// back to the file it came from when it is not valid UTF-8.
     pub delete_items: Vec<(PathBuf, bool)>,
+    /// Whether what F8 is asking about goes to the trash, or is deleted for good.
+    pub delete_to_trash: bool,
     pub search_input: String,
     pub cached_clock: String,
     pub cached_separator_height: u16,
@@ -316,13 +318,14 @@ pub struct TransferJob {
     pub skipped: u64,
 }
 
-/// Which of the three long jobs is running. They share a popup, a worker and a
+/// Which of the long jobs is running. They share a popup, a worker and a
 /// way out, and differ only in what they count and what they are called.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TransferKind {
     Copy,
     Move,
     Delete,
+    Trash,
 }
 
 impl TransferKind {
@@ -332,6 +335,7 @@ impl TransferKind {
             TransferKind::Copy => "Copy",
             TransferKind::Move => "Move",
             TransferKind::Delete => "Delete",
+            TransferKind::Trash => "Move to trash",
         }
     }
 }
@@ -372,6 +376,8 @@ pub enum Answer {
     /// Skip this one and every failure after it without asking.
     SkipAll,
     Abort,
+    /// Delete it for good, when the trash would not take it.
+    Delete,
 }
 
 /// What the worker sends back. Bytes are per chunk rather than a running total,
@@ -452,6 +458,7 @@ impl Progress for JobProgress<'_> {
                 self.aborted = true;
                 Reply::Abort
             }
+            Answer::Delete => Reply::Delete,
         }
     }
 }
@@ -744,6 +751,7 @@ impl AppState {
             create_input: TextInput::new(),
             is_f8_displayed: false,
             delete_items: Vec::new(),
+            delete_to_trash: true,
             search_input: String::new(),
             cached_clock: String::new(),
             cached_separator_height: 0,
@@ -2256,6 +2264,10 @@ impl AppState {
         self.start_job(TransferKind::Delete, move |progress| run_delete(items, progress));
     }
 
+    pub fn start_trash(&mut self, items: Vec<(PathBuf, bool)>) {
+        self.start_job(TransferKind::Trash, move |progress| run_trash(items, progress));
+    }
+
     /// Ask a running transfer to stop. It ends at the next chunk or file, so
     /// the job stays up for a moment afterwards rather than vanishing at once.
     /// One waiting on a problem is answered Abort, which is the same thing.
@@ -2323,6 +2335,7 @@ impl AppState {
             Ok(Transfer::Cancelled) => {
                 let far = match job.kind {
                     TransferKind::Delete => format!("{} entries", job.done),
+                    TransferKind::Trash => format!("{} items", job.done),
                     _ => crate::utils::format_size(job.done),
                 };
                 self.display_error(format!("{} cancelled after {far}", job.kind.title()))
@@ -2909,6 +2922,20 @@ fn run_delete(items: Vec<(PathBuf, bool)>, mut progress: JobProgress<'_>) {
 
     for (path, is_dir) in items {
         match delete_path(path, is_dir, &mut progress) {
+            Ok(Transfer::Done) => {}
+            outcome => return progress.finish(outcome),
+        }
+    }
+    progress.finish(Ok(Transfer::Done));
+}
+
+/// The worker thread behind a move to the trash. Counted in items rather than
+/// entries, since each goes in one piece.
+fn run_trash(items: Vec<(PathBuf, bool)>, mut progress: JobProgress<'_>) {
+    let _ = progress.updates.send(JobUpdate::Total(items.len() as u64));
+
+    for (path, is_dir) in items {
+        match crate::fs_ops::trash_path(path, is_dir, &mut progress) {
             Ok(Transfer::Done) => {}
             outcome => return progress.finish(outcome),
         }

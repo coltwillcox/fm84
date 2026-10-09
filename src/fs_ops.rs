@@ -631,6 +631,72 @@ pub fn delete_path(path: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Tr
     Ok(outcome.into())
 }
 
+/// Move a file or a directory to the system's trash, from where it can be put
+/// back. Counted as one, however much is in it: on one filesystem it is a
+/// rename and over at once, with nothing to count inside.
+///
+/// What the trash will not take - a read-only disk, one with nowhere to keep
+/// a trash - is asked about like any other failure, with deleting it for good
+/// as one more answer.
+pub fn trash_path(path: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Transfer, Error> {
+    if !report.step(Step::Starting(&path)) {
+        return Ok(Transfer::Cancelled);
+    }
+    loop {
+        let error = match trash::delete(&path) {
+            Ok(()) => break,
+            Err(error) => trash_error(error),
+        };
+        match report.failed(&path, &error) {
+            Reply::Retry => {}
+            Reply::Skip => break,
+            Reply::Abort => return Err(error),
+            Reply::Delete => {
+                // Its entries are not what this job counts, so they pass by
+                // without adding to it; the one below counts the item.
+                let mut uncounted = Uncounted(&mut *report);
+                if delete_path(path, is_dir, &mut uncounted)? == Transfer::Cancelled {
+                    return Ok(Transfer::Cancelled);
+                }
+                break;
+            }
+        }
+    }
+    Ok(if report.step(Step::Advanced(1)) { Transfer::Done } else { Transfer::Cancelled })
+}
+
+/// The trash crate's errors print with a prefix and a Debug dump. What
+/// matters to someone looking at the popup is what went wrong.
+fn trash_error(error: trash::Error) -> Error {
+    match error {
+        // The freedesktop trash fails with the filesystem's own error, which
+        // already says it plainly. Only that build of the crate has it.
+        #[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))]
+        trash::Error::FileSystem { source, .. } => source,
+        trash::Error::TargetedRoot => Error::other("A root directory cannot go to the trash"),
+        trash::Error::CouldNotAccess { target } => Error::other(format!("Cannot reach {target}")),
+        trash::Error::Os { description, .. } | trash::Error::Unknown { description } => Error::other(description),
+        other => Error::other(format!("Cannot move to the trash: {other:?}")),
+    }
+}
+
+/// Passes a report on with every amount taken out, so a walk inside another
+/// job's step counts as nothing of its own - but still stops when it is told.
+struct Uncounted<'a, 'b>(&'a mut (dyn Progress + 'b));
+
+impl Progress for Uncounted<'_, '_> {
+    fn step(&mut self, step: Step<'_>) -> bool {
+        match step {
+            Step::Advanced(_) => self.0.step(Step::Advanced(0)),
+            starting => self.0.step(starting),
+        }
+    }
+
+    fn failed(&mut self, path: &Path, error: &Error) -> Reply {
+        self.0.failed(path, error)
+    }
+}
+
 /// Remove one entry, announcing it first so the popup can name it, and counting
 /// it once it is dealt with - removed, or skipped when it would not go.
 fn remove_one(path: &Path, is_dir: bool, report: Report<'_>) -> Result<Outcome, Error> {
@@ -793,6 +859,9 @@ pub enum Reply {
     Skip,
     /// Stop the whole job, passing the error up.
     Abort,
+    /// Delete it for good instead. Offered only when moving to the trash,
+    /// for what the trash will not take; anywhere else it is a Skip.
+    Delete,
 }
 
 /// Follows a running transfer.
@@ -826,7 +895,7 @@ fn attempt<T>(path: &Path, report: Report<'_>, mut op: impl FnMut(Report<'_>) ->
             Ok(value) => return Ok(Some(value)),
             Err(error) => match report.failed(path, &error) {
                 Reply::Retry => {}
-                Reply::Skip => return Ok(None),
+                Reply::Skip | Reply::Delete => return Ok(None),
                 Reply::Abort => return Err(error),
             },
         }
@@ -841,7 +910,7 @@ fn next_entry(dir: &Path, entry: Result<fs::DirEntry, Error>, report: Report<'_>
         Ok(pair) => Ok(Some(pair)),
         Err(error) => match report.failed(dir, &error) {
             Reply::Abort => Err(error),
-            Reply::Retry | Reply::Skip => Ok(None),
+            Reply::Retry | Reply::Skip | Reply::Delete => Ok(None),
         },
     }
 }
@@ -1611,6 +1680,81 @@ mod transfer_tests {
             self.asked.push(path.to_path_buf());
             self.reply
         }
+    }
+
+    /// The trash is found through XDG_DATA_HOME, so pointed at a scratch
+    /// directory the test trashes nothing of anyone's. One test, since that is
+    /// one variable for the whole process.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn trashing_moves_it_away_and_what_will_not_go_can_be_deleted() {
+        let root = std::env::temp_dir().join(format!("fm84-trash-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let data = root.join("data");
+        fs::create_dir_all(&data).unwrap();
+        // SAFETY: nothing else in the tests reads XDG_DATA_HOME.
+        unsafe { std::env::set_var("XDG_DATA_HOME", &data) };
+
+        // A file and a directory with something in it go, and are in the trash.
+        let file = root.join("note.txt");
+        fs::write(&file, "kept").unwrap();
+        let dir = root.join("folder");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("inside.txt"), "").unwrap();
+        let mut answering = Answering::new(Reply::Abort);
+        assert_eq!(trash_path(file.clone(), false, &mut answering).unwrap(), Transfer::Done);
+        assert_eq!(trash_path(dir.clone(), true, &mut answering).unwrap(), Transfer::Done);
+        assert!(!file.exists() && !dir.exists());
+        assert_eq!(fs::read_to_string(data.join("Trash/files/note.txt")).unwrap(), "kept");
+        assert!(data.join("Trash/files/folder/inside.txt").exists());
+        assert!(data.join("Trash/info/note.txt.trashinfo").exists());
+        assert!(answering.asked.is_empty());
+
+        // A trash that cannot be made - its parent is a file - takes nothing.
+        let blocked = root.join("blocked");
+        fs::write(&blocked, "").unwrap();
+        unsafe { std::env::set_var("XDG_DATA_HOME", &blocked) };
+        let other = root.join("other");
+        fs::create_dir_all(&other).unwrap();
+        fs::write(other.join("inside.txt"), "").unwrap();
+
+        // Skipped, it stays; asked to delete instead, it goes for good.
+        let mut skipping = Answering::new(Reply::Skip);
+        assert_eq!(trash_path(other.clone(), true, &mut skipping).unwrap(), Transfer::Done);
+        assert!(other.exists());
+        assert_eq!(skipping.asked, std::slice::from_ref(&other));
+        let mut deleting = Answering::new(Reply::Delete);
+        assert_eq!(trash_path(other.clone(), true, &mut deleting).unwrap(), Transfer::Done);
+        assert!(!other.exists());
+
+        unsafe { std::env::remove_var("XDG_DATA_HOME") };
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    /// The delete inside a trash job counts nothing of its own: the item it
+    /// stands for is counted once, by the trash.
+    #[test]
+    fn a_delete_inside_another_step_counts_nothing() {
+        let dir = std::env::temp_dir().join(format!("fm84-uncounted-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("sub")).unwrap();
+        fs::write(dir.join("sub").join("a"), "").unwrap();
+
+        let mut counted = 0;
+        let mut started = 0;
+        let mut report = |step: Step<'_>| {
+            match step {
+                Step::Advanced(amount) => counted += amount,
+                Step::Starting(_) => started += 1,
+            }
+            true
+        };
+        let mut uncounted = Uncounted(&mut report);
+        assert_eq!(delete_path(dir.clone(), true, &mut uncounted).unwrap(), Transfer::Done);
+        assert!(!dir.exists());
+        assert_eq!(counted, 0);
+        // Still named as it goes, so the popup shows what is being deleted.
+        assert_eq!(started, 3);
     }
 
     /// A directory nothing can be added to or removed from. None when running

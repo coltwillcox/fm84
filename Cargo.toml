@@ -11,6 +11,7 @@ crossterm = "0.29.0"
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
 ratatui = "0.29.0"
 syntect = "5.2"
+trash = "5.2.9"
 unicode-width = "0.2"
 
 [target.'cfg(unix)'.dependencies]

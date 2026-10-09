@@ -169,6 +169,9 @@ pub struct Options {
     pub date_format: DateFormat,
     pub size_units: SizeUnits,
     pub confirm_delete: bool,
+    /// F8 moves to the system's trash rather than deleting for good, which
+    /// Shift+F8 still does.
+    pub delete_to_trash: bool,
     pub confirm_copy_move: bool,
     pub on_existing: OnExisting,
     /// The F9 command. Empty means pick one per platform, as before there was
@@ -222,6 +225,7 @@ impl Default for Options {
             date_format: DateFormat::Short,
             size_units: SizeUnits::Binary,
             confirm_delete: true,
+            delete_to_trash: true,
             confirm_copy_move: true,
             on_existing: OnExisting::Ask,
             terminal: String::new(),
@@ -258,6 +262,7 @@ pub enum OptionRow {
     DateFormat,
     SizeUnits,
     ConfirmDelete,
+    DeleteToTrash,
     ConfirmCopyMove,
     OnExisting,
     Terminal,
@@ -277,7 +282,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 29] = [
+pub const OPTION_ROWS: [OptionRow; 30] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -290,6 +295,7 @@ pub const OPTION_ROWS: [OptionRow; 29] = [
     OptionRow::DateFormat,
     OptionRow::SizeUnits,
     OptionRow::ConfirmDelete,
+    OptionRow::DeleteToTrash,
     OptionRow::ConfirmCopyMove,
     OptionRow::OnExisting,
     OptionRow::Terminal,
@@ -324,6 +330,7 @@ impl OptionRow {
             OptionRow::DateFormat => "Date format",
             OptionRow::SizeUnits => "Size units",
             OptionRow::ConfirmDelete => "Confirm delete",
+            OptionRow::DeleteToTrash => "Delete to trash (F8)",
             OptionRow::ConfirmCopyMove => "Confirm copy and move",
             OptionRow::OnExisting => "When destination exists",
             OptionRow::Terminal => "Terminal (F9)",
@@ -406,6 +413,7 @@ impl Options {
             }
             .to_string(),
             OptionRow::ConfirmDelete => on_off(self.confirm_delete),
+            OptionRow::DeleteToTrash => on_off(self.delete_to_trash),
             OptionRow::ConfirmCopyMove => on_off(self.confirm_copy_move),
             OptionRow::OnExisting => match self.on_existing {
                 OnExisting::Ask => "Ask",
@@ -495,6 +503,7 @@ impl Options {
                 self.size_units = if self.size_units == SizeUnits::Binary { SizeUnits::Decimal } else { SizeUnits::Binary }
             }
             OptionRow::ConfirmDelete => self.confirm_delete = !self.confirm_delete,
+            OptionRow::DeleteToTrash => self.delete_to_trash = !self.delete_to_trash,
             OptionRow::ConfirmCopyMove => self.confirm_copy_move = !self.confirm_copy_move,
             OptionRow::OnExisting => {
                 let policies = [OnExisting::Ask, OnExisting::Overwrite, OnExisting::Refuse];
@@ -590,6 +599,7 @@ impl Options {
                     }
                 }
                 "confirm_delete" => options.confirm_delete = flag(options.confirm_delete),
+                "delete_to_trash" => options.delete_to_trash = flag(options.delete_to_trash),
                 "confirm_copy_move" => options.confirm_copy_move = flag(options.confirm_copy_move),
                 "on_existing" => {
                     options.on_existing = match value {
@@ -693,6 +703,8 @@ impl Options {
              \n\
              # Behaviour\n\
              confirm_delete = {}\n\
+             # F8 to the trash; Shift+F8 always deletes for good.\n\
+             delete_to_trash = {}\n\
              confirm_copy_move = {}\n\
              # ask, overwrite or refuse, when a copy or move finds its name taken.\n\
              on_existing = {}\n\
@@ -732,6 +744,7 @@ impl Options {
             date_format,
             size_units,
             self.confirm_delete,
+            self.delete_to_trash,
             self.confirm_copy_move,
             match self.on_existing {
                 OnExisting::Ask => "ask",
@@ -939,6 +952,7 @@ mod tests {
             date_format: DateFormat::Relative,
             size_units: SizeUnits::Decimal,
             confirm_delete: false,
+            delete_to_trash: false,
             confirm_copy_move: false,
             on_existing: OnExisting::Overwrite,
             terminal: "kitty --directory {}".to_string(),
