@@ -7,6 +7,7 @@ mod fs_ops;
 mod glob;
 mod input;
 mod options;
+mod strip;
 mod ui;
 mod utils;
 mod viewer;
@@ -131,9 +132,13 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     if app_state.options.remember_dirs
         && let Some((left, right)) = options::load_session()
     {
-        app_state.dir_left = left;
-        app_state.dir_right = right;
+        app_state.dir_left = left.dir().to_path_buf();
+        app_state.dir_right = right.dir().to_path_buf();
+        app_state.tabs_left = app::Tabs::new(left.tabs, left.active);
+        app_state.tabs_right = app::Tabs::new(right.tabs, right.active);
     }
+    // A directory on the command line takes the place of the tab that would
+    // have shown, and the others stay.
     if let Some(left) = left {
         app_state.dir_left = left;
     }
@@ -173,7 +178,8 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     // Nowhere to report a failure by now, and nothing lost by it but a
     // starting point.
     if app_state.options.remember_dirs {
-        let _ = options::save_session(&app_state.dir_left, &app_state.dir_right);
+        let panel = |(tabs, active)| options::PanelSession { tabs, active };
+        let _ = options::save_session(&panel(app_state.tab_dirs(true)), &panel(app_state.tab_dirs(false)));
     }
 
     Ok(())

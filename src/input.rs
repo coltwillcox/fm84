@@ -1,7 +1,8 @@
-use crate::app::{Answer, AppState, DriveHit, OverwritePrompt, PromptKind};
+use crate::app::{Answer, AppState, OverwritePrompt, PromptKind};
+use crate::strip::StripHit;
 use crate::options::OnExisting;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
-use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind};
 use crate::display::tab_width;
 use ratatui::layout::Position;
 use ratatui::widgets::TableState;
@@ -46,6 +47,13 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     // anywhere.
                     if c == '*' && in_panel {
                         app_state.invert_selection(true);
+                    } else if alt && in_panel && let Some(digit) = c.to_digit(10).filter(|&digit| digit > 0) {
+                        // Alt+1 to Alt+8 go to that tab, and Alt+9 to the
+                        // last, however many there are - as browsers have it.
+                        let is_left = app_state.is_left_active;
+                        let count = if is_left { app_state.tabs_left.list.len() } else { app_state.tabs_right.list.len() };
+                        let index = if digit == 9 { count - 1 } else { digit as usize - 1 };
+                        app_state.select_tab(is_left, index);
                     } else if control {
                         match c {
                             'f' if in_editor || in_viewer => app_state.open_prompt(PromptKind::Find),
@@ -70,6 +78,12 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                             'r' if !app_state.is_modal_open() => {
                                 app_state.reload_panel(true, None);
                                 app_state.reload_panel(false, None);
+                            }
+                            't' if in_panel => app_state.new_tab(),
+                            'w' if in_panel => {
+                                let is_left = app_state.is_left_active;
+                                let active = if is_left { app_state.tabs_left.active } else { app_state.tabs_right.active };
+                                app_state.close_tab(is_left, active);
                             }
                             _ => {}
                         }
@@ -422,6 +436,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                                 });
                             }
                         }
+                        KeyCode::PageDown if key.modifiers.contains(KeyModifiers::CONTROL) => app_state.cycle_tab(true),
+                        KeyCode::PageUp if key.modifiers.contains(KeyModifiers::CONTROL) => app_state.cycle_tab(false),
                         KeyCode::PageDown => {
                             let page_size = app_state.page_size as usize;
                             handle_move_selection(app_state, |state, len| {
@@ -471,6 +487,16 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
             // the wheel, which would otherwise scroll a panel out of sight of the
             // dialog asking about it.
             Event::Mouse(mouse_event) if !app_state.popup_is_open() => match mouse_event.kind {
+                // A middle click closes the tab under it, as in a browser.
+                MouseEventKind::Down(MouseButton::Middle)
+                    if !app_state.is_f3_displayed
+                        && !app_state.is_f4_displayed
+                        && app_state.tab_at(mouse_event.column, mouse_event.row).is_some() =>
+                {
+                    if let Some((is_left, StripHit::Item(index))) = app_state.tab_at(mouse_event.column, mouse_event.row) {
+                        app_state.close_tab(is_left, index);
+                    }
+                }
                 MouseEventKind::Down(_btn) => {
                     if app_state.is_f4_displayed {
                         handle_editor_click(app_state, mouse_event.column, mouse_event.row, false);
@@ -503,8 +529,10 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     } else if app_state.is_f4_displayed {
                         app_state.editor_scroll_down();
                     } else if let Some(is_left) = app_state.drive_strip_at(mouse_event.column, mouse_event.row) {
-                        // Over a drive strip, the wheel moves it along.
+                        // Over a drive or tab strip, the wheel moves it along.
                         app_state.scroll_drive_strip(is_left, true);
+                    } else if let Some(is_left) = app_state.tab_strip_at(mouse_event.column, mouse_event.row) {
+                        app_state.scroll_tab_strip(is_left, true);
                     } else {
                         handle_move_selection(app_state, |state, len| {
                             state.select(state.selected().map_or(Some(0), |i| Some((i + 1).min(len.saturating_sub(1)))));
@@ -518,6 +546,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         app_state.editor_scroll_up();
                     } else if let Some(is_left) = app_state.drive_strip_at(mouse_event.column, mouse_event.row) {
                         app_state.scroll_drive_strip(is_left, false);
+                    } else if let Some(is_left) = app_state.tab_strip_at(mouse_event.column, mouse_event.row) {
+                        app_state.scroll_tab_strip(is_left, false);
                     } else {
                         handle_move_selection(app_state, |state, _len| {
                             state.select(state.selected().map_or(Some(0), |i| Some(i.saturating_sub(1))));
@@ -1218,14 +1248,27 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // The arrows at its ends move it along when not every drive fits.
     if let Some((is_left, hit)) = app_state.drive_at(column, row) {
         match hit {
-            DriveHit::Mount(index) => {
+            StripHit::Item(index) => {
                 if let Some(path) = app_state.mounts.get(index).map(|mount| mount.path.clone()) {
                     app_state.is_left_active = is_left;
                     app_state.open_dir(is_left, path, None);
                 }
             }
-            DriveHit::Back => app_state.scroll_drive_strip(is_left, false),
-            DriveHit::Forward => app_state.scroll_drive_strip(is_left, true),
+            StripHit::Back => app_state.scroll_drive_strip(is_left, false),
+            StripHit::Forward => app_state.scroll_drive_strip(is_left, true),
+        }
+        return;
+    }
+
+    // A tab shows it in that panel, which becomes the active one.
+    if let Some((is_left, hit)) = app_state.tab_at(column, row) {
+        match hit {
+            StripHit::Item(index) => {
+                app_state.is_left_active = is_left;
+                app_state.select_tab(is_left, index);
+            }
+            StripHit::Back => app_state.scroll_tab_strip(is_left, false),
+            StripHit::Forward => app_state.scroll_tab_strip(is_left, true),
         }
         return;
     }

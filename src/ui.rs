@@ -2,6 +2,7 @@ use crate::app::{AppState, PromptKind, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
 use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options};
+use crate::strip::{ARROW, Strip, StripHit};
 use crate::utils::*;
 use crate::viewer::ViewMode;
 use chrono::Local;
@@ -13,7 +14,8 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, TableState},
 };
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use unicode_width::UnicodeWidthChar;
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style { Style::new().fg(palette().border) }
@@ -243,101 +245,153 @@ fn logo_icon(style: IconStyle) -> &'static str {
     if style == IconStyle::Plain { "84" } else { ICON_LOGO }
 }
 
-/// One panel's row of drive icons: the mount it is on sits in a block of colour, and while
-/// that panel is choosing, the candidate is highlighted and named. Records in
-/// the panel's DriveStrip the column each icon starts at and how wide it is,
-/// measured from the text actually drawn, so a click cannot land anywhere but
-/// where it looks.
+/// Lay out a strip of `items` across `area`, recording in `strip` where each
+/// one is drawn - measured from the text actually drawn, so a click cannot
+/// land anywhere but where it looks.
 ///
 /// When they do not all fit, it shows as many as do, with `<` and `>` at the
 /// ends while there are more that way - clicked, or under the wheel, they
-/// move a page along. The window follows the panel's own drive, and the
-/// candidate while choosing, so the keys reach every drive without them.
-fn drive_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> Line<'static> {
-    use crate::app::DriveHit;
+/// move a page along. The window follows `focus`, so the keys reach every
+/// item without them.
+fn lay_strip(strip: &mut Strip, area: Rect, items: Vec<Span<'static>>, focus: Option<usize>) -> Vec<Span<'static>> {
+    let widths: Vec<usize> = items.iter().map(|item| display_width(&item.content)).collect();
+    let room = area.width as usize;
+    let fits = Strip::fits(&widths, room);
+    let count = items.len();
+    strip.area = area;
+    strip.place(widths, room, focus);
+    let (first, visible) = (strip.first, strip.visible);
 
+    let mut spans = Vec::with_capacity(visible + 2);
+    let mut slots = Vec::with_capacity(visible + 2);
+    let mut hits = Vec::with_capacity(visible + 2);
+    let mut column;
+    if fits {
+        spans.push(Span::raw(" "));
+        column = 1; // past the space the strip opens with
+    } else {
+        // The arrows take their columns there or not, so the items stay put
+        // as they come and go.
+        let back = first > 0;
+        spans.push(Span::styled(if back { " <" } else { "  " }, style_dir_dark()));
+        if back {
+            slots.push((0, ARROW as u16));
+            hits.push(StripHit::Back);
+        }
+        column = ARROW as u16;
+    }
+
+    for (index, item) in items.into_iter().enumerate().skip(first).take(visible) {
+        let width = display_width(&item.content) as u16;
+        slots.push((column, width));
+        hits.push(StripHit::Item(index));
+        column += width;
+        spans.push(item);
+    }
+
+    if !fits {
+        let forward = first + visible < count;
+        spans.push(Span::styled(if forward { "> " } else { "  " }, style_dir_dark()));
+        if forward {
+            slots.push((column, ARROW as u16));
+            hits.push(StripHit::Forward);
+        }
+    }
+
+    strip.slots = slots;
+    strip.hits = hits;
+    spans
+}
+
+/// One panel's row of drive icons: the mount it is on sits in a block of colour, and while
+/// that panel is choosing, the candidate is highlighted and named. The window
+/// onto them, when they do not all fit, follows the candidate while choosing
+/// and the panel's own drive otherwise.
+fn drive_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> Line<'static> {
     let current = app_state.current_mount(is_left);
     let picking = match app_state.drive_picker {
         Some((side, index)) if side == is_left => Some(index),
         _ => None,
     };
 
-    // Every slot is the same width, so the first says how many fit.
     let icon_style = app_state.options.icon_style;
     let spill = if icon_style.is_wide() { " " } else { "" };
-    let slot_width = display_width(&format!("  {}  {}", mount_icon(crate::fs_ops::MountKind::Disk, icon_style), spill));
-    let count = app_state.mounts.len();
-    let room = area.width as usize;
-    let overflows = 1 + count * slot_width > room;
-    // The arrows take two columns at each end, there or not, so the icons
-    // stay put as they come and go.
-    const ARROW: usize = 2;
-    let visible = if overflows { (room.saturating_sub(2 * ARROW) / slot_width).max(1) } else { count };
+    let items = app_state
+        .mounts
+        .iter()
+        .enumerate()
+        .map(|(index, mount)| {
+            // A block of colour marks the mount this panel is on, and a brighter
+            // one the candidate while choosing - drawn like the row under a
+            // panel's cursor, with its foreground and pair of backgrounds. Every
+            // slot is the same width, so switching drives moves nothing but the
+            // block, and all of it is clickable. Nerd Font glyphs count as one
+            // cell but most fonts draw them across two, so there each icon gets a
+            // blank cell after it to spill into - otherwise it sits half a cell
+            // right of centre. Mono fonts and plain letters fit in the one.
+            let style = if Some(index) == picking {
+                Style::new().fg(palette().selected_foreground).bg(palette().selected_background)
+            } else if Some(index) == current {
+                Style::new().fg(palette().selected_foreground).bg(palette().selected_background_inactive)
+            } else {
+                style_dir_dark()
+            };
+            Span::styled(format!("  {}  {}", mount_icon(mount.kind, icon_style), spill), style)
+        })
+        .collect();
 
     let strip = if is_left { &mut app_state.drive_strip_left } else { &mut app_state.drive_strip_right };
-    strip.area = area;
-    strip.place(count, visible, picking.or(current));
-    let (first, visible) = (strip.first, strip.visible);
-
-    let mut spans = Vec::new();
-    let mut slots = Vec::with_capacity(visible + 2);
-    let mut hits = Vec::with_capacity(visible + 2);
-    let mut column;
-    if overflows {
-        let back = first > 0;
-        spans.push(Span::styled(if back { " <" } else { "  " }, style_dir_dark()));
-        if back {
-            slots.push((0, ARROW as u16));
-            hits.push(DriveHit::Back);
-        }
-        column = ARROW as u16;
-    } else {
-        spans.push(Span::raw(" "));
-        column = 1; // past the space the strip opens with
-    }
-
-    for (index, mount) in app_state.mounts.iter().enumerate().skip(first).take(visible) {
-        // A block of colour marks the mount this panel is on, and a brighter
-        // one the candidate while choosing - drawn like the row under a
-        // panel's cursor, with its foreground and pair of backgrounds. Every
-        // slot is the same width, so switching drives moves nothing but the
-        // block, and all of it is clickable. Nerd Font glyphs count as one
-        // cell but most fonts draw them across two, so there each icon gets a
-        // blank cell after it to spill into - otherwise it sits half a cell
-        // right of centre. Mono fonts and plain letters fit in the one.
-        let style = if Some(index) == picking {
-            Style::new().fg(palette().selected_foreground).bg(palette().selected_background)
-        } else if Some(index) == current {
-            Style::new().fg(palette().selected_foreground).bg(palette().selected_background_inactive)
-        } else {
-            style_dir_dark()
-        };
-        let text = format!("  {}  {}", mount_icon(mount.kind, icon_style), spill);
-        let width = display_width(&text) as u16;
-        slots.push((column, width));
-        hits.push(DriveHit::Mount(index));
-        column += width;
-        spans.push(Span::styled(text, style));
-    }
-
-    if overflows {
-        let forward = first + visible < count;
-        spans.push(Span::styled(if forward { "> " } else { "  " }, style_dir_dark()));
-        if forward {
-            slots.push((column, ARROW as u16));
-            hits.push(DriveHit::Forward);
-        }
-    }
+    let mut spans = lay_strip(strip, area, items, picking.or(current));
 
     // Name whichever is under consideration, else the one this panel is on.
     if let Some(mount) = picking.or(current).and_then(|index| app_state.mounts.get(index)) {
         spans.push(Span::styled(format!(" {}", printable_name(&mount.label)), style_columns()));
     }
-
-    let strip = if is_left { &mut app_state.drive_strip_left } else { &mut app_state.drive_strip_right };
-    strip.slots = slots;
-    strip.hits = hits;
     Line::from(spans)
+}
+
+/// A tab is named for its directory, cut short past a point so a few fit
+/// side by side - the path bar below has the whole of the one shown.
+fn tab_label(dir: &Path) -> String {
+    const LONGEST: usize = 16;
+    let name = dir.file_name().map_or_else(|| dir.display().to_string(), |name| name.to_string_lossy().into_owned());
+    let name = printable_name(&name);
+    if display_width(&name) <= LONGEST {
+        return name;
+    }
+    let mut width = 0;
+    let kept: String = name
+        .chars()
+        .take_while(|&character| {
+            width += UnicodeWidthChar::width(character).unwrap_or(0);
+            width < LONGEST
+        })
+        .collect();
+    format!("{kept}…")
+}
+
+/// One panel's row of tabs, under its drives. The tab it shows sits in a
+/// block of colour, the brighter one in the active panel, as the drives do.
+fn tab_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> Line<'static> {
+    let (dirs, active) = app_state.tab_dirs(is_left);
+    let panel_active = app_state.is_left_active == is_left;
+    let items = dirs
+        .iter()
+        .enumerate()
+        .map(|(index, dir)| {
+            let style = if index != active {
+                style_dir_dark()
+            } else if panel_active {
+                Style::new().fg(palette().selected_foreground).bg(palette().selected_background)
+            } else {
+                Style::new().fg(palette().selected_foreground).bg(palette().selected_background_inactive)
+            };
+            Span::styled(format!(" {} ", tab_label(dir)), style)
+        })
+        .collect();
+
+    let tabs = if is_left { &mut app_state.tabs_left } else { &mut app_state.tabs_right };
+    Line::from(lay_strip(&mut tabs.strip, area, items, Some(active)))
 }
 
 fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
@@ -356,18 +410,27 @@ fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppS
     let inner = block_top.inner(area);
     f.render_widget(block_top, area);
 
+    // Each strip hands its real geometry to the mouse handler, as the panels
+    // do. One not drawn this frame has nothing to click either.
+    app_state.drive_strip_left.area = Rect::default();
+    app_state.drive_strip_right.area = Rect::default();
+    app_state.tabs_left.strip.area = Rect::default();
+    app_state.tabs_right.strip.area = Rect::default();
+
     if inner.height > 0 && !app_state.mounts.is_empty() {
         let halves = panel_split(Rect { height: 1, ..inner });
-        // Each strip hands its real geometry to the mouse handler, as the
-        // panels do.
         let left = drive_strip(app_state, true, halves[0]);
         let right = drive_strip(app_state, false, halves[2]);
         f.render_widget(Paragraph::new(left), halves[0]);
         f.render_widget(Paragraph::new(right), halves[2]);
-    } else {
-        // Nothing drawn this frame, so there is nothing to click either.
-        app_state.drive_strip_left.area = Rect::default();
-        app_state.drive_strip_right.area = Rect::default();
+    }
+    // The tabs take the row under the drives.
+    if inner.height > 1 {
+        let halves = panel_split(Rect { y: inner.y + 1, height: 1, ..inner });
+        let left = tab_strip(app_state, true, halves[0]);
+        let right = tab_strip(app_state, false, halves[2]);
+        f.render_widget(Paragraph::new(left), halves[0]);
+        f.render_widget(Paragraph::new(right), halves[2]);
     }
 }
 
@@ -1392,6 +1455,8 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F11 - Options (Alt+F1/F2 drives)",
         "F12 - Preview in other panel",
         "Ctrl+Left/Right - Dir to that panel",
+        "Ctrl+T/Ctrl+W - New/close tab",
+        "  Ctrl+PgUp/PgDn, Alt+1..9 switch",
         "Space - Select/deselect file",
         "+/- select/deselect by pattern, * invert",
         "  Alt+* invert with directories",
@@ -1859,12 +1924,33 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 mod tests {
     use super::*;
 
+    /// A tab is clicked where it is drawn, and a long name is cut short.
+    #[test]
+    fn tabs_are_drawn_and_clicked_where_they_are() {
+        assert_eq!(tab_label(Path::new("/")), "/");
+        assert_eq!(tab_label(Path::new("/home/colt/src")), "src");
+        assert_eq!(tab_label(Path::new("/tmp/a-rather-long-directory-name")), "a-rather-long-d…");
+
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.dir_left = "/tmp/b".into();
+        app_state.tabs_left = crate::app::Tabs::new(vec!["/a".into(), "/tmp/b".into()], 1);
+        tab_strip(&mut app_state, true, Rect::new(0, 1, 40, 1));
+
+        // " " then " a " then " b ".
+        assert_eq!(app_state.tab_at(0, 1), None);
+        assert_eq!(app_state.tab_at(1, 1), Some((true, StripHit::Item(0))));
+        assert_eq!(app_state.tab_at(3, 1), Some((true, StripHit::Item(0))));
+        assert_eq!(app_state.tab_at(4, 1), Some((true, StripHit::Item(1))));
+        assert_eq!(app_state.tab_at(7, 1), None);
+        assert_eq!(app_state.tab_at(4, 0), None);
+    }
+
     /// Too many drives for the half they are in: a window onto them, with
     /// arrows that are there only while there is more that way, and every
     /// click mapped to what is drawn under it.
     #[test]
     fn a_crowded_drive_strip_scrolls() {
-        use crate::app::DriveHit;
         use crate::fs_ops::{Mount, MountKind};
         let mut app_state = AppState::new();
         app_state.options.icon_style = IconStyle::Plain;
@@ -1878,28 +1964,28 @@ mod tests {
         drive_strip(&mut app_state, true, area);
         let strip = &app_state.drive_strip_left;
         assert_eq!((strip.first, strip.visible), (0, 5));
-        assert_eq!(strip.hits.first(), Some(&DriveHit::Mount(0)));
-        assert_eq!(strip.hits.last(), Some(&DriveHit::Forward));
+        assert_eq!(strip.hits.first(), Some(&StripHit::Item(0)));
+        assert_eq!(strip.hits.last(), Some(&StripHit::Forward));
         assert_eq!(app_state.drive_at(1, 0), None); // no back arrow yet
-        assert_eq!(app_state.drive_at(2, 0), Some((true, DriveHit::Mount(0))));
-        assert_eq!(app_state.drive_at(27, 0), Some((true, DriveHit::Forward)));
+        assert_eq!(app_state.drive_at(2, 0), Some((true, StripHit::Item(0))));
+        assert_eq!(app_state.drive_at(27, 0), Some((true, StripHit::Forward)));
 
         // A page along, and the back arrow appears with the icons where they were.
         app_state.scroll_drive_strip(true, true);
         drive_strip(&mut app_state, true, area);
-        assert_eq!(app_state.drive_at(0, 0), Some((true, DriveHit::Back)));
-        assert_eq!(app_state.drive_at(2, 0), Some((true, DriveHit::Mount(5))));
+        assert_eq!(app_state.drive_at(0, 0), Some((true, StripHit::Back)));
+        assert_eq!(app_state.drive_at(2, 0), Some((true, StripHit::Item(5))));
 
         // At the end, no forward arrow.
         app_state.scroll_drive_strip(true, true);
         drive_strip(&mut app_state, true, area);
         assert_eq!(app_state.drive_strip_left.first, 7);
-        assert!(!app_state.drive_strip_left.hits.contains(&DriveHit::Forward));
+        assert!(!app_state.drive_strip_left.hits.contains(&StripHit::Forward));
 
         // Room for all: no arrows and the old layout.
         drive_strip(&mut app_state, true, Rect::new(0, 0, 80, 1));
         assert_eq!(app_state.drive_strip_left.first, 0);
-        assert_eq!(app_state.drive_at(1, 0), Some((true, DriveHit::Mount(0))));
+        assert_eq!(app_state.drive_at(1, 0), Some((true, StripHit::Item(0))));
     }
 
     /// A file name can hold anything but '/' and NUL - an escape sequence, a

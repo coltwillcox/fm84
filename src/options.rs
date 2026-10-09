@@ -757,16 +757,41 @@ impl Options {
     }
 }
 
+/// One panel as the session file keeps it: the directory of each of its
+/// tabs, and which one it was showing.
+#[derive(Debug, PartialEq, Eq)]
+pub struct PanelSession {
+    pub tabs: Vec<PathBuf>,
+    pub active: usize,
+}
+
+impl PanelSession {
+    /// The directory the panel was showing.
+    pub fn dir(&self) -> &std::path::Path {
+        &self.tabs[self.active]
+    }
+}
+
 /// Where the panels were when fm84 last quit, for Remember directories. Kept
 /// apart from the options: it changes on every run, and the options only when
 /// asked to.
-pub fn load_session() -> Option<(PathBuf, PathBuf)> {
+pub fn load_session() -> Option<(PanelSession, PanelSession)> {
     let text = fs::read_to_string(config_path("session")?).ok()?;
     parse_session(&text)
 }
 
-pub fn save_session(left: &std::path::Path, right: &std::path::Path) -> io::Result<()> {
-    write_config_file("session", &format!("left = {}\nright = {}\n", escape_path(left), escape_path(right)))
+/// `left` and `right` are the directories shown, as they always were, so a
+/// session reads the same in a version from before tabs. Each tab follows as
+/// a `left_tab` or `right_tab` line, in order, with which one was showing.
+pub fn save_session(left: &PanelSession, right: &PanelSession) -> io::Result<()> {
+    let mut text = format!("left = {}\nright = {}\n", escape_path(left.dir()), escape_path(right.dir()));
+    for (side, panel) in [("left", left), ("right", right)] {
+        for tab in &panel.tabs {
+            text.push_str(&format!("{side}_tab = {}\n", escape_path(tab)));
+        }
+        text.push_str(&format!("{side}_tab_active = {}\n", panel.active));
+    }
+    write_config_file("session", &text)
 }
 
 /// A path as a session line holds it. `display()` would lose any name that is
@@ -829,16 +854,32 @@ fn path_from_bytes(bytes: Vec<u8>) -> PathBuf {
     PathBuf::from(String::from_utf8_lossy(&bytes).into_owned())
 }
 
-fn parse_session(text: &str) -> Option<(PathBuf, PathBuf)> {
+fn parse_session(text: &str) -> Option<(PanelSession, PanelSession)> {
     let (mut left, mut right) = (None, None);
+    let (mut left_tabs, mut right_tabs) = (Vec::new(), Vec::new());
+    let (mut left_active, mut right_active) = (0, 0);
     for (key, value) in key_values(text) {
         match key {
             "left" if !value.is_empty() => left = Some(unescape_path(value)),
             "right" if !value.is_empty() => right = Some(unescape_path(value)),
+            "left_tab" if !value.is_empty() => left_tabs.push(unescape_path(value)),
+            "right_tab" if !value.is_empty() => right_tabs.push(unescape_path(value)),
+            "left_tab_active" => left_active = value.parse().unwrap_or(0),
+            "right_tab_active" => right_active = value.parse().unwrap_or(0),
             _ => {}
         }
     }
-    Some((left?, right?))
+    // Without tab lines - written before there were tabs, or by hand - a
+    // panel is the one directory it names.
+    let panel = |dir: PathBuf, tabs: Vec<PathBuf>, active: usize| {
+        if tabs.is_empty() {
+            PanelSession { tabs: vec![dir], active: 0 }
+        } else {
+            let active = active.min(tabs.len() - 1);
+            PanelSession { tabs, active }
+        }
+    };
+    Some((panel(left?, left_tabs, left_active), panel(right?, right_tabs, right_active)))
 }
 
 /// The `key = value` lines of a file, skipping blanks, comments and anything
@@ -968,7 +1009,8 @@ mod tests {
     #[test]
     fn a_session_needs_both_panels() {
         let (left, right) = parse_session("left = /home/colt\nright = /tmp\n").unwrap();
-        assert_eq!((left, right), (PathBuf::from("/home/colt"), PathBuf::from("/tmp")));
+        assert_eq!((left.dir(), right.dir()), (std::path::Path::new("/home/colt"), std::path::Path::new("/tmp")));
+        assert_eq!(left.tabs.len(), 1);
         assert_eq!(parse_session("left = /home/colt\n"), None);
         assert_eq!(parse_session("left =\nright = /tmp\n"), None);
     }
@@ -977,7 +1019,7 @@ mod tests {
     fn a_session_path_comes_back_as_it_went() {
         for path in ["/home/colt", " edged ", "/tmp/100%", "/tmp/tab\there", "/tmp/caf\u{e9}"] {
             let line = format!("left = {}\nright = /\n", escape_path(std::path::Path::new(path)));
-            assert_eq!(parse_session(&line).unwrap().0, PathBuf::from(path), "{line:?}");
+            assert_eq!(parse_session(&line).unwrap().0.dir(), std::path::Path::new(path), "{line:?}");
         }
         // Written before paths were escaped: a % with no hex after it is itself.
         assert_eq!(unescape_path("/tmp/50%off"), PathBuf::from("/tmp/50%off"));
@@ -990,7 +1032,19 @@ mod tests {
         let path = std::path::Path::new(std::ffi::OsStr::from_bytes(b"/tmp/caf\xe9"));
         let line = format!("left = {}\nright = /\n", escape_path(path));
         assert_eq!(line, "left = /tmp/caf%E9\nright = /\n");
-        assert_eq!(parse_session(&line).unwrap().0, path);
+        assert_eq!(parse_session(&line).unwrap().0.dir(), path);
+    }
+
+    #[test]
+    fn a_session_keeps_each_panels_tabs() {
+        let text = "left = /b\nright = /r\nleft_tab = /a\nleft_tab = /b\nleft_tab = /c\nleft_tab_active = 1\n";
+        let (left, right) = parse_session(text).unwrap();
+        assert_eq!(left, PanelSession { tabs: vec!["/a".into(), "/b".into(), "/c".into()], active: 1 });
+        assert_eq!(right, PanelSession { tabs: vec!["/r".into()], active: 0 });
+
+        // An active tab past the end, as a hand edit might leave, is the last.
+        let (left, _) = parse_session("left = /a\nright = /r\nleft_tab = /a\nleft_tab_active = 7\n").unwrap();
+        assert_eq!(left.active, 0);
     }
 
     #[test]

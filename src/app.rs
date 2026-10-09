@@ -4,6 +4,7 @@ use crate::fs_ops::{
 };
 use crate::options::{OPTION_ROWS, OptionRow, Options};
 use image::DynamicImage;
+use crate::strip::{Strip, StripHit};
 use crate::viewer::{ViewMode, ViewerState};
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
@@ -263,8 +264,10 @@ pub struct AppState {
     pub editor_content_area: Rect,
     pub viewer_content_area: Rect,
     // The drive strips as drawn, and which of the drives each one shows.
-    pub drive_strip_left: DriveStrip,
-    pub drive_strip_right: DriveStrip,
+    pub drive_strip_left: Strip,
+    pub drive_strip_right: Strip,
+    pub tabs_left: Tabs,
+    pub tabs_right: Tabs,
     // Directory mtimes as of the last load, so an external change can be spotted
     // without stat-ing every entry.
     pub dir_stamp_left: Option<SystemTime>,
@@ -462,62 +465,39 @@ pub struct OverwritePrompt {
     pub taken: Vec<PathBuf>,
 }
 
-/// One panel's row of drive icons, as last drawn. When there are more drives
-/// than fit, it shows a window onto them, with an arrow at either end that
-/// has more beyond it.
-#[derive(Default)]
-pub struct DriveStrip {
-    pub area: Rect,
-    /// The first drive shown.
-    pub first: usize,
-    /// How many are shown, from `first`.
-    pub visible: usize,
-    /// The drive the window last moved to show. When the one that matters -
-    /// the panel's own, or the candidate while choosing - is a different one,
-    /// the window follows it there; otherwise it stays where the arrows put
-    /// it, so scrolling to look is not undone on the next frame.
-    pub followed: Option<usize>,
-    /// Where each thing on the strip is drawn, in columns from `area.x`, and
-    /// what a click there does.
-    pub slots: Vec<(u16, u16)>,
-    pub hits: Vec<DriveHit>,
+/// A tab in a panel: somewhere it was left, to go back to - the directory,
+/// the entry the cursor was on and what was selected there.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Tab {
+    pub dir: PathBuf,
+    pub cursor: Option<OsString>,
+    pub selected: HashSet<OsString>,
 }
 
-/// What a click on a drive strip lands on.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum DriveHit {
-    Mount(usize),
-    Back,
-    Forward,
-}
-
-impl DriveStrip {
-    /// Settle which drives to show, `visible` of `count`, keeping `focus` in
-    /// view when it has moved since last time.
-    pub fn place(&mut self, count: usize, visible: usize, focus: Option<usize>) {
-        self.visible = visible.min(count);
-        if let Some(focus) = focus
-            && self.followed != Some(focus)
-        {
-            if focus < self.first {
-                self.first = focus;
-            } else if focus >= self.first + self.visible {
-                self.first = focus + 1 - self.visible;
-            }
-            self.followed = Some(focus);
-        }
-        // Drives can go away, and the window must not run past the end.
-        self.first = self.first.min(count - self.visible);
+impl Tab {
+    pub fn new(dir: PathBuf) -> Self {
+        Tab { dir, cursor: None, selected: HashSet::new() }
     }
+}
 
-    /// A page along, from the arrows or the wheel.
-    pub fn scroll(&mut self, count: usize, forward: bool) {
-        let page = self.visible.max(1);
-        self.first = if forward {
-            (self.first + page).min(count.saturating_sub(self.visible))
-        } else {
-            self.first.saturating_sub(page)
-        };
+/// One panel's tabs. The panel's own fields - its directory, cursor and
+/// selection - are the tab it shows, so everything else goes on working
+/// without knowing tabs exist. That tab's entry here is brought up to date
+/// only as the panel leaves it; the rest wait here as they were left.
+pub struct Tabs {
+    pub list: Vec<Tab>,
+    pub active: usize,
+    pub strip: Strip,
+}
+
+impl Tabs {
+    pub fn new(dirs: Vec<PathBuf>, active: usize) -> Self {
+        let mut list: Vec<Tab> = dirs.into_iter().map(Tab::new).collect();
+        if list.is_empty() {
+            list.push(Tab::new(PathBuf::from(".")));
+        }
+        let active = active.min(list.len() - 1);
+        Tabs { list, active, strip: Strip::default() }
     }
 }
 
@@ -753,7 +733,7 @@ impl AppState {
             create_is_dir: true,
             is_left_active: true,
             dir_left: dir_root.clone(),
-            dir_right: dir_root,
+            dir_right: dir_root.clone(),
             page_size: 0,
             state_left,
             state_right,
@@ -808,8 +788,10 @@ impl AppState {
             image_cache: ImageCache::default(),
             cursor_detail: None,
             quit_armed: false,
-            drive_strip_left: DriveStrip::default(),
-            drive_strip_right: DriveStrip::default(),
+            drive_strip_left: Strip::default(),
+            drive_strip_right: Strip::default(),
+            tabs_left: Tabs::new(vec![dir_root.clone()], 0),
+            tabs_right: Tabs::new(vec![dir_root], 0),
         }
     }
 
@@ -2530,22 +2512,147 @@ impl AppState {
     /// The panel and what a click landed on, when it was a drive icon or an
     /// arrow. The strip runs the width of its half, so most of it is neither:
     /// a click on the label beside them, or past the last one, is nothing.
-    pub fn drive_at(&self, column: u16, row: u16) -> Option<(bool, DriveHit)> {
+    pub fn drive_at(&self, column: u16, row: u16) -> Option<(bool, StripHit)> {
         let is_left = self.drive_strip_at(column, row)?;
         let strip = if is_left { &self.drive_strip_left } else { &self.drive_strip_right };
-        let index = slot_at(&strip.slots, column - strip.area.x)?;
-        let hit = *strip.hits.get(index)?;
+        let hit = strip_hit(strip, column)?;
         match hit {
-            DriveHit::Mount(mount) if mount >= self.mounts.len() => None,
+            StripHit::Item(mount) if mount >= self.mounts.len() => None,
             _ => Some((is_left, hit)),
         }
     }
 
     /// Move a panel's drive strip a page along, when not all of it fits.
     pub fn scroll_drive_strip(&mut self, is_left: bool, forward: bool) {
-        let count = self.mounts.len();
         let strip = if is_left { &mut self.drive_strip_left } else { &mut self.drive_strip_right };
-        strip.scroll(count, forward);
+        strip.scroll(forward);
+    }
+
+    /// Which panel's tab strip a position is on, if either.
+    pub fn tab_strip_at(&self, column: u16, row: u16) -> Option<bool> {
+        let position = Position::new(column, row);
+        if self.tabs_left.strip.area.contains(position) {
+            Some(true)
+        } else if self.tabs_right.strip.area.contains(position) {
+            Some(false)
+        } else {
+            None
+        }
+    }
+
+    /// The panel and what a click landed on, when it was a tab or an arrow.
+    pub fn tab_at(&self, column: u16, row: u16) -> Option<(bool, StripHit)> {
+        let is_left = self.tab_strip_at(column, row)?;
+        let tabs = if is_left { &self.tabs_left } else { &self.tabs_right };
+        let hit = strip_hit(&tabs.strip, column)?;
+        match hit {
+            StripHit::Item(index) if index >= tabs.list.len() => None,
+            _ => Some((is_left, hit)),
+        }
+    }
+
+    pub fn scroll_tab_strip(&mut self, is_left: bool, forward: bool) {
+        let tabs = if is_left { &mut self.tabs_left } else { &mut self.tabs_right };
+        tabs.strip.scroll(forward);
+    }
+
+    fn tabs_mut(&mut self, is_left: bool) -> &mut Tabs {
+        if is_left { &mut self.tabs_left } else { &mut self.tabs_right }
+    }
+
+    /// The panel as it stands, as a tab to come back to.
+    fn panel_as_tab(&self, is_left: bool) -> Tab {
+        let (dir, children, state, selected) = if is_left {
+            (&self.dir_left, &self.children_left, &self.state_left, &self.selected_left)
+        } else {
+            (&self.dir_right, &self.children_right, &self.state_right, &self.selected_right)
+        };
+        Tab {
+            dir: dir.clone(),
+            cursor: state.selected().and_then(|index| children.get(index)).map(|item| item.name_os.clone()),
+            selected: selected.clone(),
+        }
+    }
+
+    /// Every tab of a panel's directory, the one it shows as it is now, and
+    /// which that is - for the strip's labels and the session file.
+    pub fn tab_dirs(&self, is_left: bool) -> (Vec<PathBuf>, usize) {
+        let (tabs, dir) = if is_left { (&self.tabs_left, &self.dir_left) } else { (&self.tabs_right, &self.dir_right) };
+        let mut dirs: Vec<PathBuf> = tabs.list.iter().map(|tab| tab.dir.clone()).collect();
+        dirs[tabs.active] = dir.clone();
+        (dirs, tabs.active)
+    }
+
+    /// Ctrl+T: a new tab in the active panel, beside the one it is on and in
+    /// the same directory, with the cursor where it was and nothing selected
+    /// - the selection stays with the tab it was made in.
+    pub fn new_tab(&mut self) {
+        let is_left = self.is_left_active;
+        let here = self.panel_as_tab(is_left);
+        let tabs = self.tabs_mut(is_left);
+        tabs.list[tabs.active] = here.clone();
+        tabs.list.insert(tabs.active + 1, Tab { selected: HashSet::new(), ..here });
+        tabs.active += 1;
+        if is_left { self.selected_left.clear() } else { self.selected_right.clear() }
+    }
+
+    /// Ctrl+W, or a middle click: close a tab. The last one a panel has stays,
+    /// since a panel has to show something. Closing the one shown moves to the
+    /// one after it, or before it at the end, as a browser does.
+    pub fn close_tab(&mut self, is_left: bool, index: usize) {
+        let tabs = self.tabs_mut(is_left);
+        if tabs.list.len() <= 1 || index >= tabs.list.len() {
+            return;
+        }
+        tabs.list.remove(index);
+        if index == tabs.active {
+            tabs.active = index.min(tabs.list.len() - 1);
+            self.show_tab(is_left);
+        } else if index < tabs.active {
+            tabs.active -= 1;
+        }
+    }
+
+    /// Show another of a panel's tabs, leaving this one as it is to come back to.
+    pub fn select_tab(&mut self, is_left: bool, index: usize) {
+        let here = self.panel_as_tab(is_left);
+        let tabs = self.tabs_mut(is_left);
+        if index >= tabs.list.len() || index == tabs.active {
+            return;
+        }
+        tabs.list[tabs.active] = here;
+        tabs.active = index;
+        self.show_tab(is_left);
+    }
+
+    /// Ctrl+PageDown and Ctrl+PageUp: the next tab in the active panel, or the
+    /// one before, round from the end to the start.
+    pub fn cycle_tab(&mut self, forward: bool) {
+        let is_left = self.is_left_active;
+        let tabs = self.tabs_mut(is_left);
+        let count = tabs.list.len();
+        let next = if forward { (tabs.active + 1) % count } else { (tabs.active + count - 1) % count };
+        self.select_tab(is_left, next);
+    }
+
+    /// Point the panel at the tab now active. A directory that cannot be read
+    /// is refused as anywhere else and the panel stays where it was, so the
+    /// selection only comes back when the panel did get there.
+    fn show_tab(&mut self, is_left: bool) {
+        let tabs = self.tabs_mut(is_left);
+        let tab = tabs.list[tabs.active].clone();
+        self.open_dir(is_left, tab.dir.clone(), tab.cursor.as_deref());
+        let (dir, children, selected) = if is_left {
+            (&self.dir_left, &self.children_left, &mut self.selected_left)
+        } else {
+            (&self.dir_right, &self.children_right, &mut self.selected_right)
+        };
+        if *dir == tab.dir {
+            *selected = tab.selected;
+            prune_selection(selected, children);
+        } else {
+            selected.clear();
+        }
     }
 
     /// The mount a panel is sitting on: the longest one its directory is under.
@@ -2822,6 +2929,12 @@ fn run_delete(items: Vec<(PathBuf, bool)>, mut progress: JobProgress<'_>) {
 fn prune_selection(selected: &mut HashSet<OsString>, items: &[Item]) {
     let names: HashSet<&OsString> = items.iter().map(|item| &item.name_os).collect();
     selected.retain(|name| names.contains(name));
+}
+
+/// What a click at `column` lands on, along a strip.
+fn strip_hit(strip: &Strip, column: u16) -> Option<StripHit> {
+    let index = slot_at(&strip.slots, column.checked_sub(strip.area.x)?)?;
+    strip.hits.get(index).copied()
 }
 
 /// Which of a strip's slots a column falls in, measured from the strip's left
@@ -3462,42 +3575,72 @@ mod tests {
 
 
     #[test]
-    fn the_drive_window_follows_the_focus_but_not_back_after_scrolling() {
-        use super::DriveStrip;
-        let mut strip = DriveStrip::default();
+    fn tabs_keep_where_each_was_left() {
+        let dir = std::env::temp_dir().join(format!("fm84-tabs-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("inner")).unwrap();
+        for name in ["one.txt", "two.txt"] {
+            std::fs::write(dir.join(name), "").unwrap();
+            std::fs::write(dir.join("inner").join(name), "").unwrap();
+        }
 
-        // Twelve drives, four shown: the panel's own, the ninth, is brought in.
-        strip.place(12, 4, Some(8));
-        assert_eq!((strip.first, strip.visible), (5, 4));
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), None);
+        let at = |app_state: &AppState, name: &str| app_state.children_left.iter().position(|item| item.name_full == name);
+        let cursor = |app_state: &AppState| {
+            app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone())
+        };
 
-        // Scrolled back to look, it stays there while the focus does not move.
-        strip.scroll(12, false);
-        assert_eq!(strip.first, 1);
-        strip.place(12, 4, Some(8));
-        assert_eq!(strip.first, 1);
+        // Something selected and the cursor on two.txt in the first tab.
+        app_state.selected_left.insert("one.txt".into());
+        app_state.state_left.select(at(&app_state, "two.txt"));
 
-        // The focus moving - a candidate while choosing - brings it back.
-        strip.place(12, 4, Some(10));
-        assert_eq!(strip.first, 7);
-        strip.place(12, 4, Some(2));
-        assert_eq!(strip.first, 2);
+        // A new tab: same place, nothing selected, and the first keeps its own.
+        app_state.new_tab();
+        assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active), (2, 1));
+        assert_eq!(app_state.dir_left, dir);
+        assert!(app_state.selected_left.is_empty());
+        assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
 
-        // Pages stop at either end.
-        strip.scroll(12, true);
-        strip.scroll(12, true);
-        assert_eq!(strip.first, 8);
-        strip.scroll(12, false);
-        strip.scroll(12, false);
-        strip.scroll(12, false);
-        assert_eq!(strip.first, 0);
+        // Off somewhere else in the second tab.
+        app_state.open_dir(true, dir.join("inner"), None);
+        app_state.selected_left.insert("two.txt".into());
+        assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), dir.join("inner")], 1));
 
-        // Drives going away pull the window back within the end.
-        strip.first = 8;
-        strip.place(6, 4, Some(2));
-        assert_eq!(strip.first, 2);
-        // And with room for all, all show.
-        strip.place(3, 4, Some(0));
-        assert_eq!((strip.first, strip.visible), (0, 3));
+        // Back to the first: its directory, cursor and selection.
+        app_state.select_tab(true, 0);
+        assert_eq!(app_state.dir_left, dir);
+        assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
+        assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("one.txt")]);
+
+        // Round to the second, and its own come back.
+        app_state.cycle_tab(true);
+        assert_eq!(app_state.dir_left, dir.join("inner"));
+        assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("two.txt")]);
+        app_state.cycle_tab(true);
+        assert_eq!(app_state.tabs_left.active, 0);
+
+        // Closing one not shown leaves the panel be and keeps the right one active.
+        app_state.select_tab(true, 1);
+        app_state.close_tab(true, 0);
+        assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active), (1, 0));
+        assert_eq!(app_state.dir_left, dir.join("inner"));
+
+        // The last one stays.
+        app_state.close_tab(true, 0);
+        assert_eq!(app_state.tabs_left.list.len(), 1);
+
+        // Closing the one shown moves to its neighbour.
+        app_state.new_tab();
+        app_state.open_dir(true, dir.clone(), None);
+        app_state.close_tab(true, 1);
+        assert_eq!(app_state.dir_left, dir.join("inner"));
+        // The other panel's tabs are its own.
+        assert_eq!(app_state.tabs_right.list.len(), 1);
+
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
