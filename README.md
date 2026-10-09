@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.22.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.23.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -63,11 +63,13 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🏠 **Home/End** - teleport to the edges
 - 📄 **PageUp/PageDown** - cruise in style
 - 🔀 **Tab** - switch between panels like flipping cassettes
+- ↔️ **Ctrl+← / Ctrl+→** - send the left or right panel to the directory under the cursor, keeping the focus where it is; on a file, to the directory it is in
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
 - 🔗 **Symlinked directories** - listed and entered like the real thing
 - 🔒 **Directories you cannot read** - refused with the reason, and the panel stays where it was
-- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`
+- 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`. With more drives than fit, the strip shows a window onto them: `<` and `>` at its ends, or the wheel over it, move it a page along, and it follows the panel's drive and the one being chosen
+- 📑 **Tabs** - each panel keeps its own, in the row under its drives. **Ctrl+T** opens one beside the current tab in the same directory, **Ctrl+W** closes it (a panel keeps its last), **Ctrl+PgUp** / **Ctrl+PgDn** go round them and **Alt+1**…**Alt+8** to that tab, **Alt+9** to the last. Click a tab to show it, middle-click to close it. Each remembers its directory, cursor and selection, and with Remember directories on (F11) they are all there next time
 
 ### 🔍 Quick Search
 - 🔎 **Type-ahead search** - just start typing to find files
@@ -90,6 +92,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F9** 💻 - Open external terminal in current directory (which one is set under F11)
 - **F10** 🚪 - Exit to the void
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
+- **+** / **-** / **\*** 🎯 - Select or deselect by a pattern such as `*.jpg;*.png` (`*`, `?`, `[a-z]`, `[!0-9]`; lower case matches either case), or invert the selection of files - **Alt+\*** inverts directories too. Patterns pick files; end one with `/` for directories, as in `*/`. Once a quick search is under way, `-` types into it instead
 - 🖱️ **Double-click** - open directories or view files
 - 🖱️ **Mouse scroll** - scroll content in Viewer, Editor, and file panels
 
@@ -212,6 +215,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 |-----|--------|
 | `↑` `↓` `←` `→` | Navigate |
 | `Tab` | Switch panels |
+| `Ctrl+←` / `Ctrl+→` | Open the directory under the cursor in the left / right panel |
 | `Enter` | Open directory / Execute |
 | `Backspace` | Go to parent directory |
 | `Home` / `End` | Jump to first / last item |
@@ -249,7 +253,13 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `F3` / `Shift+F3` | Next / previous match (in Viewer and Editor) |
 | `Ctrl+G` | Go to line (in Viewer and Editor) |
 | `Space` / `Insert` | Select/deselect file |
+| `+` / `-` | Select / deselect by pattern |
+| `*` | Invert the selection of files |
+| `Alt+*` | Invert the selection of files and directories |
 | `Ctrl+R` | Reload both panels |
+| `Ctrl+T` / `Ctrl+W` | New tab / close tab |
+| `Ctrl+PgUp` / `Ctrl+PgDn` | Previous / next tab |
+| `Alt+1`…`Alt+9` | Go to tab 1…8, or the last |
 | `Scroll` | Scroll content (panels, Viewer, Editor) |
 
 ---
@@ -271,14 +281,14 @@ cargo run --release
 ### ⌨️ Command line
 
 ```bash
-fm84                 # panels where you left them (or the current directory)
+fm84                 # panels and tabs where you left them (or the current directory)
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.22.0
+fm84 --version       # fm84 0.23.0
 ```
 
-A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
+A directory given takes the place of the tab that would have shown; the panel's other tabs stay. A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
 
 *Debug builds compile dependencies optimised too, so a plain `cargo run` still decodes images at full speed. The first debug build takes a little longer for it.*
 
@@ -360,5 +370,5 @@ Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.22.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.23.0 ▄▀▄▀▄▀</code>
 </p>

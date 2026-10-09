@@ -6,6 +6,18 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.23.0] - 2026-10-09
+
+### ✨ Added
+- 📑 **Tabs** - each panel keeps its own, in the row under its drives. Ctrl+T opens one beside the current tab in the same directory, Ctrl+W closes it (a panel keeps its last), Ctrl+PgUp and Ctrl+PgDn go round them, Alt+1 to Alt+8 go to that tab and Alt+9 to the last. Click a tab to show it, middle-click to close it. Each remembers its directory, cursor and selection, and with Remember directories on they all come back next time - a session from an earlier version still reads, as one tab a panel
+- 🎯 **Select by pattern** - + and - select and deselect by a pattern such as `*.jpg;*.png`, with `*`, `?` and `[a-z]` as in the shell and lower case matching either case. Patterns pick files; one ending in `/` picks directories. * inverts the selection of files and Alt+* of directories too. Once a quick search is under way, - types into it as before
+- ↔️ **Ctrl+Left and Ctrl+Right** open the directory under the cursor in the left or right panel, keeping the focus where it is; on a file, the directory it is in, on the file
+
+### 🛠️ Changed
+- 💿 **The drive strip scrolls when the drives do not all fit** - it was cut off at the edge of its half, leaving the drives past it out of reach of a click. It now shows as many as fit, with `<` and `>` at the ends while there are more that way, moved a page along by a click or the wheel, and follows the panel's drive and the one being chosen with Alt+F1 or Alt+F2
+
+---
+
 ## [0.22.0] - 2026-10-02
 
 ### ✨ Added
