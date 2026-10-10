@@ -293,6 +293,9 @@ pub struct AppState {
     /// F10 was pressed during a job. The job carries on; a second press is
     /// what leaves. Cleared when the job ends, so it only ever covers one.
     pub quit_armed: bool,
+    /// F10 was pressed over unsaved edits. The save prompt went up instead,
+    /// and once it is answered with Save or Discard, fm84 leaves.
+    pub quit_after_save_prompt: bool,
 }
 
 /// A copy or move running on a worker thread, and what it has told us so far.
@@ -796,6 +799,7 @@ impl AppState {
             image_cache: ImageCache::default(),
             cursor_detail: None,
             quit_armed: false,
+            quit_after_save_prompt: false,
             drive_strip_left: Strip::default(),
             drive_strip_right: Strip::default(),
             tabs_left: Tabs::new(vec![dir_root.clone()], 0),
@@ -1342,7 +1346,13 @@ impl AppState {
             return Ok(());
         }
 
-        let content = std::fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
+        // The binary check reads only the head of the file, so a byte that is
+        // not UTF-8 can still be waiting further in. Opened lossily, saving
+        // would write a replacement character over every one of them, so the
+        // file is refused - with a reason, rather than the decoder's own.
+        let content = String::from_utf8(std::fs::read(&file_path).map_err(|e| e.to_string())?).map_err(|_| {
+            format!("Cannot edit {}: it is not UTF-8 text. F3 shows it as it is.", file_path.display())
+        })?;
         let line_ending = detect_line_ending(&content);
         let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
         if content.ends_with('\n') {
@@ -2835,11 +2845,6 @@ impl AppState {
         self.preview = Some(PreviewState { path, label, lines, bytes });
     }
 
-    pub fn clear_all_selections(&mut self) {
-        self.selected_left.clear();
-        self.selected_right.clear();
-    }
-
     pub fn clear_active_selections(&mut self) {
         if self.is_left_active {
             self.selected_left.clear();
@@ -3151,6 +3156,29 @@ mod editor_tests {
         app_state.viewer_home();
         answer_prompt(&mut app_state, super::PromptKind::GoToLine, "50");
         assert_eq!(app_state.viewer_state.as_ref().unwrap().scroll_offset, end, "no further than the end allows");
+        std::fs::remove_file(path).unwrap();
+    }
+
+    /// A file that starts out as plain ASCII and has a byte that is not UTF-8
+    /// further in passes the check on its head. The viewer shows it anyway;
+    /// the editor, which would write replacement characters back, says why
+    /// it will not.
+    #[test]
+    fn a_stray_byte_past_the_head_still_views_and_is_refused_for_editing() {
+        let path = std::env::temp_dir().join(format!("fm84-latin1-late-{}.txt", std::process::id()));
+        let mut bytes = vec![b'a'; 600];
+        bytes.extend_from_slice(b"\ncaf\xe9\n");
+        std::fs::write(&path, bytes).unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+
+        app_state.open_viewer(path.clone()).unwrap();
+        let state = app_state.viewer_state.as_ref().unwrap();
+        assert_eq!(state.content_lines[1], "caf\u{fffd}");
+
+        let refused = app_state.open_editor(path.clone()).unwrap_err();
+        assert!(refused.contains("not UTF-8"), "{refused}");
+        assert!(app_state.editor_state.is_none());
         std::fs::remove_file(path).unwrap();
     }
 

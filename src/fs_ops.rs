@@ -1027,8 +1027,9 @@ fn copy_symlink(source: &Path, dest: &Path) -> Result<(), Error> {
     }
 }
 
-/// Copy a file's content, then its permissions - so a script or a program
-/// stays executable. Setting them is allowed to fail: on a filesystem with no
+/// Copy a file's content, then its times and permissions - so a script or a
+/// program stays executable, and a move across filesystems leaves the file
+/// dated as it was. Setting them is allowed to fail: on a filesystem with no
 /// Unix permissions (ext4 to exFAT, say) it would, with EPERM, and the copy
 /// itself is still good.
 ///
@@ -1050,51 +1051,80 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
     }
 
     let mut src_file = File::open(source)?;
-    // Only an overwrite, or a directory merged into another, finds something
-    // already here. That file is somebody's, so it is not touched until the
-    // copy has finished: the bytes go beside it and a rename puts them in
-    // place at the end. Writing straight over it would destroy it the moment
-    // the copy began, and a cancel or a full disk would leave neither the old
-    // file nor the new one.
+    // The bytes go to a temporary beside the destination, and a rename puts
+    // them in place once they are all there. Only an overwrite, or a directory
+    // merged into another, finds something already at the destination; that
+    // file is somebody's, and writing straight over it would destroy it the
+    // moment the copy began. Where nothing is there, a file written under its
+    // own name would still be half a file whenever the copy stopped short of
+    // the end - fm84 quit partway, or killed - and would pass for a whole one.
+    // A temporary that is left behind is plainly not one.
     let replacing = dest.symlink_metadata().is_ok();
-    let (target, mut dst_file) = if replacing {
-        temp_beside(dest)?
-    } else {
-        clear_link(dest)?;
-        (dest.to_path_buf(), File::create(dest)?)
+    let (temp, mut dst_file) = temp_beside(dest)?;
+    // What a failure or a cancel partway leaves: nothing, of ours.
+    let discard = |dst_file: File| {
+        drop(dst_file);
+        let _ = remove_file(&temp);
     };
     loop {
         let copied = match io::copy(&mut (&mut src_file).take(COPY_CHUNK), &mut dst_file) {
             Ok(copied) => copied,
             Err(e) => {
                 // A read or write that failed partway - a full disk, a device
-                // gone - leaves a truncated file that would pass for a finished
-                // copy, the same as a cancel does. It goes the same way. When
-                // replacing, that is the temporary, and what was there is
-                // untouched.
-                drop(dst_file);
-                let _ = remove_file(&target);
+                // gone. What was at the destination, if anything, is untouched.
+                discard(dst_file);
                 return Err(e);
             }
         };
         if copied == 0 {
-            let _ = fs::set_permissions(&target, metadata.permissions());
-            if replacing {
-                // The one moment the old file changes, and it changes all at
-                // once: anything reading it sees the old bytes or the new ones.
-                drop(dst_file);
-                clear_link(dest)?;
-                rename(&target, dest)?;
+            keep_times(&dst_file, &metadata);
+            drop(dst_file);
+            let _ = fs::set_permissions(&temp, metadata.permissions());
+            // The one moment the destination changes, and it changes all at
+            // once: anything reading it sees the old bytes or the new ones.
+            let placed = if replacing {
+                clear_link(dest).and_then(|()| rename(&temp, dest))
+            } else if path_exists(dest) {
+                // Taken while the copy ran, and nobody said it could be
+                // replaced. A rename would replace it without a word.
+                Err(Error::new(ErrorKind::AlreadyExists, format!("Destination already exists: {}", dest.display())))
+            } else {
+                rename(&temp, dest)
+            };
+            if let Err(e) = placed {
+                let _ = remove_file(&temp);
+                return Err(e);
             }
             return Ok(Transfer::Done);
         }
         if !report.step(Step::Advanced(copied)) {
-            // What is on disk is half a file that will never be finished.
-            // Left alone it would sit there looking like a complete copy.
-            drop(dst_file);
-            let _ = remove_file(&target);
+            // Half a file that will never be finished.
+            discard(dst_file);
             return Ok(Transfer::Cancelled);
         }
+    }
+}
+
+/// Give a copy the access and modification times of what it was copied
+/// from, as cp -p and file managers do. Allowed to fail, like the permissions:
+/// some filesystems keep no such times, or will not take them from us.
+fn keep_times(dest: &File, metadata: &fs::Metadata) {
+    let mut times = fs::FileTimes::new();
+    if let Ok(modified) = metadata.modified() {
+        times = times.set_modified(modified);
+    }
+    if let Ok(accessed) = metadata.accessed() {
+        times = times.set_accessed(accessed);
+    }
+    let _ = dest.set_times(times);
+}
+
+/// keep_times for a directory, once everything is inside it - each file
+/// copied in moves its modification time on. Opening a directory to set them
+/// fails on Windows, which only costs the times.
+fn keep_dir_times(dest: &Path, metadata: &fs::Metadata) {
+    if let Ok(dir) = File::open(dest) {
+        keep_times(&dir, metadata);
     }
 }
 
@@ -1137,6 +1167,7 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
     // first would refuse the files being copied into it. Allowed to fail, as
     // for files.
     if let Ok(metadata) = fs::metadata(source) {
+        keep_dir_times(dest, &metadata);
         let _ = fs::set_permissions(dest, metadata.permissions());
     }
     Ok(if skipped { Outcome::Skipped } else { Outcome::Done })
@@ -1228,6 +1259,7 @@ fn move_across(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome
         return Ok(Outcome::Skipped);
     }
 
+    keep_dir_times(dest, &metadata);
     let _ = fs::set_permissions(dest, metadata.permissions());
     let removed = attempt(source, report, |_| remove_dir(source))?;
     Ok(if removed.is_some() { Outcome::Done } else { Outcome::Skipped })
@@ -1351,12 +1383,16 @@ fn keep_owner(_file: &File, _metadata: &fs::Metadata) -> Result<(), Error> {
     Ok(())
 }
 
-/// A file to write into beside `dest`, for when something is already there.
+/// A file to write into beside `dest`, renamed over it once it is whole.
 /// Same directory, so the rename that finishes the copy is atomic and cannot
 /// half-replace anything; a temporary elsewhere would have to be copied back
 /// across, which is the thing being avoided.
+///
+/// Named after the file, shortened: the prefix and suffix would otherwise
+/// carry a name already near the filesystem's limit past it, and every copy
+/// goes through one of these now.
 fn temp_beside(dest: &Path) -> Result<(PathBuf, File), Error> {
-    let name = dest.file_name().unwrap_or_default().to_string_lossy().into_owned();
+    let name: String = dest.file_name().unwrap_or_default().to_string_lossy().chars().take(64).collect();
     for attempt in 0..1000u32 {
         let candidate = dest.with_file_name(format!(".{name}.fm84-{}-{attempt}", std::process::id()));
         match File::options().write(true).create_new(true).open(&candidate) {
@@ -1647,6 +1683,64 @@ mod transfer_tests {
         }
         // A fragment left behind would sit there looking like a finished copy.
         assert!(!dest.exists());
+        // Nor is the temporary it was written into.
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1, "a temporary was left behind");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Until the last byte is in, a new copy is not under its own name: fm84
+    /// quit or killed partway would otherwise leave half a file passing for
+    /// a whole one.
+    #[test]
+    fn a_copy_under_way_is_not_under_its_own_name() {
+        let dir = scratch("copy-temp");
+        let source = dir.join("big.bin");
+        let dest = dir.join("copy.bin");
+        fs::write(&source, vec![7u8; COPY_CHUNK as usize * 2]).unwrap();
+
+        let mut seen_early = None;
+        {
+            let mut report = |step: Step<'_>| {
+                if let Step::Advanced(_) = step {
+                    seen_early.get_or_insert(dest.exists());
+                }
+                true
+            };
+            assert_eq!(copy_path(source.clone(), dest.clone(), false, &mut report).unwrap(), Transfer::Done);
+        }
+        assert_eq!(seen_early, Some(false));
+        assert_eq!(fs::read(&dest).unwrap(), fs::read(&source).unwrap());
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 2, "a temporary was left behind");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A copy keeps the times of what it came from, files and directories
+    /// alike. A move across filesystems copies through the same code.
+    #[test]
+    fn a_copy_keeps_its_times() {
+        let dir = scratch("copy-times");
+        let source = dir.join("src");
+        fs::create_dir_all(source.join("sub")).unwrap();
+        fs::write(source.join("sub").join("old.txt"), "old").unwrap();
+        let then = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_000_000_000);
+        let times = fs::FileTimes::new().set_modified(then).set_accessed(then);
+        File::options().write(true).open(source.join("sub").join("old.txt")).unwrap().set_times(times).unwrap();
+        for directory in [source.join("sub"), source.clone()] {
+            if let Ok(handle) = File::open(&directory) {
+                let _ = handle.set_times(times);
+            }
+        }
+
+        let mut report = |_: Step<'_>| true;
+        let copied = dir.join("copied");
+        assert_eq!(copy_path(source.clone(), copied.clone(), true, &mut report).unwrap(), Transfer::Done);
+        let modified = |path: &Path| fs::metadata(path).unwrap().modified().unwrap();
+        assert_eq!(modified(&copied.join("sub").join("old.txt")), then);
+        // Directories only where the platform lets them be opened to set it.
+        if modified(&source.join("sub")) == then {
+            assert_eq!(modified(&copied.join("sub")), then);
+            assert_eq!(modified(&copied), then);
+        }
         fs::remove_dir_all(&dir).unwrap();
     }
 

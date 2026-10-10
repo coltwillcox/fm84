@@ -174,8 +174,15 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
         });
     }
 
-    // Load text file
-    let content = std::fs::read_to_string(path)?;
+    // Load text file. Only the head of it was checked, so a byte that is not
+    // UTF-8 further in - a Latin-1 'é' in a file that starts out as plain
+    // ASCII - can still turn up. Read strictly, that refused the whole file;
+    // it is shown with a replacement character in its place instead, and X
+    // still shows the bytes as they are.
+    let content = match String::from_utf8(std::fs::read(path)?) {
+        Ok(content) => content,
+        Err(e) => String::from_utf8_lossy(e.as_bytes()).into_owned(),
+    };
     let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
     if content.ends_with('\n') {
         lines.push(String::new());

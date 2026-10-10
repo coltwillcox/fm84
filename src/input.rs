@@ -122,11 +122,22 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(10) => app_state.quit_armed = true,
                         _ => {}
                     }
+                } else if app_state.is_error_displayed && !app_state.is_f11_displayed {
+                    // An error covers whatever is behind it - a panel, the
+                    // viewer, the editor with a save that failed. Esc or Enter
+                    // puts it away and nothing else gets past it: Space or a
+                    // letter would otherwise select or search in a panel that
+                    // cannot be seen. F11 answers for its own errors below.
+                    match key.code {
+                        KeyCode::Esc | KeyCode::Enter => app_state.reset_error(),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
+                        _ => {}
+                    }
                 } else if app_state.is_f2_displayed {
                     match key.code {
                         KeyCode::Esc => handle_esc(app_state),
                         KeyCode::F(2) => toggle_rename(app_state),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         KeyCode::Enter => handle_rename(app_state),
                         KeyCode::Char(to_insert) => app_state.rename_input.insert(to_insert),
                         KeyCode::Backspace => app_state.rename_input.backspace(),
@@ -141,7 +152,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     match key.code {
                         KeyCode::Esc => handle_esc(app_state),
                         KeyCode::F(1) => toggle_help(app_state),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         _ => {}
                     }
                 } else if app_state.drive_picker.is_some() {
@@ -152,20 +163,20 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                             app_state.move_drive_picker(true)
                         }
                         KeyCode::Left | KeyCode::Up => app_state.move_drive_picker(false),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         _ => {}
                     }
                 } else if app_state.is_f11_displayed {
                     if app_state.is_error_displayed {
                         // A failed save; the dialog stays open behind it.
-                        if key.code == KeyCode::Esc {
+                        if matches!(key.code, KeyCode::Esc | KeyCode::Enter) {
                             app_state.reset_error();
                         }
                     } else if app_state.options_editing {
                         match key.code {
                             KeyCode::Esc => app_state.options_cancel_edit(),
                             KeyCode::Enter => app_state.options_commit_edit(),
-                            KeyCode::F(10) => return Ok(false),
+                            KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                             KeyCode::Char(to_insert) => app_state.options_input.insert(to_insert),
                             KeyCode::Backspace => app_state.options_input.backspace(),
                             KeyCode::Delete => app_state.options_input.delete_forward(),
@@ -178,7 +189,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     } else {
                         match key.code {
                             KeyCode::Esc | KeyCode::F(11) => app_state.close_options(),
-                            KeyCode::F(10) => return Ok(false),
+                            KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                             KeyCode::Up => app_state.options_move(false),
                             KeyCode::Down => app_state.options_move(true),
                             KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Right => app_state.options_change(true),
@@ -190,14 +201,14 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     match key.code {
                         KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => answer_overwrite(app_state, true),
                         KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => answer_overwrite(app_state, false),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         _ => {}
                     }
                 } else if app_state.is_f8_displayed {
                     match key.code {
                         KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => handle_esc(app_state),
                         KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => handle_delete_confirm(app_state),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         _ => {}
                     }
                 } else if app_state.is_f7_displayed {
@@ -205,7 +216,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::Esc => handle_esc(app_state),
                         KeyCode::F(7) => toggle_create(app_state, true),
                         KeyCode::F(4) if key.modifiers.contains(KeyModifiers::SHIFT) => toggle_create(app_state, false),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         KeyCode::Enter => handle_create_confirm(app_state),
                         KeyCode::Char(to_insert) => app_state.create_input.insert(to_insert),
                         KeyCode::Backspace => app_state.create_input.backspace(),
@@ -222,7 +233,6 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     match key.code {
                         KeyCode::Esc => app_state.prompt = None,
                         KeyCode::Enter => app_state.confirm_prompt(),
-                        KeyCode::F(10) => return Ok(false),
                         KeyCode::Char(c) if *kind == PromptKind::GoToLine && !c.is_ascii_digit() => {}
                         KeyCode::Char(c) => input.insert(c),
                         KeyCode::Backspace => input.backspace(),
@@ -231,6 +241,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::Right => input.move_right(),
                         KeyCode::Home => input.move_home(),
                         KeyCode::End => input.move_end(),
+                        // Last, past every use of the input it borrows.
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         _ => {}
                     }
                 } else if app_state.is_f3_displayed {
@@ -247,7 +259,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         // one key either way on a numeric keypad or a main row.
                         KeyCode::Char('+') | KeyCode::Char('=') => app_state.viewer_zoom(true),
                         KeyCode::Char('-') | KeyCode::Char('_') => app_state.viewer_zoom(false),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         KeyCode::Down => app_state.viewer_scroll_down(),
                         KeyCode::Up => app_state.viewer_scroll_up(),
                         KeyCode::Left => app_state.viewer_scroll_left(),
@@ -277,17 +289,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     match key.code {
                         KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => app_state.reset_large_file(),
                         KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => app_state.confirm_large_file(),
-                        KeyCode::F(10) => return Ok(false),
-                        _ => {}
-                    }
-                } else if app_state.is_error_displayed && app_state.is_f4_displayed {
-                    // An error over the editor - a save that failed. Dismissing it
-                    // goes back to the edits, which are all still there; the keys
-                    // that would otherwise reach the editor or the save prompt
-                    // behind it do nothing while it covers them.
-                    match key.code {
-                        KeyCode::Esc | KeyCode::Enter => app_state.reset_error(),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         _ => {}
                     }
                 } else if app_state.is_editor_save_prompt {
@@ -296,20 +298,34 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                             // Save and close - unless the save fails, in which case
                             // closing would throw the edits away. The editor stays,
                             // with the error over it.
+                            // A quit that asked first goes ahead only once the
+                            // edits are safe.
                             app_state.is_editor_save_prompt = false;
                             match app_state.editor_save() {
-                                Ok(()) => app_state.close_editor(),
-                                Err(e) => app_state.display_error(e),
+                                Ok(()) => {
+                                    app_state.close_editor();
+                                    if app_state.quit_after_save_prompt {
+                                        return Ok(false);
+                                    }
+                                }
+                                Err(e) => {
+                                    app_state.quit_after_save_prompt = false;
+                                    app_state.display_error(e);
+                                }
                             }
                         }
                         KeyCode::Char('n') | KeyCode::Char('N') => {
-                            // Discard and close
+                            // Discard and close, and leave if that is what F10 asked.
                             app_state.is_editor_save_prompt = false;
                             app_state.close_editor();
+                            if app_state.quit_after_save_prompt {
+                                return Ok(false);
+                            }
                         }
                         KeyCode::Esc => {
-                            // Cancel, return to editor
+                            // Cancel, return to editor - and stay, if F10 asked.
                             app_state.is_editor_save_prompt = false;
+                            app_state.quit_after_save_prompt = false;
                         }
                         _ => {}
                     }
@@ -334,7 +350,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                                 app_state.display_error(e);
                             }
                         }
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         KeyCode::F(3) => app_state.find(!extend, false),
                         KeyCode::Up => { app_state.editor_prepare_move(extend); app_state.editor_cursor_up(); }
                         KeyCode::Down => { app_state.editor_prepare_move(extend); app_state.editor_cursor_down(); }
@@ -359,14 +375,14 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     match key.code {
                         KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => handle_esc(app_state),
                         KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => handle_copy_confirm(app_state),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         _ => {}
                     }
                 } else if app_state.is_f6_displayed {
                     match key.code {
                         KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => handle_esc(app_state),
                         KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => handle_move_confirm(app_state),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         _ => {}
                     }
                 } else {
@@ -397,7 +413,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         KeyCode::F(9) => open_terminal(app_state),
                         KeyCode::F(11) => toggle_options(app_state),
                         KeyCode::F(12) => toggle_preview(app_state),
-                        KeyCode::F(10) => return Ok(false),
+                        KeyCode::F(10) if request_quit(app_state) => return Ok(false),
                         KeyCode::Left if key.modifiers.contains(KeyModifiers::CONTROL) => handle_panel_operation(app_state, |state| state.open_in_panel(true)),
                         KeyCode::Right if key.modifiers.contains(KeyModifiers::CONTROL) => handle_panel_operation(app_state, |state| state.open_in_panel(false)),
                         KeyCode::Char(' ') => {
@@ -585,6 +601,20 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
         }
     }
     Ok(true)
+}
+
+/// F10: true to leave now. Unsaved edits in the editor are asked about
+/// first, whatever else is on screen - a find prompt or an error over the
+/// editor included - and the answer to that question finishes the quit.
+fn request_quit(app_state: &mut AppState) -> bool {
+    if !app_state.editor_is_modified() {
+        return true;
+    }
+    app_state.prompt = None;
+    app_state.reset_error();
+    app_state.is_editor_save_prompt = true;
+    app_state.quit_after_save_prompt = true;
+    false
 }
 
 fn toggle_help(app_state: &mut AppState) {
@@ -1301,9 +1331,6 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     app_state.last_click_time = Some(now);
     app_state.last_click_pos = (column, row);
 
-    // Clear all selections on mouse click
-    app_state.clear_all_selections();
-
     // Hit-test the panels the last frame actually drew, rather than deriving
     // their position from the layout constants a second time.
     let position = Position::new(column, row);
@@ -1423,5 +1450,33 @@ fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: 
             // the cursor away, since an anchor equal to the cursor selects nothing.
             state.selection_anchor = Some((target_line, char_col));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::request_quit;
+    use crate::app::AppState;
+
+    /// F10 leaves at once, unless the editor holds edits nobody has saved:
+    /// then the save prompt comes up first, over anything else in the way.
+    #[test]
+    fn quitting_asks_about_unsaved_edits_first() {
+        let path = std::env::temp_dir().join(format!("fm84-quit-{}.txt", std::process::id()));
+        std::fs::write(&path, "text").unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        assert!(request_quit(&mut app_state));
+
+        app_state.open_editor(path.clone()).unwrap();
+        assert!(request_quit(&mut app_state), "nothing to lose yet");
+
+        app_state.editor_insert_char('x');
+        app_state.open_prompt(crate::app::PromptKind::Find);
+        app_state.display_error("in the way".to_string());
+        assert!(!request_quit(&mut app_state));
+        assert!(app_state.is_editor_save_prompt && app_state.quit_after_save_prompt);
+        assert!(app_state.prompt.is_none() && !app_state.is_error_displayed);
+        std::fs::remove_file(path).unwrap();
     }
 }
