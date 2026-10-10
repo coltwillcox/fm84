@@ -913,12 +913,16 @@ fn parse_bool(value: &str) -> Option<bool> {
     }
 }
 
+/// Written the way the editor saves: beside the file and renamed over it.
+/// Written straight over, a crash or a full disk partway left it empty, and
+/// every option with it - and two fm84s quitting at once could each catch the
+/// other's half-written session.
 fn write_config_file(name: &str, contents: &str) -> io::Result<()> {
     let path = config_path(name).ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No config directory"))?;
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)?;
     }
-    fs::write(path, contents)
+    crate::fs_ops::save_file(&path, contents.as_bytes())
 }
 
 /// `%APPDATA%\fm84\<name>` on Windows, `$XDG_CONFIG_HOME/fm84/<name>` or

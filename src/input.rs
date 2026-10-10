@@ -40,7 +40,8 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         && !app_state.is_error_displayed
                         && app_state.prompt.is_none();
                     let in_viewer = app_state.is_f3_displayed && !app_state.is_error_displayed && app_state.prompt.is_none();
-                    let in_panel = !app_state.is_modal_open() && app_state.prompt.is_none();
+                    // Nor while a drive is being picked, which the keys answer.
+                    let in_panel = !app_state.is_modal_open() && app_state.prompt.is_none() && app_state.drive_picker.is_none();
                     // Alt+* inverts the directories as well as the files. Ctrl
                     // is an alias for the terminals that can report it; most
                     // send Ctrl+* as a bare * or not at all, while Alt arrives
@@ -520,7 +521,10 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                         app_state.close_tab(is_left, index);
                     }
                 }
-                MouseEventKind::Down(_btn) => {
+                // The left button only. The right one has nothing to offer
+                // yet, and taken for the left it moved the cursor out from
+                // under a click that was meant for something else.
+                MouseEventKind::Down(MouseButton::Left) => {
                     if app_state.is_f4_displayed {
                         handle_editor_click(app_state, mouse_event.column, mouse_event.row, false);
                     } else if app_state.is_f3_displayed {
@@ -535,7 +539,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
                     }
                 }
                 // Dragging extends whatever the press started.
-                MouseEventKind::Drag(_btn) => {
+                MouseEventKind::Drag(MouseButton::Left) => {
                     if app_state.is_f4_displayed {
                         handle_editor_click(app_state, mouse_event.column, mouse_event.row, true);
                     } else if app_state.is_f3_displayed {

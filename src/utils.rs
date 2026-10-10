@@ -50,6 +50,19 @@ pub fn format_modified(time: std::time::SystemTime, format: crate::options::Date
     }
 }
 
+/// A time to the second, for the detail lines under the panels, in the
+/// order F11's date format puts day, month and year. Relative has no exact
+/// form of its own, and the column already says how long ago; the detail
+/// gives the time itself, as the short form does.
+pub fn format_exact(time: std::time::SystemTime, format: crate::options::DateFormat) -> String {
+    use crate::options::DateFormat;
+    let local: chrono::DateTime<chrono::Local> = time.into();
+    match format {
+        DateFormat::Short | DateFormat::Relative => local.format("%d/%m/%y %H:%M:%S").to_string(),
+        DateFormat::Iso => local.format("%Y-%m-%d %H:%M:%S").to_string(),
+    }
+}
+
 /// A byte count with its thousands marked off, so a long figure can be read at
 /// a glance rather than counted.
 pub fn grouped(value: u64) -> String {
@@ -252,6 +265,18 @@ mod format_tests {
         let time = SystemTime::UNIX_EPOCH + Duration::from_secs(2_000_000_000);
         assert_eq!(format_modified(time, DateFormat::Short, time).len(), 14);
         assert_eq!(format_modified(time, DateFormat::Iso, time).len(), 16);
+    }
+
+    #[test]
+    fn the_exact_form_follows_the_chosen_order() {
+        let time = SystemTime::UNIX_EPOCH + Duration::from_secs(2_000_000_000);
+        let iso = super::format_exact(time, DateFormat::Iso);
+        assert_eq!(iso.len(), 19);
+        assert!(iso.starts_with("20") && iso.as_bytes()[4] == b'-', "{iso}");
+        let short = super::format_exact(time, DateFormat::Short);
+        assert_eq!(short.len(), 17);
+        assert_eq!(short.as_bytes()[2], b'/');
+        assert_eq!(super::format_exact(time, DateFormat::Relative), short);
     }
 }
 

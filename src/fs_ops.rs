@@ -703,9 +703,29 @@ fn remove_one(path: &Path, is_dir: bool, report: Report<'_>) -> Result<Outcome, 
     if !report.step(Step::Starting(path)) {
         return Ok(Outcome::Cancelled);
     }
-    let removed = attempt(path, report, |_| if is_dir { remove_dir(path) } else { remove_file(path) })?;
+    let removed = attempt(path, report, |_| if is_dir { remove_dir(path) } else { remove_entry(path) })?;
     report.step(Step::Advanced(1));
     Ok(if removed.is_some() { Outcome::Done } else { Outcome::Skipped })
+}
+
+/// Remove anything that is not a directory, links included. Windows keeps a
+/// link to a directory - a directory symlink or a junction - as a directory,
+/// which remove_file refuses; remove_dir takes the link away, and never what
+/// it points at.
+#[cfg(windows)]
+fn remove_entry(path: &Path) -> Result<(), Error> {
+    use std::os::windows::fs::FileTypeExt;
+    if path.symlink_metadata().is_ok_and(|metadata| metadata.file_type().is_symlink_dir()) {
+        remove_dir(path)
+    } else {
+        remove_file(path)
+    }
+}
+
+/// Elsewhere every link is a file to unlink, whatever it points at.
+#[cfg(not(windows))]
+fn remove_entry(path: &Path) -> Result<(), Error> {
+    remove_file(path)
 }
 
 fn delete_dir_recursive(path: &Path, report: Report<'_>) -> Result<Outcome, Error> {
@@ -1777,17 +1797,29 @@ mod transfer_tests {
     }
 
     /// The trash is found through XDG_DATA_HOME, so pointed at a scratch
-    /// directory the test trashes nothing of anyone's. One test, since that is
-    /// one variable for the whole process.
+    /// directory the test trashes nothing of anyone's. Set for a child run of
+    /// this same test rather than with set_var: the variable belongs to the
+    /// whole process, where every other test is running at the same time.
     #[cfg(target_os = "linux")]
     #[test]
     fn trashing_moves_it_away_and_what_will_not_go_can_be_deleted() {
-        let root = std::env::temp_dir().join(format!("fm84-trash-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&root);
+        const ROOT: &str = "FM84_TRASH_TEST_ROOT";
+        let Some(root) = std::env::var_os(ROOT).map(PathBuf::from) else {
+            let root = std::env::temp_dir().join(format!("fm84-trash-{}", std::process::id()));
+            let _ = fs::remove_dir_all(&root);
+            fs::create_dir_all(&root).unwrap();
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", "fs_ops::transfer_tests::trashing_moves_it_away_and_what_will_not_go_can_be_deleted", "--nocapture"])
+                .env(ROOT, &root)
+                .env("XDG_DATA_HOME", root.join("data"))
+                .output()
+                .unwrap();
+            let _ = fs::remove_dir_all(&root);
+            let said = String::from_utf8_lossy(&output.stdout);
+            assert!(output.status.success() && said.contains("1 passed"), "the child run failed:\n{said}");
+            return;
+        };
         let data = root.join("data");
-        fs::create_dir_all(&data).unwrap();
-        // SAFETY: nothing else in the tests reads XDG_DATA_HOME.
-        unsafe { std::env::set_var("XDG_DATA_HOME", &data) };
 
         // A file and a directory with something in it go, and are in the trash.
         let file = root.join("note.txt");
@@ -1804,10 +1836,10 @@ mod transfer_tests {
         assert!(data.join("Trash/info/note.txt.trashinfo").exists());
         assert!(answering.asked.is_empty());
 
-        // A trash that cannot be made - its parent is a file - takes nothing.
-        let blocked = root.join("blocked");
-        fs::write(&blocked, "").unwrap();
-        unsafe { std::env::set_var("XDG_DATA_HOME", &blocked) };
+        // A trash that cannot be made takes nothing. Its directory is a file
+        // now, where it was one to make before.
+        fs::remove_dir_all(&data).unwrap();
+        fs::write(&data, "").unwrap();
         let other = root.join("other");
         fs::create_dir_all(&other).unwrap();
         fs::write(other.join("inside.txt"), "").unwrap();
@@ -1820,9 +1852,6 @@ mod transfer_tests {
         let mut deleting = Answering::new(Reply::Delete);
         assert_eq!(trash_path(other.clone(), true, &mut deleting).unwrap(), Transfer::Done);
         assert!(!other.exists());
-
-        unsafe { std::env::remove_var("XDG_DATA_HOME") };
-        fs::remove_dir_all(&root).unwrap();
     }
 
     /// The delete inside a trash job counts nothing of its own: the item it

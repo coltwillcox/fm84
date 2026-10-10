@@ -17,14 +17,12 @@ pub const ICON_REMOVABLE: &str = "";
 pub const ICON_NETWORK: &str = "";
 pub const ICON_OPTICAL: &str = "";
 
-// A preview reloads every time the cursor moves, so it only ever reads the head
-// of a file - never the whole thing, and never with the large-file prompt.
-// Terminals commonly reject oversized OSC 52 payloads, and a megabyte of
-// base64 is not worth sending anyway; the internal clipboard still holds it.
 // Editing steps kept for undo. Each holds only the lines it replaced, so this
 // is bounded by what was edited rather than by the size of the file.
 pub const UNDO_LIMIT: usize = 200;
 
+// Terminals commonly reject oversized OSC 52 payloads, and a megabyte of
+// base64 is not worth sending anyway; the internal clipboard still holds it.
 pub const OSC52_MAX_BYTES: usize = 64 * 1024;
 
 // A hexdump -C line: offset, sixteen bytes, then the ASCII gutter.
@@ -92,6 +90,8 @@ pub const HEX_OFFSET_DIGITS: usize = 8;
 // the tallest pane at the widest row, and nothing there scrolls.
 pub const PREVIEW_HEX_BYTES: u64 = 4 * 1024;
 
+// A preview reloads every time the cursor moves, so it only ever reads the head
+// of a file - never the whole thing, and never with the large-file prompt.
 pub const PREVIEW_MAX_BYTES: u64 = 64 * 1024;
 pub const PREVIEW_MAX_LINES: usize = 500;
 

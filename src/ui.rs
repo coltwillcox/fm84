@@ -814,13 +814,11 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
                         let from = if index == first_line { first_col.min(to) } else { 0 };
                         spans = overlay_range(spans, from, to, style_selection());
                     }
-                    Line::from(spans)
+                    Line::from(skip_columns(spans, viewer_state.horizontal_offset))
                 })
                 .collect();
 
-            let content_para = Paragraph::new(content_lines)
-                .style(style_file())
-                .scroll((0, viewer_state.horizontal_offset as u16));
+            let content_para = Paragraph::new(content_lines).style(style_file());
             f.render_widget(content_para, content_area);
         }
 
@@ -906,6 +904,43 @@ fn overlay_range(spans: Vec<Span<'static>>, from: usize, to: usize, extra: Style
             }
         }
         column = span_end;
+    }
+    result
+}
+
+/// Drop the first `columns` display columns of a line, for horizontal
+/// scrolling. Paragraph::scroll would do it, but it takes a u16: on a
+/// minified file, whose lines run past 65,535 columns, the offset wrapped
+/// round and the view jumped back to the start. A wide character cut in two
+/// leaves a space where its second half was.
+fn skip_columns(spans: Vec<Span<'static>>, columns: usize) -> Vec<Span<'static>> {
+    if columns == 0 {
+        return spans;
+    }
+    let mut left = columns;
+    let mut result = Vec::with_capacity(spans.len());
+    for span in spans {
+        if left == 0 {
+            result.push(span);
+            continue;
+        }
+        let mut kept = String::new();
+        for character in span.content.chars() {
+            if left == 0 {
+                kept.push(character);
+                continue;
+            }
+            let width = UnicodeWidthChar::width(character).unwrap_or(0);
+            if width > left {
+                kept.extend(std::iter::repeat_n(' ', width - left));
+                left = 0;
+            } else {
+                left -= width;
+            }
+        }
+        if !kept.is_empty() {
+            result.push(Span::styled(kept, span.style));
+        }
     }
     result
 }
@@ -1029,11 +1064,10 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
                 spans = place_cursor(spans, visual_column(line, editor_state.cursor_col), cursor_style);
             }
 
-            content_lines.push(Line::from(spans));
+            content_lines.push(Line::from(skip_columns(spans, h_offset)));
         }
 
-        let content_para = Paragraph::new(content_lines)
-            .scroll((0, h_offset as u16));
+        let content_para = Paragraph::new(content_lines);
         f.render_widget(content_para, chunks[1]);
 
         (viewport_height, chunks[1])
@@ -1401,17 +1435,24 @@ fn popup_inner(area: Rect) -> Rect {
 /// that goes first is the last one, which is the one saying which key answers
 /// the prompt - so the dialog would ask a question with no way to see the
 /// answer. Here the blank rows go before any content does.
+///
+/// A line wider than the popup is wrapped at its spaces rather than cut off at
+/// the border - an error naming a long path, or the names of a dozen files
+/// being copied. When that comes to more rows than there is room for, the
+/// longest is shortened, so the line naming the keys still shows.
 fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>) {
     let inner = popup_inner(area);
     let room = inner.height as usize;
 
-    let airy = lines.len().saturating_mul(2).saturating_sub(1);
-    let mut body: Vec<Line> = Vec::with_capacity(airy.max(lines.len()));
-    for (index, line) in lines.into_iter().enumerate() {
+    let blocks = fit_rows(lines.into_iter().map(|line| wrap_line(line, inner.width as usize)).collect(), room);
+    let rows: usize = blocks.iter().map(Vec::len).sum();
+    let airy = (rows + blocks.len()).saturating_sub(1);
+    let mut body: Vec<Line> = Vec::with_capacity(airy.max(rows));
+    for (index, block) in blocks.into_iter().enumerate() {
         if index > 0 && airy <= room {
             body.push(Line::from(""));
         }
-        body.push(line);
+        body.extend(block);
     }
 
     // Sit the block in the middle of whatever is left over.
@@ -1419,6 +1460,78 @@ fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>)
     let mut out = vec![Line::from(""); padding];
     out.extend(body);
     f.render_widget(Paragraph::new(out).alignment(Alignment::Center), inner);
+}
+
+/// The rows a popup line takes at `width`. Only a line in one style is
+/// wrapped, which is every long one a popup has; a line built from several -
+/// a text field with its cursor - keeps to its own width already.
+fn wrap_line(line: Line<'static>, width: usize) -> Vec<Line<'static>> {
+    if width == 0 || line.width() <= width || line.spans.len() != 1 {
+        return vec![line];
+    }
+    let style = line.spans[0].style;
+    wrap_text(&line.spans[0].content, width)
+        .into_iter()
+        .map(|row| Line { spans: vec![Span::styled(row, style)], style: line.style, alignment: line.alignment })
+        .collect()
+}
+
+/// Text broken into rows of at most `width` columns, at the spaces between
+/// words, and inside a word only when it is wider than a row by itself.
+fn wrap_text(text: &str, width: usize) -> Vec<String> {
+    let mut rows = Vec::new();
+    let mut row = String::new();
+    let mut used = 0;
+    for word in text.split(' ') {
+        if used > 0 && used + 1 + display_width(word) > width {
+            rows.push(std::mem::take(&mut row));
+            used = 0;
+        }
+        if used > 0 {
+            row.push(' ');
+            used += 1;
+        }
+        for character in word.chars() {
+            let cell = UnicodeWidthChar::width(character).unwrap_or(0);
+            if used > 0 && used + cell > width {
+                rows.push(std::mem::take(&mut row));
+                used = 0;
+            }
+            row.push(character);
+            used += cell;
+        }
+    }
+    if !row.is_empty() || rows.is_empty() {
+        rows.push(row);
+    }
+    rows
+}
+
+/// Shorten the longest of a popup's lines until they all fit in `room` rows,
+/// marking where it was cut. The others - the question, the keys that answer
+/// it - are a row or two each, and are what has to be seen.
+fn fit_rows(mut blocks: Vec<Vec<Line<'static>>>, room: usize) -> Vec<Vec<Line<'static>>> {
+    let rows: usize = blocks.iter().map(Vec::len).sum();
+    if rows <= room {
+        return blocks;
+    }
+    let Some(longest) = (0..blocks.len()).max_by_key(|&index| blocks[index].len()) else {
+        return blocks;
+    };
+    let others = rows - blocks[longest].len();
+    let keep = room.saturating_sub(others).max(1);
+    let block = &mut blocks[longest];
+    if keep < block.len() {
+        block.truncate(keep);
+        if let Some(span) = block.last_mut().and_then(|line| line.spans.last_mut()) {
+            let mut text = span.content.to_string();
+            // Room for the mark: the row was full, or near it.
+            text.pop();
+            text.push('…');
+            span.content = text.into();
+        }
+    }
+    blocks
 }
 
 fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
@@ -2079,6 +2192,45 @@ mod tests {
         // Widest first, so a wider pane never shows less.
         assert!(seen.windows(2).all(|pair| pair[0].1 <= pair[1].1), "{seen:?}");
         assert_eq!(hex_preview(&bytes, 100, 4)[0].chars().count(), crate::viewer::hex_row_width(16, 4));
+    }
+
+    #[test]
+    fn scrolling_sideways_goes_past_what_a_u16_holds() {
+        let text = |spans: &[Span<'static>]| spans.iter().map(|span| span.content.as_ref()).collect::<String>();
+        let spans = vec![Span::raw("ab"), Span::styled("cdef", style_title())];
+        assert_eq!(text(&skip_columns(spans.clone(), 0)), "abcdef");
+        assert_eq!(text(&skip_columns(spans.clone(), 3)), "def");
+        // The style stays with what is left of its span.
+        assert_eq!(skip_columns(spans.clone(), 3)[0].style, style_title());
+        assert!(skip_columns(spans, 10).is_empty());
+
+        // Half of a wide character is a space.
+        assert_eq!(text(&skip_columns(vec![Span::raw("界x")], 1)), " x");
+
+        // A minified line, scrolled further than 65,535 columns.
+        let long = format!("{}END", "x".repeat(70_000));
+        assert_eq!(text(&skip_columns(vec![Span::raw(long)], 70_000)), "END");
+    }
+
+    #[test]
+    fn popup_text_wraps_at_spaces_and_keeps_the_last_line_in_view() {
+        assert_eq!(wrap_text("one two three", 7), ["one two", "three"]);
+        assert_eq!(wrap_text("short", 20), ["short"]);
+        // A word wider than a row is broken inside it.
+        assert_eq!(wrap_text("abcdefghij", 4), ["abcd", "efgh", "ij"]);
+        assert_eq!(wrap_text("", 4), [""]);
+        // Wide characters count as the two columns they take.
+        assert_eq!(wrap_text("界界界", 4), ["界界", "界"]);
+
+        // Twenty rows of names, a destination and the keys, in seven rows:
+        // the names give way, and the keys are still there.
+        let names = (0..60).map(|n| format!("file{n:02}")).collect::<Vec<_>>().join(", ");
+        let lines = vec![Line::from(names), Line::from("to: /tmp"), Line::from("Y / Enter - Yes")];
+        let blocks = fit_rows(lines.into_iter().map(|line| wrap_line(line, 30)).collect(), 7);
+        let rows: Vec<String> = blocks.iter().flatten().map(|line| line.to_string()).collect();
+        assert_eq!(rows.len(), 7);
+        assert!(rows[4].ends_with('…'), "{rows:?}");
+        assert_eq!(rows[5..], ["to: /tmp", "Y / Enter - Yes"]);
     }
 
     #[test]

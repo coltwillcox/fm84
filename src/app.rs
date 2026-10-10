@@ -728,7 +728,9 @@ impl AppState {
             is_error_displayed,
             is_f1_displayed: false,
             is_f11_displayed: false,
-            options: Options::load(),
+            // A test starts from the defaults, never from whatever the config
+            // of the machine running it says.
+            options: if cfg!(test) { Options::default() } else { Options::load() },
             options_cursor: 0,
             options_editing: false,
             options_input: TextInput::new(),
@@ -866,6 +868,9 @@ impl AppState {
     /// they list. A failed write still leaves the change in place for this run.
     fn options_changed(&mut self, row: OptionRow) {
         crate::display::apply(&self.options);
+        // The detail lines are held until the cursor moves, and the date
+        // format is one of the things they are written in.
+        self.cursor_detail = None;
         if row.affects_listing() {
             self.reload_panel(true, None);
             self.reload_panel(false, None);
@@ -2381,7 +2386,8 @@ impl AppState {
     /// Point a panel at `dir` and read it. The single way a panel's directory
     /// changes - navigation, and anything else that jumps somewhere. `select`
     /// names the entry to land on, otherwise the cursor goes to the top.
-    pub fn open_dir(&mut self, is_left: bool, dir: PathBuf, select: Option<&std::ffi::OsStr>) {
+    /// False when the directory was refused and the panel stayed put.
+    pub fn open_dir(&mut self, is_left: bool, dir: PathBuf, select: Option<&std::ffi::OsStr>) -> bool {
         // A directory that is there but cannot be read - /root, to anyone
         // else - is refused before the panel moves. Moved first, the panel
         // went on listing the directory it left under the name of one it
@@ -2392,7 +2398,7 @@ impl AppState {
             && let Err(e) = std::fs::read_dir(&dir)
         {
             self.display_error(format!("Cannot open {}: {}", dir.display(), e));
-            return;
+            return false;
         }
         if is_left {
             self.dir_left = dir;
@@ -2406,6 +2412,7 @@ impl AppState {
         self.search_clear();
         // Handles a vanished target too, by climbing to the nearest parent.
         self.reload_panel(is_left, select);
+        true
     }
 
     /// Ctrl+Left and Ctrl+Right, as in Total Commander: the arrow names the
@@ -2621,31 +2628,44 @@ impl AppState {
 
     /// Ctrl+W, or a middle click: close a tab. The last one a panel has stays,
     /// since a panel has to show something. Closing the one shown moves to the
-    /// one after it, or before it at the end, as a browser does.
+    /// one after it, or before it at the end, as a browser does - unless that
+    /// one's directory cannot be read, when the close is refused and the tab
+    /// stays, as it was.
     pub fn close_tab(&mut self, is_left: bool, index: usize) {
         let tabs = self.tabs_mut(is_left);
         if tabs.list.len() <= 1 || index >= tabs.list.len() {
             return;
         }
-        tabs.list.remove(index);
+        let closed = tabs.list.remove(index);
         if index == tabs.active {
             tabs.active = index.min(tabs.list.len() - 1);
-            self.show_tab(is_left);
+            if !self.show_tab(is_left) {
+                let tabs = self.tabs_mut(is_left);
+                tabs.list.insert(index, closed);
+                tabs.active = index;
+            }
         } else if index < tabs.active {
             tabs.active -= 1;
         }
     }
 
-    /// Show another of a panel's tabs, leaving this one as it is to come back to.
+    /// Show another of a panel's tabs, leaving this one as it is to come back
+    /// to. One whose directory cannot be read is refused, and this one stays
+    /// active: moved there regardless, the panel went on showing the directory
+    /// it was in under the other tab, which took that directory over for good
+    /// as soon as it was left.
     pub fn select_tab(&mut self, is_left: bool, index: usize) {
         let here = self.panel_as_tab(is_left);
         let tabs = self.tabs_mut(is_left);
         if index >= tabs.list.len() || index == tabs.active {
             return;
         }
-        tabs.list[tabs.active] = here;
+        let previous = tabs.active;
+        tabs.list[previous] = here;
         tabs.active = index;
-        self.show_tab(is_left);
+        if !self.show_tab(is_left) {
+            self.tabs_mut(is_left).active = previous;
+        }
     }
 
     /// Ctrl+PageDown and Ctrl+PageUp: the next tab in the active panel, or the
@@ -2659,12 +2679,16 @@ impl AppState {
     }
 
     /// Point the panel at the tab now active. A directory that cannot be read
-    /// is refused as anywhere else and the panel stays where it was, so the
-    /// selection only comes back when the panel did get there.
-    fn show_tab(&mut self, is_left: bool) {
+    /// is refused as anywhere else, leaving the panel - selection and all -
+    /// where it was, and false for the caller to put the tabs back. A
+    /// directory gone altogether is climbed out of, as anywhere else, and its
+    /// selection goes with it.
+    fn show_tab(&mut self, is_left: bool) -> bool {
         let tabs = self.tabs_mut(is_left);
         let tab = tabs.list[tabs.active].clone();
-        self.open_dir(is_left, tab.dir.clone(), tab.cursor.as_deref());
+        if !self.open_dir(is_left, tab.dir.clone(), tab.cursor.as_deref()) {
+            return false;
+        }
         let (dir, children, selected) = if is_left {
             (&self.dir_left, &self.children_left, &mut self.selected_left)
         } else {
@@ -2676,6 +2700,7 @@ impl AppState {
         } else {
             selected.clear();
         }
+        true
     }
 
     /// The mount a panel is sitting on: the longest one its directory is under.
@@ -2797,10 +2822,7 @@ impl AppState {
             modified: described
                 .as_ref()
                 .and_then(|described| described.modified)
-                .map(|at| {
-                    let at: chrono::DateTime<chrono::Local> = at.into();
-                    at.format("%d/%m/%y %H:%M:%S").to_string()
-                })
+                .map(|at| crate::utils::format_exact(at, self.options.date_format))
                 .unwrap_or_default(),
             owner: described.as_ref().map(|described| described.owner.clone()).unwrap_or_default(),
             attributes: described.as_ref().map(|described| described.attributes.clone()).unwrap_or_default(),
@@ -3695,6 +3717,53 @@ mod tests {
         // The other panel's tabs are its own.
         assert_eq!(app_state.tabs_right.list.len(), 1);
 
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A tab whose directory has gone unreadable is refused: the panel, its
+    /// tabs and its selection stay as they were, rather than the panel staying
+    /// put under the other tab's name and taking that tab over.
+    #[cfg(unix)]
+    #[test]
+    fn a_tab_that_cannot_be_read_is_refused_and_kept() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("fm84-tab-locked-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let locked = dir.join("locked");
+        std::fs::create_dir_all(&locked).unwrap();
+        std::fs::write(dir.join("here.txt"), "").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), None);
+        app_state.new_tab();
+        app_state.open_dir(true, locked.clone(), None);
+        app_state.select_tab(true, 0);
+        app_state.selected_left.insert("here.txt".into());
+
+        std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
+        // Root reads anything, so there is nothing to refuse.
+        if std::fs::read_dir(&locked).is_ok() {
+            std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+            return std::fs::remove_dir_all(&dir).unwrap();
+        }
+
+        app_state.select_tab(true, 1);
+        assert!(app_state.is_error_displayed);
+        assert_eq!(app_state.tabs_left.active, 0);
+        assert_eq!(app_state.dir_left, dir);
+        assert_eq!(app_state.selected_left.len(), 1);
+        assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
+
+        // Closing the tab shown would move to the locked one, so it stays too.
+        app_state.reset_error();
+        app_state.close_tab(true, 0);
+        assert!(app_state.is_error_displayed);
+        assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
+        assert_eq!(app_state.selected_left.len(), 1);
+
+        std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
