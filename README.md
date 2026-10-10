@@ -326,7 +326,7 @@ tar -xzf fm84-v*.tar.gz
 
 ## 📦 Dependencies
 
-- 🦀 **Rust** (2024 edition)
+- 🦀 **Rust** 1.88 or newer (2024 edition)
 - 🖥️ **ratatui** - TUI framework
 - ⌨️ **crossterm** - Terminal magic
 - 🎨 **syntect** - Syntax highlighting

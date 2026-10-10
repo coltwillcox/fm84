@@ -2,7 +2,18 @@
 name = "fm84"
 version = "0.24.0"
 edition = "2024"
+# Let chains in `if` and `while`, which the code leans on throughout, are
+# stable from 1.88.
+rust-version = "1.88"
 license = "MIT"
+description = "A synthwave dual-pane TUI file manager"
+repository = "https://github.com/coltwillcox/fm84"
+readme = "README.md"
+keywords = ["file-manager", "tui", "terminal", "dual-pane", "commander"]
+categories = ["command-line-utilities", "filesystem"]
+# The screenshots are for the README on GitHub, which links them from there;
+# the published crate has no use for them.
+exclude = ["images/", ".github/"]
 
 [dependencies]
 chrono = "0.4.40"
@@ -22,3 +33,12 @@ libc = "0.2"
 # own code stays quick to rebuild and fully debuggable.
 [profile.dev.package."*"]
 opt-level = 3
+
+# Smaller and a little faster release binaries, at the cost of a slower
+# release build. Panics still unwind: a worker thread that panics is noticed
+# by the UI through its closed channel, which abort would turn into the whole
+# program going down.
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
