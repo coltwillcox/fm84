@@ -145,7 +145,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     if let Some(right) = right {
         app_state.dir_right = right;
     }
-    app_state.is_f12_displayed = app_state.options.preview_on_start;
+    app_state.show_preview = app_state.options.preview_on_start;
 
     app_state.mounts = fs_ops::list_mounts();
     app_state.reload_panel(true, None);

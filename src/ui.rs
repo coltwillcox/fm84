@@ -1,4 +1,4 @@
-use crate::app::{AppState, PromptKind, TransferKind};
+use crate::app::{AppState, Dialog, PromptKind, Screen, TextInput, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
 use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options};
@@ -140,42 +140,39 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
 
         render_top_panel(f, chunks_main[0], app_state);
         render_path_bar(f, chunks_main[1], &app_state.dir_left, &app_state.dir_right, area.width, app_state.is_left_active);
-        if app_state.is_f3_displayed {
-            let (height, width, content_area) = render_viewer(f, chunks_main[2], app_state);
-            app_state.viewer_viewport_height = height;
-            app_state.viewer_viewport_width = width;
-            app_state.viewer_content_area = content_area;
-        } else if app_state.is_f4_displayed {
-            app_state.editor_viewport_height = render_editor(f, chunks_main[2], app_state);
-        } else {
-            app_state.page_size = render_file_tables(f, chunks_main[2], app_state);
+        match app_state.screen {
+            Screen::Viewer(_) => {
+                let (height, width, content_area) = render_viewer(f, chunks_main[2], app_state);
+                app_state.viewer_viewport_height = height;
+                app_state.viewer_viewport_width = width;
+                app_state.viewer_content_area = content_area;
+            }
+            Screen::Editor(_) => app_state.editor_viewport_height = render_editor(f, chunks_main[2], app_state),
+            Screen::Panels => app_state.page_size = render_file_tables(f, chunks_main[2], app_state),
         }
         render_bottom_panel(f, chunks_main[3], app_state);
         render_fkey_bar(f, chunks_main[4]);
         render_detail(f, chunks_main[4].inner(Margin { vertical: 0, horizontal: 2 }), app_state);
 
+        // The rename field, the prompt and the drive picker are drawn where
+        // they sit, in the panel, the status bar and the drive strip.
+        match &app_state.dialog {
+            Some(Dialog::Help) => render_help_popup(f, area),
+            Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
+            Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
+            Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),
+            Some(Dialog::Transfer { items, is_copy }) => render_copy_move_popup(f, area, items, *is_copy),
+            Some(Dialog::Overwrite(prompt)) => render_overwrite_popup(f, area, prompt),
+            Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
+            Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
+            Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. }) | None => {}
+        }
+        // Over everything: a job, which holds the keys while it runs, or an
+        // error, which holds them until it is put away.
         if app_state.job.is_some() {
             render_transfer_popup(f, area, app_state);
-        } else if app_state.is_error_displayed {
-            render_error_popup(f, area, app_state);
-        } else if app_state.large_file.is_some() {
-            render_large_file_popup(f, area, app_state);
-        } else if app_state.is_editor_save_prompt {
-            render_editor_save_popup(f, area);
-        } else if app_state.is_f1_displayed {
-            render_help_popup(f, area);
-        } else if app_state.is_f11_displayed {
-            render_options_popup(f, area, app_state);
-        } else if app_state.is_f5_displayed {
-            render_copy_move_popup(f, area, app_state, true);
-        } else if app_state.is_f6_displayed {
-            render_copy_move_popup(f, area, app_state, false);
-        } else if app_state.is_f7_displayed {
-            render_create_popup(f, area, app_state);
-        } else if app_state.is_f8_displayed {
-            render_delete_popup(f, area, app_state);
-        } else if let Some(prompt) = &app_state.overwrite_prompt {
-            render_overwrite_popup(f, area, prompt);
+        } else if let Some(message) = &app_state.error {
+            render_error_popup(f, area, message);
         }
     });
 }
@@ -309,8 +306,8 @@ fn lay_strip(strip: &mut Strip, area: Rect, items: Vec<Span<'static>>, focus: Op
 /// and the panel's own drive otherwise.
 fn drive_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> Line<'static> {
     let current = app_state.current_mount(is_left);
-    let picking = match app_state.drive_picker {
-        Some((side, index)) if side == is_left => Some(index),
+    let picking = match app_state.dialog {
+        Some(Dialog::DrivePicker { is_left: side, index }) if side == is_left => Some(index),
         _ => None,
     };
 
@@ -468,11 +465,11 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
         widths.push(Constraint::Length(column.width(&app_state.options)));
     }
 
-    let is_f2_displayed = app_state.is_f2_displayed;
+    let renaming = matches!(app_state.dialog, Some(Dialog::Rename(_)));
     let table_style = |active: bool| {
         Style::default()
             .bg(if active {
-                if is_f2_displayed { palette().rename_background } else { palette().selected_background }
+                if renaming { palette().rename_background } else { palette().selected_background }
             } else {
                 palette().selected_background_inactive
             })
@@ -564,7 +561,11 @@ fn build_viewport_rows(
     };
     let end = (start + viewport_height).min(total);
 
-    let is_renaming_current_side = app_state.is_f2_displayed && (app_state.is_left_active == is_left);
+    let rename_input = match &app_state.dialog {
+        Some(Dialog::Rename(input)) if app_state.is_left_active == is_left => Some(input),
+        _ => None,
+    };
+    let is_renaming_current_side = rename_input.is_some();
     let border_cell = Cell::from(Span::styled("│", style_border()));
 
     let mut rows = Vec::with_capacity(end - start);
@@ -606,7 +607,9 @@ fn build_viewport_rows(
             // The brackets around a directory sit inside the same column.
             let field = name_width as usize - (dir_prefix.len() + dir_suffix.len()).min(name_width as usize);
             let mut spans = vec![Span::styled(dir_prefix, bracket_style)];
-            spans.extend(app_state.rename_input.cursor_spans_within(field, text_style, cursor_style));
+            if let Some(input) = rename_input {
+                spans.extend(input.cursor_spans_within(field, text_style, cursor_style));
+            }
             spans.push(Span::styled(dir_suffix, bracket_style));
             (Cell::from(Line::from(spans)), String::new())
         } else {
@@ -724,7 +727,7 @@ fn make_header_row(columns: &[Column]) -> Row<'static> {
 }
 
 fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect) {
-    if let Some(viewer_state) = &app_state.viewer_state {
+    if let Some(viewer_state) = app_state.viewer() {
         let filename = shown_name(&viewer_state.file_path);
         let prefix = if viewer_state.from_edit { "Edit" } else { "View" };
         let title = format!(" {}: {} ", prefix, filename);
@@ -960,7 +963,7 @@ fn place_cursor(mut spans: Vec<Span<'static>>, column: usize, style: Style) -> V
 
 fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> usize {
     let line_numbers = app_state.options.line_numbers;
-    let (viewport_height, content_area) = if let Some(editor_state) = &mut app_state.editor_state {
+    let (viewport_height, content_area) = if let Screen::Editor(editor_state) = &mut app_state.screen {
         let filename = shown_name(&editor_state.file_path);
         let modified = if editor_state.modified { " [Modified]" } else { "" };
         let title = format!(" Edit: {}{} ", filename, modified);
@@ -1165,7 +1168,7 @@ fn disk_readout(usage: Option<(u64, u64)>, available: usize) -> Option<String> {
 fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
     let status_style = style_title().bg(palette().selected_background);
 
-    if let Some((kind, input)) = &app_state.prompt {
+    if let Some(Dialog::Prompt(kind, input)) = &app_state.dialog {
         let label = match kind {
             PromptKind::Find => " Find: ",
             PromptKind::GoToLine => " Go to line: ",
@@ -1175,16 +1178,15 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         render_prompt_bar(f, area, label, input, status_style);
         return;
     }
-    if (app_state.is_f3_displayed || app_state.is_f4_displayed)
+    if !matches!(app_state.screen, Screen::Panels)
         && let Some(note) = &app_state.find_note
     {
         render_status_bar(f, area, format!(" {} ", printable_name(note)), status_style);
         return;
     }
 
-    if app_state.is_f4_displayed {
-        // Show editor status
-        if let Some(editor_state) = &app_state.editor_state {
+    if let Some(editor_state) = app_state.editor() {
+        {
             let filename = shown_name(&editor_state.file_path);
             let modified = if editor_state.modified { " [Modified]" } else { "" };
             let name_seg = format!("{}{}", filename, modified);
@@ -1192,9 +1194,8 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             let lines_seg = format!("{} lines", editor_state.lines.len());
             render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, "F2/Ctrl+S Save", "Ctrl+F Find", "Ctrl+Z/Y Undo", "Esc Exit"]);
         }
-    } else if app_state.is_f3_displayed {
-        // Show viewer status
-        if let Some(viewer_state) = &app_state.viewer_state {
+    } else if let Some(viewer_state) = app_state.viewer() {
+        {
             let filename = shown_name(&viewer_state.file_path);
             let line_seg = format!("Line {}/{}", viewer_state.scroll_offset + 1, viewer_state.total_lines);
             let size_seg = format_size(viewer_state.file_size);
@@ -1534,7 +1535,7 @@ fn fit_rows(mut blocks: Vec<Vec<Line<'static>>>, room: usize) -> Vec<Vec<Line<'s
     blocks
 }
 
-fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
+fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message: &str) {
     let popup_area = centered_rect(60, 20, area);
     let popup_block = Block::default()
         .title(Line::from(Span::styled(" Error ", style_title())).centered())
@@ -1544,7 +1545,7 @@ fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut Ap
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    popup_body(f, popup_area, vec![Line::from(Span::styled(printable_name(&app_state.error_message), style_title()))]);
+    popup_body(f, popup_area, vec![Line::from(Span::styled(printable_name(message), style_title()))]);
 }
 
 fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
@@ -1603,7 +1604,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     f.render_widget(help_para, inner);
 }
 
-fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, editing: Option<&TextInput>) {
     let inner_width = 60.min(area.width as usize).saturating_sub(4);
     let cursor_style = Style::new().fg(palette().selected_foreground).bg(palette().selected_background).add_modifier(Modifier::BOLD);
 
@@ -1621,7 +1622,7 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppS
         if index == app_state.options_cursor {
             cursor_line = list.len();
         }
-        list.push(option_line(app_state, row, index == app_state.options_cursor, inner_width, cursor_style));
+        list.push(option_line(app_state, row, index == app_state.options_cursor, inner_width, cursor_style, editing));
     }
 
     // A border row each side, a blank row above and below the list, and two
@@ -1650,7 +1651,7 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppS
     lines.push(Line::from(""));
     lines.extend(list.into_iter().skip(first).take(room));
 
-    let hint = if !app_state.options_editing {
+    let hint = if editing.is_none() {
         "↑↓ - Move    Enter/←→ - Change    Esc - Close"
     } else if OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::Editor {
         "Enter - Save    Esc - Cancel    {} - file"
@@ -1665,10 +1666,10 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppS
 
 /// One row of the options list, padded out to the full width so the cursor
 /// reads as a bar, as it does in the panels.
-fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: bool, row_width: usize, cursor_style: Style) -> Line<'static> {
+fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: bool, row_width: usize, cursor_style: Style, editing: Option<&TextInput>) -> Line<'static> {
     let label = format!("   {}", row.label());
-    if is_cursor && app_state.options_editing {
-        let typed = app_state.options_input.cursor_spans(cursor_style, cursor_style.add_modifier(Modifier::REVERSED));
+    if is_cursor && let Some(input) = editing {
+        let typed = input.cursor_spans(cursor_style, cursor_style.add_modifier(Modifier::REVERSED));
         let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
         let gap = row_width.saturating_sub(display_width(&label) + typed_width + 1);
         let mut spans = vec![Span::styled(label, cursor_style), Span::styled(" ".repeat(gap), cursor_style)];
@@ -1698,10 +1699,10 @@ fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: 
     }
 }
 
-fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir: bool, input: &TextInput) {
     let popup_area = centered_rect(60, 20, area);
     let popup_block = Block::default()
-        .title(Line::from(Span::styled(if app_state.create_is_dir { " Create Directory " } else { " Create File " }, style_title())).centered())
+        .title(Line::from(Span::styled(if is_dir { " Create Directory " } else { " Create File " }, style_title())).centered())
         .borders(Borders::ALL)
         .style(style_border());
 
@@ -1713,7 +1714,7 @@ fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     // Padded out to the full width so the highlight reads as an input field.
     // Paragraph styles the spans rather than the row, so a bare line would
     // colour only the characters typed so far.
-    let typed = app_state.create_input.cursor_spans(style_title(), cursor_style);
+    let typed = input.cursor_spans(style_title(), cursor_style);
     let width = popup_inner(popup_area).width as usize;
     let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
     let left = width.saturating_sub(typed_width) / 2;
@@ -1728,15 +1729,15 @@ fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     );
 }
 
-fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
-    let count = app_state.delete_items.len();
+fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, bool)], to_trash: bool) {
+    let count = items.len();
     let popup_area = centered_rect(60, 30, area);
 
     // Which kind of delete it is, said plainly: one can be undone and the
     // other cannot.
-    let verb = if app_state.delete_to_trash { "Move to trash" } else { "Delete" };
+    let verb = if to_trash { "Move to trash" } else { "Delete" };
     let title = if count == 1 {
-        let item_type = if app_state.delete_items[0].1 { "directory" } else { "file" };
+        let item_type = if items[0].1 { "directory" } else { "file" };
         format!(" {verb}: {item_type} ")
     } else {
         format!(" {verb}: {count} items ")
@@ -1751,16 +1752,16 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     f.render_widget(popup_block, popup_area);
 
     let mut lines = Vec::new();
-    let question = if app_state.delete_to_trash { "Move {} to the trash?" } else { "Delete {} permanently?" };
+    let question = if to_trash { "Move {} to the trash?" } else { "Delete {} permanently?" };
     if count == 1 {
-        let name = format!("\"{}\"", shown_name(&app_state.delete_items[0].0));
+        let name = format!("\"{}\"", shown_name(&items[0].0));
         lines.push(Line::from(Span::styled(question.replace("{}", &name), style_title())));
     } else {
-        let names: Vec<String> = app_state.delete_items.iter().map(|(path, _)| shown_name(path)).collect();
+        let names: Vec<String> = items.iter().map(|(path, _)| shown_name(path)).collect();
         lines.push(Line::from(Span::styled(question.replace("{}", &format!("{count} items")), style_title())));
         lines.push(Line::from(Span::styled(names.join(", "), style_file())));
     }
-    if !app_state.delete_to_trash {
+    if !to_trash {
         lines.push(Line::from(Span::styled("This cannot be undone", style_file())));
     }
     lines.push(Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", style_columns())));
@@ -1934,13 +1935,9 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
 }
 
 /// Unified copy/move popup. `is_copy` = true for F5 copy, false for F6 move.
-fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, is_copy: bool) {
+fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, PathBuf, bool)], is_copy: bool) {
     let popup_area = centered_rect(70, 35, area);
-    let (items, verb) = if is_copy {
-        (&app_state.copy_items, "Copy")
-    } else {
-        (&app_state.move_items, "Move")
-    };
+    let verb = if is_copy { "Copy" } else { "Move" };
     let count = items.len();
 
     let title = if count == 1 {
@@ -1980,10 +1977,7 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
     );
 }
 
-fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
-    let Some(large) = &app_state.large_file else {
-        return;
-    };
+fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, large: &crate::app::LargeFile) {
     let name = shown_name(&large.path);
     let verb = if large.is_edit { "Edit" } else { "View" };
 
@@ -2132,7 +2126,7 @@ mod tests {
 
         let mut app_state = AppState::new();
         app_state.options = Options::default();
-        app_state.is_f12_displayed = true;
+        app_state.show_preview = true;
         app_state.open_dir(true, dir.clone(), Some(nasty.as_ref()));
         app_state.refresh_cursor_detail();
         app_state.refresh_preview();
@@ -2153,18 +2147,16 @@ mod tests {
 
         clean(&mut app_state, "the panel");
 
-        app_state.is_f8_displayed = true;
-        app_state.delete_items = vec![(dir.join(nasty), false)];
+        app_state.dialog = Some(Dialog::Delete { items: vec![(dir.join(nasty), false)], to_trash: true });
         clean(&mut app_state, "the delete popup");
-        app_state.is_f8_displayed = false;
 
-        app_state.is_f2_displayed = true;
-        app_state.rename_input.set(nasty.to_string());
+        let mut input = TextInput::new();
+        input.set(nasty.to_string());
+        app_state.dialog = Some(Dialog::Rename(input));
         clean(&mut app_state, "the rename field");
-        app_state.is_f2_displayed = false;
+        app_state.dialog = None;
 
-        app_state.is_error_displayed = true;
-        app_state.error_message = format!("No such file or directory: {nasty}");
+        app_state.error = Some(format!("No such file or directory: {nasty}"));
         clean(&mut app_state, "the error popup");
 
         std::fs::remove_dir_all(&dir).unwrap();
@@ -2267,7 +2259,7 @@ mod tests {
         app_state.editor_select_all();
         app_state.editor_backspace();
         render_ui(&mut terminal, &mut app_state);
-        let state = app_state.editor_state.as_ref().unwrap();
+        let state = app_state.editor().unwrap();
         assert_eq!(state.lines, [""]);
         assert_eq!(state.scroll_offset, 0);
         std::fs::remove_file(path).unwrap();
@@ -2280,7 +2272,7 @@ mod tests {
         let pasted: String = (0..200).map(|n| format!("pasted {n}\n")).collect();
         app_state.editor_insert_text(&pasted);
         render_ui(&mut terminal, &mut app_state);
-        let state = app_state.editor_state.as_ref().unwrap();
+        let state = app_state.editor().unwrap();
         let height = app_state.editor_viewport_height;
         assert!(state.cursor_line >= state.scroll_offset && state.cursor_line < state.scroll_offset + height);
         std::fs::remove_file(path).unwrap();

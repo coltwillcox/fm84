@@ -29,11 +29,6 @@ impl TextInput {
         Self { text: String::new(), cursor: 0 }
     }
 
-    pub fn clear(&mut self) {
-        self.text.clear();
-        self.cursor = 0;
-    }
-
     pub fn set(&mut self, value: String) {
         self.cursor = value.chars().count();
         self.text = value;
@@ -175,32 +170,76 @@ pub enum PromptKind {
     Deselect,
 }
 
+/// What fills the space between the top bar and the bottom one: the two
+/// panels, or a file open in the viewer or the editor. One at a time, by
+/// construction - the file being looked at lives here and nowhere else.
+pub enum Screen {
+    Panels,
+    Viewer(ViewerState),
+    Editor(EditorState),
+}
+
+/// The one dialog open over the screen, if any, carrying what it is asking
+/// about. Only one can be open at a time, and each answers its own keys, so
+/// nothing behind it can act on a key meant for it.
+pub enum Dialog {
+    /// F1.
+    Help,
+    /// F11. `editing` holds a text option while it is being typed into.
+    Options { editing: Option<TextInput> },
+    /// F2, typed into in place of the name in the panel.
+    Rename(TextInput),
+    /// F7 makes a directory, Shift+F4 an empty file.
+    Create { is_dir: bool, input: TextInput },
+    /// F8: what to delete, as paths - the name alone could not be joined
+    /// back to the file it came from when it is not valid UTF-8 - and whether
+    /// it goes to the trash or for good.
+    Delete { items: Vec<(PathBuf, bool)>, to_trash: bool },
+    /// F5 or F6, waiting to be confirmed.
+    Transfer { items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool },
+    /// A copy or move held back because some of its names are taken.
+    Overwrite(OverwritePrompt),
+    /// A file big enough to be worth asking about before it is opened.
+    LargeFile(LargeFile),
+    /// Unsaved edits, on the way out of the editor. `then_quit` when it was
+    /// F10 that asked, so that answering Save or Discard also leaves.
+    SaveChanges { then_quit: bool },
+    /// Alt+F1 or Alt+F2: which panel is choosing, and the mount highlighted.
+    DrivePicker { is_left: bool, index: usize },
+    /// The line at the foot of the screen, asking for something to find, a
+    /// line to go to or a pattern to select by.
+    Prompt(PromptKind, TextInput),
+}
+
+impl Dialog {
+    /// True for the dialogs drawn as a popup over the screen, which nothing
+    /// behind may answer for - not even the mouse. The rename field sits in
+    /// the panel, where a click cancels it; the prompt at the foot and the
+    /// drive strip leave the panels to be clicked.
+    fn is_popup(&self) -> bool {
+        !matches!(self, Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. })
+    }
+}
+
 pub struct AppState {
-    pub is_error_displayed: bool,
-    pub is_f1_displayed: bool,
-    pub is_f11_displayed: bool,
+    pub screen: Screen,
+    pub dialog: Option<Dialog>,
+    /// An error to show, over the screen and over any dialog.
+    pub error: Option<String>,
     /// What F11 sets, as loaded from the config file at startup.
     pub options: Options,
     /// The row the options popup has highlighted.
     pub options_cursor: usize,
-    /// Set while a text option is being typed into; `options_input` holds it.
-    pub options_editing: bool,
-    pub options_input: TextInput,
     /// A file F4 is handing to an external editor. The main loop runs it,
     /// since only that can give the terminal up and take it back.
     pub external_edit: Option<PathBuf>,
-    pub is_f12_displayed: bool,
+    /// F12: the opposite panel shows what the cursor is on.
+    pub show_preview: bool,
     pub preview: Option<PreviewState>,
     /// Editor clipboard. Internal, so it works in a bare TTY too.
     pub clipboard: String,
     /// Mounts offered in the top strip, refreshed on the same tick as disk usage.
     pub mounts: Vec<Mount>,
-    /// Which panel is choosing a drive, and which mount it has highlighted.
-    pub drive_picker: Option<(bool, usize)>,
-    pub is_f2_displayed: bool,
-    pub is_f7_displayed: bool,
-    /// The create dialog makes a directory (F7) or an empty file (Shift+F4).
-    pub create_is_dir: bool,
     pub is_left_active: bool,
     pub dir_left: PathBuf,
     pub dir_right: PathBuf,
@@ -209,29 +248,13 @@ pub struct AppState {
     pub state_right: TableState,
     pub children_left: Vec<Item>,
     pub children_right: Vec<Item>,
-    pub error_message: String,
-    pub rename_input: TextInput,
-    pub create_input: TextInput,
-    pub is_f8_displayed: bool,
-    /// What F8 is asking about, as paths: the name alone could not be joined
-    /// back to the file it came from when it is not valid UTF-8.
-    pub delete_items: Vec<(PathBuf, bool)>,
-    /// Whether what F8 is asking about goes to the trash, or is deleted for good.
-    pub delete_to_trash: bool,
     pub search_input: String,
     pub cached_clock: String,
     pub cached_separator_height: u16,
     pub cached_separator: String,
-    pub is_f3_displayed: bool,
-    pub viewer_state: Option<ViewerState>,
     pub viewer_viewport_height: usize,
     pub viewer_viewport_width: usize,
-    pub is_f4_displayed: bool,
-    pub editor_state: Option<EditorState>,
     pub editor_viewport_height: usize,
-    /// The line at the foot of the screen, while it is asking for something
-    /// to find, a line to go to or a pattern to select by.
-    pub prompt: Option<(PromptKind, TextInput)>,
     /// What + or - last selected by, offered again the next time.
     pub select_pattern: String,
     /// What Ctrl+F last looked for. Kept when the prompt closes, for F3 and
@@ -243,10 +266,6 @@ pub struct AppState {
     /// What the last search came to - "Not found", or that it went round the
     /// end - shown in the status bar until the next key.
     pub find_note: Option<String>,
-    pub is_f5_displayed: bool,
-    pub copy_items: Vec<(PathBuf, PathBuf, bool)>,
-    pub is_f6_displayed: bool,
-    pub move_items: Vec<(PathBuf, PathBuf, bool)>,
     // Keyed by file name, not row index: a reload can re-sort the rows, and an
     // index would then point at a different file than the one the user picked.
     // The name the filesystem holds, not the one shown: two names that are not
@@ -256,7 +275,6 @@ pub struct AppState {
     pub dir_sizes: HashMap<PathBuf, u64>,
     pub last_click_time: Option<Instant>,
     pub last_click_pos: (u16, u16),
-    pub is_editor_save_prompt: bool,
     // Where the last frame actually drew things. Mouse handling reads these
     // instead of recomputing the layout from hardcoded row numbers.
     pub table_area_left: Rect,
@@ -278,10 +296,6 @@ pub struct AppState {
     // (used, total) bytes for each panel's filesystem.
     pub disk_left: Option<(u64, u64)>,
     pub disk_right: Option<(u64, u64)>,
-    /// Set while the prompt for an expensive file is up.
-    pub large_file: Option<LargeFile>,
-    /// Set while asking whether a copy or move may write over what is there.
-    pub overwrite_prompt: Option<OverwritePrompt>,
     /// Set while a copy, move or delete is running on its own thread.
     pub job: Option<TransferJob>,
     /// Directories Space is working out the size of, each on its own thread.
@@ -293,9 +307,6 @@ pub struct AppState {
     /// F10 was pressed during a job. The job carries on; a second press is
     /// what leaves. Cleared when the job ends, so it only ever covers one.
     pub quit_armed: bool,
-    /// F10 was pressed over unsaved edits. The save prompt went up instead,
-    /// and once it is answered with Save or Discard, fm84 leaves.
-    pub quit_after_save_prompt: bool,
 }
 
 /// A copy or move running on a worker thread, and what it has told us so far.
@@ -719,30 +730,24 @@ impl AppState {
         let mut state_right = TableState::default();
         state_right.select(Some(1));
 
-        let (is_error_displayed, error_message, dir_root) = match get_current_dir() {
-            Ok(root) => (false, String::new(), root),
-            Err(e) => (true, e.to_string(), PathBuf::new()),
+        let (error, dir_root) = match get_current_dir() {
+            Ok(root) => (None, root),
+            Err(e) => (Some(e.to_string()), PathBuf::new()),
         };
 
         Self {
-            is_error_displayed,
-            is_f1_displayed: false,
-            is_f11_displayed: false,
+            screen: Screen::Panels,
+            dialog: None,
+            error,
             // A test starts from the defaults, never from whatever the config
             // of the machine running it says.
             options: if cfg!(test) { Options::default() } else { Options::load() },
             options_cursor: 0,
-            options_editing: false,
-            options_input: TextInput::new(),
             external_edit: None,
-            is_f12_displayed: false,
+            show_preview: false,
             preview: None,
             clipboard: String::new(),
             mounts: Vec::new(),
-            drive_picker: None,
-            is_f2_displayed: false,
-            is_f7_displayed: false,
-            create_is_dir: true,
             is_left_active: true,
             dir_left: dir_root.clone(),
             dir_right: dir_root.clone(),
@@ -751,38 +756,22 @@ impl AppState {
             state_right,
             children_left: Vec::new(),
             children_right: Vec::new(),
-            error_message,
-            rename_input: TextInput::new(),
-            create_input: TextInput::new(),
-            is_f8_displayed: false,
-            delete_items: Vec::new(),
-            delete_to_trash: true,
             search_input: String::new(),
             cached_clock: String::new(),
             cached_separator_height: 0,
             cached_separator: String::new(),
-            is_f3_displayed: false,
-            viewer_state: None,
             viewer_viewport_height: 0,
             viewer_viewport_width: 0,
-            is_f4_displayed: false,
-            editor_state: None,
             editor_viewport_height: 0,
-            prompt: None,
             select_pattern: "*".to_string(),
             find_term: String::new(),
             find_shown: false,
             find_note: None,
-            is_f5_displayed: false,
-            copy_items: Vec::new(),
-            is_f6_displayed: false,
-            move_items: Vec::new(),
             selected_left: HashSet::new(),
             selected_right: HashSet::new(),
             dir_sizes: HashMap::new(),
             last_click_time: None,
             last_click_pos: (0, 0),
-            is_editor_save_prompt: false,
             table_area_left: Rect::default(),
             table_area_right: Rect::default(),
             viewport_start_left: 0,
@@ -794,14 +783,11 @@ impl AppState {
             last_refresh_check: Instant::now(),
             disk_left: None,
             disk_right: None,
-            large_file: None,
-            overwrite_prompt: None,
             job: None,
             dir_sizing: Vec::new(),
             image_cache: ImageCache::default(),
             cursor_detail: None,
             quit_armed: false,
-            quit_after_save_prompt: false,
             drive_strip_left: Strip::default(),
             drive_strip_right: Strip::default(),
             tabs_left: Tabs::new(vec![dir_root.clone()], 0),
@@ -809,26 +795,62 @@ impl AppState {
         }
     }
 
-    pub fn reset_rename(&mut self) {
-        self.rename_input.clear();
-        self.is_f2_displayed = false;
-    }
-
     pub fn display_error(&mut self, message: String) {
-        self.is_error_displayed = true;
-        self.error_message = message;
+        self.error = Some(message);
     }
 
     pub fn reset_error(&mut self) {
-        self.is_error_displayed = false;
-        self.error_message.clear();
+        self.error = None;
     }
 
-    pub fn close_options(&mut self) {
-        self.is_f11_displayed = false;
-        self.options_editing = false;
-        self.options_input.clear();
+    /// The file open in the viewer, if that is what is on screen.
+    pub fn viewer(&self) -> Option<&ViewerState> {
+        match &self.screen {
+            Screen::Viewer(state) => Some(state),
+            _ => None,
+        }
     }
+
+    pub fn viewer_mut(&mut self) -> Option<&mut ViewerState> {
+        match &mut self.screen {
+            Screen::Viewer(state) => Some(state),
+            _ => None,
+        }
+    }
+
+    /// The file open in the editor, if that is what is on screen.
+    pub fn editor(&self) -> Option<&EditorState> {
+        match &self.screen {
+            Screen::Editor(state) => Some(state),
+            _ => None,
+        }
+    }
+
+    pub fn editor_mut(&mut self) -> Option<&mut EditorState> {
+        match &mut self.screen {
+            Screen::Editor(state) => Some(state),
+            _ => None,
+        }
+    }
+
+    pub fn is_viewing(&self) -> bool {
+        matches!(self.screen, Screen::Viewer(_))
+    }
+
+    pub fn is_editing(&self) -> bool {
+        matches!(self.screen, Screen::Editor(_))
+    }
+
+    /// The text field of the dialog that is open, when it has one being
+    /// typed into: a name, a pattern, something to find, a text option.
+    pub fn dialog_input(&mut self) -> Option<&mut TextInput> {
+        match self.dialog.as_mut()? {
+            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Prompt(_, input) => Some(input),
+            Dialog::Options { editing } => editing.as_mut(),
+            _ => None,
+        }
+    }
+
 
     fn options_row(&self) -> OptionRow {
         OPTION_ROWS[self.options_cursor.min(OPTION_ROWS.len() - 1)]
@@ -843,8 +865,9 @@ impl AppState {
     pub fn options_change(&mut self, forward: bool) {
         let row = self.options_row();
         if row.is_text() {
-            self.options_input.set(self.options.text(row).to_string());
-            self.options_editing = true;
+            let mut input = TextInput::new();
+            input.set(self.options.text(row).to_string());
+            self.dialog = Some(Dialog::Options { editing: Some(input) });
             return;
         }
         self.options.cycle(row, forward);
@@ -852,16 +875,21 @@ impl AppState {
     }
 
     pub fn options_commit_edit(&mut self) {
+        let Some(Dialog::Options { editing }) = &mut self.dialog else {
+            return;
+        };
+        let Some(input) = editing.take() else {
+            return;
+        };
         let row = self.options_row();
-        self.options.set_text(row, self.options_input.text.trim().to_string());
-        self.options_editing = false;
-        self.options_input.clear();
+        self.options.set_text(row, input.text.trim().to_string());
         self.options_changed(row);
     }
 
     pub fn options_cancel_edit(&mut self) {
-        self.options_editing = false;
-        self.options_input.clear();
+        if let Some(Dialog::Options { editing }) = &mut self.dialog {
+            *editing = None;
+        }
     }
 
     /// Keep a change: write it out, and reread the panels if it changes what
@@ -878,11 +906,6 @@ impl AppState {
         if let Err(e) = self.options.save() {
             self.display_error(format!("Cannot save options: {}", e));
         }
-    }
-
-    pub fn reset_create(&mut self) {
-        self.is_f7_displayed = false;
-        self.create_input.clear();
     }
 
     // Quick search methods
@@ -960,11 +983,6 @@ impl AppState {
         }
     }
 
-    pub fn reset_delete(&mut self) {
-        self.is_f8_displayed = false;
-        self.delete_items.clear();
-    }
-
     /// Open a file for viewing or editing, asking first when it is large enough
     /// that loading it will stall for a noticeable while.
     pub fn request_open(&mut self, file_path: PathBuf, is_edit: bool) {
@@ -983,7 +1001,7 @@ impl AppState {
         };
 
         if size > self.options.large_file_bytes() {
-            self.large_file = Some(LargeFile { path: file_path, is_edit, size, dimensions: None });
+            self.dialog = Some(Dialog::LargeFile(LargeFile { path: file_path, is_edit, size, dimensions: None }));
             return;
         }
 
@@ -996,7 +1014,7 @@ impl AppState {
             && let Some((dimensions, decoded)) = crate::viewer::image_cost(&file_path)
             && decoded > crate::constants::IMAGE_MAX_DECODED
         {
-            self.large_file = Some(LargeFile { path: file_path, is_edit, size: decoded, dimensions: Some(dimensions) });
+            self.dialog = Some(Dialog::LargeFile(LargeFile { path: file_path, is_edit, size: decoded, dimensions: Some(dimensions) }));
             return;
         }
 
@@ -1005,13 +1023,9 @@ impl AppState {
 
     /// Answer to the large-file prompt: load it after all.
     pub fn confirm_large_file(&mut self) {
-        if let Some(large) = self.large_file.take() {
+        if let Some(Dialog::LargeFile(large)) = self.dialog.take() {
             self.open_file(large.path, large.is_edit);
         }
-    }
-
-    pub fn reset_large_file(&mut self) {
-        self.large_file = None;
     }
 
     fn open_file(&mut self, file_path: PathBuf, is_edit: bool) {
@@ -1031,14 +1045,13 @@ impl AppState {
         // replaced is already decoded, so keeping it costs nothing and makes
         // stepping back as quick as stepping on.
         if self.options.image_prefetch
-            && let Some(previous) = self.viewer_state.take()
+            && let Screen::Viewer(previous) = std::mem::replace(&mut self.screen, Screen::Panels)
             && let Some(image) = previous.image
         {
             self.image_cache.keep(previous.file_path, image, previous.syntax_name);
         }
 
-        self.viewer_state = Some(state);
-        self.is_f3_displayed = true;
+        self.screen = Screen::Viewer(state);
         self.read_ahead();
         Ok(())
     }
@@ -1049,7 +1062,7 @@ impl AppState {
     pub fn fit_viewer_image(&mut self) -> bool {
         let (width, height) = (self.viewer_viewport_width, self.viewer_viewport_height);
         let backgrounds = self.options.image_backgrounds;
-        let Some(state) = &mut self.viewer_state else {
+        let Screen::Viewer(state) = &mut self.screen else {
             return false;
         };
         let Some(image) = &state.image else {
@@ -1087,7 +1100,7 @@ impl AppState {
     /// Switch an image between fitting inside the viewer and filling it. The
     /// redraw itself happens in fit_viewer_image before the next frame.
     pub fn viewer_toggle_fill(&mut self) {
-        if let Some(state) = &mut self.viewer_state
+        if let Screen::Viewer(state) = &mut self.screen
             && state.mode == ViewMode::Image
         {
             state.image_fill = !state.image_fill;
@@ -1101,7 +1114,7 @@ impl AppState {
     /// Fit and Fill is showing, so F still decides what 100% means. The drawing
     /// itself is rebuilt by fit_viewer_image before the next frame.
     pub fn viewer_zoom(&mut self, closer: bool) {
-        if let Some(state) = &mut self.viewer_state
+        if let Screen::Viewer(state) = &mut self.screen
             && state.mode == ViewMode::Image
         {
             let steps = crate::constants::IMAGE_ZOOM_STEPS;
@@ -1113,8 +1126,7 @@ impl AppState {
     }
 
     pub fn close_viewer(&mut self) {
-        self.is_f3_displayed = false;
-        self.viewer_state = None;
+        self.screen = Screen::Panels;
         self.close_find();
         // Nothing is going to be stepped to now, and these are the only thing
         // in the app holding decoded pictures.
@@ -1122,46 +1134,46 @@ impl AppState {
     }
 
     pub fn viewer_scroll_down(&mut self) {
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             let max = state.total_lines.saturating_sub(self.viewer_viewport_height);
             state.scroll_offset = (state.scroll_offset + 1).min(max);
         }
     }
 
     pub fn viewer_scroll_up(&mut self) {
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             state.scroll_offset = state.scroll_offset.saturating_sub(1);
         }
     }
 
     pub fn viewer_page_down(&mut self) {
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             let max = state.total_lines.saturating_sub(self.viewer_viewport_height);
             state.scroll_offset = (state.scroll_offset + self.viewer_viewport_height).min(max);
         }
     }
 
     pub fn viewer_page_up(&mut self) {
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             state.scroll_offset = state.scroll_offset.saturating_sub(self.viewer_viewport_height);
         }
     }
 
     pub fn viewer_home(&mut self) {
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             state.scroll_offset = 0;
             state.horizontal_offset = 0;
         }
     }
 
     pub fn viewer_scroll_left(&mut self) {
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             state.horizontal_offset = state.horizontal_offset.saturating_sub(1);
         }
     }
 
     pub fn viewer_copy(&mut self) {
-        if let Some(text) = self.viewer_state.as_ref().and_then(|state| state.selected_text()) {
+        if let Some(text) = self.viewer().and_then(|state| state.selected_text()) {
             crate::utils::set_system_clipboard(&text);
             self.clipboard = text;
         }
@@ -1172,13 +1184,13 @@ impl AppState {
     /// file only pays for them on demand.
     pub fn viewer_next_mode(&mut self) {
         // Nothing to toggle on the refusal notice F4 puts up.
-        if self.viewer_state.as_ref().is_some_and(|state| state.from_edit) {
+        if self.viewer().is_some_and(|state| state.from_edit) {
             return;
         }
 
         let mut error = None;
 
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             let next = state.next_mode();
             if next == ViewMode::Hex && state.bytes.is_empty() && state.file_size > 0 {
                 match std::fs::read(&state.file_path) {
@@ -1222,7 +1234,7 @@ impl AppState {
     /// the walk wraps round, so a folder of photographs can be gone through
     /// without leaving the viewer.
     pub fn viewer_step_image(&mut self, forward: bool) {
-        let Some(showing) = self.viewer_state.as_ref().map(|state| state.file_path.clone()) else {
+        let Some(showing) = self.viewer().map(|state| state.file_path.clone()) else {
             return;
         };
         let Some(going_to) = self.image_neighbour(&showing, forward) else {
@@ -1231,10 +1243,10 @@ impl AppState {
 
         // Carry across how it is being looked at, so a folder can be stepped
         // through at one zoom rather than starting over on every picture.
-        let carried = self.viewer_state.as_ref().map(|state| (state.image_fill, state.image_zoom));
+        let carried = self.viewer().map(|state| (state.image_fill, state.image_zoom));
         self.image_cache.forward = forward;
         self.request_open(going_to, false);
-        if let Some(state) = &mut self.viewer_state
+        if let Screen::Viewer(state) = &mut self.screen
             && let Some((fill, zoom)) = carried
         {
             state.image_fill = fill;
@@ -1269,7 +1281,7 @@ impl AppState {
         if !self.options.image_prefetch || !self.viewer_shows_image() {
             return;
         }
-        let Some(showing) = self.viewer_state.as_ref().map(|state| state.file_path.clone()) else {
+        let Some(showing) = self.viewer().map(|state| state.file_path.clone()) else {
             return;
         };
         if let Some(next) = self.image_neighbour(&showing, self.image_cache.forward) {
@@ -1280,13 +1292,13 @@ impl AppState {
     /// True while the viewer is showing a picture, where dragging moves the
     /// picture rather than selecting the characters it is drawn from.
     pub fn viewer_shows_image(&self) -> bool {
-        self.viewer_state.as_ref().is_some_and(|state| state.mode == ViewMode::Image && !state.from_edit)
+        self.viewer().is_some_and(|state| state.mode == ViewMode::Image && !state.from_edit)
     }
 
     /// Take hold of a picture at the pointer, ready to drag it about.
     pub fn viewer_pan_start(&mut self, column: u16, row: u16) {
         let content = self.viewer_content_area;
-        if let Some(state) = &mut self.viewer_state
+        if let Screen::Viewer(state) = &mut self.screen
             && content.contains(Position::new(column, row))
         {
             state.pan_from = Some(((column, row), (state.horizontal_offset, state.scroll_offset)));
@@ -1299,7 +1311,7 @@ impl AppState {
     /// move at once, which is the whole point of doing this with the mouse.
     pub fn viewer_pan_to(&mut self, column: u16, row: u16) {
         let (width, height) = (self.viewer_viewport_width, self.viewer_viewport_height);
-        if let Some(state) = &mut self.viewer_state
+        if let Screen::Viewer(state) = &mut self.screen
             && let Some(((from_column, from_row), (from_horizontal, from_vertical))) = state.pan_from
         {
             let moved_x = i64::from(column) - i64::from(from_column);
@@ -1312,7 +1324,7 @@ impl AppState {
     }
 
     pub fn viewer_scroll_right(&mut self) {
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             // Stop once the longest line's end reaches the right edge.
             let longest = match state.mode {
                 ViewMode::Hex => crate::constants::HEX_LINE_WIDTH,
@@ -1325,7 +1337,7 @@ impl AppState {
     }
 
     pub fn viewer_end(&mut self) {
-        if let Some(state) = &mut self.viewer_state {
+        if let Screen::Viewer(state) = &mut self.screen {
             state.scroll_offset = state.total_lines.saturating_sub(self.viewer_viewport_height);
         }
     }
@@ -1337,7 +1349,7 @@ impl AppState {
 
         if is_binary_file(&file_path).unwrap_or(false) {
             self.open_viewer(file_path)?;
-            if let Some(state) = &mut self.viewer_state {
+            if let Screen::Viewer(state) = &mut self.screen {
                 // Editing is refused outright; F3 is where a binary gets read.
                 state.from_edit = true;
                 state.mode = ViewMode::Text;
@@ -1377,7 +1389,7 @@ impl AppState {
             (Vec::new(), Vec::new())
         };
 
-        self.editor_state = Some(EditorState {
+        self.screen = Screen::Editor(EditorState {
             file_path,
             lines,
             highlighted_lines,
@@ -1393,20 +1405,20 @@ impl AppState {
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
         });
-        self.is_f4_displayed = true;
         Ok(())
     }
 
     pub fn close_editor(&mut self) {
-        self.is_f4_displayed = false;
-        self.editor_state = None;
+        self.screen = Screen::Panels;
         self.close_find();
     }
 
     /// The prompt and the marks go with the file they were for. The term is
     /// kept, to be offered again.
     fn close_find(&mut self) {
-        self.prompt = None;
+        if matches!(self.dialog, Some(Dialog::Prompt(..))) {
+            self.dialog = None;
+        }
         self.find_shown = false;
         self.find_note = None;
     }
@@ -1421,21 +1433,22 @@ impl AppState {
         if kind == PromptKind::Find {
             input.set(self.find_term.clone());
         }
-        self.prompt = Some((kind, input));
+        self.dialog = Some(Dialog::Prompt(kind, input));
     }
 
     /// Only text can be searched or numbered: not a picture, and not the notice
     /// F4 raises on a binary file.
     fn can_find(&self) -> bool {
-        if self.is_f4_displayed {
-            return self.editor_state.is_some();
+        match &self.screen {
+            Screen::Editor(_) => true,
+            Screen::Viewer(state) => !state.from_edit && state.mode != ViewMode::Image,
+            Screen::Panels => false,
         }
-        self.viewer_state.as_ref().is_some_and(|state| !state.from_edit && state.mode != ViewMode::Image)
     }
 
     /// Enter on the prompt: look for what was typed, or go to the line.
     pub fn confirm_prompt(&mut self) {
-        let Some((kind, input)) = self.prompt.take() else {
+        let Some(Dialog::Prompt(kind, input)) = self.dialog.take() else {
             return;
         };
         match kind {
@@ -1467,7 +1480,7 @@ impl AppState {
     pub fn open_select_prompt(&mut self, select: bool) {
         let mut input = TextInput::new();
         input.set(self.select_pattern.clone());
-        self.prompt = Some((if select { PromptKind::Select } else { PromptKind::Deselect }, input));
+        self.dialog = Some(Dialog::Prompt(if select { PromptKind::Select } else { PromptKind::Deselect }, input));
     }
 
     /// Select, or deselect, every entry in the active panel the pattern
@@ -1519,7 +1532,7 @@ impl AppState {
         }
         self.find_shown = true;
 
-        let found = if self.is_f4_displayed {
+        let found = if self.is_editing() {
             self.editor_find(&needle, forward, fresh)
         } else {
             self.viewer_find(&needle, forward, fresh)
@@ -1534,7 +1547,7 @@ impl AppState {
     /// Some(wrapped) when a match was found and selected.
     fn editor_find(&mut self, needle: &crate::find::Needle, forward: bool, fresh: bool) -> Option<bool> {
         let height = self.editor_viewport_height.max(1);
-        let state = self.editor_state.as_mut()?;
+        let state = self.editor_mut()?;
         let cursor = (state.cursor_line, state.cursor_col);
         let start = state.selection().map_or(cursor, |(start, _)| start);
         // A match is selected from its start to the cursor at its end, so on
@@ -1555,7 +1568,7 @@ impl AppState {
 
     fn viewer_find(&mut self, needle: &crate::find::Needle, forward: bool, fresh: bool) -> Option<bool> {
         let (height, width) = (self.viewer_viewport_height.max(1), self.viewer_viewport_width.max(1));
-        let state = self.viewer_state.as_mut()?;
+        let state = self.viewer_mut()?;
         // From the match on screen when there is one, and otherwise from the
         // top of what is showing.
         let from = match state.selected_range() {
@@ -1580,9 +1593,9 @@ impl AppState {
     /// past the end goes to the last line. In the viewer the line goes to the
     /// top, as far as the end of the file allows.
     pub fn go_to_line(&mut self, number: usize) {
-        if self.is_f4_displayed {
+        if self.is_editing() {
             let height = self.editor_viewport_height.max(1);
-            if let Some(state) = &mut self.editor_state {
+            if let Screen::Editor(state) = &mut self.screen {
                 let line = number.clamp(1, state.lines.len().max(1)) - 1;
                 state.selection_anchor = None;
                 state.cursor_line = line;
@@ -1592,7 +1605,7 @@ impl AppState {
                     state.scroll_offset = line.saturating_sub(height / 3);
                 }
             }
-        } else if let Some(state) = &mut self.viewer_state {
+        } else if let Screen::Viewer(state) = &mut self.screen {
             let line = number.clamp(1, state.total_lines.max(1)) - 1;
             state.scroll_offset = line.min(state.total_lines.saturating_sub(self.viewer_viewport_height));
         }
@@ -1601,7 +1614,7 @@ impl AppState {
     /// Re-highlight the file from `from` downward. Cheap: the cached state lets
     /// it resume mid-file and stop again as soon as the parse converges.
     pub fn editor_rehighlight_from(&mut self, from: usize) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             if state.line_states.is_empty() {
                 return; // highlighting disabled for this file
             }
@@ -1617,7 +1630,7 @@ impl AppState {
     }
 
     pub fn editor_scroll_up(&mut self) {
-        if let Some(state) = &mut self.editor_state
+        if let Screen::Editor(state) = &mut self.screen
             && state.scroll_offset > 0
         {
             state.scroll_offset -= 1;
@@ -1626,7 +1639,7 @@ impl AppState {
     }
 
     pub fn editor_scroll_down(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let max = state.lines.len().saturating_sub(self.editor_viewport_height);
             if state.scroll_offset < max {
                 state.scroll_offset += 1;
@@ -1636,14 +1649,14 @@ impl AppState {
     }
 
     pub fn editor_scroll_left(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             state.horizontal_offset = state.horizontal_offset.saturating_sub(1);
             state.auto_scroll = false;
         }
     }
 
     pub fn editor_scroll_right(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             state.horizontal_offset += 1;
             state.auto_scroll = false;
         }
@@ -1652,7 +1665,7 @@ impl AppState {
     /// Remember the lines `range` covers before they are replaced. Called once
     /// per user action, with a range spanning everything that action touches.
     fn push_undo(&mut self, range: std::ops::RangeInclusive<usize>) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let last = (*range.end()).min(state.lines.len().saturating_sub(1));
             let first = (*range.start()).min(last);
 
@@ -1671,7 +1684,7 @@ impl AppState {
     /// that does nothing nor throws away the redo history. One that did change
     /// something forks the history: editing after undoing loses the old branch.
     fn finish_edit(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let Some(step) = state.undo_stack.last() else {
                 return;
             };
@@ -1691,7 +1704,7 @@ impl AppState {
     /// The range a user action is about to touch: the selection when there is
     /// one, otherwise the given fallback.
     fn edit_range(&self, fallback: std::ops::RangeInclusive<usize>) -> std::ops::RangeInclusive<usize> {
-        match self.editor_state.as_ref().and_then(|state| state.selection()) {
+        match self.editor().and_then(|state| state.selection()) {
             Some(((first, _), (last, _))) => first..=last,
             None => fallback,
         }
@@ -1711,7 +1724,7 @@ impl AppState {
     fn step_history(&mut self, undoing: bool) {
         let mut from = None;
 
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let stack = if undoing { &mut state.undo_stack } else { &mut state.redo_stack };
             if let Some(step) = stack.pop() {
                 // However many lines replaced the originals, the buffer's change
@@ -1756,7 +1769,7 @@ impl AppState {
     /// Returns the line to re-highlight from, or None if nothing was selected.
     /// Shared by cut, paste, typing, Backspace and Delete.
     fn delete_selection(&mut self) -> Option<usize> {
-        let state = self.editor_state.as_mut()?;
+        let state = self.editor_mut()?;
         let ((first_line, first_col), (last_line, last_col)) = state.selection()?;
 
         let head = char_slice(&state.lines[first_line], 0, first_col);
@@ -1773,7 +1786,7 @@ impl AppState {
 
     pub fn editor_select_all(&mut self) {
         let height = self.editor_viewport_height;
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let last_line = state.lines.len().saturating_sub(1);
             state.selection_anchor = Some((0, 0));
             state.cursor_line = last_line;
@@ -1783,7 +1796,7 @@ impl AppState {
     }
 
     pub fn editor_copy(&mut self) {
-        if let Some(text) = self.editor_state.as_ref().and_then(|state| state.selected_text()) {
+        if let Some(text) = self.editor().and_then(|state| state.selected_text()) {
             // Offer it to the terminal as well, so it reaches the system
             // clipboard where OSC 52 is supported.
             crate::utils::set_system_clipboard(&text);
@@ -1792,7 +1805,7 @@ impl AppState {
     }
 
     pub fn editor_cut(&mut self) {
-        let line = self.editor_state.as_ref().map_or(0, |state| state.cursor_line);
+        let line = self.editor().map_or(0, |state| state.cursor_line);
         self.push_undo(self.edit_range(line..=line));
         self.editor_copy();
         if let Some(from) = self.delete_selection() {
@@ -1812,7 +1825,7 @@ impl AppState {
         if text.is_empty() {
             return;
         }
-        let line = self.editor_state.as_ref().map_or(0, |state| state.cursor_line);
+        let line = self.editor().map_or(0, |state| state.cursor_line);
         self.push_undo(self.edit_range(line..=line));
 
         // A pasted Windows clipboard arrives with CRLF; the buffer holds lines.
@@ -1821,7 +1834,7 @@ impl AppState {
         // A selection is replaced by what is pasted over it.
         let mut rehighlight = self.delete_selection();
 
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let line = state.lines[state.cursor_line].clone();
             let head = char_slice(&line, 0, state.cursor_col);
             let tail = char_slice(&line, state.cursor_col, line.chars().count());
@@ -1857,7 +1870,7 @@ impl AppState {
     /// Called before a cursor move: Shift extends the selection from where the
     /// cursor was, anything else drops it.
     pub fn editor_prepare_move(&mut self, extend: bool) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             if extend {
                 if state.selection_anchor.is_none() {
                     state.selection_anchor = Some((state.cursor_line, state.cursor_col));
@@ -1869,7 +1882,7 @@ impl AppState {
     }
 
     pub fn editor_cursor_up(&mut self) {
-        if let Some(state) = &mut self.editor_state
+        if let Screen::Editor(state) = &mut self.screen
             && state.cursor_line > 0
         {
             state.cursor_line -= 1;
@@ -1881,7 +1894,7 @@ impl AppState {
     }
 
     pub fn editor_cursor_down(&mut self) {
-        if let Some(state) = &mut self.editor_state
+        if let Screen::Editor(state) = &mut self.screen
             && state.cursor_line < state.lines.len().saturating_sub(1)
         {
             state.cursor_line += 1;
@@ -1893,7 +1906,7 @@ impl AppState {
     }
 
     pub fn editor_cursor_left(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             if state.cursor_col > 0 {
                 state.cursor_col -= 1;
             } else if state.cursor_line > 0 {
@@ -1907,7 +1920,7 @@ impl AppState {
     }
 
     pub fn editor_cursor_right(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let line_len = state.lines[state.cursor_line].chars().count();
             if state.cursor_col < line_len {
                 state.cursor_col += 1;
@@ -1922,19 +1935,19 @@ impl AppState {
     }
 
     pub fn editor_home(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             state.cursor_col = 0;
         }
     }
 
     pub fn editor_end(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             state.cursor_col = state.lines[state.cursor_line].chars().count();
         }
     }
 
     pub fn editor_page_up(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let page = self.editor_viewport_height.saturating_sub(1);
             state.cursor_line = state.cursor_line.saturating_sub(page);
             state.scroll_offset = state.scroll_offset.saturating_sub(page);
@@ -1943,7 +1956,7 @@ impl AppState {
     }
 
     pub fn editor_page_down(&mut self) {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let page = self.editor_viewport_height.saturating_sub(1);
             let max_line = state.lines.len().saturating_sub(1);
             state.cursor_line = (state.cursor_line + page).min(max_line);
@@ -1954,12 +1967,12 @@ impl AppState {
     }
 
     pub fn editor_insert_char(&mut self, c: char) {
-        let line = self.editor_state.as_ref().map_or(0, |state| state.cursor_line);
+        let line = self.editor().map_or(0, |state| state.cursor_line);
         self.push_undo(self.edit_range(line..=line));
         // Typing over a selection replaces it.
         self.delete_selection();
         let mut from = None;
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let line = &mut state.lines[state.cursor_line];
             let byte_idx = char_to_byte(line, state.cursor_col);
             line.insert(byte_idx, c);
@@ -1974,7 +1987,7 @@ impl AppState {
     }
 
     pub fn editor_backspace(&mut self) {
-        let fallback = match self.editor_state.as_ref() {
+        let fallback = match self.editor() {
             // Joining with the line above puts that line in range too.
             Some(state) if state.cursor_col == 0 => state.cursor_line.saturating_sub(1)..=state.cursor_line,
             Some(state) => state.cursor_line..=state.cursor_line,
@@ -1989,7 +2002,7 @@ impl AppState {
             return;
         }
         let mut from = None;
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             if state.cursor_col > 0 {
                 let line = &mut state.lines[state.cursor_line];
                 let byte_start = char_to_byte(line, state.cursor_col - 1);
@@ -2017,7 +2030,7 @@ impl AppState {
     }
 
     pub fn editor_delete(&mut self) {
-        let fallback = match self.editor_state.as_ref() {
+        let fallback = match self.editor() {
             // At end of line the next line is pulled up, so include it.
             Some(state) if state.cursor_col >= state.lines[state.cursor_line].chars().count() => {
                 state.cursor_line..=state.cursor_line + 1
@@ -2033,7 +2046,7 @@ impl AppState {
             return;
         }
         let mut from = None;
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let line_len = state.lines[state.cursor_line].chars().count();
             if state.cursor_col < line_len {
                 let line = &mut state.lines[state.cursor_line];
@@ -2056,11 +2069,11 @@ impl AppState {
     }
 
     pub fn editor_enter(&mut self) {
-        let line = self.editor_state.as_ref().map_or(0, |state| state.cursor_line);
+        let line = self.editor().map_or(0, |state| state.cursor_line);
         self.push_undo(self.edit_range(line..=line));
         self.delete_selection();
         let mut from = None;
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             from = Some(state.cursor_line);
             let line = &mut state.lines[state.cursor_line];
             let byte_idx = char_to_byte(line, state.cursor_col);
@@ -2081,7 +2094,7 @@ impl AppState {
     }
 
     pub fn editor_save(&mut self) -> Result<(), String> {
-        if let Some(state) = &mut self.editor_state {
+        if let Screen::Editor(state) = &mut self.screen {
             let content = state.lines.join(state.line_ending);
             crate::fs_ops::save_file(&state.file_path, content.as_bytes()).map_err(|e| e.to_string())?;
             state.modified = false;
@@ -2097,17 +2110,7 @@ impl AppState {
     }
 
     pub fn editor_is_modified(&self) -> bool {
-        self.editor_state.as_ref().is_some_and(|s| s.modified)
-    }
-
-    pub fn reset_copy(&mut self) {
-        self.is_f5_displayed = false;
-        self.copy_items.clear();
-    }
-
-    pub fn reset_move(&mut self) {
-        self.is_f6_displayed = false;
-        self.move_items.clear();
+        self.editor().is_some_and(|s| s.modified)
     }
 
     pub fn toggle_selection(&mut self) {
@@ -2222,25 +2225,15 @@ impl AppState {
     /// True while a popup is covering the screen. What is behind one must sit
     /// still: it cannot be seen, and the popup is answering for it.
     pub fn popup_is_open(&self) -> bool {
-        self.is_error_displayed
-            || self.is_f1_displayed
-            || self.is_f11_displayed
-            || self.is_f5_displayed
-            || self.is_f6_displayed
-            || self.is_f7_displayed
-            || self.is_f8_displayed
-            || self.is_editor_save_prompt
-            || self.large_file.is_some()
-            || self.overwrite_prompt.is_some()
-            || self.job.is_some()
+        self.error.is_some() || self.job.is_some() || self.dialog.as_ref().is_some_and(Dialog::is_popup)
     }
 
-    /// True while a dialog, prompt, viewer or editor owns the screen. The three
-    /// added here are not popups: the viewer and the editor are whole-screen
-    /// modes that take their own mouse input, and the rename prompt sits in the
-    /// panel, where a click cancels it rather than being swallowed.
+    /// True while a dialog, viewer or editor owns the screen. Added to the
+    /// popups: the viewer and the editor, whole-screen modes that take their
+    /// own mouse input, and the rename field, which sits in the panel, where a
+    /// click cancels it rather than being swallowed.
     pub fn is_modal_open(&self) -> bool {
-        self.popup_is_open() || self.is_f2_displayed || self.is_f3_displayed || self.is_f4_displayed
+        self.popup_is_open() || !matches!(self.screen, Screen::Panels) || matches!(self.dialog, Some(Dialog::Rename(_)))
     }
 
     /// Hand a long job to a worker thread and start following it.
@@ -2722,23 +2715,24 @@ impl AppState {
             return;
         }
         let current = self.current_mount(is_left).unwrap_or(0);
-        self.drive_picker = Some((is_left, current));
+        self.dialog = Some(Dialog::DrivePicker { is_left, index: current });
         // Into view, even if the strip was scrolled away from it.
         let strip = if is_left { &mut self.drive_strip_left } else { &mut self.drive_strip_right };
         strip.followed = None;
     }
 
     pub fn move_drive_picker(&mut self, forward: bool) {
-        if let Some((is_left, index)) = self.drive_picker {
-            let count = self.mounts.len();
-            let next = if forward { (index + 1) % count } else { (index + count - 1) % count };
-            self.drive_picker = Some((is_left, next));
+        let count = self.mounts.len();
+        if let Some(Dialog::DrivePicker { index, .. }) = &mut self.dialog
+            && count > 0
+        {
+            *index = if forward { (*index + 1) % count } else { (*index + count - 1) % count };
         }
     }
 
     /// Take the highlighted drive; the panel jumps to that mount point.
     pub fn confirm_drive_picker(&mut self) {
-        if let Some((is_left, index)) = self.drive_picker.take()
+        if let Some(Dialog::DrivePicker { is_left, index }) = self.dialog.take()
             && let Some(mount) = self.mounts.get(index)
         {
             let path = mount.path.clone();
@@ -2834,7 +2828,7 @@ impl AppState {
     /// Keep the preview pointed at whatever the cursor is on. Reads only when
     /// the target actually changed, so holding an arrow key stays cheap.
     pub fn refresh_preview(&mut self) {
-        if !self.is_f12_displayed {
+        if !self.show_preview {
             self.preview = None;
             return;
         }
@@ -3079,14 +3073,14 @@ mod editor_tests {
     /// Type into the prompt as a user would, and press Enter.
     fn answer_prompt(app_state: &mut AppState, kind: super::PromptKind, text: &str) {
         app_state.open_prompt(kind);
-        let input = &mut app_state.prompt.as_mut().unwrap().1;
-        input.clear();
+        let input = app_state.dialog_input().unwrap();
+        input.set(String::new());
         text.chars().for_each(|c| input.insert(c));
         app_state.confirm_prompt();
     }
 
     fn selected(app_state: &AppState) -> Option<((usize, usize), (usize, usize))> {
-        app_state.editor_state.as_ref().unwrap().selection()
+        app_state.editor().unwrap().selection()
     }
 
     #[test]
@@ -3096,8 +3090,8 @@ mod editor_tests {
 
         // F3 before anything was looked for asks what to look for.
         app_state.find(true, false);
-        assert_eq!(app_state.prompt.as_ref().map(|(kind, _)| *kind), Some(super::PromptKind::Find));
-        app_state.prompt = None;
+        assert!(matches!(app_state.dialog, Some(super::Dialog::Prompt(super::PromptKind::Find, _))));
+        app_state.dialog = None;
 
         answer_prompt(&mut app_state, super::PromptKind::Find, "beta");
         assert_eq!(selected(&app_state), Some(((0, 6), (0, 10))));
@@ -3118,8 +3112,8 @@ mod editor_tests {
 
         // The prompt offers the last term again, and a miss moves nothing.
         app_state.open_prompt(super::PromptKind::Find);
-        assert_eq!(app_state.prompt.as_ref().unwrap().1.text, "beta");
-        app_state.prompt = None;
+        assert_eq!(app_state.dialog_input().unwrap().text, "beta");
+        app_state.dialog = None;
         answer_prompt(&mut app_state, super::PromptKind::Find, "BETAMAX");
         assert_eq!(selected(&app_state), Some(((2, 6), (2, 10))));
         assert_eq!(app_state.find_note.as_deref(), Some("Not found: BETAMAX"));
@@ -3138,14 +3132,14 @@ mod editor_tests {
         app_state.editor_viewport_height = 10;
 
         answer_prompt(&mut app_state, super::PromptKind::GoToLine, "42");
-        let state = app_state.editor_state.as_ref().unwrap();
+        let state = app_state.editor().unwrap();
         assert_eq!((state.cursor_line, state.cursor_col), (41, 0));
         assert!(state.scroll_offset <= 41 && 41 < state.scroll_offset + 10, "the line is on screen");
 
         answer_prompt(&mut app_state, super::PromptKind::GoToLine, "100000");
-        assert_eq!(app_state.editor_state.as_ref().unwrap().cursor_line, 100, "the last line");
+        assert_eq!(app_state.editor().unwrap().cursor_line, 100, "the last line");
         answer_prompt(&mut app_state, super::PromptKind::GoToLine, "0");
-        assert_eq!(app_state.editor_state.as_ref().unwrap().cursor_line, 0);
+        assert_eq!(app_state.editor().unwrap().cursor_line, 0);
         std::fs::remove_file(path).unwrap();
     }
 
@@ -3161,7 +3155,7 @@ mod editor_tests {
         app_state.viewer_viewport_width = 40;
 
         answer_prompt(&mut app_state, super::PromptKind::Find, "needle");
-        let state = app_state.viewer_state.as_ref().unwrap();
+        let state = app_state.viewer().unwrap();
         // Columns as drawn, with the tab opened out, so the selection and the
         // copy line up with the screen.
         let start = crate::display::tab_width() + 4;
@@ -3170,14 +3164,14 @@ mod editor_tests {
         assert!(state.scroll_offset <= 29 && 29 < state.scroll_offset + 10);
 
         answer_prompt(&mut app_state, super::PromptKind::GoToLine, "5");
-        assert_eq!(app_state.viewer_state.as_ref().unwrap().scroll_offset, 4);
+        assert_eq!(app_state.viewer().unwrap().scroll_offset, 4);
         answer_prompt(&mut app_state, super::PromptKind::GoToLine, "50");
         // As far down as End goes, which leaves the last screenful showing.
         app_state.viewer_end();
-        let end = app_state.viewer_state.as_ref().unwrap().scroll_offset;
+        let end = app_state.viewer().unwrap().scroll_offset;
         app_state.viewer_home();
         answer_prompt(&mut app_state, super::PromptKind::GoToLine, "50");
-        assert_eq!(app_state.viewer_state.as_ref().unwrap().scroll_offset, end, "no further than the end allows");
+        assert_eq!(app_state.viewer().unwrap().scroll_offset, end, "no further than the end allows");
         std::fs::remove_file(path).unwrap();
     }
 
@@ -3195,17 +3189,17 @@ mod editor_tests {
         app_state.options = crate::options::Options::default();
 
         app_state.open_viewer(path.clone()).unwrap();
-        let state = app_state.viewer_state.as_ref().unwrap();
+        let state = app_state.viewer().unwrap();
         assert_eq!(state.content_lines[1], "caf\u{fffd}");
 
         let refused = app_state.open_editor(path.clone()).unwrap_err();
         assert!(refused.contains("not UTF-8"), "{refused}");
-        assert!(app_state.editor_state.is_none());
+        assert!(app_state.editor().is_none());
         std::fs::remove_file(path).unwrap();
     }
 
     fn stacks(app_state: &AppState) -> (usize, usize) {
-        let state = app_state.editor_state.as_ref().unwrap();
+        let state = app_state.editor().unwrap();
         (state.undo_stack.len(), state.redo_stack.len())
     }
 
@@ -3245,18 +3239,18 @@ mod editor_tests {
 
         // Backspace at the very start, Delete at the very end, and Ctrl+X with
         // nothing selected: none of them change the text.
-        app_state.editor_state.as_mut().unwrap().cursor_col = 0;
+        app_state.editor_mut().unwrap().cursor_col = 0;
         app_state.editor_backspace();
         app_state.editor_cut();
         {
-            let state = app_state.editor_state.as_mut().unwrap();
+            let state = app_state.editor_mut().unwrap();
             state.cursor_line = 1;
             state.cursor_col = 2;
         }
         app_state.editor_delete();
         assert_eq!(stacks(&app_state), (0, 1));
         app_state.editor_redo();
-        assert_eq!(app_state.editor_state.as_ref().unwrap().lines, ["abx", "cd"]);
+        assert_eq!(app_state.editor().unwrap().lines, ["abx", "cd"]);
 
         // A real edit still forks the history.
         app_state.editor_undo();
@@ -3342,7 +3336,7 @@ mod tests {
 
         let mut app_state = AppState::new();
         app_state.options = Options::default();
-        app_state.is_f12_displayed = true;
+        app_state.show_preview = true;
         app_state.open_dir(true, dir.clone(), Some("notes.txt".as_ref()));
         app_state.refresh_cursor_detail();
         app_state.refresh_preview();
@@ -3426,7 +3420,7 @@ mod tests {
 
         app_state.job.as_mut().unwrap().answer(super::Answer::Skip);
         wait(&mut app_state, &|app_state| app_state.job.is_none());
-        assert_eq!(app_state.error_message, "Copy finished, 1 entry skipped");
+        assert_eq!(app_state.error.as_deref(), Some("Copy finished, 1 entry skipped"));
         assert!(dir.join("copy").join("a.txt").exists());
         assert!(dir.join("copy").join("z.txt").exists());
 
@@ -3436,7 +3430,7 @@ mod tests {
         wait(&mut app_state, &|app_state| app_state.job.as_ref().is_some_and(|job| job.problem.is_some()));
         app_state.cancel_transfer();
         wait(&mut app_state, &|app_state| app_state.job.is_none());
-        assert!(app_state.error_message.starts_with("Copy cancelled"), "{}", app_state.error_message);
+        assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy cancelled"), "{:?}", app_state.error);
 
         std::fs::remove_dir_all(&dir).unwrap();
     }
@@ -3466,7 +3460,7 @@ mod tests {
         let listed = app_state.children_left.len();
 
         app_state.open_dir(true, locked.clone(), None);
-        assert!(app_state.is_error_displayed);
+        assert!(app_state.error.is_some());
         assert_eq!(app_state.dir_left, dir);
         assert_eq!(app_state.children_left.len(), listed);
 
@@ -3474,7 +3468,7 @@ mod tests {
         app_state.reset_error();
         app_state.last_refresh_check -= crate::constants::REFRESH_INTERVAL;
         app_state.refresh_stale_panels();
-        assert!(!app_state.is_error_displayed);
+        assert!(app_state.error.is_none());
 
         // Gone unreadable while the panel is in it: said once, not every tick.
         app_state.open_dir(true, locked.parent().unwrap().to_path_buf(), None);
@@ -3482,11 +3476,11 @@ mod tests {
         app_state.open_dir(true, locked.clone(), None);
         std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
         app_state.reload_panel(true, None);
-        assert!(app_state.is_error_displayed);
+        assert!(app_state.error.is_some());
         app_state.reset_error();
         app_state.last_refresh_check -= crate::constants::REFRESH_INTERVAL;
         app_state.refresh_stale_panels();
-        assert!(!app_state.is_error_displayed);
+        assert!(app_state.error.is_none());
 
         std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
         std::fs::remove_dir_all(&dir).unwrap();
@@ -3564,13 +3558,13 @@ mod tests {
 
         // Through the prompt, as + then typing then Enter does.
         app_state.open_select_prompt(true);
-        app_state.prompt.as_mut().unwrap().1.set("*.jpg;*.png".to_string());
+        app_state.dialog_input().unwrap().set("*.jpg;*.png".to_string());
         app_state.confirm_prompt();
         assert_eq!(selected(&app_state), ["B.JPG", "a.jpg", "c.png"]);
         assert_eq!(app_state.select_pattern, "*.jpg;*.png");
 
         app_state.open_select_prompt(false);
-        app_state.prompt.as_mut().unwrap().1.set("?.png".to_string());
+        app_state.dialog_input().unwrap().set("?.png".to_string());
         app_state.confirm_prompt();
         assert_eq!(selected(&app_state), ["B.JPG", "a.jpg"]);
 
@@ -3591,7 +3585,7 @@ mod tests {
 
         // An empty pattern does nothing and is not kept.
         app_state.open_select_prompt(false);
-        app_state.prompt.as_mut().unwrap().1.set(String::new());
+        app_state.dialog_input().unwrap().set(String::new());
         app_state.confirm_prompt();
         assert_eq!(selected(&app_state).len(), 5);
         assert_eq!(app_state.select_pattern, "?.png");
@@ -3750,7 +3744,7 @@ mod tests {
         }
 
         app_state.select_tab(true, 1);
-        assert!(app_state.is_error_displayed);
+        assert!(app_state.error.is_some());
         assert_eq!(app_state.tabs_left.active, 0);
         assert_eq!(app_state.dir_left, dir);
         assert_eq!(app_state.selected_left.len(), 1);
@@ -3759,7 +3753,7 @@ mod tests {
         // Closing the tab shown would move to the locked one, so it stays too.
         app_state.reset_error();
         app_state.close_tab(true, 0);
-        assert!(app_state.is_error_displayed);
+        assert!(app_state.error.is_some());
         assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
         assert_eq!(app_state.selected_left.len(), 1);
 
