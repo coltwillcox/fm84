@@ -1,6 +1,6 @@
 [package]
 name = "fm84"
-version = "0.24.0"
+version = "0.24.1"
 edition = "2024"
 # Let chains in `if` and `while`, which the code leans on throughout, are
 # stable from 1.88.

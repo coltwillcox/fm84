@@ -6,6 +6,14 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.24.1] - 2026-10-10
+
+### 🛠️ Changed
+- 📦 **Smaller release binaries** - built with link-time optimisation, as one codegen unit and stripped of symbols, the binary comes down from 5.6 MB to 3.5 MB on Linux x86_64
+- 🦀 **Rust 1.88 or newer to build** - said in the README and in `Cargo.toml`, where cargo checks it, rather than found out from a compile error. The crate now carries a description, keywords and categories, and leaves the screenshots out
+
+---
+
 ## [0.24.0] - 2026-10-10
 
 ### ✨ Added
