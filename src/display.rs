@@ -43,22 +43,22 @@ const DARK_SYNTAX: &str = "base16-ocean.dark";
 const LIGHT_SYNTAX: &str = "InspiredGitHub";
 
 const SYNTHWAVE: Palette = Palette {
-    background: rgb(0, 0, 0),                      // Black
-    gutter: rgb(14, 7, 26),                        // Violet black
+    background: rgb(0, 0, 0), // Black
+    gutter: rgb(14, 7, 26),   // Violet black
     light: false,
     syntax_theme: DARK_SYNTAX,
-    border: rgb(116, 58, 213),                     // Violet
-    columns: rgb(0, 255, 255),                     // Cyan
-    directory: rgb(255, 0, 255),                   // Magenta
-    directory_dark: rgb(150, 0, 150),              // Dark magenta
-    directory_bracket: rgb(255, 0, 255),           // Magenta
-    file: rgb(114, 137, 218),                      // Soft purple/blue
-    rename_background: rgb(255, 0, 128),           // Hot pink
-    selected_background: rgb(148, 0, 211),         // Purple
-    selected_background_inactive: rgb(45, 0, 75),  // Dark purple
-    selected_foreground: rgb(0, 255, 255),         // Cyan
-    title: rgb(242, 34, 255),                      // Purple
-    selected_marker: rgb(255, 215, 0),             // Gold
+    border: rgb(116, 58, 213),                    // Violet
+    columns: rgb(0, 255, 255),                    // Cyan
+    directory: rgb(255, 0, 255),                  // Magenta
+    directory_dark: rgb(150, 0, 150),             // Dark magenta
+    directory_bracket: rgb(255, 0, 255),          // Magenta
+    file: rgb(114, 137, 218),                     // Soft purple/blue
+    rename_background: rgb(255, 0, 128),          // Hot pink
+    selected_background: rgb(148, 0, 211),        // Purple
+    selected_background_inactive: rgb(45, 0, 75), // Dark purple
+    selected_foreground: rgb(0, 255, 255),        // Cyan
+    title: rgb(242, 34, 255),                     // Purple
+    selected_marker: rgb(255, 215, 0),            // Gold
 };
 
 // A sunset over the highway: orange and hot pink, with teal for contrast.
@@ -124,8 +124,8 @@ const HIGH_CONTRAST: Palette = Palette {
 // The schemes below take their colours from each one's published palette.
 
 const DRACULA: Palette = Palette {
-    background: rgb(40, 42, 54),                   // Background
-    gutter: rgb(33, 34, 44),                       // Darker background
+    background: rgb(40, 42, 54), // Background
+    gutter: rgb(33, 34, 44),     // Darker background
     light: false,
     syntax_theme: DARK_SYNTAX,
     border: rgb(98, 114, 164),                     // Comment
@@ -147,13 +147,13 @@ const MONOKAI: Palette = Palette {
     gutter: rgb(30, 31, 27),
     light: false,
     syntax_theme: DARK_SYNTAX,
-    border: rgb(117, 113, 94),                     // Comment
-    columns: rgb(102, 217, 239),                   // Blue
-    directory: rgb(166, 226, 46),                  // Green
+    border: rgb(117, 113, 94),    // Comment
+    columns: rgb(102, 217, 239),  // Blue
+    directory: rgb(166, 226, 46), // Green
     directory_dark: rgb(110, 140, 40),
-    directory_bracket: rgb(166, 226, 46),          // Green
-    file: rgb(248, 248, 242),                      // Foreground
-    rename_background: rgb(190, 20, 85),           // Pink, darkened for the text on it
+    directory_bracket: rgb(166, 226, 46), // Green
+    file: rgb(248, 248, 242),             // Foreground
+    rename_background: rgb(190, 20, 85),  // Pink, darkened for the text on it
     selected_background: rgb(90, 88, 72),
     selected_background_inactive: rgb(62, 61, 50), // Line highlight
     selected_foreground: rgb(230, 219, 116),       // Yellow
@@ -162,13 +162,13 @@ const MONOKAI: Palette = Palette {
 };
 
 const NORD: Palette = Palette {
-    background: rgb(46, 52, 64),                   // Polar night 0
+    background: rgb(46, 52, 64), // Polar night 0
     gutter: rgb(41, 46, 57),
     light: false,
     syntax_theme: DARK_SYNTAX,
-    border: rgb(76, 86, 106),                      // Polar night 3
-    columns: rgb(136, 192, 208),                   // Frost 1
-    directory: rgb(129, 161, 193),                 // Frost 2
+    border: rgb(76, 86, 106),      // Polar night 3
+    columns: rgb(136, 192, 208),   // Frost 1
+    directory: rgb(129, 161, 193), // Frost 2
     directory_dark: rgb(94, 110, 140),
     directory_bracket: rgb(129, 161, 193),         // Frost 2
     file: rgb(216, 222, 233),                      // Snow storm 0
@@ -181,8 +181,8 @@ const NORD: Palette = Palette {
 };
 
 const GRUVBOX_DARK: Palette = Palette {
-    background: rgb(40, 40, 40),                   // bg
-    gutter: rgb(29, 32, 33),                       // bg0_h
+    background: rgb(40, 40, 40), // bg
+    gutter: rgb(29, 32, 33),     // bg0_h
     light: false,
     syntax_theme: DARK_SYNTAX,
     border: rgb(146, 131, 116),                    // Gray
@@ -200,22 +200,22 @@ const GRUVBOX_DARK: Palette = Palette {
 };
 
 const SOLARIZED_DARK: Palette = Palette {
-    background: rgb(0, 43, 54),                    // base03
+    background: rgb(0, 43, 54), // base03
     gutter: rgb(0, 36, 46),
     light: false,
     syntax_theme: "Solarized (dark)",
-    border: rgb(88, 110, 117),                     // base01
-    columns: rgb(42, 161, 152),                    // Cyan
-    directory: rgb(38, 139, 210),                  // Blue
+    border: rgb(88, 110, 117),    // base01
+    columns: rgb(42, 161, 152),   // Cyan
+    directory: rgb(38, 139, 210), // Blue
     directory_dark: rgb(30, 95, 140),
-    directory_bracket: rgb(38, 139, 210),          // Blue
-    file: rgb(131, 148, 150),                      // base0
-    rename_background: rgb(220, 50, 47),           // Red
-    selected_background: rgb(88, 110, 117),        // base01
-    selected_background_inactive: rgb(7, 54, 66),  // base02
-    selected_foreground: rgb(253, 246, 227),       // base3
-    title: rgb(211, 54, 130),                      // Magenta
-    selected_marker: rgb(181, 137, 0),             // Yellow
+    directory_bracket: rgb(38, 139, 210),         // Blue
+    file: rgb(131, 148, 150),                     // base0
+    rename_background: rgb(220, 50, 47),          // Red
+    selected_background: rgb(88, 110, 117),       // base01
+    selected_background_inactive: rgb(7, 54, 66), // base02
+    selected_foreground: rgb(253, 246, 227),      // base3
+    title: rgb(211, 54, 130),                     // Magenta
+    selected_marker: rgb(181, 137, 0),            // Yellow
 };
 
 const TOKYO_NIGHT: Palette = Palette {
@@ -223,9 +223,9 @@ const TOKYO_NIGHT: Palette = Palette {
     gutter: rgb(22, 22, 30),
     light: false,
     syntax_theme: DARK_SYNTAX,
-    border: rgb(86, 95, 137),                      // Comment
-    columns: rgb(125, 207, 255),                   // Cyan
-    directory: rgb(122, 162, 247),                 // Blue
+    border: rgb(86, 95, 137),      // Comment
+    columns: rgb(125, 207, 255),   // Cyan
+    directory: rgb(122, 162, 247), // Blue
     directory_dark: rgb(70, 90, 150),
     directory_bracket: rgb(122, 162, 247),         // Blue
     file: rgb(192, 202, 245),                      // Foreground
@@ -238,13 +238,13 @@ const TOKYO_NIGHT: Palette = Palette {
 };
 
 const CATPPUCCIN_MOCHA: Palette = Palette {
-    background: rgb(30, 30, 46),                   // Base
-    gutter: rgb(24, 24, 37),                       // Mantle
+    background: rgb(30, 30, 46), // Base
+    gutter: rgb(24, 24, 37),     // Mantle
     light: false,
     syntax_theme: DARK_SYNTAX,
-    border: rgb(108, 112, 134),                    // Overlay 0
-    columns: rgb(148, 226, 213),                   // Teal
-    directory: rgb(137, 180, 250),                 // Blue
+    border: rgb(108, 112, 134),    // Overlay 0
+    columns: rgb(148, 226, 213),   // Teal
+    directory: rgb(137, 180, 250), // Blue
     directory_dark: rgb(90, 120, 170),
     directory_bracket: rgb(137, 180, 250),         // Blue
     file: rgb(205, 214, 244),                      // Text
@@ -260,60 +260,60 @@ const CATPPUCCIN_MOCHA: Palette = Palette {
 // foreground is shared by both selection backgrounds and the rename one.
 
 const SOLARIZED_LIGHT: Palette = Palette {
-    background: rgb(253, 246, 227),                // base3
-    gutter: rgb(238, 232, 213),                    // base2
+    background: rgb(253, 246, 227), // base3
+    gutter: rgb(238, 232, 213),     // base2
     light: true,
     syntax_theme: "Solarized (light)",
-    border: rgb(147, 161, 161),                    // base1
-    columns: rgb(30, 125, 118),                    // Cyan, darkened for the pale background
-    directory: rgb(38, 139, 210),                  // Blue
+    border: rgb(147, 161, 161),   // base1
+    columns: rgb(30, 125, 118),   // Cyan, darkened for the pale background
+    directory: rgb(38, 139, 210), // Blue
     directory_dark: rgb(110, 150, 180),
-    directory_bracket: rgb(38, 139, 210),          // Blue
-    file: rgb(101, 123, 131),                      // base00
+    directory_bracket: rgb(38, 139, 210), // Blue
+    file: rgb(101, 123, 131),             // base00
     rename_background: rgb(246, 196, 190),
     selected_background: rgb(197, 222, 240),
     selected_background_inactive: rgb(238, 232, 213), // base2
-    selected_foreground: rgb(7, 54, 66),           // base02
-    title: rgb(211, 54, 130),                      // Magenta
-    selected_marker: rgb(203, 75, 22),             // Orange
+    selected_foreground: rgb(7, 54, 66),              // base02
+    title: rgb(211, 54, 130),                         // Magenta
+    selected_marker: rgb(203, 75, 22),                // Orange
 };
 
 const GRUVBOX_LIGHT: Palette = Palette {
-    background: rgb(251, 241, 199),                // bg
-    gutter: rgb(242, 229, 188),                    // bg0_s
+    background: rgb(251, 241, 199), // bg
+    gutter: rgb(242, 229, 188),     // bg0_s
     light: true,
     syntax_theme: "base16-ocean.light",
-    border: rgb(146, 131, 116),                    // Gray
-    columns: rgb(66, 123, 88),                     // Aqua
-    directory: rgb(7, 102, 120),                   // Blue
+    border: rgb(146, 131, 116),  // Gray
+    columns: rgb(66, 123, 88),   // Aqua
+    directory: rgb(7, 102, 120), // Blue
     directory_dark: rgb(100, 140, 150),
-    directory_bracket: rgb(7, 102, 120),           // Blue
-    file: rgb(60, 56, 54),                         // fg
+    directory_bracket: rgb(7, 102, 120), // Blue
+    file: rgb(60, 56, 54),               // fg
     rename_background: rgb(240, 180, 160),
-    selected_background: rgb(213, 196, 161),       // bg2
+    selected_background: rgb(213, 196, 161),          // bg2
     selected_background_inactive: rgb(235, 219, 178), // bg1
-    selected_foreground: rgb(40, 40, 40),          // fg0
-    title: rgb(175, 58, 3),                        // Orange
-    selected_marker: rgb(143, 63, 113),            // Purple
+    selected_foreground: rgb(40, 40, 40),             // fg0
+    title: rgb(175, 58, 3),                           // Orange
+    selected_marker: rgb(143, 63, 113),               // Purple
 };
 
 const CATPPUCCIN_LATTE: Palette = Palette {
-    background: rgb(239, 241, 245),                // Base
-    gutter: rgb(230, 233, 239),                    // Mantle
+    background: rgb(239, 241, 245), // Base
+    gutter: rgb(230, 233, 239),     // Mantle
     light: true,
     syntax_theme: LIGHT_SYNTAX,
-    border: rgb(156, 160, 176),                    // Overlay 0
-    columns: rgb(23, 146, 153),                    // Teal
-    directory: rgb(30, 102, 245),                  // Blue
+    border: rgb(156, 160, 176),   // Overlay 0
+    columns: rgb(23, 146, 153),   // Teal
+    directory: rgb(30, 102, 245), // Blue
     directory_dark: rgb(120, 150, 220),
-    directory_bracket: rgb(30, 102, 245),          // Blue
-    file: rgb(76, 79, 105),                        // Text
+    directory_bracket: rgb(30, 102, 245), // Blue
+    file: rgb(76, 79, 105),               // Text
     rename_background: rgb(240, 180, 195),
-    selected_background: rgb(188, 192, 204),       // Surface 1
+    selected_background: rgb(188, 192, 204),          // Surface 1
     selected_background_inactive: rgb(220, 224, 232), // Crust
-    selected_foreground: rgb(76, 79, 105),         // Text
-    title: rgb(136, 57, 239),                      // Mauve
-    selected_marker: rgb(254, 100, 11),            // Peach
+    selected_foreground: rgb(76, 79, 105),            // Text
+    title: rgb(136, 57, 239),                         // Mauve
+    selected_marker: rgb(254, 100, 11),               // Peach
 };
 
 const GITHUB_LIGHT: Palette = Palette {
@@ -322,17 +322,17 @@ const GITHUB_LIGHT: Palette = Palette {
     light: true,
     syntax_theme: LIGHT_SYNTAX,
     border: rgb(175, 184, 193),
-    columns: rgb(26, 127, 55),                     // Green
-    directory: rgb(9, 105, 218),                   // Blue
+    columns: rgb(26, 127, 55),   // Green
+    directory: rgb(9, 105, 218), // Blue
     directory_dark: rgb(84, 140, 210),
-    directory_bracket: rgb(9, 105, 218),           // Blue
-    file: rgb(31, 35, 40),                         // Foreground
+    directory_bracket: rgb(9, 105, 218), // Blue
+    file: rgb(31, 35, 40),               // Foreground
     rename_background: rgb(255, 210, 210),
     selected_background: rgb(200, 225, 255),
     selected_background_inactive: rgb(234, 238, 242),
-    selected_foreground: rgb(31, 35, 40),          // Foreground
-    title: rgb(130, 80, 223),                      // Purple
-    selected_marker: rgb(188, 76, 0),              // Orange
+    selected_foreground: rgb(31, 35, 40), // Foreground
+    title: rgb(130, 80, 223),             // Purple
+    selected_marker: rgb(188, 76, 0),     // Orange
 };
 
 pub fn palette_of(theme: Theme) -> &'static Palette {

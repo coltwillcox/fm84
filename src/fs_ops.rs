@@ -2,8 +2,8 @@ use crate::app::Item;
 use crate::constants::COPY_CHUNK;
 use crate::options::{Options, SortKey};
 use crate::utils::format_size;
-use std::ffi::OsString;
 use std::env;
+use std::ffi::OsString;
 use std::fs::{self, File, create_dir, read_dir, remove_dir, remove_file, rename};
 use std::io::{self, Error, ErrorKind, Read, Write};
 use std::path::{Path, PathBuf};
@@ -63,9 +63,7 @@ fn format_attributes(metadata: &fs::Metadata, _is_dir: bool, is_symlink: bool) -
     let flag = |bit: u32, on: char| if flags & bit != 0 { on } else { '-' };
     let kind = if is_symlink { 'l' } else { flag(DIRECTORY, 'd') };
 
-    [kind, flag(ARCHIVE, 'a'), flag(READONLY, 'r'), flag(HIDDEN, 'h'), flag(SYSTEM, 's')]
-        .iter()
-        .collect()
+    [kind, flag(ARCHIVE, 'a'), flag(READONLY, 'r'), flag(HIDDEN, 'h'), flag(SYSTEM, 's')].iter().collect()
 }
 
 #[cfg(not(any(unix, windows)))]
@@ -88,9 +86,7 @@ fn is_hidden(name: &str, _metadata: Option<&fs::Metadata>) -> bool {
 }
 
 pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, Error> {
-    let entries: Vec<_> = read_dir(path)?
-        .filter_map(|entry| entry.ok())
-        .collect();
+    let entries: Vec<_> = read_dir(path)?.filter_map(|entry| entry.ok()).collect();
 
     let has_parent = path.parent().is_some();
     let mut children = Vec::with_capacity(entries.len() + usize::from(has_parent));
@@ -119,11 +115,7 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
         // to a directory as a file: sorted among the files, sized in bytes and
         // impossible to enter. Follow it, and fall back to the link when the
         // target is missing so a broken link still lists as an ordinary entry.
-        let metadata = if is_symlink {
-            fs::metadata(&entry_path).or_else(|_| entry.metadata()).ok()
-        } else {
-            entry.metadata().ok()
-        };
+        let metadata = if is_symlink { fs::metadata(&entry_path).or_else(|_| entry.metadata()).ok() } else { entry.metadata().ok() };
         let is_dir = metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false);
         let name_os = entry.file_name();
         let name_full = name_os.to_string_lossy().into_owned();
@@ -133,26 +125,15 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
         // Lossy like the name above, and for the same reason: a name that is
         // not valid UTF-8 still has to be shown as something. to_str() gave
         // None for those, which left the column blank.
-        let name = if is_dir {
-            name_full.clone()
-        } else {
-            entry_path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
-        };
-        let extension = if is_dir {
-            String::new()
-        } else {
-            entry_path.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default()
-        };
+        let name = if is_dir { name_full.clone() } else { entry_path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default() };
+        let extension = if is_dir { String::new() } else { entry_path.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default() };
         let size_bytes = if is_dir { 0 } else { metadata.as_ref().map(|m| m.len()).unwrap_or(0) };
         let size = if is_dir { "<DIR>".to_string() } else { format_size(size_bytes) };
         // Written out when drawn, in whichever format F11 names - and a
         // relative date has to be, or it would go stale between reloads.
         let modified_at = metadata.as_ref().and_then(|m| m.modified().ok());
 
-        let attributes = metadata
-            .as_ref()
-            .map(|metadata| format_attributes(metadata, is_dir, is_symlink))
-            .unwrap_or_default();
+        let attributes = metadata.as_ref().map(|metadata| format_attributes(metadata, is_dir, is_symlink)).unwrap_or_default();
 
         children.push(Item {
             name_os,
@@ -223,13 +204,21 @@ pub struct Mount {
 /// Home, listed first after root because it is where people actually go.
 fn home_mount() -> Option<Mount> {
     let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
-    Some(Mount { path: PathBuf::from(home), label: "~".to_string(), kind: MountKind::Home })
+    Some(Mount {
+        path: PathBuf::from(home),
+        label: "~".to_string(),
+        kind: MountKind::Home,
+    })
 }
 
 /// Mount points worth offering, root first, then home, then the rest by path.
 #[cfg(target_os = "linux")]
 pub fn list_mounts() -> Vec<Mount> {
-    let mut mounts = vec![Mount { path: PathBuf::from("/"), label: "/".to_string(), kind: MountKind::Disk }];
+    let mut mounts = vec![Mount {
+        path: PathBuf::from("/"),
+        label: "/".to_string(),
+        kind: MountKind::Disk,
+    }];
     mounts.extend(home_mount());
     if let Ok(table) = fs::read_to_string("/proc/mounts") {
         mounts.extend(parse_proc_mounts(&table));
@@ -276,11 +265,12 @@ fn parse_proc_mounts(table: &str) -> Vec<Mount> {
         if found.iter().any(|mount| mount.path == path) {
             continue;
         }
-        let label = path
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())
-            .unwrap_or_else(|| target.clone());
-        found.push(Mount { path, label, kind: classify_mount(source, fstype, is_fuse) });
+        let label = path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_else(|| target.clone());
+        found.push(Mount {
+            path,
+            label,
+            kind: classify_mount(source, fstype, is_fuse),
+        });
     }
 
     found.sort_by(|a, b| a.path.cmp(&b.path));
@@ -325,10 +315,7 @@ fn base_device(name: &str) -> &str {
     if let Some(index) = name.rfind('p') {
         let (head, tail) = name.split_at(index);
         let digits = &tail[1..];
-        if !digits.is_empty()
-            && digits.bytes().all(|byte| byte.is_ascii_digit())
-            && head.bytes().last().is_some_and(|byte| byte.is_ascii_digit())
-        {
+        if !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit()) && head.bytes().last().is_some_and(|byte| byte.is_ascii_digit()) {
             return head;
         }
     }
@@ -367,17 +354,7 @@ fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
 
         assert_eq!(
             paths,
-            [
-                "/boot",
-                "/media/My Backup",
-                "/media/stick",
-                "/mnt/grimlock",
-                "/mnt/laserbeak",
-                "/mnt/pcloud",
-                "/run/media/colt/AUDIO",
-                "/run/media/colt/ravage",
-                "/tmp",
-            ],
+            ["/boot", "/media/My Backup", "/media/stick", "/mnt/grimlock", "/mnt/laserbeak", "/mnt/pcloud", "/run/media/colt/AUDIO", "/run/media/colt/ravage", "/tmp",],
             "should keep device-backed and user fuse mounts, sorted"
         );
 
@@ -419,7 +396,11 @@ fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
 /// Every mounted volume on macOS shows up under /Volumes.
 #[cfg(target_vendor = "apple")]
 pub fn list_mounts() -> Vec<Mount> {
-    let mut mounts = vec![Mount { path: PathBuf::from("/"), label: "/".to_string(), kind: MountKind::Disk }];
+    let mut mounts = vec![Mount {
+        path: PathBuf::from("/"),
+        label: "/".to_string(),
+        kind: MountKind::Disk,
+    }];
     mounts.extend(home_mount());
 
     let Ok(entries) = read_dir("/Volumes") else {
@@ -470,7 +451,11 @@ pub fn list_mounts() -> Vec<Mount> {
             DRIVE_FIXED => MountKind::Disk,
             _ => continue,
         };
-        mounts.push(Mount { path: PathBuf::from(&root), label: root[..2].to_string(), kind });
+        mounts.push(Mount {
+            path: PathBuf::from(&root),
+            label: root[..2].to_string(),
+            kind,
+        });
     }
     mounts
 }
@@ -550,21 +535,14 @@ pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
 
     // Declared here rather than pulling in windows-sys for one call.
     unsafe extern "system" {
-        fn GetDiskFreeSpaceExW(
-            directory: *const u16,
-            free_to_caller: *mut u64,
-            total: *mut u64,
-            total_free: *mut u64,
-        ) -> i32;
+        fn GetDiskFreeSpaceExW(directory: *const u16, free_to_caller: *mut u64, total: *mut u64, total_free: *mut u64) -> i32;
     }
 
     let wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
     let (mut free_to_caller, mut total, mut total_free) = (0u64, 0u64, 0u64);
     // SAFETY: wide is NUL-terminated and the three outputs are only read back
     // after the call reports success.
-    let ok = unsafe {
-        GetDiskFreeSpaceExW(wide.as_ptr(), &mut free_to_caller, &mut total, &mut total_free) != 0
-    };
+    let ok = unsafe { GetDiskFreeSpaceExW(wide.as_ptr(), &mut free_to_caller, &mut total, &mut total_free) != 0 };
     if !ok {
         return None;
     }
@@ -622,10 +600,7 @@ pub fn delete_path(path: PathBuf, is_dir: bool, report: Report<'_>) -> Result<Tr
     // A symlink is removed as a link, never followed - including one pointing at
     // a directory, which reaches here with is_dir set because the panel treats it
     // as one. Walking into one would delete what it points at.
-    let is_symlink = path
-        .symlink_metadata()
-        .map(|metadata| metadata.file_type().is_symlink())
-        .unwrap_or(false);
+    let is_symlink = path.symlink_metadata().map(|metadata| metadata.file_type().is_symlink()).unwrap_or(false);
 
     let outcome = if is_dir && !is_symlink { delete_dir_recursive(&path, report)? } else { remove_one(&path, false, report)? };
     Ok(outcome.into())
@@ -742,11 +717,7 @@ fn delete_dir_recursive(path: &Path, report: Report<'_>) -> Result<Outcome, Erro
 
         // file_type() describes the entry itself, so a link to a directory is a
         // link here and is unlinked rather than followed into.
-        let outcome = if file_type.is_dir() {
-            delete_dir_recursive(&entry_path, &mut *report)?
-        } else {
-            remove_one(&entry_path, false, &mut *report)?
-        };
+        let outcome = if file_type.is_dir() { delete_dir_recursive(&entry_path, &mut *report)? } else { remove_one(&entry_path, false, &mut *report)? };
         match outcome {
             Outcome::Cancelled => return Ok(Outcome::Cancelled),
             Outcome::Skipped => skipped = true,
@@ -1040,11 +1011,7 @@ fn copy_symlink(source: &Path, dest: &Path) -> Result<(), Error> {
     let target = fs::read_link(source)?;
     // Windows picks the call by link kind, and creating one needs Developer
     // Mode or elevation - the error surfaces to the user either way.
-    if source.is_dir() {
-        std::os::windows::fs::symlink_dir(target, dest)
-    } else {
-        std::os::windows::fs::symlink_file(target, dest)
-    }
+    if source.is_dir() { std::os::windows::fs::symlink_dir(target, dest) } else { std::os::windows::fs::symlink_file(target, dest) }
 }
 
 /// Copy a file's content, then its times and permissions - so a script or a
@@ -1245,11 +1212,7 @@ fn move_across(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome
     }
 
     if !metadata.is_dir() {
-        let copied = if metadata.file_type().is_symlink() {
-            copy_link(source, dest, report)?
-        } else {
-            copy_file(source, dest, report)?
-        };
+        let copied = if metadata.file_type().is_symlink() { copy_link(source, dest, report)? } else { copy_file(source, dest, report)? };
         if copied != Outcome::Done {
             return Ok(copied);
         }
@@ -1366,10 +1329,7 @@ pub fn save_file(path: &Path, content: &[u8]) -> Result<(), Error> {
         return in_place();
     }
     // After the owner, which can clear the setuid and setgid bits.
-    let written = file
-        .write_all(content)
-        .and_then(|()| file.set_permissions(metadata.permissions()))
-        .and_then(|()| file.sync_all());
+    let written = file.write_all(content).and_then(|()| file.set_permissions(metadata.permissions())).and_then(|()| file.sync_all());
     drop(file);
     if let Err(e) = written.and_then(|()| rename(&temp, &target)) {
         let _ = remove_file(&temp);
@@ -1440,9 +1400,7 @@ fn clear_link(dest: &Path) -> Result<(), Error> {
 /// link in the way goes. A directory does not - no link replaces a tree.
 fn clear_for_link(dest: &Path) -> Result<(), Error> {
     match dest.symlink_metadata() {
-        Ok(metadata) if metadata.is_dir() => {
-            Err(Error::new(ErrorKind::AlreadyExists, format!("Cannot replace directory {} with a link", dest.display())))
-        }
+        Ok(metadata) if metadata.is_dir() => Err(Error::new(ErrorKind::AlreadyExists, format!("Cannot replace directory {} with a link", dest.display()))),
         Ok(_) => clear_link(dest).and_then(|()| if path_exists(dest) { remove_file(dest) } else { Ok(()) }),
         Err(_) => Ok(()),
     }
@@ -1600,10 +1558,7 @@ mod transfer_tests {
         fs::create_dir(dir.join("sub")).unwrap();
         fs::write(dir.join("sub").join("b.bin"), vec![0u8; 2500]).unwrap();
 
-        let items = vec![
-            (dir.join("a.bin"), dir.join("copy-a.bin"), false),
-            (dir.join("sub"), dir.join("copy-sub"), true),
-        ];
+        let items = vec![(dir.join("a.bin"), dir.join("copy-a.bin"), false), (dir.join("sub"), dir.join("copy-sub"), true)];
         assert_eq!(measure(&items), 3500);
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -2351,11 +2306,7 @@ mod transfer_tests {
         fs::write(dest.join("shared").join("keep.txt"), "k").unwrap();
         fs::write(dest.join("clash"), "old").unwrap();
 
-        let before = [
-            inode(&source.join("shared").join("big.bin")),
-            inode(&source.join("fresh")),
-            inode(&source.join("clash")),
-        ];
+        let before = [inode(&source.join("shared").join("big.bin")), inode(&source.join("fresh")), inode(&source.join("clash"))];
         let mut report = |_: Step<'_>| true;
         assert_eq!(move_path(source.clone(), dest.clone(), true, &mut report).unwrap(), Transfer::Done);
 
@@ -2480,10 +2431,7 @@ fn owner_of(metadata: &fs::Metadata) -> String {
 /// detail lines are gathered on a thread of their own now. The buffer grows
 /// for an entry too long for it, as a directory service's can be.
 #[cfg(unix)]
-fn lookup_name<E>(
-    call: impl Fn(&mut E, *mut libc::c_char, libc::size_t, *mut *mut E) -> libc::c_int,
-    name: impl Fn(&E) -> *const libc::c_char,
-) -> Option<String> {
+fn lookup_name<E>(call: impl Fn(&mut E, *mut libc::c_char, libc::size_t, *mut *mut E) -> libc::c_int, name: impl Fn(&E) -> *const libc::c_char) -> Option<String> {
     let mut buffer: Vec<libc::c_char> = vec![0; 1024];
     loop {
         // SAFETY: an all-zero passwd or group is a valid value of the type -

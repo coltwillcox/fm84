@@ -116,14 +116,7 @@ impl Drop for Watch {
 /// which moves with any write anywhere on it. `stamp` and `usage` are what
 /// the listing it is watching saw, so a change made while it was being read
 /// is still reported.
-pub fn watch_dir(
-    is_left: bool,
-    dir: PathBuf,
-    mut stamp: Option<SystemTime>,
-    mut usage: Option<(u64, u64)>,
-    interval: Duration,
-    events: Sender<WatchEvent>,
-) -> Watch {
+pub fn watch_dir(is_left: bool, dir: PathBuf, mut stamp: Option<SystemTime>, mut usage: Option<(u64, u64)>, interval: Duration, events: Sender<WatchEvent>) -> Watch {
     let stop = Arc::new(AtomicBool::new(false));
     let (watched, worker_stop) = (dir.clone(), Arc::clone(&stop));
     std::thread::spawn(move || {

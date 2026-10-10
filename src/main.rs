@@ -192,18 +192,14 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
 /// otherwise goes on the end.
 fn run_external_editor(terminal: &mut Tui, app_state: &mut AppState, path: &std::path::Path) -> io::Result<()> {
     let command = app_state.options.editor.clone();
-    let mut parts: Vec<std::ffi::OsString> =
-        command.split_whitespace().map(|part| utils::substitute(part, path.as_os_str())).collect();
+    let mut parts: Vec<std::ffi::OsString> = command.split_whitespace().map(|part| utils::substitute(part, path.as_os_str())).collect();
     if !command.contains("{}") {
         parts.push(path.as_os_str().to_owned());
     }
     let program = parts.remove(0);
 
     restore_terminal()?;
-    let result = std::process::Command::new(&program)
-        .args(&parts)
-        .current_dir(path.parent().unwrap_or(std::path::Path::new(".")))
-        .status();
+    let result = std::process::Command::new(&program).args(&parts).current_dir(path.parent().unwrap_or(std::path::Path::new("."))).status();
     take_terminal()?;
     // The editor drew over everything; forget what ratatui thinks is there.
     terminal.clear()?;

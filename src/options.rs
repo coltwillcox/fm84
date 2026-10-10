@@ -370,15 +370,7 @@ impl OptionRow {
     /// Whether changing this row changes what the panels hold, rather than
     /// only how they are drawn. The sizes are written out as the rows load.
     pub fn affects_listing(self) -> bool {
-        matches!(
-            self,
-            OptionRow::ShowHidden
-                | OptionRow::SortKey
-                | OptionRow::SortDirection
-                | OptionRow::DirsFirst
-                | OptionRow::CaseSensitive
-                | OptionRow::SizeUnits
-        )
+        matches!(self, OptionRow::ShowHidden | OptionRow::SortKey | OptionRow::SortDirection | OptionRow::DirsFirst | OptionRow::CaseSensitive | OptionRow::SizeUnits)
     }
 }
 
@@ -499,9 +491,7 @@ impl Options {
                 let formats = [DateFormat::Short, DateFormat::Iso, DateFormat::Relative];
                 self.date_format = step(&formats, self.date_format, forward);
             }
-            OptionRow::SizeUnits => {
-                self.size_units = if self.size_units == SizeUnits::Binary { SizeUnits::Decimal } else { SizeUnits::Binary }
-            }
+            OptionRow::SizeUnits => self.size_units = if self.size_units == SizeUnits::Binary { SizeUnits::Decimal } else { SizeUnits::Binary },
             OptionRow::ConfirmDelete => self.confirm_delete = !self.confirm_delete,
             OptionRow::DeleteToTrash => self.delete_to_trash = !self.delete_to_trash,
             OptionRow::ConfirmCopyMove => self.confirm_copy_move = !self.confirm_copy_move,
@@ -527,9 +517,7 @@ impl Options {
             }
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,
-            OptionRow::HighlightLimit => {
-                self.highlight_limit_kib = step(&HIGHLIGHT_LIMITS_KIB, self.highlight_limit_kib, forward)
-            }
+            OptionRow::HighlightLimit => self.highlight_limit_kib = step(&HIGHLIGHT_LIMITS_KIB, self.highlight_limit_kib, forward),
             OptionRow::LargeFile => self.large_file_mib = step(&LARGE_FILE_LIMITS_MIB, self.large_file_mib, forward),
             OptionRow::ImageDefault => self.image_fill = !self.image_fill,
             OptionRow::ImageBackgrounds => self.image_backgrounds = !self.image_backgrounds,
@@ -549,10 +537,7 @@ impl Options {
     /// Read the config file. A missing file, or a line that makes no sense,
     /// leaves that setting at its default rather than refusing to start.
     pub fn load() -> Self {
-        config_path("config")
-            .and_then(|path| fs::read_to_string(path).ok())
-            .map(|text| Self::parse(&text))
-            .unwrap_or_default()
+        config_path("config").and_then(|path| fs::read_to_string(path).ok()).map(|text| Self::parse(&text)).unwrap_or_default()
     }
 
     pub fn save(&self) -> io::Result<()> {
@@ -1057,7 +1042,13 @@ mod tests {
     fn a_session_keeps_each_panels_tabs() {
         let text = "left = /b\nright = /r\nleft_tab = /a\nleft_tab = /b\nleft_tab = /c\nleft_tab_active = 1\n";
         let (left, right) = parse_session(text).unwrap();
-        assert_eq!(left, PanelSession { tabs: vec!["/a".into(), "/b".into(), "/c".into()], active: 1 });
+        assert_eq!(
+            left,
+            PanelSession {
+                tabs: vec!["/a".into(), "/b".into(), "/c".into()],
+                active: 1
+            }
+        );
         assert_eq!(right, PanelSession { tabs: vec!["/r".into()], active: 0 });
 
         // An active tab past the end, as a hand edit might leave, is the last.

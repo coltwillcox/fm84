@@ -1,9 +1,9 @@
 use crate::app::{Answer, AppState, Dialog, OverwritePrompt, PromptKind, Screen, TextInput, TransferKind};
-use crate::strip::StripHit;
-use crate::options::OnExisting;
-use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use crate::display::tab_width;
+use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
+use crate::options::OnExisting;
+use crate::strip::StripHit;
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
 use ratatui::widgets::TableState;
 use std::io::Result;
@@ -86,10 +86,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
     let clear = app_state.dialog.is_none() && app_state.error.is_none();
     let in_editor = clear && app_state.is_editing();
     let in_viewer = clear && app_state.is_viewing();
-    let in_panel = clear
-        && app_state.job.is_none()
-        && matches!(app_state.screen, Screen::Panels)
-        && !app_state.panel_busy(app_state.is_left_active);
+    let in_panel = clear && app_state.job.is_none() && matches!(app_state.screen, Screen::Panels) && !app_state.panel_busy(app_state.is_left_active);
 
     // Alt+* inverts the directories as well as the files. Ctrl is an alias
     // for the terminals that can report it; most send Ctrl+* as a bare * or
@@ -150,9 +147,7 @@ fn job_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         KeyCode::Char('s') | KeyCode::Char('S') if job.problem.is_some() => job.answer(Answer::Skip),
         KeyCode::Char('a') | KeyCode::Char('A') if job.problem.is_some() => job.answer(Answer::SkipAll),
         // Offered only for what the trash would not take.
-        KeyCode::Char('d') | KeyCode::Char('D') if job.problem.is_some() && job.kind == TransferKind::Trash => {
-            job.answer(Answer::Delete)
-        }
+        KeyCode::Char('d') | KeyCode::Char('D') if job.problem.is_some() && job.kind == TransferKind::Trash => job.answer(Answer::Delete),
         KeyCode::Esc => app_state.cancel_transfer(),
         // The second F10 leaves, abandoning the job where it stands. Asked
         // for twice because it is the way out of a transfer stuck in a write
@@ -327,14 +322,38 @@ fn editor_key(app_state: &mut AppState, key: KeyEvent) {
             }
         }
         KeyCode::F(3) => app_state.find(!extend, false),
-        KeyCode::Up => { app_state.editor_prepare_move(extend); app_state.editor_cursor_up(); }
-        KeyCode::Down => { app_state.editor_prepare_move(extend); app_state.editor_cursor_down(); }
-        KeyCode::Left => { app_state.editor_prepare_move(extend); app_state.editor_cursor_left(); }
-        KeyCode::Right => { app_state.editor_prepare_move(extend); app_state.editor_cursor_right(); }
-        KeyCode::Home => { app_state.editor_prepare_move(extend); app_state.editor_home(); }
-        KeyCode::End => { app_state.editor_prepare_move(extend); app_state.editor_end(); }
-        KeyCode::PageUp => { app_state.editor_prepare_move(extend); app_state.editor_page_up(); }
-        KeyCode::PageDown => { app_state.editor_prepare_move(extend); app_state.editor_page_down(); }
+        KeyCode::Up => {
+            app_state.editor_prepare_move(extend);
+            app_state.editor_cursor_up();
+        }
+        KeyCode::Down => {
+            app_state.editor_prepare_move(extend);
+            app_state.editor_cursor_down();
+        }
+        KeyCode::Left => {
+            app_state.editor_prepare_move(extend);
+            app_state.editor_cursor_left();
+        }
+        KeyCode::Right => {
+            app_state.editor_prepare_move(extend);
+            app_state.editor_cursor_right();
+        }
+        KeyCode::Home => {
+            app_state.editor_prepare_move(extend);
+            app_state.editor_home();
+        }
+        KeyCode::End => {
+            app_state.editor_prepare_move(extend);
+            app_state.editor_end();
+        }
+        KeyCode::PageUp => {
+            app_state.editor_prepare_move(extend);
+            app_state.editor_page_up();
+        }
+        KeyCode::PageDown => {
+            app_state.editor_prepare_move(extend);
+            app_state.editor_page_down();
+        }
         KeyCode::Enter => app_state.editor_enter(),
         KeyCode::Backspace => app_state.editor_backspace(),
         // CUA aliases, which bypass the Ctrl-chord gate entirely.
@@ -683,27 +702,20 @@ fn enter_directory_panel(app_state: &mut AppState) {
 
 #[cfg(target_os = "macos")]
 fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
-    Command::new("open").arg(path)
-        .stdout(Stdio::null()).stderr(Stdio::null())
-        .spawn()?;
+    Command::new("open").arg(path).stdout(Stdio::null()).stderr(Stdio::null()).spawn()?;
     Ok(())
 }
 
 #[cfg(target_os = "windows")]
 fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
-    Command::new("cmd").args(["/C", "start", ""]).arg(path)
-        .stdout(Stdio::null()).stderr(Stdio::null())
-        .spawn()?;
+    Command::new("cmd").args(["/C", "start", ""]).arg(path).stdout(Stdio::null()).stderr(Stdio::null()).spawn()?;
     Ok(())
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
     use std::os::unix::process::CommandExt;
-    Command::new("xdg-open").arg(path)
-        .stdout(Stdio::null()).stderr(Stdio::null())
-        .process_group(0)
-        .spawn()?;
+    Command::new("xdg-open").arg(path).stdout(Stdio::null()).stderr(Stdio::null()).process_group(0).spawn()?;
     Ok(())
 }
 
@@ -776,16 +788,8 @@ fn handle_create_confirm(app_state: &mut AppState) {
 
 fn handle_f3_view(app_state: &mut AppState) {
     // Get selected item from active panel
-    let state = if app_state.is_left_active {
-        &app_state.state_left
-    } else {
-        &app_state.state_right
-    };
-    let children = if app_state.is_left_active {
-        &app_state.children_left
-    } else {
-        &app_state.children_right
-    };
+    let state = if app_state.is_left_active { &app_state.state_left } else { &app_state.state_right };
+    let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };
     let selected_item = state.selected().and_then(|index| children.get(index));
 
     if let Some(item) = selected_item {
@@ -795,11 +799,7 @@ fn handle_f3_view(app_state: &mut AppState) {
         }
 
         // Build file path
-        let parent_path = if app_state.is_left_active {
-            &app_state.dir_left
-        } else {
-            &app_state.dir_right
-        };
+        let parent_path = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_os);
 
@@ -810,16 +810,8 @@ fn handle_f3_view(app_state: &mut AppState) {
 
 fn handle_f4_edit(app_state: &mut AppState) {
     // Get selected item from active panel
-    let state = if app_state.is_left_active {
-        &app_state.state_left
-    } else {
-        &app_state.state_right
-    };
-    let children = if app_state.is_left_active {
-        &app_state.children_left
-    } else {
-        &app_state.children_right
-    };
+    let state = if app_state.is_left_active { &app_state.state_left } else { &app_state.state_right };
+    let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };
     let selected_item = state.selected().and_then(|index| children.get(index));
 
     if let Some(item) = selected_item {
@@ -829,11 +821,7 @@ fn handle_f4_edit(app_state: &mut AppState) {
         }
 
         // Build file path
-        let parent_path = if app_state.is_left_active {
-            &app_state.dir_left
-        } else {
-            &app_state.dir_right
-        };
+        let parent_path = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_os);
 
@@ -888,10 +876,7 @@ fn detach(_process: &mut Command) {}
 #[cfg(target_os = "macos")]
 fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
     use std::os::unix::process::CommandExt;
-    Command::new("open").arg("-a").arg("Terminal").arg(dir)
-        .stdout(Stdio::null()).stderr(Stdio::null())
-        .process_group(0)
-        .spawn()?;
+    Command::new("open").arg("-a").arg("Terminal").arg(dir).stdout(Stdio::null()).stderr(Stdio::null()).process_group(0).spawn()?;
     Ok(())
 }
 
@@ -899,8 +884,11 @@ fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
 fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
     use std::os::windows::process::CommandExt;
     const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
-    Command::new("cmd").args(["/C", "start", "cmd"]).current_dir(dir)
-        .stdout(Stdio::null()).stderr(Stdio::null())
+    Command::new("cmd")
+        .args(["/C", "start", "cmd"])
+        .current_dir(dir)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .creation_flags(CREATE_NEW_PROCESS_GROUP)
         .spawn()?;
     Ok(())
@@ -910,28 +898,12 @@ fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
 fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
     use std::os::unix::process::CommandExt;
     if let Ok(term) = std::env::var("TERMINAL") {
-        Command::new(&term).current_dir(dir)
-            .stdout(Stdio::null()).stderr(Stdio::null())
-            .process_group(0)
-            .spawn()?;
+        Command::new(&term).current_dir(dir).stdout(Stdio::null()).stderr(Stdio::null()).process_group(0).spawn()?;
         return Ok(());
     }
-    let emulators = [
-        "xdg-terminal-emulator",
-        "alacritty",
-        "kitty",
-        "foot",
-        "gnome-terminal",
-        "konsole",
-        "xfce4-terminal",
-        "xterm",
-    ];
+    let emulators = ["xdg-terminal-emulator", "alacritty", "kitty", "foot", "gnome-terminal", "konsole", "xfce4-terminal", "xterm"];
     for emu in &emulators {
-        if Command::new(emu).current_dir(dir)
-            .stdout(Stdio::null()).stderr(Stdio::null())
-            .process_group(0)
-            .spawn().is_ok()
-        {
+        if Command::new(emu).current_dir(dir).stdout(Stdio::null()).stderr(Stdio::null()).process_group(0).spawn().is_ok() {
             return Ok(());
         }
     }
@@ -1086,20 +1058,12 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
 
     // Select the row if within bounds
     if actual_index < total {
-        let state = if clicked_left {
-            &mut app_state.state_left
-        } else {
-            &mut app_state.state_right
-        };
+        let state = if clicked_left { &mut app_state.state_left } else { &mut app_state.state_right };
         state.select(Some(actual_index));
 
         // Double-click on directory: enter it
         if is_double_click {
-            let children = if clicked_left {
-                &app_state.children_left
-            } else {
-                &app_state.children_right
-            };
+            let children = if clicked_left { &app_state.children_left } else { &app_state.children_right };
             if actual_index < children.len() {
                 if children[actual_index].is_dir {
                     enter_directory_panel(app_state);

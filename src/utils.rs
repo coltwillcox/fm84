@@ -157,15 +157,7 @@ pub fn printable_line(line: &str) -> String {
 
 /// Width of a line as the viewer draws it: tabs expanded, columns not bytes.
 pub fn line_display_width(line: &str) -> usize {
-    line.chars()
-        .map(|character| {
-            if character == '\t' {
-                crate::display::tab_width()
-            } else {
-                UnicodeWidthChar::width(character).unwrap_or(0)
-            }
-        })
-        .sum()
+    line.chars().map(|character| if character == '\t' { crate::display::tab_width() } else { UnicodeWidthChar::width(character).unwrap_or(0) }).sum()
 }
 
 pub fn color_for_extension(ext: &str) -> Color {
@@ -195,11 +187,7 @@ pub fn extension_color(ext: &str, light: bool) -> Color {
         240..300 => (x, 0.0, c),
         _ => (c, 0.0, x),
     };
-    Color::Rgb(
-        ((r1 + m) * 255.0) as u8,
-        ((g1 + m) * 255.0) as u8,
-        ((b1 + m) * 255.0) as u8,
-    )
+    Color::Rgb(((r1 + m) * 255.0) as u8, ((g1 + m) * 255.0) as u8, ((b1 + m) * 255.0) as u8)
 }
 
 /// A name as it is safe to draw. A file name can hold any byte but '/' and NUL,

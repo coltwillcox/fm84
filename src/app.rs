@@ -1,23 +1,20 @@
-use crate::fs_ops::{
-    Description, Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir,
-    load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place,
-};
 use crate::background::{Latest, Watch, WatchEvent};
-use crate::viewer::Preview;
+use crate::fs_ops::{Description, Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place};
 use crate::options::{OPTION_ROWS, OptionRow, Options};
-use image::DynamicImage;
 use crate::strip::{Strip, StripHit};
+use crate::viewer::Preview;
 use crate::viewer::{ViewMode, ViewerState};
+use image::DynamicImage;
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
 use ratatui::text::Span;
 use ratatui::widgets::TableState;
-use std::ffi::OsString;
 use std::collections::{HashMap, HashSet};
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
-use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 
 /// Reusable single-line text input with cursor.
@@ -37,10 +34,7 @@ impl TextInput {
     }
 
     fn byte_index(&self) -> usize {
-        self.text.char_indices()
-            .nth(self.cursor)
-            .map(|(i, _)| i)
-            .unwrap_or(self.text.len())
+        self.text.char_indices().nth(self.cursor).map(|(i, _)| i).unwrap_or(self.text.len())
     }
 
     pub fn move_left(&mut self) {
@@ -70,10 +64,7 @@ impl TextInput {
 
     pub fn backspace(&mut self) {
         if self.cursor > 0 {
-            let byte_start = self.text.char_indices()
-                .nth(self.cursor - 1)
-                .map(|(i, _)| i)
-                .unwrap_or(0);
+            let byte_start = self.text.char_indices().nth(self.cursor - 1).map(|(i, _)| i).unwrap_or(0);
             let byte_end = self.byte_index();
             self.text.replace_range(byte_start..byte_end, "");
             self.cursor -= 1;
@@ -84,10 +75,7 @@ impl TextInput {
         let len = self.text.chars().count();
         if self.cursor < len {
             let byte_start = self.byte_index();
-            let byte_end = self.text.char_indices()
-                .nth(self.cursor + 1)
-                .map(|(i, _)| i)
-                .unwrap_or(self.text.len());
+            let byte_end = self.text.char_indices().nth(self.cursor + 1).map(|(i, _)| i).unwrap_or(self.text.len());
             self.text.replace_range(byte_start..byte_end, "");
         }
     }
@@ -452,7 +440,13 @@ struct JobProgress<'a> {
 
 impl<'a> JobProgress<'a> {
     fn new(updates: &'a Sender<JobUpdate>, cancel: &'a AtomicBool, answers: &'a Receiver<Answer>) -> Self {
-        JobProgress { updates, cancel, answers, skip_all: false, aborted: false }
+        JobProgress {
+            updates,
+            cancel,
+            answers,
+            skip_all: false,
+            aborted: false,
+        }
     }
 
     /// The message that ends the job, given how its last item came out.
@@ -484,13 +478,12 @@ impl Progress for JobProgress<'_> {
         let answer = if self.skip_all {
             Answer::Skip
         } else {
-            let problem = JobProblem { path: path.to_path_buf(), message: error.to_string() };
+            let problem = JobProblem {
+                path: path.to_path_buf(),
+                message: error.to_string(),
+            };
             // Nobody left to ask, or nobody answering, is an Abort.
-            if self.updates.send(JobUpdate::Problem(problem)).is_err() {
-                Answer::Abort
-            } else {
-                self.answers.recv().unwrap_or(Answer::Abort)
-            }
+            if self.updates.send(JobUpdate::Problem(problem)).is_err() { Answer::Abort } else { self.answers.recv().unwrap_or(Answer::Abort) }
         };
         match answer {
             Answer::Retry => Reply::Retry,
@@ -595,7 +588,12 @@ struct Listed {
 /// Everything a panel needs from the disk, read on the listing thread.
 fn read_listing(dir: &Path, options: &Options) -> Listed {
     let Some(found) = nearest_existing_dir(dir) else {
-        return Listed { dir: None, items: Err(std::io::ErrorKind::NotFound.into()), stamp: None, disk: None };
+        return Listed {
+            dir: None,
+            items: Err(std::io::ErrorKind::NotFound.into()),
+            stamp: None,
+            disk: None,
+        };
     };
     let stamp = std::fs::metadata(&found).and_then(|metadata| metadata.modified()).ok();
     let items = load_directory_rows(&found, options);
@@ -676,8 +674,7 @@ impl ImageCache {
     }
 
     fn holds(&self, path: &Path) -> bool {
-        self.ready.iter().any(|(held, _, _)| held == path)
-            || self.pending.as_ref().is_some_and(|(wanted, _)| wanted == path)
+        self.ready.iter().any(|(held, _, _)| held == path) || self.pending.as_ref().is_some_and(|(wanted, _)| wanted == path)
     }
 
     /// Start reading one, unless it is already here or on its way.
@@ -960,7 +957,6 @@ impl AppState {
         }
     }
 
-
     fn options_row(&self) -> OptionRow {
         OPTION_ROWS[self.options_cursor.min(OPTION_ROWS.len() - 1)]
     }
@@ -1085,11 +1081,7 @@ impl AppState {
 
     /// Returns (&children, &mut state) for the active panel.
     fn active_panel_mut(&mut self) -> (&[Item], &mut TableState) {
-        if self.is_left_active {
-            (&self.children_left, &mut self.state_left)
-        } else {
-            (&self.children_right, &mut self.state_right)
-        }
+        if self.is_left_active { (&self.children_left, &mut self.state_left) } else { (&self.children_right, &mut self.state_right) }
     }
 
     /// Open a file for viewing or editing, asking first when it is large enough
@@ -1110,7 +1102,12 @@ impl AppState {
         };
 
         if size > self.options.large_file_bytes() {
-            self.dialog = Some(Dialog::LargeFile(LargeFile { path: file_path, is_edit, size, dimensions: None }));
+            self.dialog = Some(Dialog::LargeFile(LargeFile {
+                path: file_path,
+                is_edit,
+                size,
+                dimensions: None,
+            }));
             return;
         }
 
@@ -1123,7 +1120,12 @@ impl AppState {
             && let Some((dimensions, decoded)) = crate::viewer::image_cost(&file_path)
             && decoded > crate::constants::IMAGE_MAX_DECODED
         {
-            self.dialog = Some(Dialog::LargeFile(LargeFile { path: file_path, is_edit, size: decoded, dimensions: Some(dimensions) }));
+            self.dialog = Some(Dialog::LargeFile(LargeFile {
+                path: file_path,
+                is_edit,
+                size: decoded,
+                dimensions: Some(dimensions),
+            }));
             return;
         }
 
@@ -1191,8 +1193,7 @@ impl AppState {
         }
 
         let (was_columns, was_rows) = (state.image_columns, state.image_lines.len());
-        (state.image_lines, state.image_colors, state.image_backgrounds) =
-            crate::viewer::image_to_ascii(image, columns, rows, backgrounds);
+        (state.image_lines, state.image_colors, state.image_backgrounds) = crate::viewer::image_to_ascii(image, columns, rows, backgrounds);
         state.total_lines = state.line_count();
         state.image_columns = columns;
         // Hold whatever was in the middle of the pane in the middle of it. A
@@ -1316,12 +1317,7 @@ impl AppState {
                     if state.content_lines.is_empty() {
                         state.content_lines.push(String::new());
                     }
-                    state.max_line_width = state
-                        .content_lines
-                        .iter()
-                        .map(|line| crate::utils::line_display_width(line))
-                        .max()
-                        .unwrap_or(0);
+                    state.max_line_width = state.content_lines.iter().map(|line| crate::utils::line_display_width(line)).max().unwrap_or(0);
                 }
 
                 state.mode = next;
@@ -1368,8 +1364,7 @@ impl AppState {
     /// the name: that is how the viewer decides everywhere else, and it costs a
     /// fraction of a millisecond a file.
     fn image_neighbour(&self, showing: &Path, forward: bool) -> Option<PathBuf> {
-        let (children, dir) =
-            if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
+        let (children, dir) = if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
         let files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir).map(|item| item.path_in(dir)).collect();
         let at = files.iter().position(|path| path == showing)?;
 
@@ -1476,9 +1471,7 @@ impl AppState {
         // not UTF-8 can still be waiting further in. Opened lossily, saving
         // would write a replacement character over every one of them, so the
         // file is refused - with a reason, rather than the decoder's own.
-        let content = String::from_utf8(std::fs::read(&file_path).map_err(|e| e.to_string())?).map_err(|_| {
-            format!("Cannot edit {}: it is not UTF-8 text. F3 shows it as it is.", file_path.display())
-        })?;
+        let content = String::from_utf8(std::fs::read(&file_path).map_err(|e| e.to_string())?).map_err(|_| format!("Cannot edit {}: it is not UTF-8 text. F3 shows it as it is.", file_path.display()))?;
         let line_ending = detect_line_ending(&content);
         let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
         if content.ends_with('\n') {
@@ -1641,11 +1634,7 @@ impl AppState {
         }
         self.find_shown = true;
 
-        let found = if self.is_editing() {
-            self.editor_find(&needle, forward, fresh)
-        } else {
-            self.viewer_find(&needle, forward, fresh)
-        };
+        let found = if self.is_editing() { self.editor_find(&needle, forward, fresh) } else { self.viewer_find(&needle, forward, fresh) };
         self.find_note = match found {
             None => Some(format!("Not found: {}", self.find_term)),
             Some(true) => Some(if forward { "Wrapped to the top" } else { "Wrapped to the bottom" }.to_string()),
@@ -1728,13 +1717,7 @@ impl AppState {
                 return; // highlighting disabled for this file
             }
             let extension = state.file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
-            crate::viewer::highlight_from(
-                &state.lines,
-                extension,
-                from,
-                &mut state.highlighted_lines,
-                &mut state.line_states,
-            );
+            crate::viewer::highlight_from(&state.lines, extension, from, &mut state.highlighted_lines, &mut state.line_states);
         }
     }
 
@@ -1797,8 +1780,7 @@ impl AppState {
             let Some(step) = state.undo_stack.last() else {
                 return;
             };
-            let unchanged = state.lines.len() == step.total_lines_before
-                && state.lines[step.first_line..step.first_line + step.before.len()] == step.before[..];
+            let unchanged = state.lines.len() == step.total_lines_before && state.lines[step.first_line..step.first_line + step.before.len()] == step.before[..];
             if unchanged {
                 state.undo_stack.pop();
                 return;
@@ -2141,9 +2123,7 @@ impl AppState {
     pub fn editor_delete(&mut self) {
         let fallback = match self.editor() {
             // At end of line the next line is pulled up, so include it.
-            Some(state) if state.cursor_col >= state.lines[state.cursor_line].chars().count() => {
-                state.cursor_line..=state.cursor_line + 1
-            }
+            Some(state) if state.cursor_col >= state.lines[state.cursor_line].chars().count() => state.cursor_line..=state.cursor_line + 1,
             Some(state) => state.cursor_line..=state.cursor_line,
             None => return,
         };
@@ -2293,16 +2273,18 @@ impl AppState {
     /// each size that is finished.
     pub fn poll_dir_sizes(&mut self) {
         let mut finished = Vec::new();
-        self.dir_sizing.retain_mut(|sizing| loop {
-            match sizing.updates.try_recv() {
-                Ok(SizeUpdate::Found(found)) => sizing.found = found,
-                Ok(SizeUpdate::Finished(result)) => {
-                    finished.push((sizing.path.clone(), result));
-                    break false;
+        self.dir_sizing.retain_mut(|sizing| {
+            loop {
+                match sizing.updates.try_recv() {
+                    Ok(SizeUpdate::Found(found)) => sizing.found = found,
+                    Ok(SizeUpdate::Finished(result)) => {
+                        finished.push((sizing.path.clone(), result));
+                        break false;
+                    }
+                    Err(TryRecvError::Empty) => break true,
+                    // Gone without a word, which only happens if it panicked.
+                    Err(TryRecvError::Disconnected) => break false,
                 }
-                Err(TryRecvError::Empty) => break true,
-                // Gone without a word, which only happens if it panicked.
-                Err(TryRecvError::Disconnected) => break false,
             }
         });
 
@@ -2633,10 +2615,7 @@ impl AppState {
             Ok(items) => {
                 let selected = if is_left { &mut self.selected_left } else { &mut self.selected_right };
                 prune_selection(selected, &items);
-                let index = wanted
-                    .and_then(|name| items.iter().position(|item| item.name_os == name))
-                    .unwrap_or(previous_index)
-                    .min(items.len().saturating_sub(1));
+                let index = wanted.and_then(|name| items.iter().position(|item| item.name_os == name)).unwrap_or(previous_index).min(items.len().saturating_sub(1));
                 if is_left {
                     self.children_left = items;
                     self.state_left.select(Some(index));
@@ -3020,17 +2999,9 @@ impl AppState {
         detail.awaiting = false;
         // The exact count, since the column rounds it to something like
         // "9 MiB" and the difference is the point of showing it again.
-        detail.size = described
-            .as_ref()
-            .and_then(|described| described.size_bytes)
-            .map(|bytes| format!("{} bytes", crate::utils::grouped(bytes)))
-            .unwrap_or_default();
+        detail.size = described.as_ref().and_then(|described| described.size_bytes).map(|bytes| format!("{} bytes", crate::utils::grouped(bytes))).unwrap_or_default();
         // To the second, which the column has no room for either.
-        detail.modified = described
-            .as_ref()
-            .and_then(|described| described.modified)
-            .map(|at| crate::utils::format_exact(at, date_format))
-            .unwrap_or_default();
+        detail.modified = described.as_ref().and_then(|described| described.modified).map(|at| crate::utils::format_exact(at, date_format)).unwrap_or_default();
         detail.owner = described.as_ref().map(|described| described.owner.clone()).unwrap_or_default();
         detail.attributes = described.as_ref().map(|described| described.attributes.clone()).unwrap_or_default();
         detail.link = described.and_then(|described| described.link);
@@ -3057,7 +3028,13 @@ impl AppState {
                 }
                 None => (String::new(), false),
             };
-            self.preview = Some(PreviewState { path, label, lines: Vec::new(), bytes: Vec::new(), awaiting });
+            self.preview = Some(PreviewState {
+                path,
+                label,
+                lines: Vec::new(),
+                bytes: Vec::new(),
+                awaiting,
+            });
         }
 
         if !self.preview.as_ref().is_some_and(|preview| preview.awaiting) {
@@ -3228,11 +3205,7 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: 
     let _ = progress.updates.send(JobUpdate::Total(measure(&remaining)));
 
     for (source, dest, is_dir) in remaining {
-        let result = if is_copy {
-            copy_path(source, dest, is_dir, &mut progress)
-        } else {
-            move_path(source, dest, overwrite, &mut progress)
-        };
+        let result = if is_copy { copy_path(source, dest, is_dir, &mut progress) } else { move_path(source, dest, overwrite, &mut progress) };
         match result {
             Ok(Transfer::Done) => {}
             outcome => return progress.finish(outcome),
@@ -3266,10 +3239,7 @@ fn char_slice(line: &str, from: usize, to: usize) -> String {
 
 /// Convert a char index to a byte index in a string.
 fn char_to_byte(s: &str, char_idx: usize) -> usize {
-    s.char_indices()
-        .nth(char_idx)
-        .map(|(i, _)| i)
-        .unwrap_or(s.len())
+    s.char_indices().nth(char_idx).map(|(i, _)| i).unwrap_or(s.len())
 }
 
 #[cfg(test)]
@@ -3719,9 +3689,7 @@ mod tests {
         app_state.open_dir(false, std::env::temp_dir(), None);
         app_state.is_left_active = true;
         let at = |app_state: &AppState, name: &str| app_state.children_left.iter().position(|item| item.name_full == name);
-        let cursor_right = |app_state: &AppState| {
-            app_state.state_right.selected().and_then(|index| app_state.children_right.get(index)).map(|item| item.name_full.clone())
-        };
+        let cursor_right = |app_state: &AppState| app_state.state_right.selected().and_then(|index| app_state.children_right.get(index)).map(|item| item.name_full.clone());
 
         // A directory: the other panel goes into it, and the focus stays.
         app_state.state_left.select(at(&app_state, "inner"));
@@ -3813,8 +3781,7 @@ mod tests {
 
     #[test]
     fn a_selection_outlives_a_re_sort_but_not_its_file() {
-        let mut selected: HashSet<std::ffi::OsString> =
-            ["one.txt", "two.txt"].iter().map(|name| name.into()).collect();
+        let mut selected: HashSet<std::ffi::OsString> = ["one.txt", "two.txt"].iter().map(|name| name.into()).collect();
 
         // Re-sorted, renumbered: both files are still there, so both stay
         // selected. This is what keying by name rather than row is for.
@@ -3864,7 +3831,6 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
-
     #[test]
     fn tabs_keep_where_each_was_left() {
         let dir = std::env::temp_dir().join(format!("fm84-tabs-{}", std::process::id()));
@@ -3880,9 +3846,7 @@ mod tests {
         app_state.is_left_active = true;
         app_state.open_dir(true, dir.clone(), None);
         let at = |app_state: &AppState, name: &str| app_state.children_left.iter().position(|item| item.name_full == name);
-        let cursor = |app_state: &AppState| {
-            app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone())
-        };
+        let cursor = |app_state: &AppState| app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone());
 
         // Something selected and the cursor on two.txt in the first tab.
         app_state.selected_left.insert("one.txt".into());
@@ -3997,7 +3961,13 @@ mod tests {
         let listed = app_state.children_left.len();
 
         let (sender, answer) = std::sync::mpsc::channel();
-        app_state.listing_left = Some(super::PendingListing { dir: dir.join("far"), navigate: true, select: None, tab: None, answer });
+        app_state.listing_left = Some(super::PendingListing {
+            dir: dir.join("far"),
+            navigate: true,
+            select: None,
+            tab: None,
+            answer,
+        });
         assert!(app_state.panel_busy(true));
         // The panel is as it was, and its tabs cannot be touched.
         app_state.new_tab();
@@ -4032,11 +4002,27 @@ mod tests {
         for refused in [true, false] {
             let (sender, answer) = std::sync::mpsc::channel();
             app_state.tabs_left.active = 1;
-            let tab = super::TabSwitch { selected: HashSet::new(), undo: super::TabUndo::Active(0) };
-            app_state.listing_left = Some(super::PendingListing { dir: dir.join("locked"), navigate: true, select: None, tab: Some(tab), answer });
+            let tab = super::TabSwitch {
+                selected: HashSet::new(),
+                undo: super::TabUndo::Active(0),
+            };
+            app_state.listing_left = Some(super::PendingListing {
+                dir: dir.join("locked"),
+                navigate: true,
+                select: None,
+                tab: Some(tab),
+                answer,
+            });
             if refused {
                 let denied = std::io::Error::from(std::io::ErrorKind::PermissionDenied);
-                sender.send(super::Listed { dir: Some(dir.join("locked")), items: Err(denied), stamp: None, disk: None }).unwrap();
+                sender
+                    .send(super::Listed {
+                        dir: Some(dir.join("locked")),
+                        items: Err(denied),
+                        stamp: None,
+                        disk: None,
+                    })
+                    .unwrap();
                 app_state.poll_listings();
                 assert!(app_state.error.is_some());
                 app_state.reset_error();

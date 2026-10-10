@@ -8,7 +8,10 @@ use std::path::PathBuf;
 #[derive(Debug, PartialEq, Eq)]
 pub enum Command {
     /// Start, with the panels in these directories where given.
-    Run { left: Option<PathBuf>, right: Option<PathBuf> },
+    Run {
+        left: Option<PathBuf>,
+        right: Option<PathBuf>,
+    },
     Help,
     Version,
 }
@@ -45,7 +48,10 @@ pub fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command, String
         return Err(format!("expected at most two directories, got {}", directories.len()));
     }
     let mut directories = directories.into_iter();
-    Ok(Command::Run { left: directories.next(), right: directories.next() })
+    Ok(Command::Run {
+        left: directories.next(),
+        right: directories.next(),
+    })
 }
 
 pub fn version() -> String {
@@ -53,8 +59,7 @@ pub fn version() -> String {
 }
 
 pub fn help() -> String {
-    let config = crate::options::config_path("config")
-        .map_or_else(|| "none found".to_string(), |path| path.display().to_string());
+    let config = crate::options::config_path("config").map_or_else(|| "none found".to_string(), |path| path.display().to_string());
     format!(
         "{version} - a synthwave dual-pane TUI file manager
 
@@ -102,7 +107,10 @@ mod tests {
         assert_eq!(parse_strs(&["/tmp"]), Ok(Command::Run { left: Some("/tmp".into()), right: None }));
         assert_eq!(
             parse_strs(&["/tmp", "/home"]),
-            Ok(Command::Run { left: Some("/tmp".into()), right: Some("/home".into()) })
+            Ok(Command::Run {
+                left: Some("/tmp".into()),
+                right: Some("/home".into())
+            })
         );
         assert!(parse_strs(&["a", "b", "c"]).unwrap_err().contains("at most two"));
     }

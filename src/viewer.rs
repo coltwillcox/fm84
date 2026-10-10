@@ -1,7 +1,4 @@
-use crate::constants::{
-    CELL_ASPECT_FALLBACK, CELL_ASPECT_RANGE, HEX_BYTES_PER_LINE, HEX_OFFSET_DIGITS, IMAGE_COLOR_DROP_BITS, IMAGE_GLYPH_CONTRAST,
-    IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL, PREVIEW_HEX_BYTES,
-};
+use crate::constants::{CELL_ASPECT_FALLBACK, CELL_ASPECT_RANGE, HEX_BYTES_PER_LINE, HEX_OFFSET_DIGITS, IMAGE_COLOR_DROP_BITS, IMAGE_GLYPH_CONTRAST, IMAGE_MAX_OVERFLOW, IMAGE_MAX_SIDE, IMAGE_RAMP, IMAGE_ZOOM_NORMAL, PREVIEW_HEX_BYTES};
 use image::DynamicImage;
 use image::imageops::FilterType;
 use ratatui::style::Color;
@@ -37,9 +34,7 @@ fn highlighter() -> &'static Highlighter<'static> {
             .filter_map(|name| themes.themes.get(name).map(|theme| (name, Highlighter::new(theme))))
             .collect()
     });
-    highlighters
-        .get(crate::display::palette().syntax_theme)
-        .unwrap_or_else(|| highlighters.values().next().expect("syntect ships its default themes"))
+    highlighters.get(crate::display::palette().syntax_theme).unwrap_or_else(|| highlighters.values().next().expect("syntect ships its default themes"))
 }
 
 /// What the viewer is showing of a file.
@@ -245,11 +240,7 @@ fn load_image(bytes: &[u8]) -> Option<(DynamicImage, String)> {
     let name = format.extensions_str().first().map_or_else(|| format!("{format:?}"), |ext| ext.to_uppercase());
     let label = format!("{} {}x{}", name, image.width(), image.height());
 
-    let image = if image.width().max(image.height()) > IMAGE_MAX_SIDE {
-        image.thumbnail(IMAGE_MAX_SIDE, IMAGE_MAX_SIDE)
-    } else {
-        image
-    };
+    let image = if image.width().max(image.height()) > IMAGE_MAX_SIDE { image.thumbnail(IMAGE_MAX_SIDE, IMAGE_MAX_SIDE) } else { image };
     Some((image, label))
 }
 
@@ -323,22 +314,11 @@ fn coarse(channel: u8) -> u8 {
 ///
 /// On a dark background a dense character is a bright one. On a light theme
 /// it is the other way round: ink is dark, so density stands for darkness.
-pub fn image_to_ascii(
-    image: &DynamicImage,
-    columns: usize,
-    rows: usize,
-    backgrounds: bool,
-) -> (Vec<String>, Vec<Vec<Color>>, Vec<Vec<Color>>) {
+pub fn image_to_ascii(image: &DynamicImage, columns: usize, rows: usize, backgrounds: bool) -> (Vec<String>, Vec<Vec<Color>>, Vec<Vec<Color>>) {
     image_to_ascii_on(image, columns, rows, crate::display::light_background(), backgrounds)
 }
 
-fn image_to_ascii_on(
-    image: &DynamicImage,
-    columns: usize,
-    rows: usize,
-    light: bool,
-    backgrounds: bool,
-) -> (Vec<String>, Vec<Vec<Color>>, Vec<Vec<Color>>) {
+fn image_to_ascii_on(image: &DynamicImage, columns: usize, rows: usize, light: bool, backgrounds: bool) -> (Vec<String>, Vec<Vec<Color>>, Vec<Vec<Color>>) {
     let (columns, rows) = (columns.max(1) as u32, rows.max(1) as u32);
     let small = image.resize_exact(columns, rows, FilterType::Triangle).to_rgba8();
 
@@ -366,8 +346,7 @@ fn image_to_ascii_on(
                 // bright one, so neither end of the picture flattens out.
                 let shift = |value: u8| {
                     let value = value as f64;
-                    let lifted =
-                        if luma < 128.0 { value + (255.0 - value) * IMAGE_GLYPH_CONTRAST } else { value * (1.0 - IMAGE_GLYPH_CONTRAST) };
+                    let lifted = if luma < 128.0 { value + (255.0 - value) * IMAGE_GLYPH_CONTRAST } else { value * (1.0 - IMAGE_GLYPH_CONTRAST) };
                     lifted.round() as u8
                 };
                 ink_row.push(Color::Rgb(shift(colour[0]), shift(colour[1]), shift(colour[2])));
@@ -464,9 +443,7 @@ impl ViewerState {
                 hex_line(offset, self.bytes.get(offset..stop).unwrap_or(&[]))
             }
             ViewMode::Image => self.image_lines.get(index).cloned().unwrap_or_default(),
-            ViewMode::Text => {
-                self.content_lines.get(index).map(|line| crate::utils::printable_line(line)).unwrap_or_default()
-            }
+            ViewMode::Text => self.content_lines.get(index).map(|line| crate::utils::printable_line(line)).unwrap_or_default(),
         }
     }
 
@@ -574,18 +551,10 @@ pub fn highlight_all(content: &[String], extension: &str) -> (Vec<Vec<Span<'stat
 /// the state matches the cache - past that point the existing spans still hold.
 /// Both vectors are edited in place, so an ordinary keystroke touches a couple
 /// of entries no matter how long the file is.
-pub fn highlight_from(
-    content: &[String],
-    extension: &str,
-    from: usize,
-    spans: &mut Vec<Vec<Span<'static>>>,
-    states: &mut Vec<LineState>,
-) {
+pub fn highlight_from(content: &[String], extension: &str, from: usize, spans: &mut Vec<Vec<Span<'static>>>, states: &mut Vec<LineState>) {
     let ps = syntax_set();
     let hlr = highlighter();
-    let syntax = ps
-        .find_syntax_by_extension(extension)
-        .unwrap_or_else(|| ps.find_syntax_plain_text());
+    let syntax = ps.find_syntax_by_extension(extension).unwrap_or_else(|| ps.find_syntax_plain_text());
     let fresh = || (ParseState::new(syntax), HighlightState::new(hlr, ScopeStack::new()));
 
     let mut start = from;
@@ -639,12 +608,7 @@ pub fn highlight_from(
         let line = &content[index];
         let ops = parse.parse_line(line, ps).unwrap_or_default();
         let line_spans: Vec<Span<'static>> = HighlightIterator::new(&mut hl, &ops, line, hlr)
-            .map(|(style, text)| {
-                Span::styled(
-                    text.to_string(),
-                    ratatui::style::Style::default().fg(syntect_to_ratatui_color(style.foreground)),
-                )
-            })
+            .map(|(style, text)| Span::styled(text.to_string(), ratatui::style::Style::default().fg(syntect_to_ratatui_color(style.foreground))))
             .collect();
 
         if index < states.len() {
@@ -713,17 +677,12 @@ mod tests {
             "    match value { 0 => Err(Error::Empty), _ => Ok(text) }",
             "}",
         ];
-        (0..count)
-            .map(|i| template[i % template.len()].replace("{}", &i.to_string()))
-            .collect()
+        (0..count).map(|i| template[i % template.len()].replace("{}", &i.to_string())).collect()
     }
 
     /// Spans reduced to comparable data.
     fn shape(spans: &[Vec<Span<'static>>]) -> Vec<Vec<(String, Option<Color>)>> {
-        spans
-            .iter()
-            .map(|line| line.iter().map(|s| (s.content.to_string(), s.style.fg)).collect())
-            .collect()
+        spans.iter().map(|line| line.iter().map(|s| (s.content.to_string(), s.style.fg)).collect()).collect()
     }
 
     fn assert_matches_full(lines: &[String], spans: &[Vec<Span<'static>>], states: &[LineState], case: &str) {
@@ -772,7 +731,6 @@ mod tests {
         assert_matches_full(&lines, &spans, &states, "appended line");
     }
 }
-
 
 #[cfg(test)]
 mod image_tests {
@@ -885,10 +843,7 @@ mod image_tests {
                 let wanted = f64::from(width) / f64::from(height);
                 // A row is a coarse unit: at 40 rows one of them is 2.5% of the
                 // height, and the count is rounded to a whole one.
-                assert!(
-                    (drawn / wanted - 1.0).abs() < 0.05,
-                    "{width}x{height} on a {cell} cell drew {columns}x{rows}, shape {drawn:.3} against {wanted:.3}"
-                );
+                assert!((drawn / wanted - 1.0).abs() < 0.05, "{width}x{height} on a {cell} cell drew {columns}x{rows}, shape {drawn:.3} against {wanted:.3}");
             }
         }
     }
@@ -926,10 +881,7 @@ mod image_tests {
             let image = solid(image_width, image_height, [0, 0, 0, 255]);
             for (width, height) in [(80, 20), (30, 20), (200, 50), (7, 3)] {
                 let (columns, rows) = image_size_for(&image, width, height, false, IMAGE_ZOOM_NORMAL);
-                assert!(
-                    columns <= width && rows <= height,
-                    "{image_width}x{image_height} fit in {width}x{height}: {columns}x{rows}"
-                );
+                assert!(columns <= width && rows <= height, "{image_width}x{image_height} fit in {width}x{height}: {columns}x{rows}");
                 let drawn = image_to_ascii_on(&image, columns, rows, false, false).0;
                 assert_eq!(drawn.len(), rows);
             }
@@ -957,11 +909,7 @@ mod image_tests {
                     let (columns, rows) = image_size_for(&image, width, height, fill, zoom);
                     let (lines, colors, _) = image_to_ascii_on(&image, columns, rows, false, false);
                     let cells = columns * lines.len();
-                    assert!(
-                        cells <= budget,
-                        "{image_width}x{image_height} fill={fill} zoom={zoom}: {columns}x{} is {cells} cells",
-                        lines.len()
-                    );
+                    assert!(cells <= budget, "{image_width}x{image_height} fill={fill} zoom={zoom}: {columns}x{} is {cells} cells", lines.len());
                     assert_eq!(colors.len(), lines.len());
                 }
             }

@@ -18,16 +18,32 @@ use std::path::{Path, PathBuf};
 use unicode_width::UnicodeWidthChar;
 
 // The styles used throughout rendering, from whichever palette is showing.
-fn style_border() -> Style { Style::new().fg(palette().border) }
-fn style_title() -> Style { Style::new().fg(palette().title) }
-fn style_columns() -> Style { Style::new().fg(palette().columns) }
-fn style_file() -> Style { Style::new().fg(palette().file) }
-fn style_dir() -> Style { Style::new().fg(palette().directory) }
-fn style_dir_dark() -> Style { Style::new().fg(palette().directory_dark) }
-fn style_selection() -> Style { Style::new().bg(palette().selected_background_inactive) }
+fn style_border() -> Style {
+    Style::new().fg(palette().border)
+}
+fn style_title() -> Style {
+    Style::new().fg(palette().title)
+}
+fn style_columns() -> Style {
+    Style::new().fg(palette().columns)
+}
+fn style_file() -> Style {
+    Style::new().fg(palette().file)
+}
+fn style_dir() -> Style {
+    Style::new().fg(palette().directory)
+}
+fn style_dir_dark() -> Style {
+    Style::new().fg(palette().directory_dark)
+}
+fn style_selection() -> Style {
+    Style::new().bg(palette().selected_background_inactive)
+}
 // The other matches of a search. Marked rather than coloured, so it reads in
 // every theme and leaves the syntax colours underneath alone.
-fn style_match() -> Style { Style::new().add_modifier(Modifier::UNDERLINED | Modifier::BOLD) }
+fn style_match() -> Style {
+    Style::new().add_modifier(Modifier::UNDERLINED | Modifier::BOLD)
+}
 
 /// The columns beside Name. Name is never dropped, so it is not one of them.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -123,9 +139,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
 
         // Guard against terminal too small to render
         if area.height < 10 || area.width < 30 {
-            let msg = Paragraph::new("Terminal too small")
-                .alignment(Alignment::Center)
-                .style(style_title());
+            let msg = Paragraph::new("Terminal too small").alignment(Alignment::Center).style(style_title());
             let y = area.height / 2;
             if y < area.height {
                 f.render_widget(msg, Rect::new(area.x, area.y + y, area.width, 1));
@@ -201,10 +215,7 @@ fn clear(f: &mut ratatui::Frame<'_>, area: Rect) {
 /// The left / separator / right split every full-width row shares, so the rows
 /// that line up with the panels all derive their columns the same way.
 fn panel_split(area: Rect) -> std::rc::Rc<[Rect]> {
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Length(1), Constraint::Percentage(50)])
-        .split(area)
+    Layout::default().direction(Direction::Horizontal).constraints([Constraint::Percentage(50), Constraint::Length(1), Constraint::Percentage(50)]).split(area)
 }
 
 fn mount_icon(kind: crate::fs_ops::MountKind, style: IconStyle) -> &'static str {
@@ -438,11 +449,7 @@ fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &std::path:
     let path_left = limit_path_string(dir_left, length_left.saturating_sub(8));
     let path_right = limit_path_string(dir_right, length_right.saturating_sub(8));
 
-    let (color_left, color_right) = if is_left_active {
-        (style_dir(), style_dir_dark())
-    } else {
-        (style_dir_dark(), style_dir())
-    };
+    let (color_left, color_right) = if is_left_active { (style_dir(), style_dir_dark()) } else { (style_dir_dark(), style_dir()) };
 
     let border_line = vec![
         Span::styled("├──", style_border()),
@@ -532,13 +539,7 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
 }
 
 /// Build only the rows visible in the viewport, returns (rows, start_offset)
-fn build_viewport_rows(
-    app_state: &AppState,
-    is_left: bool,
-    viewport_height: usize,
-    columns: &[Column],
-    name_width: u16,
-) -> (Vec<Row<'static>>, usize) {
+fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: &[Column], name_width: u16) -> (Vec<Row<'static>>, usize) {
     let children = if is_left { &app_state.children_left } else { &app_state.children_right };
     let state = if is_left { &app_state.state_left } else { &app_state.state_right };
     let selected_set = if is_left { &app_state.selected_left } else { &app_state.selected_right };
@@ -595,11 +596,7 @@ fn build_viewport_rows(
 
         let (dir_prefix, dir_suffix) = if child.is_dir { ("[", "]") } else { ("", "") };
 
-        let bracket_style = if is_selected {
-            Style::default().fg(palette().selected_marker)
-        } else {
-            Style::default().fg(palette().directory_bracket)
-        };
+        let bracket_style = if is_selected { Style::default().fg(palette().selected_marker) } else { Style::default().fg(palette().directory_bracket) };
 
         let (name_cell, extension) = if is_renaming_current_item {
             // REVERSED survives Table row_highlight_style override
@@ -613,11 +610,14 @@ fn build_viewport_rows(
             spans.push(Span::styled(dir_suffix, bracket_style));
             (Cell::from(Line::from(spans)), String::new())
         } else {
-            (Cell::from(Line::from(vec![
-                Span::styled(dir_prefix, bracket_style),
-                Span::styled(printable_name(if has_ext_column { &child.name } else { &child.name_full }), text_style),
-                Span::styled(dir_suffix, bracket_style),
-            ])), printable_name(&child.extension))
+            (
+                Cell::from(Line::from(vec![
+                    Span::styled(dir_prefix, bracket_style),
+                    Span::styled(printable_name(if has_ext_column { &child.name } else { &child.name_full }), text_style),
+                    Span::styled(dir_suffix, bracket_style),
+                ])),
+                printable_name(&child.extension),
+            )
         };
 
         // Get size - for directories, show calculated size if available
@@ -636,10 +636,7 @@ fn build_viewport_rows(
             child.size.clone()
         };
 
-        let mut cells = vec![
-            Cell::from(Span::styled(icon, Style::default().fg(text_color))),
-            name_cell,
-        ];
+        let mut cells = vec![Cell::from(Span::styled(icon, Style::default().fg(text_color))), name_cell];
         for column in columns {
             let value = match column {
                 Column::Ext => extension.clone(),
@@ -657,9 +654,7 @@ fn build_viewport_rows(
 }
 
 fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::PreviewState, is_left: bool) {
-    let block = Block::default()
-        .borders(if is_left { Borders::LEFT } else { Borders::RIGHT })
-        .border_style(style_border());
+    let block = Block::default().borders(if is_left { Borders::LEFT } else { Borders::RIGHT }).border_style(style_border());
     let inner = block.inner(area);
 
     clear(f, area);
@@ -706,19 +701,11 @@ fn hex_preview(bytes: &[u8], width: u16, rows: usize) -> Vec<String> {
         .find(|&(per_line, digits)| crate::viewer::hex_row_width(per_line, digits) <= room)
         .unwrap_or(PREVIEW_HEX_LAYOUTS[PREVIEW_HEX_LAYOUTS.len() - 1]);
 
-    bytes
-        .chunks(per_line)
-        .take(rows)
-        .enumerate()
-        .map(|(index, chunk)| crate::viewer::hex_row(index * per_line, chunk, per_line, digits))
-        .collect()
+    bytes.chunks(per_line).take(rows).enumerate().map(|(index, chunk)| crate::viewer::hex_row(index * per_line, chunk, per_line, digits)).collect()
 }
 
 fn make_header_row(columns: &[Column]) -> Row<'static> {
-    let mut cells = vec![
-        Cell::from(Span::styled("", style_columns())),
-        Cell::from(Span::styled("Name", style_columns())),
-    ];
+    let mut cells = vec![Cell::from(Span::styled("", style_columns())), Cell::from(Span::styled("Name", style_columns()))];
     for column in columns {
         cells.push(Cell::from(Span::styled("", style_columns())));
         cells.push(Cell::from(Span::styled(column.title(), style_columns())));
@@ -732,10 +719,7 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         let prefix = if viewer_state.from_edit { "Edit" } else { "View" };
         let title = format!(" {}: {} ", prefix, filename);
 
-        let border_block = Block::default()
-            .title(Line::from(Span::styled(title, style_title())).centered())
-            .borders(Borders::ALL)
-            .border_style(style_border());
+        let border_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).border_style(style_border());
 
         let inner_area = border_block.inner(area);
         f.render_widget(border_block, area);
@@ -744,16 +728,9 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         // and line numbers mean nothing down the side of a picture. F11 can
         // turn it off for text too.
         let no_gutter = viewer_state.mode != ViewMode::Text || !app_state.options.line_numbers;
-        let line_num_width = if no_gutter {
-            0
-        } else {
-            (viewer_state.total_lines.to_string().len() as u16).max(3) + 2
-        };
+        let line_num_width = if no_gutter { 0 } else { (viewer_state.total_lines.to_string().len() as u16).max(3) + 2 };
 
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Length(line_num_width), Constraint::Min(0)])
-            .split(inner_area);
+        let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Length(line_num_width), Constraint::Min(0)]).split(inner_area);
 
         let viewport_height = inner_area.height as usize;
         let start = viewer_state.scroll_offset;
@@ -762,14 +739,8 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         // formatted at all then.
         if !no_gutter {
             let num_width = (line_num_width as usize).saturating_sub(1);
-            let line_numbers: Vec<Line> = (start..end)
-                .map(|line_num| Line::from(Span::styled(
-                    format!("{:>width$} ", line_num + 1, width = num_width),
-                    style_columns(),
-                )))
-                .collect();
-            let line_number_para = Paragraph::new(line_numbers)
-                .style(Style::default().bg(crate::display::gutter()));
+            let line_numbers: Vec<Line> = (start..end).map(|line_num| Line::from(Span::styled(format!("{:>width$} ", line_num + 1, width = num_width), style_columns()))).collect();
+            let line_number_para = Paragraph::new(line_numbers).style(Style::default().bg(crate::display::gutter()));
             f.render_widget(line_number_para, chunks[0]);
         }
 
@@ -784,9 +755,7 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
 
         // Render content
         if viewer_state.from_edit {
-            let binary_msg = Paragraph::new("Binary file detected. Press Esc to return.")
-                .alignment(Alignment::Center)
-                .style(style_title());
+            let binary_msg = Paragraph::new("Binary file detected. Press Esc to return.").alignment(Alignment::Center).style(style_title());
             f.render_widget(binary_msg, chunks[1]);
         } else {
             // Both modes render from the same line text, so the selection and
@@ -801,9 +770,7 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
                     let width = text.chars().count();
                     let matches = needle.as_ref().map(|needle| needle.find_all(&text)).unwrap_or_default();
                     let mut spans = match viewer_state.image_colors.get(index) {
-                        Some(colors) if viewer_state.mode == ViewMode::Image => {
-                            colored_spans(&text, colors, viewer_state.image_backgrounds.get(index).map(Vec::as_slice))
-                        }
+                        Some(colors) if viewer_state.mode == ViewMode::Image => colored_spans(&text, colors, viewer_state.image_backgrounds.get(index).map(Vec::as_slice)),
                         _ => vec![Span::styled(text, style_file())],
                     };
                     for (from, to) in matches {
@@ -968,10 +935,7 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
         let modified = if editor_state.modified { " [Modified]" } else { "" };
         let title = format!(" Edit: {}{} ", filename, modified);
 
-        let border_block = Block::default()
-            .title(Line::from(Span::styled(title, style_title())).centered())
-            .borders(Borders::ALL)
-            .border_style(style_border());
+        let border_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).border_style(style_border());
 
         let inner_area = border_block.inner(area);
         f.render_widget(border_block, area);
@@ -982,10 +946,7 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
         let total_lines = editor_state.lines.len();
         let line_num_width = if line_numbers { (total_lines.to_string().len() as u16).max(3) + 2 } else { 0 };
 
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Length(line_num_width), Constraint::Min(0)])
-            .split(inner_area);
+        let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Length(line_num_width), Constraint::Min(0)]).split(inner_area);
 
         let viewport_height = inner_area.height as usize;
         editor_state.keep_in_view(viewport_height);
@@ -998,25 +959,17 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
         let numbers: Vec<Line> = (start..end)
             .map(|line_num| {
                 let style = if line_num == editor_state.cursor_line { style_current_line } else { style_columns() };
-                Line::from(Span::styled(
-                    format!("{:>width$} ", line_num + 1, width = num_width),
-                    style,
-                ))
+                Line::from(Span::styled(format!("{:>width$} ", line_num + 1, width = num_width), style))
             })
             .collect();
         if line_numbers {
-            let line_number_para = Paragraph::new(numbers)
-                .style(Style::default().bg(crate::display::gutter()));
+            let line_number_para = Paragraph::new(numbers).style(Style::default().bg(crate::display::gutter()));
             f.render_widget(line_number_para, chunks[0]);
         }
 
         // Auto-scroll to keep cursor visible (disabled during mouse scrolling)
         if editor_state.auto_scroll {
-            let visual_cursor_col: usize = editor_state.lines[editor_state.cursor_line]
-                .chars()
-                .take(editor_state.cursor_col)
-                .map(|c| if c == '\t' { tab_width() } else { 1 })
-                .sum();
+            let visual_cursor_col: usize = editor_state.lines[editor_state.cursor_line].chars().take(editor_state.cursor_col).map(|c| if c == '\t' { tab_width() } else { 1 }).sum();
             let viewport_width = chunks[1].width as usize;
             if visual_cursor_col < editor_state.horizontal_offset {
                 editor_state.horizontal_offset = visual_cursor_col;
@@ -1037,15 +990,11 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
         for (idx, line) in editor_state.lines[start..end].iter().enumerate() {
             let actual_line_idx = start + idx;
 
-            let mut spans: Vec<Span<'static>> =
-                if has_highlighting && actual_line_idx < editor_state.highlighted_lines.len() {
-                    editor_state.highlighted_lines[actual_line_idx]
-                        .iter()
-                        .map(|span| Span::styled(printable_line(&span.content), span.style))
-                        .collect()
-                } else {
-                    vec![Span::styled(printable_line(line), style_file())]
-                };
+            let mut spans: Vec<Span<'static>> = if has_highlighting && actual_line_idx < editor_state.highlighted_lines.len() {
+                editor_state.highlighted_lines[actual_line_idx].iter().map(|span| Span::styled(printable_line(&span.content), span.style)).collect()
+            } else {
+                vec![Span::styled(printable_line(line), style_file())]
+            };
 
             for (from, to) in needle.as_ref().map(|needle| needle.find_all(line)).unwrap_or_default() {
                 spans = overlay_range(spans, visual_column(line, from), visual_column(line, to), style_match());
@@ -1055,11 +1004,7 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
                 && (first_line..=last_line).contains(&actual_line_idx)
             {
                 let from = if actual_line_idx == first_line { visual_column(line, first_col) } else { 0 };
-                let to = if actual_line_idx == last_line {
-                    visual_column(line, last_col)
-                } else {
-                    visual_column(line, line.chars().count())
-                };
+                let to = if actual_line_idx == last_line { visual_column(line, last_col) } else { visual_column(line, line.chars().count()) };
                 spans = overlay_range(spans, from, to, style_selection());
             }
 
@@ -1138,10 +1083,7 @@ fn render_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, text: String, style
     let status_line = vec![
         Span::styled("├─", style_border()),
         Span::styled(text, style),
-        Span::styled(
-            "─".repeat((area.width as usize).saturating_sub(text_len).saturating_sub(3)),
-            style_border(),
-        ),
+        Span::styled("─".repeat((area.width as usize).saturating_sub(text_len).saturating_sub(3)), style_border()),
         Span::styled("┤", style_border()),
     ];
     f.render_widget(Paragraph::new(Line::from(status_line)), area);
@@ -1233,13 +1175,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         // Show panel stats: selected/total files and selected/total size
         // Returns (count_part, size_part) e.g. ("0/5", "1.2 KiB") or ("2/5", "800 B/1.2 KiB")
         let panel_stat = |children: &[crate::app::Item], selected_set: &std::collections::HashSet<std::ffi::OsString>, current_dir: &PathBuf, dir_sizes: &std::collections::HashMap<PathBuf, u64>| -> (String, String) {
-            let item_size = |c: &crate::app::Item| -> u64 {
-                if c.is_dir {
-                    dir_sizes.get(&c.path_in(current_dir)).copied().unwrap_or(0)
-                } else {
-                    c.size_bytes
-                }
-            };
+            let item_size = |c: &crate::app::Item| -> u64 { if c.is_dir { dir_sizes.get(&c.path_in(current_dir)).copied().unwrap_or(0) } else { c.size_bytes } };
             let total_count = children.iter().filter(|c| c.name != "..").count();
             let total_size: u64 = children.iter().filter(|c| c.name != "..").map(&item_size).sum();
 
@@ -1264,19 +1200,13 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         let left_pad = (total_width.saturating_sub(3) / 2).saturating_sub(left_stat_len + 1);
         let right_pad = (total_width.saturating_sub(2) / 2).saturating_sub(right_stat_len + 1);
 
-        let (left_style, right_style) = if app_state.is_left_active {
-            (style_title(), style_dir_dark())
-        } else {
-            (style_dir_dark(), style_title())
-        };
+        let (left_style, right_style) = if app_state.is_left_active { (style_title(), style_dir_dark()) } else { (style_dir_dark(), style_title()) };
 
         // Disk usage sits at the far end of each panel's dash run, dropping to a
         // shorter form and then out entirely as the terminal narrows.
         let left_disk = disk_readout(app_state.disk_left, left_pad);
         let right_disk = disk_readout(app_state.disk_right, right_pad);
-        let dashes = |pad: usize, disk: &Option<String>| {
-            pad - disk.as_ref().map_or(0, |text| display_width(text) + 1)
-        };
+        let dashes = |pad: usize, disk: &Option<String>| pad - disk.as_ref().map_or(0, |text| display_width(text) + 1);
 
         let mut status_line = vec![
             Span::styled("├─", style_border()),
@@ -1341,9 +1271,7 @@ fn render_detail(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
 
     // Every part after the first is preceded by a gap, so its cost is its own
     // width plus that.
-    let cost = |parts: &[(&str, Style)]| -> usize {
-        parts.iter().filter(|(text, _)| !text.is_empty()).map(|(text, _)| display_width(text) + gap.len()).sum()
-    };
+    let cost = |parts: &[(&str, Style)]| -> usize { parts.iter().filter(|(text, _)| !text.is_empty()).map(|(text, _)| display_width(text) + gap.len()).sum() };
     let spans = |parts: &[(&str, Style)], lead: bool| -> Vec<Span<'static>> {
         let mut out: Vec<Span<'static>> = Vec::new();
         for (text, style) in parts.iter().filter(|(text, _)| !text.is_empty()) {
@@ -1408,9 +1336,7 @@ fn tail_of(text: &str, room: usize) -> String {
 }
 
 fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect) {
-    let mut block_bottom = Block::default()
-        .borders(Borders::LEFT | Borders::BOTTOM | Borders::RIGHT)
-        .border_style(style_border());
+    let mut block_bottom = Block::default().borders(Borders::LEFT | Borders::BOTTOM | Borders::RIGHT).border_style(style_border());
 
     // Two corners, then each label with a dash between. The last label's
     // trailing space can fall off the end unnoticed, hence the one spare column.
@@ -1478,7 +1404,11 @@ fn wrap_line(line: Line<'static>, width: usize) -> Vec<Line<'static>> {
     let style = line.spans[0].style;
     wrap_text(&line.spans[0].content, width)
         .into_iter()
-        .map(|row| Line { spans: vec![Span::styled(row, style)], style: line.style, alignment: line.alignment })
+        .map(|row| Line {
+            spans: vec![Span::styled(row, style)],
+            style: line.style,
+            alignment: line.alignment,
+        })
         .collect()
 }
 
@@ -1542,10 +1472,7 @@ fn fit_rows(mut blocks: Vec<Vec<Line<'static>>>, room: usize) -> Vec<Vec<Line<'s
 
 fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message: &str) {
     let popup_area = centered_rect(60, 20, area);
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(" Error ", style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(" Error ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1592,19 +1519,14 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     let x = area.x + (area.width.saturating_sub(popup_width)) / 2;
     let popup_area = Rect::new(x, y, popup_width, popup_height);
 
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(" Help/About ", style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(" Help/About ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     let inner = popup_area.inner(Margin { vertical: 2, horizontal: 2 });
     let max_len = help_lines.iter().map(|l| l.len()).max().unwrap_or(0);
-    let lines: Vec<Line> = help_lines.iter()
-        .map(|&text| Line::from(Span::styled(format!("{:<width$}", text, width = max_len), style_title())))
-        .collect();
+    let lines: Vec<Line> = help_lines.iter().map(|&text| Line::from(Span::styled(format!("{:<width$}", text, width = max_len), style_title()))).collect();
     let help_para = Paragraph::new(lines).alignment(Alignment::Center);
     f.render_widget(help_para, inner);
 }
@@ -1633,10 +1555,7 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppS
     // A border row each side, a blank row above and below the list, and two
     // for the key hint under it.
     let popup_area = centered(area, inner_width + 4, list.len() + 6);
-    let mut popup_block = Block::default()
-        .title(Line::from(Span::styled(" Options ", style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let mut popup_block = Block::default().title(Line::from(Span::styled(" Options ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     // On a short terminal the list scrolls, keeping the cursor row in view.
     // The blank rows and the hint around it take three.
@@ -1697,10 +1616,7 @@ fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: 
     if is_cursor {
         Line::from(Span::styled(format!("{}{}{} ", label, " ".repeat(gap), value), cursor_style))
     } else {
-        Line::from(vec![
-            Span::styled(format!("{}{}", label, " ".repeat(gap)), style_dir()),
-            Span::styled(format!("{} ", value), style_columns()),
-        ])
+        Line::from(vec![Span::styled(format!("{}{}", label, " ".repeat(gap)), style_dir()), Span::styled(format!("{} ", value), style_columns())])
     }
 }
 
@@ -1727,11 +1643,7 @@ fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir: bool, inp
     spans.extend(typed);
     spans.push(Span::raw(" ".repeat(width.saturating_sub(left + typed_width))));
     let input_line = Line::from(spans).style(style_title().bg(palette().selected_background));
-    popup_body(
-        f,
-        popup_area,
-        vec![input_line, Line::from(Span::styled("Enter - Create    Esc - Cancel", style_columns()))],
-    );
+    popup_body(f, popup_area, vec![input_line, Line::from(Span::styled("Enter - Create    Esc - Cancel", style_columns()))]);
 }
 
 fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, bool)], to_trash: bool) {
@@ -1748,10 +1660,7 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf
         format!(" {verb}: {count} items ")
     };
 
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(title, style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1778,10 +1687,7 @@ fn render_overwrite_popup(f: &mut ratatui::Frame<'_>, area: Rect, prompt: &crate
     let count = prompt.taken.len();
     let popup_area = centered_rect(60, 30, area);
     let verb = if prompt.is_copy { "Copy" } else { "Move" };
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(format!(" {verb}: overwrite? "), style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {verb}: overwrite? "), style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1838,10 +1744,7 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
         }
     };
     let popup_area = centered_rect(60, 30, area);
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(title, style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1872,12 +1775,7 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
         }
         (_, Some(total)) if total > 0 => {
             let rate = job.done as f64 / elapsed.as_secs_f64().max(0.001);
-            format!(
-                "{} of {} at {}/s    {hint}",
-                format_size(job.done),
-                format_size(total),
-                format_size(rate as u64)
-            )
+            format!("{} of {} at {}/s    {hint}", format_size(job.done), format_size(total), format_size(rate as u64))
         }
         _ => hint.to_string(),
     };
@@ -1893,10 +1791,7 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
         Line::from(""),
         Line::from(Span::styled(detail, style_file())),
     ];
-    f.render_widget(
-        Paragraph::new(lines).alignment(Alignment::Center),
-        popup_area.inner(Margin { vertical: 1, horizontal: 2 }),
-    );
+    f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
 }
 
 /// An entry a copy, move or delete could not deal with. Shown at once,
@@ -1910,10 +1805,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Trash => " Cannot move to trash ",
     };
     let popup_area = centered_rect(60, 30, area);
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(title, style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1934,10 +1826,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
     if quit_armed {
         lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));
     }
-    f.render_widget(
-        Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }),
-        popup_area.inner(Margin { vertical: 1, horizontal: 2 }),
-    );
+    f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
 }
 
 /// Unified copy/move popup. `is_copy` = true for F5 copy, false for F6 move.
@@ -1953,10 +1842,7 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(Path
         format!(" {} {} items ", verb, count)
     };
 
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(title, style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1989,10 +1875,7 @@ fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, large: &crate
 
     let popup_area = centered_rect(60, 30, area);
     let title = if large.dimensions.is_some() { " Large Picture " } else { " Large File " };
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(title, style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -2021,10 +1904,7 @@ fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, large: &crate
 
 fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     let popup_area = centered_rect(60, 25, area);
-    let popup_block = Block::default()
-        .title(Line::from(Span::styled(" Unsaved Changes ", style_title())).centered())
-        .borders(Borders::ALL)
-        .style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(" Unsaved Changes ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -2087,7 +1967,11 @@ mod tests {
         app_state.options.icon_style = IconStyle::Plain;
         app_state.dir_left = "/".into();
         app_state.mounts = (0..12)
-            .map(|index| Mount { path: format!("/mnt/{index}").into(), label: format!("d{index}"), kind: MountKind::Disk })
+            .map(|index| Mount {
+                path: format!("/mnt/{index}").into(),
+                label: format!("d{index}"),
+                kind: MountKind::Disk,
+            })
             .collect();
         let area = Rect::new(0, 0, 30, 1);
 
@@ -2140,20 +2024,16 @@ mod tests {
 
         let mut clean = |app_state: &mut AppState, what: &str| {
             render_ui(&mut terminal, app_state);
-            let dirty: Vec<String> = terminal
-                .backend()
-                .buffer()
-                .content()
-                .iter()
-                .filter(|cell| cell.symbol().chars().any(char::is_control))
-                .map(|cell| format!("{:?}", cell.symbol()))
-                .collect();
+            let dirty: Vec<String> = terminal.backend().buffer().content().iter().filter(|cell| cell.symbol().chars().any(char::is_control)).map(|cell| format!("{:?}", cell.symbol())).collect();
             assert!(dirty.is_empty(), "{what} drew {dirty:?}");
         };
 
         clean(&mut app_state, "the panel");
 
-        app_state.dialog = Some(Dialog::Delete { items: vec![(dir.join(nasty), false)], to_trash: true });
+        app_state.dialog = Some(Dialog::Delete {
+            items: vec![(dir.join(nasty), false)],
+            to_trash: true,
+        });
         clean(&mut app_state, "the delete popup");
 
         let mut input = TextInput::new();
