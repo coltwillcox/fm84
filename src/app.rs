@@ -240,7 +240,7 @@ pub struct AppState {
     pub preview: Option<PreviewState>,
     /// Editor clipboard. Internal, so it works in a bare TTY too.
     pub clipboard: String,
-    /// Mounts offered in the top strip, refreshed on the same tick as disk usage.
+    /// Mounts offered in the drive strips, kept current by a watcher thread.
     pub mounts: Vec<Mount>,
     pub is_left_active: bool,
     pub dir_left: PathBuf,
@@ -288,31 +288,38 @@ pub struct AppState {
     // The drive strips as drawn, and which of the drives each one shows.
     pub drive_strip_left: Strip,
     pub drive_strip_right: Strip,
+    // Each panel's tabs, and its tab strip as drawn.
     pub tabs_left: Tabs,
     pub tabs_right: Tabs,
-    /// A panel's directory still being read, past the moment the UI waits
-    /// for it. The panel goes on showing what it did until it lands.
+    // A panel's directory still being read, past the moment the UI waits for
+    // it. The panel goes on showing what it did until it lands.
     pub listing_left: Option<PendingListing>,
     pub listing_right: Option<PendingListing>,
-    /// How long the UI waits on a listing, and on the detail lines and the
-    /// preview, before going on without them. Without limit under test,
-    /// which wants each answer in hand before it looks.
+    /// How long the UI waits on a listing before going on without it.
+    /// Without limit under test, which wants each answer in hand before it
+    /// looks; the same goes for `detail_wait`.
     pub listing_wait: Duration,
+    /// How long the UI waits on the detail lines and the preview.
     pub detail_wait: Duration,
-    /// Watching each panel's directory for changes and its filesystem for
-    /// free space, and the mounts for drives coming and going.
+    // Watching each panel's directory for changes and its filesystem for free
+    // space, and the mounts for drives coming and going. Dropping one stops it.
     watch_left: Option<Watch>,
     watch_right: Option<Watch>,
     _watch_mounts: Watch,
+    /// Handed to each watcher as it starts; what they report arrives on
+    /// `watch_events`.
     watch_sender: Sender<WatchEvent>,
     watch_events: Receiver<WatchEvent>,
+    /// How often a watcher looks. Shortened under test, so a change is seen
+    /// inside it.
     pub watch_interval: Duration,
-    /// Changed on disk since it was read, to be read again once nothing is
-    /// open over it.
+    // Changed on disk since it was read, to be read again once nothing is
+    // open over it.
     stale_left: bool,
     stale_right: bool,
-    /// Where the detail lines and the preview are gathered.
+    /// Where the detail lines are gathered.
     detail_worker: Latest<(PathBuf, bool), Option<Description>>,
+    /// Where the preview is gathered.
     preview_worker: Latest<(PathBuf, bool), Preview>,
     // (used, total) bytes for each panel's filesystem.
     pub disk_left: Option<(u64, u64)>,
@@ -330,14 +337,16 @@ pub struct AppState {
     pub quit_armed: bool,
 }
 
-/// A copy or move running on a worker thread, and what it has told us so far.
+/// A copy, move or delete running on a worker thread, and what it has told us
+/// so far.
 /// The work is off the UI thread because a single write to a stalled network
 /// mount can block for seconds, and that is exactly when a progress bar and a
 /// way out of it are wanted.
 pub struct TransferJob {
     pub kind: TransferKind,
     /// None until the counting pass has something to report. Counted in bytes
-    /// for a copy or move, and in entries removed for a delete.
+    /// for a copy or move, in entries removed for a delete, and in items for a
+    /// move to the trash.
     pub total: Option<u64>,
     pub done: u64,
     pub current: PathBuf,
@@ -346,7 +355,8 @@ pub struct TransferJob {
     cancel: Arc<AtomicBool>,
     updates: Receiver<JobUpdate>,
     /// An entry the worker could not deal with, waiting on Retry, Skip, Skip
-    /// all or Abort. The worker sits still until it hears which.
+    /// all or Abort - or Delete, for what the trash would not take. The worker
+    /// sits still until it hears which.
     pub problem: Option<JobProblem>,
     answers: Sender<Answer>,
     /// Entries left where they were, by Skip or Skip all, to say so at the end.

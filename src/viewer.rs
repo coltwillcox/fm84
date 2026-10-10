@@ -70,8 +70,9 @@ pub struct ViewerState {
     pub max_line_width: usize,
     /// A decoded image, drawn as ASCII into `image_lines`.
     pub image: Option<DynamicImage>,
-    /// The ASCII drawing of `image`, and the colour of each of its characters.
+    /// The ASCII drawing of `image`.
     pub image_lines: Vec<String>,
+    /// The colour of each character in `image_lines`.
     pub image_colors: Vec<Vec<Color>>,
     /// The colour behind each character. Empty when the option is off, in which
     /// case the terminal shows through the gaps in the glyphs and the darker

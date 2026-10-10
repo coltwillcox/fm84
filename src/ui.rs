@@ -1811,8 +1811,9 @@ fn progress_bar(fraction: f64, width: usize) -> String {
     "\u{25aa}".repeat(filled) + &"\u{25ab}".repeat(width - filled)
 }
 
-/// How a copy or move is getting on. Held back for a moment after the transfer
-/// starts, so the many that finish at once never flash a popup on the way past.
+/// How a copy, move or delete is getting on. Held back for a moment after the
+/// job starts, so the many that finish at once never flash a popup on the way
+/// past.
 fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
     let Some(job) = &app_state.job else {
         return;

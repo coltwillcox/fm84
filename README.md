@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.23.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.24.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -81,16 +81,17 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing, the field scrolling to keep the cursor in view on a long name); a change of case alone works on macOS and Windows too
 - **F3** 👁️ - View files (text, hexdump, or images as ASCII art); Esc closes the viewer, F3 inside it finds the next match
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, Esc to close with an unsaved changes prompt, mouse click to position cursor)
-- **F5** 📋 - Copy to other panel (selected items or cursor item), keeping permissions where the filesystem can hold them
-- **F6** 📦 - Move to other panel (selected items or cursor item)
+- **F5** 📋 - Copy to other panel (selected items or cursor item), keeping permissions and modified times where the filesystem can hold them
+- **F6** 📦 - Move to other panel (selected items or cursor item); a move to another disk keeps modified times too, so it looks just as a move on one disk does
 - ♻️ **Names already taken** - F5 and F6 ask before writing over them: files are replaced, directories merged. F11 can make it overwrite or refuse without asking
-- 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels, and a cancelled copy cleans up the half-written file. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
+- 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels. Each file is written beside its destination and renamed into place only once it is whole, so a copy that is cancelled, fails or is cut short by quitting never leaves half a file under the real name. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🧯 **One bad entry doesn't sink the job** - a file that will not copy, move or delete (a socket, a pipe, a permission refused, a disk full) stops the job and asks: **R** retry, **S** skip, **A** skip all, **Esc** abort. A skipped entry is left where it was, and a directory holding one stays with it, so a move never leaves anything gone from both sides. The end says how many were skipped
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
-- **F8** / **Delete** 🗑️ - Delete files & folders (selected items or cursor item, with confirmation - which F11 can turn off - and progress)
+- **F8** / **Delete** 🗑️ - Move files & folders to the system's trash (selected items or cursor item, with confirmation - which F11 can turn off - and progress). What the trash will not take - a read-only disk, one with nowhere to keep a trash - is asked about, with **D** to delete it for good. F11 can make F8 delete permanently instead
+- **Shift+F8** / **Shift+Delete** 💀 - Delete permanently, always asking first
 - **F9** 💻 - Open external terminal in current directory (which one is set under F11)
-- **F10** 🚪 - Exit to the void
+- **F10** 🚪 - Exit to the void - asking first about unsaved changes in the editor
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
 - **+** / **-** / **\*** 🎯 - Select or deselect by a pattern such as `*.jpg;*.png` (`*`, `?`, `[a-z]`, `[!0-9]`; lower case matches either case), or invert the selection of files - **Alt+\*** inverts directories too. Patterns pick files; end one with `/` for directories, as in `*/`. Once a quick search is under way, `-` types into it instead
 - 🖱️ **Double-click** - open directories or view files
@@ -101,6 +102,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ⌨️ **Ctrl+R** - force an immediate reload of both panels
 - 🧭 **Vanished directories** - if the open directory is deleted, the panel climbs to the nearest surviving parent
 - 🤫 **Stays out of the way** - never reloads while a dialog, Viewer or Editor is open
+- 🐌 **Slow and dead mounts** - directories are read, watched and described on threads of their own. A network mount that stops answering no longer freezes fm84: the panel keeps showing what it did, the status bar says it is reading, and Esc stops waiting. The other panel works as ever
 
 ### 🧱 Columns
 - 📋 **Name, Ext, Size, Modified, Attributes** - permissions written the way `ls -l` writes them
@@ -132,6 +134,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔎 **Find** - Ctrl+F asks what to look for, F3 and Shift+F3 go to the next and previous match, round the ends of the file. Every match on screen is underlined and the current one selected, ready for Ctrl+C. Lower case matches either case, a capital only itself. In hex view it searches the dump as shown
 - 🔢 **Go to line** - Ctrl+G, then the number
 - 🛡️ **Escape sequences neutralised** - a file full of control codes can't hijack your terminal
+- 🔤 **Stray bytes** - a text file with a byte that is not UTF-8 in it still opens, with a placeholder where the byte was; `X` shows it as it is
 - ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory (16 or 256 under F11), and before decoding a picture that needs over 256 MiB of it - a few hundred KB of PNG can unpack to hundreds of MB
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
@@ -149,7 +152,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 💾 **Save** - F2 or Ctrl+S, written beside the file and swapped in whole, so a full disk or a crash mid-save leaves the old file rather than half of the new one; links, permissions and owner are kept
 - 📍 **Line/Column tracking** - always know where you are
 - 🔎 **Find and go to line** - Ctrl+F, F3 / Shift+F3 and Ctrl+G, as in the Viewer; the match found is selected, so typing replaces it
-- ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close; a save that fails keeps the editor open, edits and all
+- ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close, and on F10; a save that fails keeps the editor open, edits and all
+- 🔤 **UTF-8 only** - a file that is not UTF-8 text is refused rather than opened with its odd bytes replaced, which saving would make permanent; F3 shows it
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 - 🖱️ **Mouse click and drag** - click to position the cursor, drag to select
@@ -174,6 +178,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 
 **Behaviour**
 - 🗑️ **Confirm delete** and ✅ **Confirm copy and move** - turn off to skip the question
+- ♻️ **Delete to trash (F8)** - on, F8 moves to the trash; off, it deletes for good. Shift+F8 always deletes for good
 - ♻️ **When destination exists** - Ask, Overwrite (files replaced, directories merged) or Refuse. A file never replaces a directory or the other way round, and nothing is copied onto itself
 - 💻 **Terminal (F9)** - any command, `{}` standing for the directory; left empty, one is picked for you
 - 📝 **Editor (F4)** - an external editor such as `nvim` or `hx`, which gets the terminal until it exits; `{}` stands for the file, which otherwise goes last. Left empty, the built-in editor opens
@@ -221,7 +226,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `Home` / `End` | Jump to first / last item |
 | `PageUp` / `PageDown` | Page navigation |
 | `[a-z0-9]` | Quick search |
-| `Esc` | Clear search / Close dialogs, the Viewer and the Editor / Stop directory sizing |
+| `Esc` | Clear search / Close dialogs, the Viewer and the Editor / Stop directory sizing / Stop waiting on a directory that has not answered |
 | `F1` | Help |
 | `F2` | Rename |
 | `F3` | View file |
@@ -230,11 +235,13 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `F6` | Move to other panel |
 | `F7` | Create directory |
 | `Shift+F4` | Create empty file |
-| `F8` / `Delete` | Delete (selected items or cursor item) |
+| `F8` / `Delete` | Move to trash (selected items or cursor item) |
+| `Shift+F8` / `Shift+Delete` | Delete permanently |
 | `Esc` | Cancel a running copy, move or delete |
 | `R` / `S` / `A` | Retry / Skip / Skip all, when an entry in a copy, move or delete fails |
+| `D` | Delete permanently, when the trash will not take an entry |
 | `F9` | Open terminal (the one set under F11, if any) |
-| `F10` | Quit (twice during an operation) |
+| `F10` | Quit (twice during an operation; asks first about unsaved edits) |
 | `F11` | Options - panels, behaviour, appearance, viewer and editor |
 | `F12` | Preview cursor file in other panel |
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
@@ -285,7 +292,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.23.0
+fm84 --version       # fm84 0.24.0
 ```
 
 A directory given takes the place of the tab that would have shown; the panel's other tabs stay. A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
@@ -370,5 +377,5 @@ Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.23.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.24.0 ▄▀▄▀▄▀</code>
 </p>

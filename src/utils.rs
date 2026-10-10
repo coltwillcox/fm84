@@ -11,7 +11,8 @@ pub fn display_width(text: &str) -> usize {
     UnicodeWidthStr::width(text)
 }
 
-// Converts bytes to human-readable format with binary prefixes (KiB, MiB, etc.)
+/// A byte count as the panels write it, rounded to a whole number of KiB,
+/// MiB and so on - or of kB, MB, when F11 asks for powers of 1000.
 pub fn format_size(bytes: u64) -> String {
     let (step, units) = if crate::display::decimal_sizes() { (1000.0, DECIMAL_UNITS) } else { (1024.0, UNITS) };
     let mut size = bytes as f64;

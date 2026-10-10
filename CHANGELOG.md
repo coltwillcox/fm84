@@ -6,6 +6,32 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.24.0] - 2026-10-10
+
+### ✨ Added
+- ♻️ **F8 moves to the trash** - files and folders go to the system's trash, from where they can be put back. Shift+F8 (or Shift+Delete) deletes for good, and always asks first, whatever Confirm delete says. What the trash will not take - a read-only disk, one with nowhere to keep a trash - is asked about like any other failure, with D to delete it for good. **Delete to trash** under F11 turns it off
+
+### 🛠️ Changed
+- 🐌 **A dead network mount no longer freezes fm84** - reading a panel's directory, the once-a-second check for changes and free space, the drive list, and the detail lines and preview that follow the cursor all touched the disk on the thread that draws and reads keys, and on a mount that had stopped answering each one waited, with Esc and F10 unheard. They run on threads of their own now. On a disk that answers nothing looks different; on one that does not, the panel keeps showing what it did, the status bar says it is still reading, Esc stops waiting, and the other panel goes on working
+- 🕰️ **Copies keep their modified times** - files and directories alike, and so does a move to another disk, which used to come out dated the moment it landed
+- 🧾 **Popups wrap long lines** - an error naming a long path, or the names of a dozen files being copied, wrap at their spaces instead of running off the edge. Too many to fit are cut short with `…`, so the line saying which keys answer still shows
+- 🖱️ **Only the left button clicks** - the right one moved the cursor as if it were the left
+- 📅 **The detail line's date follows F11's date format**, ISO included
+
+### 🐛 Fixed
+- 💾 **F10 in the editor threw away unsaved edits** - it now asks Save, Discard or Cancel first, and leaves once answered
+- 🔤 **A text file with a stray non-UTF-8 byte past its first 512 refused to open** - the viewer shows it, with a placeholder for the byte; the editor says it is not UTF-8 text, rather than opening it with the byte replaced for good
+- 🧩 **A copy cut short left half a file under the real name** - each file is written beside its destination and renamed into place once whole, so a cancel, a failure or quitting mid-copy leaves nothing that passes for a finished copy
+- ✅ **A mouse click cleared the selection in both panels** - clicking to make the other panel active lost a selection built by hand
+- 🚧 **Keys reached the panel behind an error** - Space selected and letters searched in a panel the error covered. Esc or Enter puts it away, and nothing else gets past
+- 📑 **Switching to a tab whose directory had become unreadable took over another tab** - the panel stayed put under the new tab's name. It is refused now, and the tabs stay as they were
+- ↔️ **Lines past 65,535 columns scrolled back to the start** in the viewer and the editor - a minified file has them
+- 🖼️ **The large-file question while stepping through pictures could only be answered with Esc**, which closed the viewer too
+- 🪟 **Windows: a link to a directory would not delete**, directory symlinks and junctions alike
+- ⚙️ **The config and session files could be left empty** by a crash or a full disk while they were written - they are written beside and renamed into place, like a save
+
+---
+
 ## [0.23.0] - 2026-10-09
 
 ### ✨ Added

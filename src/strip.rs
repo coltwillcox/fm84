@@ -22,13 +22,15 @@ pub struct Strip {
     /// where the arrows put it, so scrolling to look is not undone on the
     /// next frame.
     pub followed: Option<usize>,
-    /// Where each thing on the strip is drawn, in columns from `area.x`, and
-    /// what a click there does.
+    /// Where each thing on the strip is drawn, as its start and width in
+    /// columns from `area.x`.
     pub slots: Vec<(u16, u16)>,
+    /// What a click on each of `slots` does.
     pub hits: Vec<StripHit>,
-    /// Each item's width, and the room there was, as of the last placing -
-    /// what the arrows need to work out a page.
+    /// Each item's width as of the last placing - what the arrows need, with
+    /// `room`, to work out a page.
     widths: Vec<usize>,
+    /// The room there was for the items at the last placing.
     room: usize,
 }
 

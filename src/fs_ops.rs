@@ -2439,8 +2439,10 @@ pub struct Description {
     pub link: Option<String>,
 }
 
-/// Look one entry up. Costs a stat and, for a link, a readlink - which is why
-/// it is done when the cursor moves rather than on the way to drawing a frame.
+/// Look one entry up. Costs a stat, a readlink for a link, and the owner's
+/// name - which is why it is done when the cursor moves rather than on the way
+/// to drawing a frame, and on a thread of its own, where a dead mount holds
+/// up nothing.
 pub fn describe(path: &Path, is_dir: bool) -> Option<Description> {
     let metadata = fs::symlink_metadata(path).ok()?;
     let is_symlink = metadata.file_type().is_symlink();

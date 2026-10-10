@@ -102,7 +102,7 @@ fn take_terminal() -> io::Result<()> {
     execute!(stdout(), EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)
 }
 
-/// Undo everything init_terminal did. Runs on normal exit, on error, and from the
+/// Undo everything take_terminal did. Runs on normal exit, on error, and from the
 /// panic hook, so it can't rely on the Terminal still being alive - a build with
 /// panic = "abort" never drops it. Showing the cursor here covers that case.
 fn restore_terminal() -> io::Result<()> {
