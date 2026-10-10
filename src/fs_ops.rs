@@ -213,7 +213,7 @@ pub enum MountKind {
 }
 
 /// Somewhere a panel can jump to: a filesystem mount, or home.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Mount {
     pub path: PathBuf,
     pub label: String,
@@ -2466,16 +2466,42 @@ fn owner_of(metadata: &fs::Metadata) -> String {
     use std::os::unix::fs::MetadataExt;
     let (uid, gid) = (metadata.uid(), metadata.gid());
 
-    // SAFETY: both return a pointer into storage the C library owns, valid
-    // until the next call on this thread; the name is copied out before then.
-    // Only ever called from the thread that draws, so there is no next call.
-    let name = |pointer: *const libc::c_char| -> Option<String> {
-        (!pointer.is_null()).then(|| unsafe { std::ffi::CStr::from_ptr(pointer) }.to_string_lossy().into_owned())
-    };
-    let user = unsafe { libc::getpwuid(uid).as_ref() }.and_then(|entry| name(entry.pw_name));
-    let group = unsafe { libc::getgrgid(gid).as_ref() }.and_then(|entry| name(entry.gr_name));
+    let user = lookup_name(|entry: &mut libc::passwd, buffer, length, found| unsafe { libc::getpwuid_r(uid, entry, buffer, length, found) }, |entry| entry.pw_name);
+    let group = lookup_name(|entry: &mut libc::group, buffer, length, found| unsafe { libc::getgrgid_r(gid, entry, buffer, length, found) }, |entry| entry.gr_name);
 
     format!("{}:{}", user.unwrap_or_else(|| uid.to_string()), group.unwrap_or_else(|| gid.to_string()))
+}
+
+/// A user or group name, looked up with the _r calls, which write into a
+/// buffer of ours. The plain getpwuid and getgrgid hand back storage shared by
+/// the whole process, which is only safe while one thread ever asks - and the
+/// detail lines are gathered on a thread of their own now. The buffer grows
+/// for an entry too long for it, as a directory service's can be.
+#[cfg(unix)]
+fn lookup_name<E>(
+    call: impl Fn(&mut E, *mut libc::c_char, libc::size_t, *mut *mut E) -> libc::c_int,
+    name: impl Fn(&E) -> *const libc::c_char,
+) -> Option<String> {
+    let mut buffer: Vec<libc::c_char> = vec![0; 1024];
+    loop {
+        // SAFETY: an all-zero passwd or group is a valid value of the type -
+        // null pointers and zero ids - and is only read once the call has
+        // filled it in and said so by setting `found`.
+        let mut entry: E = unsafe { std::mem::zeroed() };
+        let mut found: *mut E = std::ptr::null_mut();
+        let status = call(&mut entry, buffer.as_mut_ptr(), buffer.len(), &mut found);
+        if status == libc::ERANGE && buffer.len() < 1 << 20 {
+            buffer.resize(buffer.len() * 2, 0);
+            continue;
+        }
+        if status != 0 || found.is_null() {
+            return None;
+        }
+        let pointer = name(&entry);
+        // SAFETY: the name points into `buffer`, which is alive and holds a
+        // NUL-terminated string the call wrote there.
+        return (!pointer.is_null()).then(|| unsafe { std::ffi::CStr::from_ptr(pointer) }.to_string_lossy().into_owned());
+    }
 }
 
 #[cfg(not(unix))]

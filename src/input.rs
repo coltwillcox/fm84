@@ -86,7 +86,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
     let clear = app_state.dialog.is_none() && app_state.error.is_none();
     let in_editor = clear && app_state.is_editing();
     let in_viewer = clear && app_state.is_viewing();
-    let in_panel = clear && app_state.job.is_none() && matches!(app_state.screen, Screen::Panels);
+    let in_panel = clear
+        && app_state.job.is_none()
+        && matches!(app_state.screen, Screen::Panels)
+        && !app_state.panel_busy(app_state.is_left_active);
 
     // Alt+* inverts the directories as well as the files. Ctrl is an alias
     // for the terminals that can report it; most send Ctrl+* as a bare * or
@@ -346,6 +349,18 @@ fn editor_key(app_state: &mut AppState, key: KeyEvent) {
 }
 
 fn panel_key(app_state: &mut AppState, key: KeyEvent) {
+    // A panel still being read shows what it did before, and a key acting on
+    // that would act on the wrong directory. Esc stops waiting for it, and Tab
+    // goes over to the other panel, which works as ever.
+    let is_left = app_state.is_left_active;
+    if app_state.panel_busy(is_left) {
+        match key.code {
+            KeyCode::Esc => app_state.cancel_listing(is_left),
+            KeyCode::Tab => app_state.is_left_active = !is_left,
+            _ => {}
+        }
+        return;
+    }
     let drive_chord = key.modifiers.intersects(KeyModifiers::ALT | KeyModifiers::CONTROL);
     let control = key.modifiers.contains(KeyModifiers::CONTROL);
     match key.code {
@@ -610,8 +625,12 @@ fn handle_rename(app_state: &mut AppState) {
     }
 }
 
-/// Move the active panel's cursor.
+/// Move the active panel's cursor - not over one still being read, whose
+/// rows are about to be replaced.
 fn move_cursor(app_state: &mut AppState, move_fn: impl Fn(&mut TableState, usize)) {
+    if app_state.panel_busy(app_state.is_left_active) {
+        return;
+    }
     let (state, len) = if app_state.is_left_active {
         (&mut app_state.state_left, app_state.children_left.len())
     } else {
@@ -1040,6 +1059,12 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
         return;
     }
     let area = if clicked_left { app_state.table_area_left } else { app_state.table_area_right };
+    // A click on a panel still being read makes it the active one, and does
+    // nothing to rows about to be replaced.
+    if app_state.panel_busy(clicked_left) {
+        app_state.is_left_active = clicked_left;
+        return;
+    }
 
     // The table draws its header on the first row of its area.
     if row <= area.y {

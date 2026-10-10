@@ -1,7 +1,9 @@
 use crate::fs_ops::{
-    Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, list_mounts,
+    Description, Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir,
     load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place,
 };
+use crate::background::{Latest, Watch, WatchEvent};
+use crate::viewer::Preview;
 use crate::options::{OPTION_ROWS, OptionRow, Options};
 use image::DynamicImage;
 use crate::strip::{Strip, StripHit};
@@ -16,7 +18,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
-use std::time::{Instant, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 
 /// Reusable single-line text input with cursor.
 pub struct TextInput {
@@ -288,11 +290,30 @@ pub struct AppState {
     pub drive_strip_right: Strip,
     pub tabs_left: Tabs,
     pub tabs_right: Tabs,
-    // Directory mtimes as of the last load, so an external change can be spotted
-    // without stat-ing every entry.
-    pub dir_stamp_left: Option<SystemTime>,
-    pub dir_stamp_right: Option<SystemTime>,
-    pub last_refresh_check: Instant,
+    /// A panel's directory still being read, past the moment the UI waits
+    /// for it. The panel goes on showing what it did until it lands.
+    pub listing_left: Option<PendingListing>,
+    pub listing_right: Option<PendingListing>,
+    /// How long the UI waits on a listing, and on the detail lines and the
+    /// preview, before going on without them. Without limit under test,
+    /// which wants each answer in hand before it looks.
+    pub listing_wait: Duration,
+    pub detail_wait: Duration,
+    /// Watching each panel's directory for changes and its filesystem for
+    /// free space, and the mounts for drives coming and going.
+    watch_left: Option<Watch>,
+    watch_right: Option<Watch>,
+    _watch_mounts: Watch,
+    watch_sender: Sender<WatchEvent>,
+    watch_events: Receiver<WatchEvent>,
+    pub watch_interval: Duration,
+    /// Changed on disk since it was read, to be read again once nothing is
+    /// open over it.
+    stale_left: bool,
+    stale_right: bool,
+    /// Where the detail lines and the preview are gathered.
+    detail_worker: Latest<(PathBuf, bool), Option<Description>>,
+    preview_worker: Latest<(PathBuf, bool), Preview>,
     // (used, total) bytes for each panel's filesystem.
     pub disk_left: Option<(u64, u64)>,
     pub disk_right: Option<(u64, u64)>,
@@ -522,6 +543,68 @@ impl Tabs {
     }
 }
 
+/// A panel's directory being read on a thread, with what to do once it is.
+pub struct PendingListing {
+    /// The directory asked for.
+    pub dir: PathBuf,
+    /// Going there, rather than reading again where the panel already is.
+    navigate: bool,
+    /// The entry to land on.
+    select: Option<OsString>,
+    /// Set when it is a tab being switched to.
+    tab: Option<TabSwitch>,
+    answer: Receiver<Listed>,
+}
+
+/// A tab being switched to: what was selected in it, and how to put the tabs
+/// back if its directory turns out not to be readable.
+struct TabSwitch {
+    selected: HashSet<OsString>,
+    undo: TabUndo,
+}
+
+enum TabUndo {
+    /// The tab that was active before.
+    Active(usize),
+    /// The tab closed, and where it was.
+    Reopen(usize, Tab),
+}
+
+/// What a listing thread comes back with.
+struct Listed {
+    /// Where it read: the directory asked for, or the nearest parent of it
+    /// still there. None if not even the root could be reached.
+    dir: Option<PathBuf>,
+    items: std::io::Result<Vec<Item>>,
+    /// The directory's modified time, taken before it was read, so a change
+    /// made during the read is still seen as one.
+    stamp: Option<SystemTime>,
+    disk: Option<(u64, u64)>,
+}
+
+/// Everything a panel needs from the disk, read on the listing thread.
+fn read_listing(dir: &Path, options: &Options) -> Listed {
+    let Some(found) = nearest_existing_dir(dir) else {
+        return Listed { dir: None, items: Err(std::io::ErrorKind::NotFound.into()), stamp: None, disk: None };
+    };
+    let stamp = std::fs::metadata(&found).and_then(|metadata| metadata.modified()).ok();
+    let items = load_directory_rows(&found, options);
+    let disk = disk_usage(&found);
+    Listed { dir: Some(found), items, stamp, disk }
+}
+
+/// What the preview shows of an entry, read on the preview thread: the head
+/// of a file, or how many entries a directory holds.
+fn read_preview(path: &Path, is_dir: bool) -> Preview {
+    if !is_dir {
+        return crate::viewer::load_preview(path, crate::constants::PREVIEW_MAX_BYTES, crate::constants::PREVIEW_MAX_LINES);
+    }
+    Preview::Lines(vec![match std::fs::read_dir(path) {
+        Ok(entries) => format!("{} items", entries.count()),
+        Err(e) => e.to_string(),
+    }])
+}
+
 /// A directory whose size Space asked for, being walked on its own thread.
 /// Not a TransferJob: nothing waits on it, so it has no popup and holds up
 /// nothing. The panels go on working while it counts, and the Size column
@@ -635,6 +718,8 @@ pub struct CursorDetail {
     pub owner: String,
     pub attributes: String,
     pub link: Option<String>,
+    /// Asked for and not yet in: only the name is known so far.
+    awaiting: bool,
 }
 
 /// A file big enough to be worth asking about before it is opened.
@@ -694,6 +779,8 @@ pub struct PreviewState {
     /// The head of a binary file, laid out as a hexdump by whatever draws it.
     /// Empty for everything else, which comes as lines.
     pub bytes: Vec<u8>,
+    /// Asked for and not yet in: only the name is shown so far.
+    awaiting: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -730,6 +817,7 @@ impl AppState {
         let mut state_right = TableState::default();
         state_right.select(Some(1));
 
+        let (watch_sender, watch_events) = mpsc::channel();
         let (error, dir_root) = match get_current_dir() {
             Ok(root) => (None, root),
             Err(e) => (Some(e.to_string()), PathBuf::new()),
@@ -778,9 +866,20 @@ impl AppState {
             viewport_start_right: 0,
             editor_content_area: Rect::default(),
             viewer_content_area: Rect::default(),
-            dir_stamp_left: None,
-            dir_stamp_right: None,
-            last_refresh_check: Instant::now(),
+            listing_left: None,
+            listing_right: None,
+            listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
+            detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },
+            watch_left: None,
+            watch_right: None,
+            _watch_mounts: crate::background::watch_mounts(crate::constants::REFRESH_INTERVAL, watch_sender.clone()),
+            watch_sender,
+            watch_events,
+            watch_interval: crate::constants::REFRESH_INTERVAL,
+            stale_left: false,
+            stale_right: false,
+            detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
+            preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
             disk_left: None,
             disk_right: None,
             job: None,
@@ -2352,60 +2451,28 @@ impl AppState {
         }
     }
 
-    /// Remember a directory's mtime so a later change to it stands out.
-    pub fn record_dir_stamp(&mut self, is_left: bool) {
-        let dir = if is_left { &self.dir_left } else { &self.dir_right };
-        let stamp = std::fs::metadata(dir).and_then(|metadata| metadata.modified()).ok();
-        if is_left {
-            self.dir_stamp_left = stamp;
-        } else {
-            self.dir_stamp_right = stamp;
-        }
-        self.record_disk_usage(is_left);
+    fn listing(&self, is_left: bool) -> &Option<PendingListing> {
+        if is_left { &self.listing_left } else { &self.listing_right }
     }
 
-    /// Read the panel filesystem's used/total. Off the render path: statvfs is
-    /// a syscall and blocks outright on an unresponsive network mount.
-    pub fn record_disk_usage(&mut self, is_left: bool) {
-        let dir = if is_left { &self.dir_left } else { &self.dir_right };
-        let usage = disk_usage(dir);
-        if is_left {
-            self.disk_left = usage;
-        } else {
-            self.disk_right = usage;
-        }
+    fn listing_mut(&mut self, is_left: bool) -> &mut Option<PendingListing> {
+        if is_left { &mut self.listing_left } else { &mut self.listing_right }
+    }
+
+    /// True while a panel's directory is still being read, past the moment
+    /// the UI waits. Until it lands the panel shows what it did before, and
+    /// only Tab and Esc mean anything there.
+    pub fn panel_busy(&self, is_left: bool) -> bool {
+        self.listing(is_left).is_some()
     }
 
     /// Point a panel at `dir` and read it. The single way a panel's directory
     /// changes - navigation, and anything else that jumps somewhere. `select`
     /// names the entry to land on, otherwise the cursor goes to the top.
-    /// False when the directory was refused and the panel stayed put.
+    /// False when the directory was refused and the panel stayed put; true
+    /// when it went there, or is still on its way.
     pub fn open_dir(&mut self, is_left: bool, dir: PathBuf, select: Option<&std::ffi::OsStr>) -> bool {
-        // A directory that is there but cannot be read - /root, to anyone
-        // else - is refused before the panel moves. Moved first, the panel
-        // went on listing the directory it left under the name of one it
-        // could not show, and every operation built its paths in the wrong
-        // place. One that is not there at all goes ahead, for the reload to
-        // climb from.
-        if dir.exists()
-            && let Err(e) = std::fs::read_dir(&dir)
-        {
-            self.display_error(format!("Cannot open {}: {}", dir.display(), e));
-            return false;
-        }
-        if is_left {
-            self.dir_left = dir;
-            self.selected_left.clear();
-            self.state_left.select(Some(0));
-        } else {
-            self.dir_right = dir;
-            self.selected_right.clear();
-            self.state_right.select(Some(0));
-        }
-        self.search_clear();
-        // Handles a vanished target too, by climbing to the nearest parent.
-        self.reload_panel(is_left, select);
-        true
+        self.request_listing(is_left, dir, true, select.map(std::ffi::OsStr::to_os_string), None).unwrap_or(true)
     }
 
     /// Ctrl+Left and Ctrl+Right, as in Total Commander: the arrow names the
@@ -2436,60 +2503,130 @@ impl AppState {
     /// file just renamed or created. Otherwise the cursor keeps the *file* it
     /// was on rather than the row, since entries appearing or vanishing above
     /// shift every index below them; if that file is gone, the row is kept.
+    /// A panel on its way somewhere else is left to get there: what it lands
+    /// on is read fresh anyway.
     pub fn reload_panel(&mut self, is_left: bool, prefer: Option<&std::ffi::OsStr>) {
+        if self.listing(is_left).as_ref().is_some_and(|pending| pending.navigate) {
+            return;
+        }
         let dir = if is_left { self.dir_left.clone() } else { self.dir_right.clone() };
+        self.request_listing(is_left, dir, false, prefer.map(std::ffi::OsStr::to_os_string), None);
+    }
 
-        // The directory may have been removed underneath us; climb to the
-        // nearest ancestor that still exists rather than sitting on an error.
-        let (dir, relocated) = match nearest_existing_dir(&dir) {
-            Some(found) if found == dir => (dir, false),
-            Some(found) => (found, true),
-            None => {
-                self.display_error(format!("No such directory: {}", dir.display()));
-                return;
+    /// Read a panel's directory on a thread of its own, and take it in at
+    /// once if it comes back inside the moment the UI waits - which on a disk
+    /// that answers it always does, so nothing looks any different. Otherwise
+    /// the panel goes on showing what it did, and poll_listings takes the
+    /// listing in when it lands. Some(false) when it was refused there and
+    /// then, None while it is still being read. A listing already on its way
+    /// for this panel is dropped for this one.
+    fn request_listing(&mut self, is_left: bool, dir: PathBuf, navigate: bool, select: Option<OsString>, tab: Option<TabSwitch>) -> Option<bool> {
+        let (sender, answer) = mpsc::channel();
+        let (worker_dir, options) = (dir.clone(), self.options.clone());
+        std::thread::spawn(move || {
+            let _ = sender.send(read_listing(&worker_dir, &options));
+        });
+        let pending = PendingListing { dir, navigate, select, tab, answer };
+        match pending.answer.recv_timeout(self.listing_wait) {
+            Ok(listed) => Some(self.apply_listing(is_left, pending, listed)),
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                *self.listing_mut(is_left) = Some(pending);
+                None
             }
-        };
+            // Gone without a word, which only happens if it panicked.
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                self.display_error(format!("Cannot read {}", pending.dir.display()));
+                self.undo_tab(is_left, pending.tab);
+                Some(false)
+            }
+        }
+    }
 
-        if relocated {
-            // Cursor, search and selection all referred to entries that are gone.
+    /// Take in whichever listings have landed since the last frame.
+    pub fn poll_listings(&mut self) {
+        for is_left in [true, false] {
+            let Some(pending) = self.listing_mut(is_left).take() else {
+                continue;
+            };
+            match pending.answer.try_recv() {
+                Ok(listed) => {
+                    self.apply_listing(is_left, pending, listed);
+                }
+                Err(TryRecvError::Empty) => *self.listing_mut(is_left) = Some(pending),
+                Err(TryRecvError::Disconnected) => {
+                    self.display_error(format!("Cannot read {}", pending.dir.display()));
+                    self.undo_tab(is_left, pending.tab);
+                }
+            }
+        }
+    }
+
+    /// Esc on a panel still being read: stop waiting for it. The panel stays
+    /// where it was, and a tab it was switching to is switched back. Whatever
+    /// the thread finds is never asked for.
+    pub fn cancel_listing(&mut self, is_left: bool) {
+        if let Some(pending) = self.listing_mut(is_left).take() {
+            self.undo_tab(is_left, pending.tab);
+        }
+    }
+
+    /// Put a panel to a listing that has come back. False when it was a
+    /// directory that is there but could not be read, which is refused - /root,
+    /// to anyone else - and the panel stays where it was. Moved there anyway,
+    /// the panel went on listing the directory it left under the name of one it
+    /// could not show, and every operation built its paths in the wrong place.
+    /// One that is gone is climbed out of, to the nearest parent still there.
+    fn apply_listing(&mut self, is_left: bool, pending: PendingListing, listed: Listed) -> bool {
+        let Some(found) = listed.dir else {
+            self.display_error(format!("No such directory: {}", pending.dir.display()));
+            self.undo_tab(is_left, pending.tab);
+            return false;
+        };
+        if pending.navigate
+            && found == pending.dir
+            && let Err(e) = &listed.items
+        {
+            self.display_error(format!("Cannot open {}: {}", pending.dir.display(), e));
+            self.undo_tab(is_left, pending.tab);
+            return false;
+        }
+
+        // Gone from under it, and climbed out of to `found`.
+        let relocated = found != pending.dir;
+        if pending.navigate || relocated {
+            // Cursor, search and selection all referred to entries elsewhere.
             if is_left {
-                self.dir_left = dir.clone();
+                self.dir_left = found.clone();
                 self.selected_left.clear();
                 self.state_left.select(Some(0));
             } else {
-                self.dir_right = dir.clone();
+                self.dir_right = found.clone();
                 self.selected_right.clear();
                 self.state_right.select(Some(0));
             }
             self.search_clear();
         }
 
-        let (children, state) = if is_left {
-            (&self.children_left, &self.state_left)
-        } else {
-            (&self.children_right, &self.state_right)
-        };
+        let (children, state) = if is_left { (&self.children_left, &self.state_left) } else { (&self.children_right, &self.state_right) };
         let previous_index = state.selected().unwrap_or(0);
         let wanted = if relocated {
             None
+        } else if pending.navigate {
+            pending.select
         } else {
             // By the name the filesystem holds: two that are not valid UTF-8
             // can read the same, and the cursor would land on the wrong one.
-            prefer.map(std::ffi::OsStr::to_os_string).or_else(|| {
-                children.get(previous_index).map(|item| item.name_os.clone())
-            })
+            pending.select.or_else(|| children.get(previous_index).map(|item| item.name_os.clone()))
         };
 
-        match load_directory_rows(&dir, &self.options) {
+        match listed.items {
             Ok(items) => {
                 let selected = if is_left { &mut self.selected_left } else { &mut self.selected_right };
                 prune_selection(selected, &items);
-
                 let index = wanted
                     .and_then(|name| items.iter().position(|item| item.name_os == name))
                     .unwrap_or(previous_index)
                     .min(items.len().saturating_sub(1));
-
                 if is_left {
                     self.children_left = items;
                     self.state_left.select(Some(index));
@@ -2497,15 +2634,36 @@ impl AppState {
                     self.children_right = items;
                     self.state_right.select(Some(index));
                 }
-                self.record_dir_stamp(is_left);
             }
-            Err(e) => {
-                self.display_error(e.to_string());
-                // Taken as read all the same, so the refresh only tries again
-                // once the directory changes. Otherwise it found the stamp
-                // out of date every second and put the same error back up
-                // each time it was closed.
-                self.record_dir_stamp(is_left);
+            // Gone unreadable while the panel is in it. Said once: the watcher
+            // only speaks up again when the directory changes.
+            Err(e) => self.display_error(e.to_string()),
+        }
+
+        if is_left {
+            self.disk_left = listed.disk;
+        } else {
+            self.disk_right = listed.disk;
+        }
+        let watch = if is_left { &self.watch_left } else { &self.watch_right };
+        if watch.as_ref().is_none_or(|watch| watch.dir != found) {
+            let watch = crate::background::watch_dir(is_left, found.clone(), listed.stamp, listed.disk, self.watch_interval, self.watch_sender.clone());
+            if is_left {
+                self.watch_left = Some(watch);
+            } else {
+                self.watch_right = Some(watch);
+            }
+        }
+
+        // A tab brings back what was selected in it - when the panel got to
+        // where the tab was, and not to some parent of it.
+        if let Some(tab) = pending.tab {
+            let (children, selected) = if is_left { (&self.children_left, &mut self.selected_left) } else { (&self.children_right, &mut self.selected_right) };
+            if relocated {
+                selected.clear();
+            } else {
+                *selected = tab.selected;
+                prune_selection(selected, children);
             }
         }
 
@@ -2518,6 +2676,51 @@ impl AppState {
         // refreshes both on its way to drawing one.
         self.preview = None;
         self.cursor_detail = None;
+        true
+    }
+
+    /// A tab switch that did not happen, put back as it was.
+    fn undo_tab(&mut self, is_left: bool, tab: Option<TabSwitch>) {
+        let Some(tab) = tab else {
+            return;
+        };
+        let tabs = self.tabs_mut(is_left);
+        match tab.undo {
+            TabUndo::Active(previous) => tabs.active = previous,
+            TabUndo::Reopen(index, closed) => {
+                tabs.list.insert(index, closed);
+                tabs.active = index;
+            }
+        }
+    }
+
+    /// Take in what the watchers have seen since the last frame.
+    pub fn poll_watchers(&mut self) {
+        while let Ok(event) = self.watch_events.try_recv() {
+            match event {
+                WatchEvent::Changed { is_left, dir } => {
+                    if dir == *(if is_left { &self.dir_left } else { &self.dir_right }) {
+                        if is_left {
+                            self.stale_left = true;
+                        } else {
+                            self.stale_right = true;
+                        }
+                    }
+                }
+                // Free space moves without the directory changing - a copy
+                // anywhere else on the same filesystem shifts it.
+                WatchEvent::Disk { is_left, dir, usage } => {
+                    if dir == *(if is_left { &self.dir_left } else { &self.dir_right }) {
+                        if is_left {
+                            self.disk_left = usage;
+                        } else {
+                            self.disk_right = usage;
+                        }
+                    }
+                }
+                WatchEvent::Mounts(mounts) => self.mounts = mounts,
+            }
+        }
     }
 
     /// Which panel's drive strip a position is on, if either.
@@ -2611,6 +2814,9 @@ impl AppState {
     /// - the selection stays with the tab it was made in.
     pub fn new_tab(&mut self) {
         let is_left = self.is_left_active;
+        if self.panel_busy(is_left) {
+            return;
+        }
         let here = self.panel_as_tab(is_left);
         let tabs = self.tabs_mut(is_left);
         tabs.list[tabs.active] = here.clone();
@@ -2623,8 +2829,11 @@ impl AppState {
     /// since a panel has to show something. Closing the one shown moves to the
     /// one after it, or before it at the end, as a browser does - unless that
     /// one's directory cannot be read, when the close is refused and the tab
-    /// stays, as it was.
+    /// stays, as it was. Not while the panel is still being read.
     pub fn close_tab(&mut self, is_left: bool, index: usize) {
+        if self.panel_busy(is_left) {
+            return;
+        }
         let tabs = self.tabs_mut(is_left);
         if tabs.list.len() <= 1 || index >= tabs.list.len() {
             return;
@@ -2632,11 +2841,7 @@ impl AppState {
         let closed = tabs.list.remove(index);
         if index == tabs.active {
             tabs.active = index.min(tabs.list.len() - 1);
-            if !self.show_tab(is_left) {
-                let tabs = self.tabs_mut(is_left);
-                tabs.list.insert(index, closed);
-                tabs.active = index;
-            }
+            self.show_tab(is_left, TabUndo::Reopen(index, closed));
         } else if index < tabs.active {
             tabs.active -= 1;
         }
@@ -2646,8 +2851,12 @@ impl AppState {
     /// to. One whose directory cannot be read is refused, and this one stays
     /// active: moved there regardless, the panel went on showing the directory
     /// it was in under the other tab, which took that directory over for good
-    /// as soon as it was left.
+    /// as soon as it was left. Not while the panel is still being read, for
+    /// the same reason: it is not yet showing the tab it says it is.
     pub fn select_tab(&mut self, is_left: bool, index: usize) {
+        if self.panel_busy(is_left) {
+            return;
+        }
         let here = self.panel_as_tab(is_left);
         let tabs = self.tabs_mut(is_left);
         if index >= tabs.list.len() || index == tabs.active {
@@ -2656,9 +2865,7 @@ impl AppState {
         let previous = tabs.active;
         tabs.list[previous] = here;
         tabs.active = index;
-        if !self.show_tab(is_left) {
-            self.tabs_mut(is_left).active = previous;
-        }
+        self.show_tab(is_left, TabUndo::Active(previous));
     }
 
     /// Ctrl+PageDown and Ctrl+PageUp: the next tab in the active panel, or the
@@ -2673,27 +2880,13 @@ impl AppState {
 
     /// Point the panel at the tab now active. A directory that cannot be read
     /// is refused as anywhere else, leaving the panel - selection and all -
-    /// where it was, and false for the caller to put the tabs back. A
-    /// directory gone altogether is climbed out of, as anywhere else, and its
-    /// selection goes with it.
-    fn show_tab(&mut self, is_left: bool) -> bool {
+    /// where it was, and `undo` puts the tabs back. A directory gone
+    /// altogether is climbed out of, as anywhere else, and its selection goes
+    /// with it.
+    fn show_tab(&mut self, is_left: bool, undo: TabUndo) {
         let tabs = self.tabs_mut(is_left);
         let tab = tabs.list[tabs.active].clone();
-        if !self.open_dir(is_left, tab.dir.clone(), tab.cursor.as_deref()) {
-            return false;
-        }
-        let (dir, children, selected) = if is_left {
-            (&self.dir_left, &self.children_left, &mut self.selected_left)
-        } else {
-            (&self.dir_right, &self.children_right, &mut self.selected_right)
-        };
-        if *dir == tab.dir {
-            *selected = tab.selected;
-            prune_selection(selected, children);
-        } else {
-            selected.clear();
-        }
-        true
+        self.request_listing(is_left, tab.dir, true, tab.cursor, Some(TabSwitch { selected: tab.selected, undo }));
     }
 
     /// The mount a panel is sitting on: the longest one its directory is under.
@@ -2709,8 +2902,8 @@ impl AppState {
 
     /// Start choosing a drive for a panel, highlighting the one it is on.
     pub fn open_drive_picker(&mut self, is_left: bool) {
-        // Re-read so a stick plugged in a moment ago shows up.
-        self.mounts = list_mounts();
+        // Kept current by the watcher, so a stick plugged in a moment ago is
+        // already there.
         if self.mounts.is_empty() {
             return;
         }
@@ -2740,27 +2933,21 @@ impl AppState {
         }
     }
 
-    /// Reread any panel whose directory changed underneath us. Called once per
-    /// frame; the interval keeps it to a couple of stat calls a second.
+    /// Reread any panel whose directory the watcher saw change. Not under an
+    /// open dialog, which would move things out from under the user, nor while
+    /// the panel is still being read: what lands then is fresh anyway.
     pub fn refresh_stale_panels(&mut self) {
-        // Reloading under an open dialog would move things out from under the user.
-        if self.is_modal_open() || self.last_refresh_check.elapsed() < crate::constants::REFRESH_INTERVAL {
+        if self.is_modal_open() {
             return;
         }
-        self.last_refresh_check = Instant::now();
-
-        // A drive appearing or going away should show up in the strip.
-        self.mounts = list_mounts();
-
         for is_left in [true, false] {
-            // Free space moves without the directory changing - a copy anywhere
-            // else on the same filesystem shifts it - so this updates every tick.
-            self.record_disk_usage(is_left);
-
-            let dir = if is_left { &self.dir_left } else { &self.dir_right };
-            let stamp = std::fs::metadata(dir).and_then(|metadata| metadata.modified()).ok();
-            let known = if is_left { self.dir_stamp_left } else { self.dir_stamp_right };
-            if stamp != known {
+            let stale = if is_left { self.stale_left } else { self.stale_right };
+            if stale && !self.panel_busy(is_left) {
+                if is_left {
+                    self.stale_left = false;
+                } else {
+                    self.stale_right = false;
+                }
                 self.reload_panel(is_left, None);
             }
         }
@@ -2781,52 +2968,67 @@ impl AppState {
     }
 
     /// Gather what the detail lines say, when the cursor has moved to something
-    /// else. Same shape as the preview below it, and for the same reason.
+    /// else. Asked of a thread, since it stats the file, reads a link and looks
+    /// the owner up, and any of those can wait for good on a dead mount. The
+    /// name is known already, and shows at once; the rest follows, at once on
+    /// a disk that answers.
     pub fn refresh_cursor_detail(&mut self) {
         let target = self.cursor_target();
         let path = target.as_ref().map(|(path, _, _)| path.clone());
-        if self.cursor_detail.as_ref().is_some_and(|detail| detail.path == path) {
-            return;
-        }
-
-        let Some((path, name, is_dir)) = target else {
+        let mut wait = Duration::ZERO;
+        if self.cursor_detail.as_ref().is_none_or(|detail| detail.path != path) {
+            let (name, awaiting) = match target {
+                Some((path, name, is_dir)) => {
+                    self.detail_worker.ask((path, is_dir));
+                    wait = self.detail_wait;
+                    (name, true)
+                }
+                None => (String::new(), false),
+            };
             self.cursor_detail = Some(CursorDetail {
-                path: None,
-                name: String::new(),
+                path,
+                name,
                 size: String::new(),
                 modified: String::new(),
                 owner: String::new(),
                 attributes: String::new(),
                 link: None,
+                awaiting,
             });
+        }
+
+        if !self.cursor_detail.as_ref().is_some_and(|detail| detail.awaiting) {
+            return;
+        }
+        let Some(((path, _), described)) = self.detail_worker.answer(wait) else {
             return;
         };
-
-        let described = crate::fs_ops::describe(&path, is_dir);
-        self.cursor_detail = Some(CursorDetail {
-            name,
-            // The exact count, since the column rounds it to something like
-            // "9 MiB" and the difference is the point of showing it again.
-            size: described
-                .as_ref()
-                .and_then(|described| described.size_bytes)
-                .map(|bytes| format!("{} bytes", crate::utils::grouped(bytes)))
-                .unwrap_or_default(),
-            // To the second, which the column has no room for either.
-            modified: described
-                .as_ref()
-                .and_then(|described| described.modified)
-                .map(|at| crate::utils::format_exact(at, self.options.date_format))
-                .unwrap_or_default(),
-            owner: described.as_ref().map(|described| described.owner.clone()).unwrap_or_default(),
-            attributes: described.as_ref().map(|described| described.attributes.clone()).unwrap_or_default(),
-            link: described.and_then(|described| described.link),
-            path: Some(path),
-        });
+        let date_format = self.options.date_format;
+        let Some(detail) = self.cursor_detail.as_mut().filter(|detail| detail.path.as_ref() == Some(&path)) else {
+            return;
+        };
+        detail.awaiting = false;
+        // The exact count, since the column rounds it to something like
+        // "9 MiB" and the difference is the point of showing it again.
+        detail.size = described
+            .as_ref()
+            .and_then(|described| described.size_bytes)
+            .map(|bytes| format!("{} bytes", crate::utils::grouped(bytes)))
+            .unwrap_or_default();
+        // To the second, which the column has no room for either.
+        detail.modified = described
+            .as_ref()
+            .and_then(|described| described.modified)
+            .map(|at| crate::utils::format_exact(at, date_format))
+            .unwrap_or_default();
+        detail.owner = described.as_ref().map(|described| described.owner.clone()).unwrap_or_default();
+        detail.attributes = described.as_ref().map(|described| described.attributes.clone()).unwrap_or_default();
+        detail.link = described.and_then(|described| described.link);
     }
 
     /// Keep the preview pointed at whatever the cursor is on. Reads only when
-    /// the target actually changed, so holding an arrow key stays cheap.
+    /// the target actually changed, so holding an arrow key stays cheap - and
+    /// on a thread, like the detail lines, for the same reason.
     pub fn refresh_preview(&mut self) {
         if !self.show_preview {
             self.preview = None;
@@ -2835,30 +3037,33 @@ impl AppState {
 
         let target = self.cursor_target();
         let path = target.as_ref().map(|(path, _, _)| path.clone());
-        if self.preview.as_ref().is_some_and(|preview| preview.path == path) {
-            return;
+        let mut wait = Duration::ZERO;
+        if self.preview.as_ref().is_none_or(|preview| preview.path != path) {
+            let (label, awaiting) = match target {
+                Some((path, name, is_dir)) => {
+                    self.preview_worker.ask((path, is_dir));
+                    wait = self.detail_wait;
+                    (name, true)
+                }
+                None => (String::new(), false),
+            };
+            self.preview = Some(PreviewState { path, label, lines: Vec::new(), bytes: Vec::new(), awaiting });
         }
 
-        let (label, content) = match &target {
-            None => (String::new(), crate::viewer::Preview::Lines(Vec::new())),
-            Some((path, name, true)) => {
-                let lines = match std::fs::read_dir(path) {
-                    Ok(entries) => vec![format!("{} items", entries.count())],
-                    Err(e) => vec![e.to_string()],
-                };
-                (name.clone(), crate::viewer::Preview::Lines(lines))
-            }
-            Some((path, name, false)) => (
-                name.clone(),
-                crate::viewer::load_preview(path, crate::constants::PREVIEW_MAX_BYTES, crate::constants::PREVIEW_MAX_LINES),
-            ),
+        if !self.preview.as_ref().is_some_and(|preview| preview.awaiting) {
+            return;
+        }
+        let Some(((path, _), content)) = self.preview_worker.answer(wait) else {
+            return;
         };
-        let (lines, bytes) = match content {
-            crate::viewer::Preview::Lines(lines) => (lines, Vec::new()),
-            crate::viewer::Preview::Bytes(bytes) => (Vec::new(), bytes),
+        let Some(preview) = self.preview.as_mut().filter(|preview| preview.path.as_ref() == Some(&path)) else {
+            return;
         };
-
-        self.preview = Some(PreviewState { path, label, lines, bytes });
+        preview.awaiting = false;
+        match content {
+            Preview::Lines(lines) => preview.lines = lines,
+            Preview::Bytes(bytes) => preview.bytes = bytes,
+        }
     }
 
     pub fn clear_active_selections(&mut self) {
@@ -3456,6 +3661,9 @@ mod tests {
 
         let mut app_state = AppState::new();
         app_state.options = Options::default();
+        // Watchers that look every few milliseconds, so the ticks the
+        // refresh would answer come round inside the test.
+        app_state.watch_interval = std::time::Duration::from_millis(5);
         app_state.open_dir(true, dir.clone(), None);
         let listed = app_state.children_left.len();
 
@@ -3466,7 +3674,8 @@ mod tests {
 
         // Closed, and a refresh comes round: it stays closed.
         app_state.reset_error();
-        app_state.last_refresh_check -= crate::constants::REFRESH_INTERVAL;
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        app_state.poll_watchers();
         app_state.refresh_stale_panels();
         assert!(app_state.error.is_none());
 
@@ -3478,7 +3687,8 @@ mod tests {
         app_state.reload_panel(true, None);
         assert!(app_state.error.is_some());
         app_state.reset_error();
-        app_state.last_refresh_check -= crate::constants::REFRESH_INTERVAL;
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        app_state.poll_watchers();
         app_state.refresh_stale_panels();
         assert!(app_state.error.is_none());
 
@@ -3758,6 +3968,123 @@ mod tests {
         assert_eq!(app_state.selected_left.len(), 1);
 
         std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A directory that has not answered yet leaves the panel where it was,
+    /// busy, with nothing on it acting on the rows about to be replaced; it
+    /// is taken in when it lands. Built by hand, so the test decides when.
+    #[test]
+    fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
+        let dir = std::env::temp_dir().join(format!("fm84-slow-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("far")).unwrap();
+        std::fs::write(dir.join("far").join("there.txt"), "").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), None);
+        let listed = app_state.children_left.len();
+
+        let (sender, answer) = std::sync::mpsc::channel();
+        app_state.listing_left = Some(super::PendingListing { dir: dir.join("far"), navigate: true, select: None, tab: None, answer });
+        assert!(app_state.panel_busy(true));
+        // The panel is as it was, and its tabs cannot be touched.
+        app_state.new_tab();
+        assert_eq!(app_state.tabs_left.list.len(), 1);
+        assert_eq!((app_state.dir_left.clone(), app_state.children_left.len()), (dir.clone(), listed));
+        // Nor does a reread of where it was get in the way of where it is going.
+        app_state.reload_panel(true, None);
+        assert!(app_state.listing_left.as_ref().is_some_and(|pending| pending.dir == dir.join("far")));
+        app_state.poll_listings();
+        assert!(app_state.panel_busy(true), "nothing has landed yet");
+
+        sender.send(super::read_listing(&dir.join("far"), &app_state.options)).unwrap();
+        app_state.poll_listings();
+        assert!(!app_state.panel_busy(true));
+        assert_eq!(app_state.dir_left, dir.join("far"));
+        assert!(app_state.children_left.iter().any(|item| item.name_full == "there.txt"));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A tab switched to whose directory turns out, late, to be unreadable is
+    /// switched back - as it is when Esc stops waiting for it.
+    #[test]
+    fn a_late_refusal_or_esc_puts_the_tab_back() {
+        let dir = std::env::temp_dir().join(format!("fm84-late-tab-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.open_dir(true, dir.clone(), None);
+        app_state.tabs_left = super::Tabs::new(vec![dir.clone(), dir.join("locked")], 0);
+
+        for refused in [true, false] {
+            let (sender, answer) = std::sync::mpsc::channel();
+            app_state.tabs_left.active = 1;
+            let tab = super::TabSwitch { selected: HashSet::new(), undo: super::TabUndo::Active(0) };
+            app_state.listing_left = Some(super::PendingListing { dir: dir.join("locked"), navigate: true, select: None, tab: Some(tab), answer });
+            if refused {
+                let denied = std::io::Error::from(std::io::ErrorKind::PermissionDenied);
+                sender.send(super::Listed { dir: Some(dir.join("locked")), items: Err(denied), stamp: None, disk: None }).unwrap();
+                app_state.poll_listings();
+                assert!(app_state.error.is_some());
+                app_state.reset_error();
+            } else {
+                app_state.cancel_listing(true);
+            }
+            assert!(!app_state.panel_busy(true));
+            assert_eq!(app_state.tabs_left.active, 0);
+            assert_eq!(app_state.dir_left, dir);
+        }
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// The watcher sees a directory change and the panel reads it again; the
+    /// detail lines and the preview arrive from their threads, the name first.
+    #[test]
+    fn changes_and_details_arrive_from_their_threads() {
+        let dir = std::env::temp_dir().join(format!("fm84-watched-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("notes.txt"), "hello").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.watch_interval = std::time::Duration::from_millis(5);
+        app_state.open_dir(true, dir.clone(), Some("notes.txt".as_ref()));
+
+        // Made behind fm84's back, and found without anything being pressed.
+        std::fs::write(dir.join("new.txt"), "").unwrap();
+        let started = std::time::Instant::now();
+        while !app_state.children_left.iter().any(|item| item.name_full == "new.txt") {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "the change was never seen");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_watchers();
+            app_state.refresh_stale_panels();
+        }
+
+        // Without waiting on them: the name at once, the rest when it comes.
+        app_state.detail_wait = std::time::Duration::ZERO;
+        app_state.show_preview = true;
+        let at = app_state.children_left.iter().position(|item| item.name_full == "notes.txt");
+        app_state.state_left.select(at);
+        app_state.cursor_detail = None;
+        app_state.refresh_cursor_detail();
+        assert_eq!(app_state.cursor_detail.as_ref().unwrap().name, "notes.txt");
+        let started = std::time::Instant::now();
+        loop {
+            app_state.refresh_cursor_detail();
+            app_state.refresh_preview();
+            let detail = app_state.cursor_detail.as_ref().unwrap();
+            let preview = app_state.preview.as_ref().unwrap();
+            if !detail.awaiting && !preview.awaiting {
+                assert_eq!(detail.size, "5 bytes");
+                assert_eq!(preview.lines, ["hello"]);
+                break;
+            }
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "the details never came");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

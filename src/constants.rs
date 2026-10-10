@@ -2,6 +2,15 @@ use std::time::Duration;
 
 // How often to check whether a panel's directory changed on disk.
 pub const REFRESH_INTERVAL: Duration = Duration::from_secs(1);
+// How long the UI waits on a directory being read before going on without it,
+// leaving the panel as it was and saying it is still reading. A disk that
+// answers lists even a large directory well inside this; only one that has
+// stopped answering runs past it.
+pub const LISTING_WAIT: Duration = Duration::from_millis(150);
+// The same for the detail lines and the preview, which follow the cursor and
+// so are asked for on every key: short enough that holding an arrow key over a
+// dead mount still moves, long enough that a live one shows them at once.
+pub const DETAIL_WAIT: Duration = Duration::from_millis(30);
 
 pub const TITLE: &str = "File Manager '84";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

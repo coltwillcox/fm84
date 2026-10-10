@@ -1220,6 +1220,11 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             }
             render_segmented_status_bar(f, area, &segments);
         }
+    } else if let Some(listing) = if app_state.is_left_active { &app_state.listing_left } else { &app_state.listing_right } {
+        // A directory that has not answered yet - a network mount gone quiet.
+        // The panel shows what it did until it does.
+        let text = format!(" Reading {}…  Esc to stop ", printable_name(&listing.dir.to_string_lossy()));
+        render_status_bar(f, area, text, status_style);
     } else if !app_state.search_input.is_empty() {
         // Show search string
         let text = format!(" Search: {} ", app_state.search_input);
