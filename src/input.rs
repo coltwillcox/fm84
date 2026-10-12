@@ -106,6 +106,8 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         match c {
             'f' if in_editor || in_viewer => app_state.open_prompt(PromptKind::Find),
             'g' if in_editor || in_viewer => app_state.open_prompt(PromptKind::GoToLine),
+            // Replace, in the editor; elsewhere Ctrl+R rereads the panels.
+            'r' if in_editor => app_state.open_replace(),
             's' if in_editor => {
                 save_then(app_state, AfterSave::Stay);
             }
@@ -241,6 +243,22 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc => app_state.dialog = None,
             _ => {}
         },
+        // A match asked about, while replacing. Enter is not an answer: a key
+        // pressed out of habit should not be the one that changes the text.
+        Some(Dialog::Replacing { replaced, .. }) => {
+            let replaced = *replaced;
+            match code {
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    app_state.replace_step(true);
+                }
+                KeyCode::Char('n') | KeyCode::Char('N') => {
+                    app_state.replace_step(false);
+                }
+                KeyCode::Char('a') | KeyCode::Char('A') => app_state.replace_all(),
+                KeyCode::Esc => app_state.finish_replace(replaced),
+                _ => {}
+            }
+        }
         // Changed on disk since the editor read it: write over it anyway,
         // read it again, or go back to the edits.
         Some(&Dialog::DiskChanged { then, now, .. }) => match code {
@@ -371,6 +389,8 @@ fn editor_key(app_state: &mut AppState, key: KeyEvent) {
             save_then(app_state, AfterSave::Stay);
         }
         KeyCode::F(3) => app_state.find(!extend, false),
+        // F4 replaces, as in MC's editor; Ctrl+R does too.
+        KeyCode::F(4) => app_state.open_replace(),
         KeyCode::Up => {
             app_state.editor_prepare_move(extend);
             app_state.editor_cursor_up();
@@ -1593,6 +1613,41 @@ mod tests {
         press(&mut app_state, KeyCode::Char('o'));
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "GFtheirs\nand more\n");
         std::fs::remove_file(&path).unwrap();
+    }
+
+    /// Ctrl+R and F4 replace in the editor; Y replaces, Enter does nothing,
+    /// and Esc stops, saying how many were done.
+    #[test]
+    fn replace_is_driven_from_the_keys() {
+        let path = std::env::temp_dir().join(format!("fm84-replace-keys-{}.txt", std::process::id()));
+        std::fs::write(&path, "cat cat cat").unwrap();
+        let mut app_state = AppState::new();
+        app_state.open_editor(path.clone()).unwrap();
+        let answer = |app_state: &mut AppState, text: &str| {
+            app_state.dialog_input().unwrap().set(text.to_string());
+            press(app_state, KeyCode::Enter);
+        };
+
+        handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL));
+        answer(&mut app_state, "cat");
+        answer(&mut app_state, "dog");
+        press(&mut app_state, KeyCode::Enter);
+        assert!(matches!(app_state.dialog, Some(Dialog::Replacing { replaced: 0, .. })), "Enter is not an answer");
+        press(&mut app_state, KeyCode::Char('y'));
+        press(&mut app_state, KeyCode::Esc);
+        assert!(app_state.dialog.is_none());
+        assert_eq!(app_state.editor().unwrap().lines, ["dog cat cat"]);
+        assert_eq!(app_state.find_note.as_deref(), Some("Replaced 1"));
+
+        // F4 offers the last term and replacement again.
+        press(&mut app_state, KeyCode::F(4));
+        assert_eq!(app_state.dialog_input().unwrap().text, "cat");
+        press(&mut app_state, KeyCode::Enter);
+        assert_eq!(app_state.dialog_input().unwrap().text, "dog");
+        press(&mut app_state, KeyCode::Enter);
+        press(&mut app_state, KeyCode::Char('a'));
+        assert_eq!(app_state.editor().unwrap().lines, ["dog dog dog"]);
+        std::fs::remove_file(path).unwrap();
     }
 
     /// F10 leaves at once, unless the editor holds edits nobody has saved:

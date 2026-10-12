@@ -169,7 +169,8 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         render_detail(f, chunks_main[4].inner(Margin { vertical: 0, horizontal: 2 }), app_state);
 
         // The rename field, the prompt and the drive picker are drawn where
-        // they sit, in the panel, the status bar and the drive strip.
+        // they sit, in the panel, the status bar and the drive strip - and so
+        // is the replace question, under the match it is asking about.
         let mut find_files_page = None;
         match &app_state.dialog {
             Some(Dialog::Help) => render_help_popup(f, area),
@@ -187,7 +188,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
                 }
                 FindFiles::Found(search) => find_files_page = Some(render_find_files_results(f, area, search)),
             },
-            Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. }) | None => {}
+            Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {
             app_state.find_files_page = page;
@@ -1121,12 +1122,19 @@ fn disk_readout(usage: Option<(u64, u64)>, available: usize) -> Option<String> {
 fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
     let status_style = style_title().bg(palette().selected_background);
 
+    if let Some(Dialog::Replacing { .. }) = &app_state.dialog {
+        let question = format!(" Replace \"{}\" with \"{}\"?   Y - Yes   N - No   A - All   Esc - Stop ", printable_name(&app_state.find_term), printable_name(&app_state.replace_with));
+        render_status_bar(f, area, question, status_style);
+        return;
+    }
     if let Some(Dialog::Prompt(kind, input)) = &app_state.dialog {
         let label = match kind {
             PromptKind::Find => " Find: ",
             PromptKind::GoToLine => " Go to line: ",
             PromptKind::Select => " Select: ",
             PromptKind::Deselect => " Deselect: ",
+            PromptKind::Replace => " Replace: ",
+            PromptKind::ReplaceWith => " With: ",
         };
         render_prompt_bar(f, area, label, input, status_style);
         return;
@@ -1499,7 +1507,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "  F fit/fill, +/- zoom",
         "F4 - Edit file (Ctrl+S/F2 save)",
         "  Ctrl+F find, F3/Shift+F3 next/prev",
-        "  Ctrl+G go to line",
+        "  Ctrl+G go to line, Ctrl+R/F4 replace",
         "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
         "  Shift+arrows select, Ctrl+A all",
         "F5 - Copy (to the other panel, or where typed)",

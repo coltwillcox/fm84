@@ -158,6 +158,10 @@ pub enum PromptKind {
     GoToLine,
     Select,
     Deselect,
+    /// What to replace, in the editor.
+    Replace,
+    /// What to replace it with.
+    ReplaceWith,
 }
 
 /// What fills the space between the top bar and the bottom one: the two
@@ -214,6 +218,10 @@ pub enum Dialog {
     Prompt(PromptKind, TextInput),
     /// Alt+F7: what to look for, and then what was found.
     FindFiles(Box<FindFiles>),
+    /// Replacing in the editor, a match at a time: the one selected is the
+    /// one asked about. `stop_at` is where it started, which it stops at once
+    /// it has gone round the end of the file and back; `wrapped` says it has.
+    Replacing { stop_at: (usize, usize), wrapped: bool, replaced: usize },
 }
 
 /// What a save in the editor goes on to do once the file is written.
@@ -350,6 +358,8 @@ pub struct AppState {
     /// How many results the Find files list showed when it was last drawn,
     /// which is how far PageUp and PageDown go.
     pub find_files_page: usize,
+    /// What Ctrl+R last replaced with, offered again the next time.
+    pub replace_with: String,
     /// What Ctrl+F last looked for. Kept when the prompt closes, for F3 and
     /// Shift+F3, and offered again the next time it opens.
     pub find_term: String,
@@ -1057,6 +1067,7 @@ impl AppState {
             find_files_last: ("*".to_string(), String::new()),
             find_files_page: 10,
             find_term: String::new(),
+            replace_with: String::new(),
             find_shown: false,
             find_note: None,
             selected_left: HashSet::new(),
@@ -1794,7 +1805,146 @@ impl AppState {
                 self.select_pattern = input.text;
                 self.select_by(&glob, kind == PromptKind::Select);
             }
+            // What to replace, and then what with. Nothing to replace is a
+            // cancel; nothing to replace it with deletes it.
+            PromptKind::Replace => {
+                if input.text.is_empty() {
+                    return;
+                }
+                self.find_term = input.text;
+                let mut with = TextInput::new();
+                with.set(self.replace_with.clone());
+                self.dialog = Some(Dialog::Prompt(PromptKind::ReplaceWith, with));
+            }
+            PromptKind::ReplaceWith => {
+                self.replace_with = input.text;
+                self.start_replace();
+            }
         }
+    }
+
+    /// Ctrl+R or F4 in the editor: ask what to replace, offering the text
+    /// selected when it is all on one line, or else what Ctrl+F last looked
+    /// for.
+    pub fn open_replace(&mut self) {
+        let Some(state) = self.editor() else {
+            return;
+        };
+        let offered = state.selected_text().filter(|text| !text.contains('\n')).unwrap_or_else(|| self.find_term.clone());
+        let mut input = TextInput::new();
+        input.set(offered);
+        self.dialog = Some(Dialog::Prompt(PromptKind::Replace, input));
+    }
+
+    /// Go to the first match from the cursor and ask about it.
+    fn start_replace(&mut self) {
+        let Some(needle) = crate::find::Needle::new(&self.find_term) else {
+            return;
+        };
+        let Some(state) = self.editor() else {
+            return;
+        };
+        let stop_at = state.selection().map_or((state.cursor_line, state.cursor_col), |(start, _)| start);
+        self.find_shown = true;
+        match self.editor_find(&needle, true, true) {
+            Some(wrapped) => self.dialog = Some(Dialog::Replacing { stop_at, wrapped, replaced: 0 }),
+            None => self.find_note = Some(format!("Not found: {}", self.find_term)),
+        }
+    }
+
+    /// Y or N on the match asked about: replace it, or leave it, and go on to
+    /// the next - or, back where it started, stop. True while there is
+    /// another to ask about.
+    pub fn replace_step(&mut self, replace: bool) -> bool {
+        let Some(Dialog::Replacing { mut stop_at, mut wrapped, mut replaced }) = self.dialog.take() else {
+            return false;
+        };
+        let Some(needle) = crate::find::Needle::new(&self.find_term) else {
+            return false;
+        };
+        if replace && let Some(((line, start), (_, end))) = self.editor().and_then(EditorState::selection) {
+            let with = self.replace_with.clone();
+            self.replace_selection(&with);
+            replaced += 1;
+            // Gone round and back on the line it started on, text before the
+            // starting point moves the starting point along with it.
+            if wrapped && line == stop_at.0 && start < stop_at.1 {
+                stop_at.1 = (stop_at.1 + with.chars().count()).saturating_sub(end - start);
+            }
+        }
+        // On from the cursor, which is past the match: never into the text
+        // just put in, so replacing "a" with "aa" cannot go on for ever.
+        let next = self.editor_find(&needle, true, false);
+        let at = self.editor().and_then(EditorState::selection).map(|(start, _)| start);
+        match (next, at) {
+            (Some(went_round), Some(at)) if !((wrapped || went_round) && at >= stop_at) => {
+                wrapped |= went_round;
+                self.dialog = Some(Dialog::Replacing { stop_at, wrapped, replaced });
+                true
+            }
+            _ => {
+                self.finish_replace(replaced);
+                false
+            }
+        }
+    }
+
+    /// A on the match asked about: replace it and every one after it, round
+    /// to where it started, as a single step for Ctrl+Z to take back.
+    pub fn replace_all(&mut self) {
+        let Some(state) = self.editor_mut() else {
+            return;
+        };
+        let before = state.lines.clone();
+        let cursor = (state.cursor_line, state.cursor_col);
+        // Each replacement records its own step; those are put aside, and
+        // one for the lot recorded in their place.
+        let history = std::mem::take(&mut state.undo_stack);
+        while self.replace_step(true) {}
+        if let Some(state) = self.editor_mut() {
+            let changed = state.lines != before;
+            state.undo_stack = history;
+            if changed {
+                state.undo_stack.push(EditStep {
+                    first_line: 0,
+                    total_lines_before: before.len(),
+                    before,
+                    cursor,
+                });
+                if state.undo_stack.len() > crate::constants::UNDO_LIMIT {
+                    state.undo_stack.remove(0);
+                }
+            }
+        }
+    }
+
+    /// Esc on the match asked about, or no more to ask about: say how many
+    /// were replaced.
+    pub fn finish_replace(&mut self, replaced: usize) {
+        if let Some(Dialog::Replacing { .. }) = self.dialog {
+            self.dialog = None;
+        }
+        self.find_note = Some(match replaced {
+            0 => "Nothing replaced".to_string(),
+            1 => "Replaced 1".to_string(),
+            many => format!("Replaced {many}"),
+        });
+    }
+
+    /// Put `text` in place of the selection, as one step to undo. Typed or
+    /// pasted text does this already; nothing at all, which deletes the
+    /// selection, is the case they leave out.
+    fn replace_selection(&mut self, text: &str) {
+        if !text.is_empty() {
+            self.editor_insert_text(text);
+            return;
+        }
+        let line = self.editor().map_or(0, |state| state.cursor_line);
+        self.push_undo(self.edit_range(line..=line));
+        if let Some(from) = self.delete_selection() {
+            self.editor_rehighlight_from(from);
+        }
+        self.finish_edit();
     }
 
     /// Alt+F7: ask what to look for, offering the last search again.
@@ -3610,6 +3760,18 @@ fn char_to_byte(s: &str, char_idx: usize) -> usize {
 }
 
 #[cfg(test)]
+impl AppState {
+    /// Put the editor's cursor somewhere, with nothing selected.
+    fn editor_state_cursor(&mut self, line: usize, col: usize) {
+        if let Some(state) = self.editor_mut() {
+            state.cursor_line = line;
+            state.cursor_col = col;
+            state.selection_anchor = None;
+        }
+    }
+}
+
+#[cfg(test)]
 mod editor_tests {
     use super::AppState;
 
@@ -3747,6 +3909,82 @@ mod editor_tests {
         let refused = app_state.open_editor(path.clone()).unwrap_err();
         assert!(refused.contains("not UTF-8"), "{refused}");
         assert!(app_state.editor().is_none());
+        std::fs::remove_file(path).unwrap();
+    }
+
+    /// Ask to replace `what` with `with`, as Ctrl+R and the two prompts do.
+    fn replace(app_state: &mut AppState, what: &str, with: &str) {
+        app_state.open_replace();
+        app_state.dialog_input().unwrap().set(what.to_string());
+        app_state.confirm_prompt();
+        app_state.dialog_input().unwrap().set(with.to_string());
+        app_state.confirm_prompt();
+    }
+
+    fn text(app_state: &AppState) -> String {
+        app_state.editor().unwrap().lines.join("\n")
+    }
+
+    fn asking(app_state: &AppState) -> bool {
+        matches!(app_state.dialog, Some(super::Dialog::Replacing { .. }))
+    }
+
+    #[test]
+    fn replace_asks_about_each_match_and_stops_where_it_began() {
+        let (mut app_state, path) = editor_with("replace-each", "a b a\nb a");
+        replace(&mut app_state, "a", "xy");
+        // The first match is selected and asked about.
+        assert_eq!(selected(&app_state), Some(((0, 0), (0, 1))));
+        assert!(app_state.replace_step(true));
+        assert!(app_state.replace_step(false));
+        // The last one; after it, round the end and back to the start, where
+        // the one left alone is not asked about again.
+        assert!(!app_state.replace_step(true));
+        assert!(!asking(&app_state));
+        assert_eq!(text(&app_state), "xy b a\nb xy");
+        assert_eq!(app_state.find_note.as_deref(), Some("Replaced 2"));
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn replace_all_is_one_step_to_undo_and_never_chases_its_own_text() {
+        let (mut app_state, path) = editor_with("replace-all", "a a\na");
+        // Started on the last line, it goes round to cover the lines above.
+        app_state.editor_state_cursor(1, 0);
+        replace(&mut app_state, "a", "aa");
+        app_state.replace_all();
+        assert_eq!(text(&app_state), "aa aa\naa");
+        assert_eq!(app_state.find_note.as_deref(), Some("Replaced 3"));
+        app_state.editor_undo();
+        assert_eq!(text(&app_state), "a a\na");
+        app_state.editor_redo();
+        assert_eq!(text(&app_state), "aa aa\naa");
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn replacing_with_nothing_deletes_and_lower_case_matches_any_case() {
+        let (mut app_state, path) = editor_with("replace-nothing", "Foo bar foo");
+        replace(&mut app_state, "foo", "");
+        app_state.replace_all();
+        assert_eq!(text(&app_state), " bar ");
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn going_round_moves_the_stopping_point_with_the_text_before_it() {
+        // From the middle of a line, round to its start: what goes in before
+        // the starting point pushes it along, and every match is done once.
+        let (mut app_state, path) = editor_with("replace-shift", "ab ab ab");
+        app_state.editor_state_cursor(0, 4);
+        replace(&mut app_state, "ab", "abab");
+        app_state.replace_all();
+        assert_eq!(text(&app_state), "abab abab abab");
+        assert_eq!(app_state.find_note.as_deref(), Some("Replaced 3"));
+        // Nothing there: said so, and nothing is asked.
+        replace(&mut app_state, "zzz", "y");
+        assert!(!asking(&app_state));
+        assert_eq!(app_state.find_note.as_deref(), Some("Not found: zzz"));
         std::fs::remove_file(path).unwrap();
     }
 
