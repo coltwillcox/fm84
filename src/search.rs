@@ -43,7 +43,8 @@ const CHUNK: usize = 64 * 1024;
 /// Walk down from `query.start`, in name order, reporting each match as it
 /// is found - each directory's contents straight after it, as `find` lists a
 /// tree. Links to directories are not followed: one pointing back up the tree
-/// would never end. Stops when `cancel` is set, or when `send` returns false
+/// would never end. Nor are the system's own trees gone into, unless the
+/// search started in one - see is_system_tree. Stops when `cancel` is set, or when `send` returns false
 /// because nobody is listening any more.
 pub fn search(query: &Query, cancel: &AtomicBool, send: &mut dyn FnMut(Update) -> bool) {
     let mut unreadable = 0;
@@ -97,11 +98,23 @@ pub fn search(query: &Query, cancel: &AtomicBool, send: &mut dyn FnMut(Update) -
         if found && !send(Update::Found(path.clone(), is_dir)) {
             return;
         }
-        if is_dir {
+        if is_dir && (!is_system_tree(&path) || is_system_tree(&query.start)) {
             entering = Some(path);
         }
     }
     send(Update::Finished { unreadable });
+}
+
+/// The trees the system keeps for its own machinery rather than for files:
+/// the kernel's views of processes and devices under /proc, /sys and /dev, and
+/// runtime state under /run - credentials, portals and gvfs. Their entries
+/// pass for files and are not: reading some never returns - a USB-C port's
+/// state under /sys was found waiting for good - and the rest say nothing a
+/// search for files is after. /run/media is the exception, where removable
+/// media are mounted. The drive strip leaves out the same trees.
+fn is_system_tree(path: &Path) -> bool {
+    const MACHINERY: [&str; 4] = ["/proc", "/sys", "/dev", "/run"];
+    MACHINERY.iter().any(|root| path.starts_with(root)) && !path.starts_with("/run/media")
 }
 
 /// Whether the file at `path` holds what `needle` looks for. Read a chunk at
@@ -233,6 +246,37 @@ mod tests {
         }
         fs::set_permissions(dir.join("locked"), fs::Permissions::from_mode(0o755)).unwrap();
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn the_systems_own_trees_are_left_out_unless_started_in() {
+        for path in ["/proc", "/sys/class/net", "/dev/sda", "/run/user/1000/gvfs"] {
+            assert!(is_system_tree(Path::new(path)), "{path}");
+        }
+        // Component by component, so names merely starting the same are not.
+        for path in ["/", "/home/sys", "/process", "/devices", "/run/media/me/stick", "/running"] {
+            assert!(!is_system_tree(Path::new(path)), "{path}");
+        }
+        // Started in one, it is searched: here /proc/self, where the walk
+        // has to go down into task/ to find a status file inside.
+        #[cfg(target_os = "linux")]
+        {
+            let query = Query {
+                start: "/proc/self".into(),
+                name: Glob::new("status").unwrap(),
+                containing: None,
+                show_hidden: true,
+            };
+            let mut found = Vec::new();
+            search(&query, &AtomicBool::new(false), &mut |update| {
+                if let Update::Found(path, _) = update {
+                    found.push(path);
+                }
+                true
+            });
+            assert!(found.contains(&PathBuf::from("/proc/self/status")));
+            assert!(found.iter().any(|path| path.starts_with("/proc/self/task")), "{found:?}");
+        }
     }
 
     #[test]
