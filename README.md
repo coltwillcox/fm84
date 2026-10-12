@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.25.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.26.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -75,6 +75,12 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔎 **Type-ahead search** - just start typing to find files
 - ⬆️⬇️ **Navigate matches** - Up/Down arrows jump between results
 - 🧹 **Esc** - clear the search vibes
+
+### 🔭 Find Files (Alt+F7)
+- 🎯 **By name, and by what is in them** - a name pattern as `+` takes it (`*.jpg;*.png`, `*/` for directories), and text the file has to hold, lower case matching either case. **Ctrl+F7** works too, for desktops that take Alt+F7 for moving windows. The last search is offered again
+- 🌳 **Down from the panel you are in** - each directory's contents straight after it, in name order, as `find` lists a tree. Links to directories are not followed, and hidden entries are passed over unless F11 shows them
+- 🪶 **Never in the way** - it runs on a thread of its own, and results arrive as they are found while it says where it is looking. Files are read 64 KiB at a time, never whole, and pipes and devices are never opened. Directories that cannot be read are counted, not fatal
+- ↩️ **Enter goes there** - the panel moves to the directory of the result chosen, cursor on it. Esc closes the list, stopping a search still under way
 
 ### 📝 File Operations
 - **F1** 💡 - Help/About
@@ -138,6 +144,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔤 **Stray bytes** - a text file with a byte that is not UTF-8 in it still opens, with a placeholder where the byte was; `X` shows it as it is
 - ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory (16 or 256 under F11), and before decoding a picture that needs over 256 MiB of it - a few hundred KB of PNG can unpack to hundreds of MB
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
+- 📜 **Wrap** - `W` breaks long lines onto as many rows as they need, after a space where there is one; scrolling goes by rows, so a line longer than the screen can be read to its end. Finding, selecting and copying go on by whole lines, so a copy never gains a break that was only on screen, and line numbers and Go to line count lines, not rows. The next file opened wraps or not as the last was left
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 
 ### ✍️ Editor (F4)
@@ -151,8 +158,10 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Undo and redo** - Ctrl+Z, then Ctrl+Y or Ctrl+Shift+Z, 200 steps deep, one step per action rather than per keystroke burst; a key that changes nothing costs no step
 - 📋 **System clipboard** - copies reach it over OSC 52, pastes arrive as bracketed paste, both without linking a clipboard library
 - 💾 **Save** - F2 or Ctrl+S, written beside the file and swapped in whole, so a full disk or a crash mid-save leaves the old file rather than half of the new one; links, permissions and owner are kept
+- 🛑 **Changed on disk** - when something else has written the file since it was opened, a save stops and says so, the file as it was and as it is now: **O** overwrites it, **R** reloads it and drops the edits, **Esc** goes back to them. A file deleted meanwhile can be saved again with O
 - 📍 **Line/Column tracking** - always know where you are
 - 🔎 **Find and go to line** - Ctrl+F, F3 / Shift+F3 and Ctrl+G, as in the Viewer; the match found is selected, so typing replaces it
+- 🔁 **Replace** - Ctrl+R or F4 asks what to replace (the selection, or the last thing looked for) and what with, then goes from the cursor a match at a time: **Y** replaces, **N** skips, **A** replaces the rest, **Esc** stops. It goes round the end of the file and stops where it began, never into the text it has just put in; Enter is not an answer. Replace all is one step for Ctrl+Z
 - ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close, and on F10; a save that fails keeps the editor open, edits and all
 - 🔤 **UTF-8 only** - a file that is not UTF-8 text is refused rather than opened with its odd bytes replaced, which saving would make permanent; F3 shows it
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
@@ -247,8 +256,10 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `F11` | Options - panels, behaviour, appearance, viewer and editor |
 | `F12` | Preview cursor file in other panel |
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
+| `Alt+F7` / `Ctrl+F7` | Find files by name and content |
 | `X` | Toggle hex view; cycle Image, Text, Hex for images (in Viewer) |
 | `F` | Fit or fill an image (in Viewer) |
+| `W` | Wrap long lines, or scroll them sideways (in Viewer) |
 | `PageUp` / `PageDown` | Previous / next picture in the folder (in Viewer) |
 | `Drag` | Move a picture about (in Viewer) |
 | `+` / `-` | Zoom an image in or out (in Viewer) |
@@ -261,6 +272,9 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `Ctrl+F` | Find (in Viewer and Editor) |
 | `F3` / `Shift+F3` | Next / previous match (in Viewer and Editor) |
 | `Ctrl+G` | Go to line (in Viewer and Editor) |
+| `Ctrl+R` / `F4` | Replace (in Editor) |
+| `Y` / `N` / `A` | Replace / Skip / Replace all, when replacing (in Editor) |
+| `O` / `R` | Overwrite / Reload, when the file changed on disk since it was opened (in Editor) |
 | `Space` / `Insert` | Select/deselect file |
 | `+` / `-` | Select / deselect by pattern |
 | `*` | Invert the selection of files |
@@ -294,7 +308,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.25.0
+fm84 --version       # fm84 0.26.0
 ```
 
 A directory given takes the place of the tab that would have shown; the panel's other tabs stay. A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
@@ -379,5 +393,5 @@ Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.25.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.26.0 ▄▀▄▀▄▀</code>
 </p>

@@ -6,6 +6,18 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.26.0] - 2026-10-12
+
+### ✨ Added
+- 🔭 **Find files** - Alt+F7, or Ctrl+F7 where the desktop takes Alt+F7, searches down from the active panel's directory by a name pattern as `+` takes it (`*.rs;*.toml`, `*/` for directories) and, if asked, for text in the files, lower case matching either case. It runs on a thread of its own: results arrive as they are found, with where it is looking, and Esc stops it. Directories each list straight after their parent, in name order; links to directories are not followed, hidden entries are passed over unless F11 shows them, files are read 64 KiB at a time, pipes and devices are never opened, and directories that cannot be read are counted rather than stopping it. Enter takes the panel to the result chosen, cursor on it, and the last search is offered again
+- 🔁 **Replace in the editor** - Ctrl+R or F4 asks what to replace, offering the selection or the last thing looked for, and what with; then it goes from the cursor a match at a time - **Y** replace, **N** skip, **A** all the rest, **Esc** stop - round the end of the file and back to where it began, saying how many it replaced. It never looks inside the text it has just put in, so `a` to `aa` ends. Enter is not an answer, and Replace all is one step for Ctrl+Z
+- 📜 **Wrap in the viewer** - W breaks long lines onto rows, after a space where there is one, and scrolling goes by rows, so a line longer than the screen can be read to its end. Finding, selecting and copying still go by whole lines - a copy gains no breaks, and a word split across rows is still found - while line numbers and Go to line count lines. The next file takes up W as the last was left
+
+### 🛠️ Changed
+- 🛑 **The editor asks before saving over changes made elsewhere** - a file written by something else since it was opened, as its time or size shows, is not saved over without a word: **O** overwrites, **R** reloads and drops the edits, **Esc** goes back to them. A save on the way out carries on to closing, or quitting, once answered. A file deleted in the meantime is said to be, and O saves it again
+
+---
+
 ## [0.25.0] - 2026-10-12
 
 ### ✨ Added
