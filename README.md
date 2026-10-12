@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.26.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.26.1** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -78,7 +78,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 🔭 Find Files (Alt+F7)
 - 🎯 **By name, and by what is in them** - a name pattern as `+` takes it (`*.jpg;*.png`, `*/` for directories), and text the file has to hold, lower case matching either case. **Ctrl+F7** works too, for desktops that take Alt+F7 for moving windows. The last search is offered again
-- 🌳 **Down from the panel you are in** - each directory's contents straight after it, in name order, as `find` lists a tree. Links to directories are not followed, and hidden entries are passed over unless F11 shows them
+- 🌳 **Down from the panel you are in** - each directory's contents straight after it, in the order the panels list them, as `find` lists a tree. Links to directories are not followed, and hidden entries are passed over unless F11 shows them. The system's own trees - `/proc`, `/sys`, `/dev` and `/run`, all but `/run/media` - are left out unless the search starts in one: their entries pass for files and are not, and some never answer a read
 - 🪶 **Never in the way** - it runs on a thread of its own, and results arrive as they are found while it says where it is looking. Files are read 64 KiB at a time, never whole, and pipes and devices are never opened. Directories that cannot be read are counted, not fatal
 - ↩️ **Enter goes there** - the panel moves to the directory of the result chosen, cursor on it. Esc closes the list, stopping a search still under way
 
@@ -308,7 +308,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.26.0
+fm84 --version       # fm84 0.26.1
 ```
 
 A directory given takes the place of the tab that would have shown; the panel's other tabs stay. A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
@@ -393,5 +393,5 @@ Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.26.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.26.1 ▄▀▄▀▄▀</code>
 </p>

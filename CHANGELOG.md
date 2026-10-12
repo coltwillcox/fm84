@@ -6,6 +6,19 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.26.1] - 2026-10-12
+
+### 🐛 Fixed
+- 🔭 **Find files could wait for good** - searching for text from `/` went into the system's own trees, and a file there - a USB-C port's state under `/sys` - never answered a read. `/proc`, `/sys`, `/dev` and `/run`, all but `/run/media`, are now left out unless the search starts in one
+- 🔁 **Replace could go on for ever** - started partway through a file, with a replacement holding what it replaced (`let` to `/* let`), it went round the end a second time into the text it had put in. Replace all hung, and Y kept asking. It stops once round now, whatever is left
+- 📜 **Wrapping a very long line slowed the viewer to a crawl** - every row laid out and searched the whole of its line, so a megabyte-long line wrapped onto fifty rows was gone through fifty times a frame: a tenth of a second for each key, a third with matches marked. Each line is now laid out once a frame, about 5 ms
+- ⏱️ **Replace all in a highlighted file was slow** - each replacement highlighted its line again, so 60,000 took over a second. It now highlights once, at the end, in about a third of that
+- 🔤 **Find files listed capitals first** - names were put in byte order. They now come as the panels list them, ignoring case unless F11 says otherwise
+- 🧭 **F5, F6 and Alt+F7 used the directory a panel was leaving** - while it was still reading a slow one it was going to, they offered the old one. They now go by where it is going
+- 🔗 **A move onto another name for the same file left it behind** - merging into a directory holding a hard link to the file being moved, the source stayed, and its directory would not go as not empty. The old name is taken away now, as `mv` does, without asking about writing over it
+
+---
+
 ## [0.26.0] - 2026-10-12
 
 ### ✨ Added
