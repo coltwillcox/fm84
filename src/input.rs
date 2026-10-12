@@ -1028,7 +1028,8 @@ fn open_transfer(app_state: &mut AppState, is_copy: bool) {
     if sources.is_empty() {
         return;
     }
-    let other = if app_state.is_left_active { app_state.dir_right.clone() } else { app_state.dir_left.clone() };
+    // Where the other panel is going, should it be on its way somewhere.
+    let other = app_state.panel_dir(!app_state.is_left_active);
     if !app_state.options.confirm_copy_move {
         go_transfer(app_state, &sources, &other, true, is_copy);
         return;
@@ -1649,6 +1650,27 @@ mod tests {
         press(&mut app_state, KeyCode::Char('a'));
         assert_eq!(app_state.editor().unwrap().lines, ["dog dog dog"]);
         std::fs::remove_file(path).unwrap();
+    }
+
+    /// The other panel on its way to a directory slow to read: F5 offers the
+    /// one it is going to, not the one it is leaving.
+    #[test]
+    fn a_copy_goes_where_the_other_panel_is_going() {
+        let dir = std::env::temp_dir().join(format!("fm84-copy-pending-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        for sub in ["from", "leaving", "going"] {
+            std::fs::create_dir_all(dir.join(sub)).unwrap();
+        }
+        std::fs::write(dir.join("from").join("a.txt"), "").unwrap();
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.join("from"), Some("a.txt".as_ref()));
+        app_state.open_dir(false, dir.join("leaving"), None);
+        app_state.listing_right = Some(crate::app::PendingListing::going_to(dir.join("going")));
+
+        press(&mut app_state, KeyCode::F(5));
+        assert_eq!(std::path::PathBuf::from(&app_state.dialog_input().unwrap().text), dir.join("going").join("a.txt"));
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// F10 leaves at once, unless the editor holds edits nobody has saved:

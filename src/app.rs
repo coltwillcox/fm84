@@ -764,6 +764,21 @@ pub struct PendingListing {
     answer: Receiver<Listed>,
 }
 
+#[cfg(test)]
+impl PendingListing {
+    /// A panel on its way to `dir`, held there for a test: nothing is coming.
+    pub fn going_to(dir: PathBuf) -> Self {
+        let (_, answer) = mpsc::channel();
+        PendingListing {
+            dir,
+            navigate: true,
+            select: None,
+            tab: None,
+            answer,
+        }
+    }
+}
+
 /// A tab being switched to: what was selected in it, and how to put the tabs
 /// back if its directory turns out not to be readable.
 struct TabSwitch {
@@ -2056,7 +2071,7 @@ impl AppState {
             true => pattern.to_string(),
             false => format!("{pattern} containing \"{containing}\""),
         };
-        let start = if self.is_left_active { self.dir_left.clone() } else { self.dir_right.clone() };
+        let start = self.panel_dir(self.is_left_active);
         let query = crate::search::Query {
             start: start.clone(),
             name: crate::glob::Glob::new(pattern).unwrap_or_else(|| crate::glob::Glob::new("*").expect("* is a pattern")),
@@ -3046,6 +3061,23 @@ impl AppState {
 
     fn listing_mut(&mut self, is_left: bool) -> &mut Option<PendingListing> {
         if is_left { &mut self.listing_left } else { &mut self.listing_right }
+    }
+
+    /// The directory a panel is in - or, while it is on its way somewhere
+    /// slow to read, the one it is going to, which is the one meant. Asked of
+    /// by what reaches into the panel from outside: a copy to it, or a search
+    /// from it.
+    pub fn panel_dir(&self, is_left: bool) -> PathBuf {
+        match self.listing(is_left) {
+            Some(pending) if pending.navigate => pending.dir.clone(),
+            _ => {
+                if is_left {
+                    self.dir_left.clone()
+                } else {
+                    self.dir_right.clone()
+                }
+            }
+        }
     }
 
     /// True while a panel's directory is still being read, past the moment
