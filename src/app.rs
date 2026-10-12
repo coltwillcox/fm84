@@ -185,8 +185,19 @@ pub enum Dialog {
     /// back to the file it came from when it is not valid UTF-8 - and whether
     /// it goes to the trash or for good.
     Delete { items: Vec<(PathBuf, bool)>, to_trash: bool },
-    /// F5 or F6, waiting to be confirmed.
-    Transfer { items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool },
+    /// F5 or F6, waiting to be confirmed, with where to put what is chosen
+    /// typed into `input`. It opens on the other panel's directory - with the
+    /// file's name on the end, when it is a single file - `default` as the
+    /// filesystem holds it, and `opened_with` as it was written into
+    /// the field: a path that is not valid UTF-8 can only be shown near
+    /// enough, so while the field is as it opened, `default` is what is used.
+    Transfer {
+        sources: Vec<(PathBuf, bool)>,
+        is_copy: bool,
+        input: TextInput,
+        opened_with: String,
+        default: PathBuf,
+    },
     /// A copy or move held back because some of its names are taken.
     Overwrite(OverwritePrompt),
     /// A file big enough to be worth asking about before it is opened.
@@ -951,7 +962,7 @@ impl AppState {
     /// typed into: a name, a pattern, something to find, a text option.
     pub fn dialog_input(&mut self) -> Option<&mut TextInput> {
         match self.dialog.as_mut()? {
-            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Prompt(_, input) => Some(input),
+            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Prompt(_, input) => Some(input),
             Dialog::Options { editing } => editing.as_mut(),
             _ => None,
         }

@@ -1,6 +1,6 @@
 use crate::app::{Answer, AppState, Dialog, OverwritePrompt, PromptKind, Screen, TextInput, TransferKind};
 use crate::display::tab_width;
-use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path};
+use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets};
 use crate::options::OnExisting;
 use crate::strip::StripHit;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
@@ -203,10 +203,15 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             _ => edit_text(app_state, code),
         },
         Some(Dialog::Delete { .. }) if yes => handle_delete_confirm(app_state),
-        Some(Dialog::Transfer { .. }) if yes => handle_transfer_confirm(app_state),
+        // Y and N type into the destination; only Enter and Esc answer it.
+        Some(Dialog::Transfer { .. }) => match code {
+            KeyCode::Enter => handle_transfer_confirm(app_state),
+            KeyCode::Esc => app_state.dialog = None,
+            _ => edit_text(app_state, code),
+        },
         Some(Dialog::Overwrite(_)) if yes || no => answer_overwrite(app_state, yes),
         Some(Dialog::LargeFile(_)) if yes => app_state.confirm_large_file(),
-        Some(Dialog::Delete { .. } | Dialog::Transfer { .. } | Dialog::LargeFile(_)) if no => app_state.dialog = None,
+        Some(Dialog::Delete { .. } | Dialog::LargeFile(_)) if no => app_state.dialog = None,
         Some(&Dialog::SaveChanges { then_quit }) => match code {
             KeyCode::Char('y') | KeyCode::Char('Y') => {
                 // Save and close - unless the save fails, in which case
@@ -910,29 +915,79 @@ fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
     Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No terminal emulator found. Set $TERMINAL."))
 }
 
-/// F5 or F6: copy or move what is chosen to the other panel, once confirmed.
+/// F5 or F6: copy or move what is chosen, to where the dialog is told. For a
+/// single file it opens on that file's path in the other panel, ready to be
+/// given another name; for anything else - several entries, or a directory -
+/// on the other panel's directory. Enter alone does what it always did. With
+/// Confirm copy and move off there is no dialog, and it goes straight there.
 fn open_transfer(app_state: &mut AppState, is_copy: bool) {
-    let dest_dir = if app_state.is_left_active { &app_state.dir_right } else { &app_state.dir_left };
-    let items: Vec<(PathBuf, PathBuf, bool)> = chosen_items(app_state)
-        .into_iter()
-        .map(|(source, is_dir)| {
-            let dest = dest_dir.join(source.file_name().unwrap_or_default());
-            (source, dest, is_dir)
-        })
-        .collect();
-    if items.is_empty() {
+    let sources = chosen_items(app_state);
+    if sources.is_empty() {
         return;
     }
-    app_state.dialog = Some(Dialog::Transfer { items, is_copy });
+    let other = if app_state.is_left_active { app_state.dir_right.clone() } else { app_state.dir_left.clone() };
     if !app_state.options.confirm_copy_move {
-        handle_transfer_confirm(app_state);
+        go_transfer(app_state, &sources, &other, true, is_copy);
+        return;
+    }
+    let (default, into_dir) = match &sources[..] {
+        [(file, false)] => (other.join(file.file_name().unwrap_or_default()), false),
+        _ => (other, true),
+    };
+    // A directory gets a separator on the end, which says it is one and
+    // leaves the cursor where a name would be typed.
+    let mut opened_with = default.to_string_lossy().into_owned();
+    if into_dir && !opened_with.ends_with(std::path::is_separator) {
+        opened_with.push(std::path::MAIN_SEPARATOR);
+    }
+    let mut input = TextInput::new();
+    input.set(opened_with.clone());
+    app_state.dialog = Some(Dialog::Transfer { sources, is_copy, input, opened_with, default });
+}
+
+/// Enter on the copy or move dialog.
+fn handle_transfer_confirm(app_state: &mut AppState) {
+    let Some(Dialog::Transfer { sources, is_copy, input, opened_with, default }) = app_state.dialog.take() else {
+        return;
+    };
+    // As it opened: the file to exactly that path - so one in the way is
+    // asked about, or refused if it is a directory, as F5 always did - and
+    // anything else into that directory.
+    if input.text == opened_with {
+        match &sources[..] {
+            [(file, false)] if !opened_with.ends_with(std::path::is_separator) => submit_transfer(app_state, vec![(file.clone(), default, false)], is_copy),
+            _ => go_transfer(app_state, &sources, &default, true, is_copy),
+        }
+        return;
+    }
+    // Nothing to copy to: taken as a cancel, as an empty name is by F2 and F7.
+    if input.text.trim().is_empty() {
+        return;
+    }
+    let base = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
+    let destination = typed_path(&input.text, base);
+    go_transfer(app_state, &sources, &destination, input.text.ends_with(std::path::is_separator), is_copy);
+}
+
+/// Copy or move `sources` to `destination`, read as transfer_targets reads it.
+fn go_transfer(app_state: &mut AppState, sources: &[(PathBuf, bool)], destination: &Path, names_dir: bool, is_copy: bool) {
+    match transfer_targets(sources, destination, names_dir) {
+        Ok(items) => submit_transfer(app_state, items, is_copy),
+        Err(message) => app_state.display_error(message),
     }
 }
 
-fn handle_transfer_confirm(app_state: &mut AppState) {
-    if let Some(Dialog::Transfer { items, is_copy }) = app_state.dialog.take() {
-        submit_transfer(app_state, items, is_copy);
-    }
+/// A path as typed into a dialog. `~` at the start is the home directory,
+/// as in a shell, and a path that is not absolute is taken from `base`, the
+/// directory the active panel is in - so a bare name copies beside the file.
+fn typed_path(text: &str, base: &Path) -> PathBuf {
+    let home = || std::env::home_dir().unwrap_or_default();
+    let path = match text.strip_prefix('~') {
+        Some("") => home(),
+        Some(rest) if rest.starts_with(std::path::is_separator) => home().join(rest.trim_start_matches(std::path::is_separator)),
+        _ => PathBuf::from(text),
+    };
+    base.join(path)
 }
 
 /// Start a confirmed copy or move, once what it would write over is settled.
@@ -1199,6 +1254,138 @@ mod tests {
         assert!(press(&mut app_state, KeyCode::F(10)));
         assert!(!press(&mut app_state, KeyCode::Char('n')));
         assert_eq!(std::fs::read_to_string(dir.join("a.txt")).unwrap(), "text");
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_typed_path_starts_from_the_panel_or_from_home() {
+        let base = std::path::Path::new("/panel/dir");
+        let home = std::env::home_dir().unwrap_or_default();
+        assert_eq!(super::typed_path("/abs/x", base), std::path::Path::new("/abs/x"));
+        assert_eq!(super::typed_path("x", base), base.join("x"));
+        assert_eq!(super::typed_path("sub/x", base), base.join("sub/x"));
+        assert_eq!(super::typed_path("~", base), home);
+        assert_eq!(super::typed_path("~/x", base), home.join("x"));
+        // Only a `~` that stands for home: one starting a name is the name.
+        assert_eq!(super::typed_path("~x", base), base.join("~x"));
+    }
+
+    /// F5 and F6 go where the field says. A single file opens on its path in
+    /// the other panel, anything else on the other panel's directory, and
+    /// either goes there when it is left as it opened. A name edited in
+    /// renames it on the way, and a bare one puts it beside the original. Y
+    /// and N are typed, not taken for an answer.
+    #[test]
+    fn copy_and_move_go_where_the_destination_says() {
+        let dir = std::env::temp_dir().join(format!("fm84-dest-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let (left, right) = (dir.join("left"), dir.join("right"));
+        std::fs::create_dir_all(&left).unwrap();
+        std::fs::create_dir_all(&right).unwrap();
+        std::fs::write(left.join("a.txt"), "a").unwrap();
+        std::fs::write(left.join("z.txt"), "z").unwrap();
+        std::fs::create_dir(left.join("sub")).unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(false, right.clone(), None);
+        let on_a = |app_state: &mut AppState| {
+            app_state.open_dir(true, left.clone(), Some("a.txt".as_ref()));
+        };
+        let finish = |app_state: &mut AppState| {
+            let started = std::time::Instant::now();
+            while app_state.job.is_some() {
+                assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
+                std::thread::sleep(std::time::Duration::from_millis(5));
+                app_state.poll_transfer();
+            }
+        };
+        let type_in = |app_state: &mut AppState, text: &str| {
+            app_state.dialog_input().unwrap().set(text.to_string());
+            press(app_state, KeyCode::Enter);
+        };
+
+        // A single file opens on its path in the other panel, and Enter alone
+        // copies it there.
+        on_a(&mut app_state);
+        press(&mut app_state, KeyCode::F(5));
+        assert_eq!(std::path::PathBuf::from(&app_state.dialog_input().unwrap().text), right.join("a.txt"));
+        press(&mut app_state, KeyCode::Enter);
+        finish(&mut app_state);
+        assert_eq!(std::fs::read_to_string(right.join("a.txt")).unwrap(), "a");
+
+        // Again, onto the copy now there: asked about, as ever.
+        on_a(&mut app_state);
+        press(&mut app_state, KeyCode::F(5));
+        press(&mut app_state, KeyCode::Enter);
+        assert!(matches!(app_state.dialog, Some(Dialog::Overwrite(_))));
+        press(&mut app_state, KeyCode::Esc);
+
+        // The name edited, one key at a time.
+        on_a(&mut app_state);
+        press(&mut app_state, KeyCode::F(5));
+        for _ in "a.txt".chars() {
+            press(&mut app_state, KeyCode::Backspace);
+        }
+        for c in "b.txt".chars() {
+            press(&mut app_state, KeyCode::Char(c));
+        }
+        press(&mut app_state, KeyCode::Enter);
+        finish(&mut app_state);
+        assert!(right.join("b.txt").exists());
+
+        // N is typed into the field, and Esc leaves it.
+        on_a(&mut app_state);
+        press(&mut app_state, KeyCode::F(5));
+        press(&mut app_state, KeyCode::Char('n'));
+        assert!(app_state.dialog_input().unwrap().text.ends_with('n'));
+        press(&mut app_state, KeyCode::Esc);
+        assert!(app_state.dialog.is_none() && app_state.job.is_none());
+
+        // A bare name is beside the original.
+        on_a(&mut app_state);
+        press(&mut app_state, KeyCode::F(5));
+        type_in(&mut app_state, "dup.txt");
+        finish(&mut app_state);
+        assert_eq!(std::fs::read_to_string(left.join("dup.txt")).unwrap(), "a");
+
+        // F6 to a new name in the same place is a rename.
+        on_a(&mut app_state);
+        press(&mut app_state, KeyCode::F(6));
+        type_in(&mut app_state, "moved.txt");
+        finish(&mut app_state);
+        assert!(!left.join("a.txt").exists() && left.join("moved.txt").exists());
+
+        // A directory in the way of a file is refused, not copied into, when
+        // the field is left as it opened.
+        std::fs::create_dir(right.join("z.txt")).unwrap();
+        app_state.open_dir(true, left.clone(), Some("z.txt".as_ref()));
+        press(&mut app_state, KeyCode::F(5));
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.error.as_deref().is_some_and(|error| error.contains("Cannot replace directory")), "{:?}", app_state.error);
+        assert!(!right.join("z.txt").join("z.txt").exists());
+        app_state.reset_error();
+
+        // A directory, and several entries, open on the other panel's
+        // directory alone.
+        let opened_on_directory = |app_state: &mut AppState| {
+            let text = app_state.dialog_input().unwrap().text.clone();
+            std::path::Path::new(&text) == right && text.ends_with(std::path::MAIN_SEPARATOR)
+        };
+        app_state.open_dir(true, left.clone(), Some("sub".as_ref()));
+        press(&mut app_state, KeyCode::F(5));
+        assert!(opened_on_directory(&mut app_state));
+        press(&mut app_state, KeyCode::Esc);
+        app_state.open_dir(true, left.clone(), None);
+        app_state.selected_left.extend(["dup.txt".into(), "z.txt".into()]);
+        press(&mut app_state, KeyCode::F(5));
+        assert!(opened_on_directory(&mut app_state));
+
+        // And several cannot share one name.
+        type_in(&mut app_state, "one.txt");
+        assert!(app_state.error.as_deref().is_some_and(|error| error.contains("2 items need a directory")), "{:?}", app_state.error);
+        assert!(!left.join("one.txt").exists());
 
         std::fs::remove_dir_all(&dir).unwrap();
     }

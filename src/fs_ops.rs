@@ -1253,6 +1253,28 @@ fn is_real_dir(path: &Path) -> bool {
     path.symlink_metadata().is_ok_and(|metadata| metadata.is_dir())
 }
 
+/// Where each source goes when copied or moved to `destination`, read the
+/// way cp and mv read it. Into a directory that is there, or one named with a
+/// separator on the end (`names_dir`), each goes under its own name. Anything
+/// else is the new path of the one source being copied - several cannot all
+/// take one name - and the directory it would go in has to be there.
+pub fn transfer_targets(sources: &[(PathBuf, bool)], destination: &Path, names_dir: bool) -> Result<Vec<(PathBuf, PathBuf, bool)>, String> {
+    if destination.is_dir() {
+        return Ok(sources.iter().map(|(source, is_dir)| (source.clone(), destination.join(source.file_name().unwrap_or_default()), *is_dir)).collect());
+    }
+    if names_dir {
+        return Err(format!("No such directory: {}", destination.display()));
+    }
+    let [(source, is_dir)] = sources else {
+        return Err(format!("{} items need a directory to go into, and {} is not one", sources.len(), destination.display()));
+    };
+    match destination.parent() {
+        Some(parent) if parent.is_dir() => Ok(vec![(source.clone(), destination.to_path_buf(), *is_dir)]),
+        Some(parent) => Err(format!("No such directory: {}", parent.display())),
+        None => Err(format!("Cannot copy to {}", destination.display())),
+    }
+}
+
 /// What a copy or move would write over, checked for every item before any
 /// is started - bailing out partway would leave some done and the rest not.
 /// Returns the destinations already taken, for the caller to ask about or
@@ -2234,6 +2256,30 @@ mod transfer_tests {
         assert!(!link.exists());
         assert!(target.join("keep.bin").exists(), "the link's target was followed");
 
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_destination_is_read_as_cp_reads_it() {
+        let dir = scratch("targets");
+        fs::create_dir(dir.join("into")).unwrap();
+        let one = vec![(dir.join("a.txt"), false)];
+        let two = vec![(dir.join("a.txt"), false), (dir.join("sub"), true)];
+
+        // A directory that is there takes each under its own name, whether or
+        // not it was typed with a separator after it.
+        for names_dir in [false, true] {
+            assert_eq!(
+                transfer_targets(&two, &dir.join("into"), names_dir).unwrap(),
+                [(dir.join("a.txt"), dir.join("into").join("a.txt"), false), (dir.join("sub"), dir.join("into").join("sub"), true)]
+            );
+        }
+        // Anything else is a new name, for one source only.
+        assert_eq!(transfer_targets(&one, &dir.join("b.txt"), false).unwrap(), [(dir.join("a.txt"), dir.join("b.txt"), false)]);
+        assert!(transfer_targets(&two, &dir.join("b.txt"), false).unwrap_err().contains("2 items need a directory"));
+        // In a directory that has to be there, and a separator means one.
+        assert!(transfer_targets(&one, &dir.join("missing").join("b.txt"), false).unwrap_err().starts_with("No such directory"));
+        assert!(transfer_targets(&one, &dir.join("missing"), true).unwrap_err().starts_with("No such directory"));
         fs::remove_dir_all(&dir).unwrap();
     }
 

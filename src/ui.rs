@@ -175,7 +175,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
             Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),
-            Some(Dialog::Transfer { items, is_copy }) => render_copy_move_popup(f, area, items, *is_copy),
+            Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_copy_move_popup(f, area, sources, *is_copy, input),
             Some(Dialog::Overwrite(prompt)) => render_overwrite_popup(f, area, prompt),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
@@ -1829,14 +1829,16 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
 }
 
-/// Unified copy/move popup. `is_copy` = true for F5 copy, false for F6 move.
-fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, PathBuf, bool)], is_copy: bool) {
+/// The copy or move dialog: what is going, and a field for where to, opened
+/// on the other panel's directory. `is_copy` = true for F5 copy, false for F6
+/// move.
+fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], is_copy: bool, input: &TextInput) {
     let popup_area = centered_rect(70, 35, area);
     let verb = if is_copy { "Copy" } else { "Move" };
-    let count = items.len();
+    let count = sources.len();
 
     let title = if count == 1 {
-        let item_type = if items[0].2 { "directory" } else { "file" };
+        let item_type = if sources[0].1 { "directory" } else { "file" };
         format!(" {} {} ", verb, item_type)
     } else {
         format!(" {} {} items ", verb, count)
@@ -1847,25 +1849,28 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(Path
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    // Source info
     let source_msg = if count == 1 {
-        let source_name = shown_name(&items[0].0);
-        format!("{} \"{}\"", verb, source_name)
+        format!("{} \"{}\" to:", verb, shown_name(&sources[0].0))
     } else {
-        let names: Vec<String> = items.iter().map(|(src, _, _)| shown_name(src)).collect();
-        format!("{} {} items: {}", verb, count, names.join(", "))
+        let names: Vec<String> = sources.iter().map(|(source, _)| shown_name(source)).collect();
+        format!("{} {} items to: {}", verb, count, names.join(", "))
     };
-    // Destination directory
-    let dest_dir = items[0].1.parent().map(|p| p.to_path_buf()).unwrap_or_default();
-    let dest_display = limit_path_string(&dest_dir, popup_area.width as usize - 10);
+
+    // The destination, the width of the popup, scrolling to keep the cursor
+    // in view on a path longer than that. Padded out to the full width so the
+    // highlight reads as an input field.
+    let width = popup_inner(popup_area).width as usize;
+    let cursor_style = style_title().add_modifier(Modifier::REVERSED);
+    let typed = input.cursor_spans_within(width, style_title(), cursor_style);
+    let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+    let mut spans = typed;
+    spans.push(Span::raw(" ".repeat(width.saturating_sub(typed_width))));
+    let input_line = Line::from(spans).style(style_title().bg(palette().selected_background));
+
     popup_body(
         f,
         popup_area,
-        vec![
-            Line::from(Span::styled(source_msg, style_title())),
-            Line::from(Span::styled(format!("to: {dest_display}"), style_file())),
-            Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", style_columns())),
-        ],
+        vec![Line::from(Span::styled(source_msg, style_title())), input_line, Line::from(Span::styled(format!("Enter - {verb}    Esc - Cancel"), style_columns()))],
     );
 }
 
