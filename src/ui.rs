@@ -1490,8 +1490,8 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "  Ctrl+G go to line",
         "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
         "  Shift+arrows select, Ctrl+A all",
-        "F5 - Copy to other panel",
-        "F6 - Move to other panel",
+        "F5 - Copy (to the other panel, or where typed)",
+        "F6 - Move (to the other panel, or where typed)",
         "F7 - Create directory",
         "Shift+F4 - Create file",
         "F8 - Move to trash",
@@ -1846,7 +1846,8 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
 }
 
 /// The copy or move dialog: what is going, and a field for where to, opened
-/// on the other panel's directory. `is_copy` = true for F5 copy, false for F6
+/// on the other panel - the file's path there for a single file, the
+/// directory for anything else. `is_copy` = true for F5 copy, false for F6
 /// move.
 fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], is_copy: bool, input: &TextInput) {
     let popup_area = centered_rect(70, 35, area);

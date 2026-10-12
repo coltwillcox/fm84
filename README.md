@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.24.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.25.0** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -81,9 +81,10 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing, the field scrolling to keep the cursor in view on a long name); a change of case alone works on macOS and Windows too
 - **F3** 👁️ - View files (text, hexdump, or images as ASCII art); Esc closes the viewer, F3 inside it finds the next match
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, Esc to close with an unsaved changes prompt, mouse click to position cursor)
-- **F5** 📋 - Copy to other panel (selected items or cursor item), keeping permissions and modified times where the filesystem can hold them
-- **F6** 📦 - Move to other panel (selected items or cursor item); a move to another disk keeps modified times too, so it looks just as a move on one disk does
-- ♻️ **Names already taken** - F5 and F6 ask before writing over them: files are replaced, directories merged. F11 can make it overwrite or refuse without asking
+- **F5** 📋 - Copy (selected items or cursor item), keeping permissions and modified times where the filesystem can hold them
+- **F6** 📦 - Move (selected items or cursor item); a move to another disk keeps modified times too, so it looks just as a move on one disk does
+- 🎯 **Where to** - F5 and F6 ask where, with the answer filled in: for a single file its path in the other panel, ready for a new name; for anything else the other panel's directory. Enter alone sends it there. Read as `cp` and `mv` read it: into a directory that is there, or one typed with a `/` on the end; anything else is a new name for the one item. A path that is not absolute starts from the panel you are in, so a bare name copies beside the original - and F6 with one renames it. `~` is home
+- ♻️ **Names already taken** - each file already there is asked about as the job reaches it, with both shown, size and date and which is newer: **Y** overwrite, **N** skip, **A** overwrite all, **S** skip all, **O** overwrite all older, **Esc** abort. Directories are merged, and asked about file by file. F11 can make it overwrite, or refuse the whole job, without asking
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels. Each file is written beside its destination and renamed into place only once it is whole, so a copy that is cancelled, fails or is cut short by quitting never leaves half a file under the real name. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🧯 **One bad entry doesn't sink the job** - a file that will not copy, move or delete (a socket, a pipe, a permission refused, a disk full) stops the job and asks: **R** retry, **S** skip, **A** skip all, **Esc** abort. A skipped entry is left where it was, and a directory holding one stays with it, so a move never leaves anything gone from both sides. The end says how many were skipped
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
@@ -179,7 +180,7 @@ Grouped under four headings; the list scrolls on a short terminal.
 **Behaviour**
 - 🗑️ **Confirm delete** and ✅ **Confirm copy and move** - turn off to skip the question
 - ♻️ **Delete to trash (F8)** - on, F8 moves to the trash; off, it deletes for good. Shift+F8 always deletes for good
-- ♻️ **When destination exists** - Ask, Overwrite (files replaced, directories merged) or Refuse. A file never replaces a directory or the other way round, and nothing is copied onto itself
+- ♻️ **When destination exists** - Ask about each file as the copy or move reaches it, Overwrite them all (directories merged), or Refuse a job with any name taken before it starts. A file never replaces a directory or the other way round, and nothing is copied onto itself
 - 💻 **Terminal (F9)** - any command, `{}` standing for the directory; left empty, one is picked for you
 - 📝 **Editor (F4)** - an external editor such as `nvim` or `hx`, which gets the terminal until it exits; `{}` stands for the file, which otherwise goes last. Left empty, the built-in editor opens
 - 📍 **Remember directories** - reopen both panels where they were when fm84 last quit
@@ -231,14 +232,15 @@ Grouped under four headings; the list scrolls on a short terminal.
 | `F2` | Rename |
 | `F3` | View file |
 | `F4` | Edit file (built-in, or the editor set under F11) |
-| `F5` | Copy to other panel |
-| `F6` | Move to other panel |
+| `F5` | Copy (to the other panel, or wherever the dialog is told) |
+| `F6` | Move (to the other panel, or wherever the dialog is told) |
 | `F7` | Create directory |
 | `Shift+F4` | Create empty file |
 | `F8` / `Delete` | Move to trash (selected items or cursor item) |
 | `Shift+F8` / `Shift+Delete` | Delete permanently |
 | `Esc` | Cancel a running copy, move or delete |
 | `R` / `S` / `A` | Retry / Skip / Skip all, when an entry in a copy, move or delete fails |
+| `Y` / `N` / `A` / `S` / `O` | Overwrite / Skip / Overwrite all / Skip all / Overwrite all older, when a file is already there |
 | `D` | Delete permanently, when the trash will not take an entry |
 | `F9` | Open terminal (the one set under F11, if any) |
 | `F10` | Quit (twice during an operation; asks first about unsaved edits) |
@@ -292,7 +294,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.24.1
+fm84 --version       # fm84 0.25.0
 ```
 
 A directory given takes the place of the tab that would have shown; the panel's other tabs stay. A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
@@ -377,5 +379,5 @@ Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.24.1 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.25.0 ▄▀▄▀▄▀</code>
 </p>

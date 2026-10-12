@@ -6,6 +6,17 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.25.0] - 2026-10-12
+
+### ✨ Added
+- 🎯 **F5 and F6 ask where to** - the dialog has a field for the destination, filled in so Enter alone does what it always did: for a single file its path in the other panel, with the cursor at the end of the name to change it; for several entries, or a directory, the other panel's directory. What is typed is read as `cp` and `mv` read it - into a directory that is there, or one written with a `/` on the end, under each entry's own name; anything else is a new name for the one entry, in a directory that has to be there. A path that is not absolute starts from the panel you are in, so a bare name copies beside the original, and F6 with one renames it. `~` is home. Y and N now type into the field; Enter and Esc answer it
+- ♻️ **Files already there are asked about one at a time** - as the copy or move reaches each, with both shown: size, date, and which is newer. **Y** overwrites it, **N** skips it, **A** overwrites it and every one after, **S** skips them all, **O** overwrites only those older than what would replace them, and **Esc** stops the job. Enter is not an answer, so a key pressed out of habit cannot write over a file. Directories are still merged, and the files inside them asked about. What was skipped stays where it was, on both sides, and the end says how many
+
+### 🛠️ Changed
+- ❓ **Ask, under F11's When destination exists, asks per file** - it used to ask once, before the job, for every name taken at the top; files in a directory being merged were written over without a word. Overwrite and Refuse are as they were
+
+---
+
 ## [0.24.1] - 2026-10-10
 
 ### 🛠️ Changed
