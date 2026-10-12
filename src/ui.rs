@@ -740,7 +740,9 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         // and line numbers mean nothing down the side of a picture. F11 can
         // turn it off for text too.
         let no_gutter = viewer_state.mode != ViewMode::Text || !app_state.options.line_numbers;
-        let line_num_width = if no_gutter { 0 } else { (viewer_state.total_lines.to_string().len() as u16).max(3) + 2 };
+        // Wide enough for the last line's number - lines, not the rows a
+        // wrapped one is broken into.
+        let line_num_width = if no_gutter { 0 } else { (viewer_state.line_count().to_string().len() as u16).max(3) + 2 };
 
         let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Length(line_num_width), Constraint::Min(0)]).split(inner_area);
 
@@ -751,7 +753,14 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
         // formatted at all then.
         if !no_gutter {
             let num_width = (line_num_width as usize).saturating_sub(1);
-            let line_numbers: Vec<Line> = (start..end).map(|line_num| Line::from(Span::styled(format!("{:>width$} ", line_num + 1, width = num_width), style_columns()))).collect();
+            // A wrapped line is numbered on its first row only.
+            let line_numbers: Vec<Line> = (start..end)
+                .map(|index| {
+                    let (line, from, _) = viewer_state.row(index);
+                    let number = if from == 0 { (line + 1).to_string() } else { String::new() };
+                    Line::from(Span::styled(format!("{number:>num_width$} "), style_columns()))
+                })
+                .collect();
             let line_number_para = Paragraph::new(line_numbers).style(Style::default().bg(crate::display::gutter()));
             f.render_widget(line_number_para, chunks[0]);
         }
@@ -778,23 +787,36 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
             let needle = marking.then(|| crate::find::Needle::new(&app_state.find_term)).flatten();
             let content_lines: Vec<Line> = (start..end)
                 .map(|index| {
-                    let text = viewer_state.line_text(index);
-                    let width = text.chars().count();
-                    let matches = needle.as_ref().map(|needle| needle.find_all(&text)).unwrap_or_default();
-                    let mut spans = match viewer_state.image_colors.get(index) {
-                        Some(colors) if viewer_state.mode == ViewMode::Image => colored_spans(&text, colors, viewer_state.image_backgrounds.get(index).map(Vec::as_slice)),
+                    // The row's piece of its line - the whole line, unless
+                    // wrapping. Matches and the selection are worked out on
+                    // the whole line and cut down to the piece, so one that
+                    // crosses from one row to the next shows on both.
+                    let (line, row_from, row_to) = viewer_state.row(index);
+                    let whole = viewer_state.line_text(line);
+                    let width = whole.chars().count();
+                    let (row_from, row_to) = (row_from.min(width), row_to.min(width));
+                    let on_row = |from: usize, to: usize| {
+                        let (from, to) = (from.clamp(row_from, row_to), to.clamp(row_from, row_to));
+                        (from < to).then(|| (from - row_from, to - row_from))
+                    };
+                    let matches = needle.as_ref().map(|needle| needle.find_all(&whole)).unwrap_or_default();
+                    let text: String = whole.chars().skip(row_from).take(row_to - row_from).collect();
+                    let mut spans = match viewer_state.image_colors.get(line) {
+                        Some(colors) if viewer_state.mode == ViewMode::Image => colored_spans(&text, colors, viewer_state.image_backgrounds.get(line).map(Vec::as_slice)),
                         _ => vec![Span::styled(text, style_file())],
                     };
-                    for (from, to) in matches {
+                    for (from, to) in matches.into_iter().filter_map(|(from, to)| on_row(from, to)) {
                         spans = overlay_range(spans, from, to, style_match());
                     }
 
                     if let Some(((first_line, first_col), (last_line, last_col))) = selection
-                        && (first_line..=last_line).contains(&index)
+                        && (first_line..=last_line).contains(&line)
                     {
-                        let to = if index == last_line { last_col.min(width) } else { width };
-                        let from = if index == first_line { first_col.min(to) } else { 0 };
-                        spans = overlay_range(spans, from, to, style_selection());
+                        let to = if line == last_line { last_col.min(width) } else { width };
+                        let from = if line == first_line { first_col.min(to) } else { 0 };
+                        if let Some((from, to)) = on_row(from, to) {
+                            spans = overlay_range(spans, from, to, style_selection());
+                        }
                     }
                     Line::from(skip_columns(spans, viewer_state.horizontal_offset))
                 })
@@ -1158,7 +1180,8 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     } else if let Some(viewer_state) = app_state.viewer() {
         {
             let filename = shown_name(&viewer_state.file_path);
-            let line_seg = format!("Line {}/{}", viewer_state.scroll_offset + 1, viewer_state.total_lines);
+            // Lines, not the rows a wrapped one is broken into.
+            let line_seg = format!("Line {}/{}", viewer_state.row(viewer_state.scroll_offset).0 + 1, viewer_state.line_count());
             let size_seg = format_size(viewer_state.file_size);
             let zoom_seg = format!("+/- Zoom {}%", viewer_state.image_zoom);
             let mut segments = vec![filename.as_str(), line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()];
@@ -1176,6 +1199,9 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
                     segments.push(if viewer_state.image_fill { "F Fit [Fill]" } else { "F [Fit] Fill" });
                     segments.push(zoom_seg.as_str());
                 } else {
+                    if viewer_state.mode == ViewMode::Text {
+                        segments.push(if viewer_state.wrap { "W [Wrap]" } else { "W Wrap" });
+                    }
                     segments.push("Ctrl+F Find");
                 }
             }
@@ -1504,7 +1530,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F1 - This help",
         "F2 - Rename folder/file",
         "F3 - View file (X text/hex/image)",
-        "  F fit/fill, +/- zoom",
+        "  F fit/fill, +/- zoom, W wrap",
         "F4 - Edit file (Ctrl+S/F2 save)",
         "  Ctrl+F find, F3/Shift+F3 next/prev",
         "  Ctrl+G go to line, Ctrl+R/F4 replace",

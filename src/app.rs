@@ -360,6 +360,9 @@ pub struct AppState {
     pub find_files_page: usize,
     /// What Ctrl+R last replaced with, offered again the next time.
     pub replace_with: String,
+    /// Whether W last left the viewer wrapping lines, which the next file
+    /// opened takes up.
+    pub viewer_wrap: bool,
     /// What Ctrl+F last looked for. Kept when the prompt closes, for F3 and
     /// Shift+F3, and offered again the next time it opens.
     pub find_term: String,
@@ -1068,6 +1071,7 @@ impl AppState {
             find_files_page: 10,
             find_term: String::new(),
             replace_with: String::new(),
+            viewer_wrap: false,
             find_shown: false,
             find_note: None,
             selected_left: HashSet::new(),
@@ -1362,6 +1366,7 @@ impl AppState {
         let decoded = if self.options.image_prefetch { self.image_cache.take(&file_path) } else { None };
         let mut state = crate::viewer::load_file_content(&file_path, decoded).map_err(|e| e.to_string())?;
         state.image_fill = self.options.image_fill;
+        state.wrap = self.viewer_wrap;
 
         // Only once the new one is in hand: a load that failed used to leave
         // what was open alone, and should go on doing so. The picture being
@@ -1417,6 +1422,46 @@ impl AppState {
         state.selection = None;
         state.pan_from = None;
         true
+    }
+
+    /// Break the viewer's lines onto rows whenever it is wrapping and has not
+    /// yet been, or the width has changed since; go back to a row a line when
+    /// it has stopped - X to a hexdump, or W. True if it did either, so the
+    /// caller can draw again.
+    pub fn fit_viewer_wrap(&mut self) -> bool {
+        let width = self.viewer_viewport_width;
+        let Screen::Viewer(state) = &mut self.screen else {
+            return false;
+        };
+        if state.wrapping() {
+            if width > 0 && state.rows_width != width {
+                state.rewrap(width);
+                return true;
+            }
+        } else if !state.rows.is_empty() {
+            state.unwrap_rows();
+            return true;
+        }
+        false
+    }
+
+    /// W in the viewer: wrap long lines, or stop. Only for text; the next
+    /// file opened wraps or not as this one was left.
+    pub fn viewer_toggle_wrap(&mut self) {
+        let width = self.viewer_viewport_width;
+        let Screen::Viewer(state) = &mut self.screen else {
+            return;
+        };
+        if state.mode != ViewMode::Text || state.from_edit {
+            return;
+        }
+        state.wrap = !state.wrap;
+        self.viewer_wrap = state.wrap;
+        if state.wrap && width > 0 {
+            state.rewrap(width);
+        } else {
+            state.unwrap_rows();
+        }
     }
 
     /// Switch an image between fitting inside the viewer and filling it. The
@@ -1532,6 +1577,9 @@ impl AppState {
                     state.max_line_width = state.content_lines.iter().map(|line| crate::utils::line_display_width(line)).max().unwrap_or(0);
                 }
 
+                // Rows broken from the lines of one mode mean nothing in
+                // another's; the next frame breaks them again if it wraps.
+                state.unwrap_rows();
                 state.mode = next;
                 state.total_lines = state.line_count();
                 // Positions in one mode's lines mean nothing in another's.
@@ -1640,7 +1688,9 @@ impl AppState {
     }
 
     pub fn viewer_scroll_right(&mut self) {
-        if let Screen::Viewer(state) = &mut self.screen {
+        if let Screen::Viewer(state) = &mut self.screen
+            && !state.wrapping()
+        {
             // Stop once the longest line's end reaches the right edge.
             let longest = match state.mode {
                 ViewMode::Hex => crate::constants::HEX_LINE_WIDTH,
@@ -2167,16 +2217,21 @@ impl AppState {
         let from = match state.selected_range() {
             Some((_, end)) if forward && !fresh => end,
             Some((start, _)) => start,
-            None => (state.scroll_offset, 0),
+            None => {
+                let (line, from, _) = state.row(state.scroll_offset);
+                (line, from)
+            }
         };
 
         let found = crate::find::search(needle, state.line_count(), |index| state.line_text(index), from, forward)?;
         state.selection = Some(((found.line, found.start), (found.line, found.end)));
-        if found.line < state.scroll_offset || found.line >= state.scroll_offset + height {
+        // Scrolled by rows, which are the lines themselves unless wrapping.
+        let row = state.row_of(found.line, found.start);
+        if row < state.scroll_offset || row >= state.scroll_offset + height {
             let max = state.total_lines.saturating_sub(height);
-            state.scroll_offset = found.line.saturating_sub(height / 3).min(max);
+            state.scroll_offset = row.saturating_sub(height / 3).min(max);
         }
-        if found.start < state.horizontal_offset || found.end > state.horizontal_offset + width {
+        if !state.wrapping() && (found.start < state.horizontal_offset || found.end > state.horizontal_offset + width) {
             state.horizontal_offset = found.start.saturating_sub(width / 4);
         }
         Some(found.wrapped)
@@ -2199,8 +2254,8 @@ impl AppState {
                 }
             }
         } else if let Screen::Viewer(state) = &mut self.screen {
-            let line = number.clamp(1, state.total_lines.max(1)) - 1;
-            state.scroll_offset = line.min(state.total_lines.saturating_sub(self.viewer_viewport_height));
+            let line = number.clamp(1, state.line_count().max(1)) - 1;
+            state.scroll_offset = state.row_of(line, 0).min(state.total_lines.saturating_sub(self.viewer_viewport_height));
         }
     }
 
@@ -3985,6 +4040,66 @@ mod editor_tests {
         replace(&mut app_state, "zzz", "y");
         assert!(!asking(&app_state));
         assert_eq!(app_state.find_note.as_deref(), Some("Not found: zzz"));
+        std::fs::remove_file(path).unwrap();
+    }
+
+    /// W wraps long lines in the viewer: scrolling goes by rows, while
+    /// finding, selecting, copying and going to a line go by lines.
+    #[test]
+    fn the_viewer_wraps_long_lines_onto_rows() {
+        let path = std::env::temp_dir().join(format!("fm84-wrap-{}.txt", std::process::id()));
+        std::fs::write(&path, "short\none two three four five six seven needle eight\nlast").unwrap();
+        let mut app_state = AppState::new();
+        app_state.open_viewer(path.clone()).unwrap();
+        (app_state.viewer_viewport_width, app_state.viewer_viewport_height) = (10, 3);
+
+        app_state.viewer_toggle_wrap();
+        let state = app_state.viewer().unwrap();
+        assert!(state.wrapping());
+        assert_eq!(state.line_count(), 3);
+        // The long line takes six rows of ten.
+        assert_eq!(state.total_lines, 8);
+        assert_eq!(state.row(1), (1, 0, 8));
+
+        // Found on the long line's fifth row, which scrolls into view.
+        app_state.find_term = "needle".to_string();
+        app_state.find(true, true);
+        let state = app_state.viewer().unwrap();
+        assert_eq!(state.selected_text().as_deref(), Some("needle"));
+        let row = state.row_of(1, 38);
+        assert!(state.scroll_offset <= row && row < state.scroll_offset + 3, "row {row} off screen from {}", state.scroll_offset);
+
+        // Copied across a break that is only on screen: no newline in it.
+        let state = app_state.viewer_mut().unwrap();
+        state.selection = Some(((1, 4), (1, 13)));
+        assert_eq!(state.selected_text().as_deref(), Some("two three"));
+        // A click on the second row of the long line lands in that line.
+        state.scroll_offset = 0;
+        assert_eq!(state.position_at(2, 3), (1, 11));
+
+        // Go to line 3: the row it starts on, as far down as the end allows.
+        app_state.go_to_line(3);
+        assert_eq!(app_state.viewer().unwrap().scroll_offset, 5);
+
+        // X to a hexdump is a row a line again; back to text, wrapped again.
+        app_state.viewer_next_mode();
+        assert!(app_state.viewer().unwrap().rows.is_empty());
+        app_state.viewer_next_mode();
+        assert!(app_state.fit_viewer_wrap());
+        assert_eq!(app_state.viewer().unwrap().total_lines, 8);
+
+        // W again: a row a line, with the line that was at the top still there.
+        app_state.viewer_mut().unwrap().scroll_offset = 3;
+        app_state.viewer_toggle_wrap();
+        let state = app_state.viewer().unwrap();
+        assert!(!state.wrapping() && state.rows.is_empty());
+        assert_eq!((state.scroll_offset, state.total_lines), (1, 3));
+
+        // The next file opened takes up W as it was left.
+        app_state.viewer_toggle_wrap();
+        app_state.close_viewer();
+        app_state.open_viewer(path.clone()).unwrap();
+        assert!(app_state.viewer().unwrap().wrap);
         std::fs::remove_file(path).unwrap();
     }
 

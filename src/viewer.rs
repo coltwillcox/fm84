@@ -84,6 +84,18 @@ pub struct ViewerState {
     /// What + and - have scaled the picture to, as a percentage of the Fit or
     /// Fill size, so those two keep deciding what 100% means.
     pub image_zoom: u16,
+    /// W: long lines are broken onto as many rows as they need, rather than
+    /// scrolled sideways. Text only - a hexdump and a picture have the width
+    /// they have.
+    pub wrap: bool,
+    /// The rows lines are broken into while wrapping, each a line and the
+    /// range of its characters on that row; empty when not. Scrolling, and
+    /// `total_lines`, count these, while finding, selecting and copying go on
+    /// working in whole lines - so a copy never gains a break that is only on
+    /// screen, and a word split across two rows is still found.
+    pub rows: Vec<(usize, usize, usize)>,
+    /// The width `rows` were broken to; 0 when they are not there.
+    pub rows_width: usize,
 }
 
 pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
@@ -143,6 +155,9 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
                 image_lines: Vec::new(),
                 image_colors: Vec::new(),
                 image_backgrounds: Vec::new(),
+                wrap: false,
+                rows: Vec::new(),
+                rows_width: 0,
             });
         }
 
@@ -167,6 +182,9 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
             image_lines: Vec::new(),
             image_colors: Vec::new(),
             image_backgrounds: Vec::new(),
+            wrap: false,
+            rows: Vec::new(),
+            rows_width: 0,
         });
     }
 
@@ -213,6 +231,9 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
         image_lines: Vec::new(),
         image_colors: Vec::new(),
         image_backgrounds: Vec::new(),
+        wrap: false,
+        rows: Vec::new(),
+        rows_width: 0,
     })
 }
 
@@ -456,6 +477,60 @@ impl ViewerState {
         }
     }
 
+    /// Whether lines are being broken onto rows: W is on, and it is text.
+    pub fn wrapping(&self) -> bool {
+        self.wrap && self.mode == ViewMode::Text && !self.from_edit
+    }
+
+    /// Row `index` on screen, as the line it shows and the range of that
+    /// line's characters. Without wrapping, a row is a whole line.
+    pub fn row(&self, index: usize) -> (usize, usize, usize) {
+        match self.rows.last() {
+            None => (index, 0, usize::MAX),
+            Some(&last) => self.rows.get(index).copied().unwrap_or(last),
+        }
+    }
+
+    /// The row on screen that holds character `col` of `line`.
+    pub fn row_of(&self, line: usize, col: usize) -> usize {
+        if self.rows.is_empty() {
+            return line;
+        }
+        self.rows.partition_point(|&(row_line, from, _)| (row_line, from) <= (line, col)).saturating_sub(1)
+    }
+
+    /// The place in the text under `column` of row `row` on screen, as a line
+    /// and a character in it - which is where a click lands.
+    pub fn position_at(&self, row: usize, column: usize) -> (usize, usize) {
+        let (line, from, to) = self.row(row.min(self.total_lines.saturating_sub(1)));
+        let length = self.line_text(line).chars().count();
+        (line, (from + column + self.horizontal_offset).min(to).min(length))
+    }
+
+    /// Break every line onto rows `width` wide, keeping the text that was at
+    /// the top of the screen there.
+    pub fn rewrap(&mut self, width: usize) {
+        let (line, from, _) = self.row(self.scroll_offset);
+        let rows: Vec<(usize, usize, usize)> = (0..self.line_count()).flat_map(|index| wrap_ranges(&self.line_text(index), width).into_iter().map(move |(from, to)| (index, from, to))).collect();
+        self.rows = rows;
+        self.rows_width = width;
+        self.total_lines = self.rows.len().max(1);
+        self.horizontal_offset = 0;
+        self.scroll_offset = self.row_of(line, from).min(self.total_lines.saturating_sub(1));
+    }
+
+    /// Back to a row a line, keeping the line that was at the top there.
+    pub fn unwrap_rows(&mut self) {
+        if self.rows.is_empty() {
+            return;
+        }
+        let (line, _, _) = self.row(self.scroll_offset);
+        self.rows.clear();
+        self.rows_width = 0;
+        self.total_lines = self.line_count();
+        self.scroll_offset = line;
+    }
+
     /// The mode X moves on to: the picture comes first for an image, then its
     /// bytes as text and as hex.
     pub fn next_mode(&self) -> ViewMode {
@@ -466,6 +541,43 @@ impl ViewerState {
             ViewMode::Hex => ViewMode::Text,
         }
     }
+}
+
+/// Where a line breaks to fit `width` columns, as ranges of its characters:
+/// after a space where there is one in reach, and inside a word only when it
+/// is wider than a row by itself. Always at least one, so an empty line still
+/// has a row of its own.
+pub fn wrap_ranges(text: &str, width: usize) -> Vec<(usize, usize)> {
+    let width = width.max(1);
+    let characters: Vec<char> = text.chars().collect();
+    let mut ranges = Vec::new();
+    let mut start = 0;
+    while start < characters.len() {
+        let (mut end, mut used, mut after_space) = (start, 0, None);
+        while end < characters.len() {
+            let cell = unicode_width::UnicodeWidthChar::width(characters[end]).unwrap_or(0);
+            // At least one character a row, however wide, so it moves on.
+            if used + cell > width && end > start {
+                break;
+            }
+            used += cell;
+            if characters[end] == ' ' {
+                after_space = Some(end + 1);
+            }
+            end += 1;
+        }
+        if end < characters.len()
+            && let Some(after_space) = after_space
+        {
+            end = after_space;
+        }
+        ranges.push((start, end));
+        start = end;
+    }
+    if ranges.is_empty() {
+        ranges.push((0, 0));
+    }
+    ranges
 }
 
 /// Rows a hexdump of these bytes occupies; at least one, so an empty file still
@@ -632,6 +744,25 @@ mod tests {
 
     /// Every hexdump layout measures what it says it does, and the viewer's own
     /// still comes to the width the horizontal scroll is bounded by.
+    #[test]
+    fn lines_wrap_at_spaces_and_only_split_a_word_too_long_for_a_row() {
+        let pieces = |text: &str, width: usize| -> Vec<String> {
+            let characters: Vec<char> = text.chars().collect();
+            super::wrap_ranges(text, width).into_iter().map(|(from, to)| characters[from..to].iter().collect()).collect()
+        };
+        // After the space, which stays with the word before it.
+        assert_eq!(pieces("the quick brown fox", 10), ["the quick ", "brown fox"]);
+        // A word wider than a row is split where the row ends.
+        assert_eq!(pieces("abcdefghijkl xy", 5), ["abcde", "fghij", "kl xy"]);
+        assert_eq!(pieces("abcdefghijkl wxyz", 5), ["abcde", "fghij", "kl ", "wxyz"]);
+        // Wide characters take the two columns they are drawn in.
+        assert_eq!(pieces("界界界", 4), ["界界", "界"]);
+        // One that does not fit at all still moves on, a row of its own.
+        assert_eq!(pieces("界x", 1), ["界", "x"]);
+        // An empty line keeps its row.
+        assert_eq!(super::wrap_ranges("", 10), [(0, 0)]);
+    }
+
     #[test]
     fn hex_rows_measure_what_they_claim() {
         let bytes: Vec<u8> = (0..=255u8).collect();

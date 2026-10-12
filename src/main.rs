@@ -167,7 +167,9 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         render_ui(terminal, &mut app_state);
         // An image fits the width the viewer was just drawn at, so a new width
         // means drawing again now rather than on the next event.
-        if app_state.fit_viewer_image() {
+        // Lines wrap to the width just drawn at too.
+        let refitted = app_state.fit_viewer_image() | app_state.fit_viewer_wrap();
+        if refitted {
             render_ui(terminal, &mut app_state);
         }
         app_state.refresh_stale_panels();

@@ -349,6 +349,8 @@ fn viewer_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(3) => app_state.find(!key.modifiers.contains(KeyModifiers::SHIFT), false),
         KeyCode::Char('x') | KeyCode::Char('X') => app_state.viewer_next_mode(),
         KeyCode::Char('f') | KeyCode::Char('F') => app_state.viewer_toggle_fill(),
+        // Wrap long lines, or scroll them sideways.
+        KeyCode::Char('w') | KeyCode::Char('W') => app_state.viewer_toggle_wrap(),
         // Zoom a picture. The unshifted keys count too, so it is one key
         // either way on a numeric keypad or a main row.
         KeyCode::Char('+') | KeyCode::Char('=') => app_state.viewer_zoom(true),
@@ -1238,9 +1240,8 @@ fn handle_viewer_click(app_state: &mut AppState, column: u16, row: u16, extend: 
             return;
         }
 
-        let line = (state.scroll_offset + (row - area.y) as usize).min(state.total_lines.saturating_sub(1));
-        let width = state.line_text(line).chars().count();
-        let position = (line, ((column - area.x) as usize + state.horizontal_offset).min(width));
+        // Through the rows, so a click on a wrapped line lands in it.
+        let position = state.position_at(state.scroll_offset + (row - area.y) as usize, (column - area.x) as usize);
 
         state.selection = match (extend, state.selection) {
             (true, Some((anchor, _))) => Some((anchor, position)),
