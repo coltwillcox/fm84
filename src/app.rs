@@ -203,6 +203,10 @@ pub enum Dialog {
     /// Unsaved edits, on the way out of the editor. `then_quit` when it was
     /// F10 that asked, so that answering Save or Discard also leaves.
     SaveChanges { then_quit: bool },
+    /// Something else has changed the file in the editor since it was opened,
+    /// and saving would write over that: asked about before it does. `then` is
+    /// what the save was on its way to, done once it is answered with a save.
+    DiskChanged { then: AfterSave, opened: Option<DiskStamp>, now: Option<DiskStamp> },
     /// Alt+F1 or Alt+F2: which panel is choosing, and the mount highlighted.
     DrivePicker { is_left: bool, index: usize },
     /// The line at the foot of the screen, asking for something to find, a
@@ -210,6 +214,51 @@ pub enum Dialog {
     Prompt(PromptKind, TextInput),
     /// Alt+F7: what to look for, and then what was found.
     FindFiles(Box<FindFiles>),
+}
+
+/// What a save in the editor goes on to do once the file is written.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum AfterSave {
+    /// Back to editing.
+    Stay,
+    /// Close the editor.
+    Close,
+    /// Close the editor, and fm84 with it: the save was F10's.
+    Quit,
+}
+
+/// A file as it stood on disk: when it was last modified, and its size.
+/// Together they tell a file something else has written apart from the one
+/// the editor read, even on a filesystem that keeps time only to the second.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct DiskStamp {
+    pub modified: Option<SystemTime>,
+    pub size: u64,
+}
+
+impl DiskStamp {
+    /// The file at `path` as it stands now, through a link to what it names
+    /// - which is what a save writes. None when there is nothing there.
+    pub fn of(path: &Path) -> Option<Self> {
+        let metadata = std::fs::metadata(path).ok()?;
+        Some(DiskStamp {
+            modified: metadata.modified().ok(),
+            size: metadata.len(),
+        })
+    }
+}
+
+/// How a save from the editor came out, when it did not fail.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Saved {
+    Done,
+    /// Not written: something else changed the file since the editor read
+    /// it, and writing would throw that away. The stamps are the file as it
+    /// was read, and as it is now.
+    ChangedOnDisk {
+        opened: Option<DiskStamp>,
+        now: Option<DiskStamp>,
+    },
 }
 
 /// Find files, from the form to the results.
@@ -906,6 +955,9 @@ pub struct EditorState {
     /// The terminator this file was written with, so saving doesn't rewrite
     /// every line of a CRLF file just because one character changed.
     pub line_ending: &'static str,
+    /// The file as it stood when it was last read or written here, so a save
+    /// can tell when something else has written it since.
+    pub disk_stamp: Option<DiskStamp>,
 }
 
 /// One undoable edit: the lines it replaced, and where the cursor was. The
@@ -1599,6 +1651,9 @@ impl AppState {
         use crate::viewer::{highlight_all, is_binary_file};
 
         let file_size = std::fs::metadata(&file_path).map_err(|e| e.to_string())?.len();
+        // Taken before the file is read: a write between the two then makes
+        // the save ask needlessly, rather than go over it without a word.
+        let disk_stamp = DiskStamp::of(&file_path);
 
         if is_binary_file(&file_path).unwrap_or(false) {
             self.open_viewer(file_path)?;
@@ -1655,7 +1710,22 @@ impl AppState {
             line_states,
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
+            disk_stamp,
         });
+        Ok(())
+    }
+
+    /// R on the changed-on-disk question: read the file again as it now is,
+    /// dropping the edits, and keep the cursor on the line it was on, as far
+    /// as the file still reaches.
+    pub fn editor_reload(&mut self) -> Result<(), String> {
+        let Some((path, line)) = self.editor().map(|state| (state.file_path.clone(), state.cursor_line)) else {
+            return Ok(());
+        };
+        self.open_editor(path)?;
+        if let Some(state) = self.editor_mut() {
+            state.cursor_line = line.min(state.lines.len().saturating_sub(1));
+        }
         Ok(())
     }
 
@@ -2457,11 +2527,30 @@ impl AppState {
         self.finish_edit();
     }
 
-    pub fn editor_save(&mut self) -> Result<(), String> {
+    /// Save the file in the editor - unless something else has written it
+    /// since it was read here, when nothing is written and the caller asks
+    /// first. A file gone altogether counts: saving would bring back what
+    /// someone meant to delete.
+    pub fn editor_save(&mut self) -> Result<Saved, String> {
+        if let Some(state) = self.editor() {
+            let now = DiskStamp::of(&state.file_path);
+            if now != state.disk_stamp {
+                return Ok(Saved::ChangedOnDisk { opened: state.disk_stamp, now });
+            }
+        }
+        self.editor_save_over()?;
+        Ok(Saved::Done)
+    }
+
+    /// Save the file in the editor, whatever is on disk.
+    pub fn editor_save_over(&mut self) -> Result<(), String> {
         if let Screen::Editor(state) = &mut self.screen {
             let content = state.lines.join(state.line_ending);
             crate::fs_ops::save_file(&state.file_path, content.as_bytes()).map_err(|e| e.to_string())?;
             state.modified = false;
+            // What is there now is this, and the next save should not take
+            // it for somebody else's.
+            state.disk_stamp = DiskStamp::of(&state.file_path);
             // A save written in place leaves its directory's mtime alone - only
             // adding, removing or renaming entries moves that - so the refresh
             // that watches it never notices, and the panels would go on showing

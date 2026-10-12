@@ -1,4 +1,4 @@
-use crate::app::{Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
+use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, TextInput, TransferKind};
 use crate::display::tab_width;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets};
 use crate::options::OnExisting;
@@ -107,9 +107,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             'f' if in_editor || in_viewer => app_state.open_prompt(PromptKind::Find),
             'g' if in_editor || in_viewer => app_state.open_prompt(PromptKind::GoToLine),
             's' if in_editor => {
-                if let Err(e) = app_state.editor_save() {
-                    app_state.display_error(e);
-                }
+                save_then(app_state, AfterSave::Stay);
             }
             'a' if in_editor => app_state.editor_select_all(),
             // Ctrl+Z undoes; Ctrl+Shift+Z and Ctrl+Y put it back.
@@ -231,13 +229,7 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                 // the error over it, and a quit that asked first goes ahead
                 // only once the edits are safe.
                 app_state.dialog = None;
-                match app_state.editor_save() {
-                    Ok(()) => {
-                        app_state.close_editor();
-                        return !then_quit;
-                    }
-                    Err(e) => app_state.display_error(e),
-                }
+                return save_then(app_state, if then_quit { AfterSave::Quit } else { AfterSave::Close });
             }
             KeyCode::Char('n') | KeyCode::Char('N') => {
                 // Discard and close, and leave if that is what F10 asked.
@@ -247,6 +239,26 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             }
             // Back to the editor - and stay, if F10 asked.
             KeyCode::Esc => app_state.dialog = None,
+            _ => {}
+        },
+        // Changed on disk since the editor read it: write over it anyway,
+        // read it again, or go back to the edits.
+        Some(&Dialog::DiskChanged { then, now, .. }) => match code {
+            KeyCode::Char('o') | KeyCode::Char('O') => {
+                app_state.dialog = None;
+                match app_state.editor_save_over() {
+                    Ok(()) => return after_save(app_state, then),
+                    Err(e) => app_state.display_error(e),
+                }
+            }
+            // Only while there is a file to read.
+            KeyCode::Char('r') | KeyCode::Char('R') if now.is_some() => {
+                app_state.dialog = None;
+                if let Err(e) = app_state.editor_reload() {
+                    app_state.display_error(e);
+                }
+            }
+            KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => app_state.dialog = None,
             _ => {}
         },
         Some(Dialog::DrivePicker { .. }) => match code {
@@ -356,9 +368,7 @@ fn editor_key(app_state: &mut AppState, key: KeyEvent) {
             }
         }
         KeyCode::F(2) => {
-            if let Err(e) = app_state.editor_save() {
-                app_state.display_error(e);
-            }
+            save_then(app_state, AfterSave::Stay);
         }
         KeyCode::F(3) => app_state.find(!extend, false),
         KeyCode::Up => {
@@ -588,6 +598,40 @@ fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) {
             }
         }
         _ => {}
+    }
+}
+
+/// Save the file in the editor, then go on to `then`. When something else
+/// has written the file since it was read, nothing is saved yet: the question
+/// goes up instead, and its answer carries on to `then`. A save that fails
+/// leaves the editor open, edits and all, with the error over it. False to
+/// quit.
+fn save_then(app_state: &mut AppState, then: AfterSave) -> bool {
+    match app_state.editor_save() {
+        Ok(Saved::Done) => after_save(app_state, then),
+        Ok(Saved::ChangedOnDisk { opened, now }) => {
+            app_state.dialog = Some(Dialog::DiskChanged { then, opened, now });
+            true
+        }
+        Err(e) => {
+            app_state.display_error(e);
+            true
+        }
+    }
+}
+
+/// What a save goes on to once the file is written. False to quit.
+fn after_save(app_state: &mut AppState, then: AfterSave) -> bool {
+    match then {
+        AfterSave::Stay => true,
+        AfterSave::Close => {
+            app_state.close_editor();
+            true
+        }
+        AfterSave::Quit => {
+            app_state.close_editor();
+            false
+        }
     }
 }
 
@@ -1479,6 +1523,76 @@ mod tests {
         assert!(app_state.dialog.is_none());
 
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A save asks first when something else has written the file since the
+    /// editor read it: O writes over it, R reads it again, Esc goes back. A
+    /// save of its own never asks, and a file gone is said to be.
+    #[test]
+    fn a_save_asks_before_writing_over_changes_made_elsewhere() {
+        let path = std::env::temp_dir().join(format!("fm84-disk-changed-{}.txt", std::process::id()));
+        std::fs::write(&path, "one\n").unwrap();
+        let mut app_state = AppState::new();
+        app_state.open_editor(path.clone()).unwrap();
+        let ctrl_s = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL));
+        let asked = |app_state: &AppState| matches!(app_state.dialog, Some(Dialog::DiskChanged { .. }));
+
+        // Its own saves, one after another, never ask.
+        press(&mut app_state, KeyCode::Char('A'));
+        ctrl_s(&mut app_state);
+        press(&mut app_state, KeyCode::Char('B'));
+        ctrl_s(&mut app_state);
+        assert!(!asked(&app_state));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "ABone\n");
+
+        // Written elsewhere: the save asks, and writes nothing yet.
+        std::fs::write(&path, "written elsewhere\n").unwrap();
+        press(&mut app_state, KeyCode::Char('C'));
+        ctrl_s(&mut app_state);
+        assert!(asked(&app_state));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "written elsewhere\n");
+        // Esc goes back to the edits, and the next save asks again.
+        press(&mut app_state, KeyCode::Esc);
+        assert!(app_state.dialog.is_none() && app_state.editor_is_modified());
+        press(&mut app_state, KeyCode::F(2));
+        assert!(asked(&app_state));
+        // O writes over it, and after that a save is its own again.
+        press(&mut app_state, KeyCode::Char('o'));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "ABCone\n");
+        press(&mut app_state, KeyCode::Char('D'));
+        ctrl_s(&mut app_state);
+        assert!(!asked(&app_state));
+
+        // R reads it again, the edits gone.
+        std::fs::write(&path, "theirs\nand more\n").unwrap();
+        press(&mut app_state, KeyCode::Char('E'));
+        ctrl_s(&mut app_state);
+        press(&mut app_state, KeyCode::Char('r'));
+        let state = app_state.editor().unwrap();
+        assert_eq!(state.lines, ["theirs", "and more", ""]);
+        assert!(!state.modified);
+
+        // From the question on the way out: once answered, the editor closes.
+        std::fs::write(&path, "again elsewhere\n").unwrap();
+        press(&mut app_state, KeyCode::Char('F'));
+        press(&mut app_state, KeyCode::Esc);
+        press(&mut app_state, KeyCode::Char('y'));
+        assert!(asked(&app_state) && app_state.is_editing());
+        press(&mut app_state, KeyCode::Char('o'));
+        assert!(!app_state.is_editing());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "Ftheirs\nand more\n");
+
+        // Gone: said so, with nothing to reload, and O puts it back.
+        app_state.open_editor(path.clone()).unwrap();
+        std::fs::remove_file(&path).unwrap();
+        press(&mut app_state, KeyCode::Char('G'));
+        ctrl_s(&mut app_state);
+        assert!(matches!(app_state.dialog, Some(Dialog::DiskChanged { now: None, .. })));
+        press(&mut app_state, KeyCode::Char('r'));
+        assert!(asked(&app_state), "nothing there to reload");
+        press(&mut app_state, KeyCode::Char('o'));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "GFtheirs\nand more\n");
+        std::fs::remove_file(&path).unwrap();
     }
 
     /// F10 leaves at once, unless the editor holds edits nobody has saved:

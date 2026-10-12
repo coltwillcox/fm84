@@ -179,6 +179,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_copy_move_popup(f, area, sources, *is_copy, input),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
+            Some(Dialog::DiskChanged { opened, now, .. }) => render_disk_changed_popup(f, area, app_state, *opened, *now),
             Some(Dialog::FindFiles(find)) => match find.as_ref() {
                 FindFiles::Asking { name, containing, on_containing } => {
                     let start = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
@@ -1855,6 +1856,41 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));
     }
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
+}
+
+/// Asks before a save writes over what something else has written since the
+/// editor read the file: the file as it was then and as it is now, and the
+/// answers. A file that has gone is said to have, and cannot be reloaded.
+fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, opened: Option<crate::app::DiskStamp>, now: Option<crate::app::DiskStamp>) {
+    let popup_area = centered_rect(64, 40, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(" Changed on disk ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let name = app_state.editor().map(|state| shown_name(&state.file_path)).unwrap_or_default();
+    let stamp = |label: &str, stamp: Option<crate::app::DiskStamp>| {
+        let shown = match stamp {
+            Some(stamp) => {
+                let date = stamp.modified.map(|at| format_exact(at, app_state.options.date_format)).unwrap_or_else(|| "?".to_string());
+                format!("{:>9}  {date}", format_size(stamp.size))
+            }
+            None => "not there".to_string(),
+        };
+        Line::from(Span::styled(format!("{label:<12}{shown}"), style_file()))
+    };
+    let mut lines = match now {
+        Some(_) => vec![Line::from(Span::styled(format!("\"{name}\" has changed since it was opened"), style_title()))],
+        None => vec![Line::from(Span::styled(format!("\"{name}\" is no longer there"), style_title()))],
+    };
+    lines.push(stamp("When opened", opened));
+    lines.push(stamp("Now", now));
+    let keys = match now {
+        Some(_) => "O - Overwrite it    R - Reload, losing your edits",
+        None => "O - Save it again",
+    };
+    lines.push(Line::from(Span::styled(keys, style_columns())));
+    lines.push(Line::from(Span::styled("Esc - Back to editing", style_columns())));
+    popup_body(f, popup_area, lines);
 }
 
 /// Alt+F7: where the search starts, the two fields, and what goes in them.
