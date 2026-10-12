@@ -1,4 +1,4 @@
-use crate::app::{Answer, AppState, Dialog, OverwritePrompt, PromptKind, Screen, TextInput, TransferKind};
+use crate::app::{Answer, AppState, Clashes, Dialog, PromptKind, Screen, TextInput, TransferKind};
 use crate::display::tab_width;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets};
 use crate::options::OnExisting;
@@ -141,7 +141,16 @@ fn job_key(app_state: &mut AppState, key: KeyEvent) -> bool {
     let Some(job) = app_state.job.as_mut() else {
         return true;
     };
+    let clash = job.clash.is_some();
     match key.code {
+        // A file in the way, waiting on whether to write over it. Enter is
+        // not one of the answers: a key pressed out of habit should not be
+        // the one that writes over a file.
+        KeyCode::Char('y') | KeyCode::Char('Y') if clash => job.answer(Answer::Overwrite),
+        KeyCode::Char('n') | KeyCode::Char('N') if clash => job.answer(Answer::Skip),
+        KeyCode::Char('a') | KeyCode::Char('A') if clash => job.answer(Answer::OverwriteAll),
+        KeyCode::Char('s') | KeyCode::Char('S') if clash => job.answer(Answer::SkipAll),
+        KeyCode::Char('o') | KeyCode::Char('O') if clash => job.answer(Answer::OverwriteOlder),
         // An entry that failed, waiting on what to do about it.
         KeyCode::Char('r') | KeyCode::Char('R') if job.problem.is_some() => job.answer(Answer::Retry),
         KeyCode::Char('s') | KeyCode::Char('S') if job.problem.is_some() => job.answer(Answer::Skip),
@@ -209,7 +218,6 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc => app_state.dialog = None,
             _ => edit_text(app_state, code),
         },
-        Some(Dialog::Overwrite(_)) if yes || no => answer_overwrite(app_state, yes),
         Some(Dialog::LargeFile(_)) if yes => app_state.confirm_large_file(),
         Some(Dialog::Delete { .. } | Dialog::LargeFile(_)) if no => app_state.dialog = None,
         Some(&Dialog::SaveChanges { then_quit }) => match code {
@@ -990,10 +998,13 @@ fn typed_path(text: &str, base: &Path) -> PathBuf {
     base.join(path)
 }
 
-/// Start a confirmed copy or move, once what it would write over is settled.
-/// Every destination is checked before anything is written: bailing out
-/// partway would leave some items done and the rest not. Names already taken
-/// go by F11's "When destination exists" - ask, overwrite, or refuse.
+/// Start a confirmed copy or move. Every destination is checked before
+/// anything is written, for what no answer could make safe - an item onto
+/// itself, a directory into itself, a file and a directory in each other's
+/// place - since bailing out partway would leave some items done and the rest
+/// not. Files already there go by F11's "When destination exists": asked
+/// about one at a time as the job reaches them, written over, or - for Refuse
+/// - the whole job refused before it starts.
 fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
     let taken = match check_destinations(&items) {
         Ok(taken) => taken,
@@ -1002,26 +1013,12 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
             return;
         }
     };
-    if taken.is_empty() {
-        // The work itself, the panel reload and the selections are all
-        // handled by the job as it finishes.
-        app_state.start_transfer(items, is_copy, false);
-        return;
-    }
+    // The work itself, the panel reload and the selections are all handled
+    // by the job as it finishes.
     match app_state.options.on_existing {
-        OnExisting::Overwrite => app_state.start_transfer(items, is_copy, true),
-        OnExisting::Refuse => app_state.display_error(format!("Destination already exists: {}", taken[0].display())),
-        OnExisting::Ask => app_state.dialog = Some(Dialog::Overwrite(OverwritePrompt { items, is_copy, taken })),
-    }
-}
-
-/// The answer to the overwrite question: yes starts the transfer, writing
-/// over what is there; no drops it.
-fn answer_overwrite(app_state: &mut AppState, overwrite: bool) {
-    if let Some(Dialog::Overwrite(prompt)) = app_state.dialog.take()
-        && overwrite
-    {
-        app_state.start_transfer(prompt.items, prompt.is_copy, true);
+        OnExisting::Refuse if !taken.is_empty() => app_state.display_error(format!("Destination already exists: {}", taken[0].display())),
+        OnExisting::Overwrite => app_state.start_transfer(items, is_copy, Clashes::ReplaceAll),
+        OnExisting::Ask | OnExisting::Refuse => app_state.start_transfer(items, is_copy, Clashes::Ask),
     }
 }
 
@@ -1315,12 +1312,22 @@ mod tests {
         finish(&mut app_state);
         assert_eq!(std::fs::read_to_string(right.join("a.txt")).unwrap(), "a");
 
-        // Again, onto the copy now there: asked about, as ever.
+        // Again, onto the copy now there: the job stops to ask about it, and
+        // Esc leaves it as it was.
         on_a(&mut app_state);
         press(&mut app_state, KeyCode::F(5));
         press(&mut app_state, KeyCode::Enter);
-        assert!(matches!(app_state.dialog, Some(Dialog::Overwrite(_))));
+        let started = std::time::Instant::now();
+        while !app_state.job.as_ref().is_some_and(|job| job.clash.is_some()) {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "never asked");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
         press(&mut app_state, KeyCode::Esc);
+        finish(&mut app_state);
+        assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Copy cancelled")), "{:?}", app_state.error);
+        assert_eq!(std::fs::read_to_string(right.join("a.txt")).unwrap(), "a");
+        app_state.reset_error();
 
         // The name edited, one key at a time.
         on_a(&mut app_state);

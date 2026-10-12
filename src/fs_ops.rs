@@ -670,6 +670,10 @@ impl Progress for Uncounted<'_, '_> {
     fn failed(&mut self, path: &Path, error: &Error) -> Reply {
         self.0.failed(path, error)
     }
+
+    fn exists(&mut self, source: &Path, dest: &Path) -> Clash {
+        self.0.exists(source, dest)
+    }
 }
 
 /// Remove one entry, announcing it first so the popup can name it, and counting
@@ -866,6 +870,26 @@ pub trait Progress {
     fn failed(&mut self, _path: &Path, _error: &Error) -> Reply {
         Reply::Abort
     }
+
+    /// `dest` is already there - a file or a link - and `source` is about to
+    /// be written over it. Asked once for each; a directory onto a directory
+    /// is never asked about, but merged, its files asked about one at a time.
+    /// Left alone, what is there is replaced: a caller with nobody to ask has
+    /// already said it may be.
+    fn exists(&mut self, _source: &Path, _dest: &Path) -> Clash {
+        Clash::Replace
+    }
+}
+
+/// The answer to a name already taken.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Clash {
+    /// Write over what is there.
+    Replace,
+    /// Leave what is there, and the source where it was.
+    Keep,
+    /// Stop the whole job.
+    Abort,
 }
 
 /// A closure is a Progress that never answers for a failure, which is all a
@@ -972,13 +996,35 @@ pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
         return Ok(Transfer::Done);
     };
     let outcome = if metadata.file_type().is_symlink() {
-        copy_link(&source, &dest, report)?
+        settle_clash(&source, &dest, report).map_or_else(|| copy_link(&source, &dest, report), Ok)?
     } else if is_dir {
         copy_dir_recursive(&source, &dest, report)?
     } else {
-        copy_file(&source, &dest, report)?
+        settle_clash(&source, &dest, report).map_or_else(|| copy_file(&source, &dest, report), Ok)?
     };
     Ok(outcome.into())
+}
+
+/// When `dest` is already there and is not a directory - a file or a link -
+/// ask whether `source` may be written over it. None to go ahead; otherwise
+/// how the entry came out without it: left where it was, or the job stopped.
+/// A directory in the way is not asked about here: a directory is merged
+/// into it, and a file onto it fails, which is asked about as a failure.
+fn settle_clash(source: &Path, dest: &Path, report: Report<'_>) -> Option<Outcome> {
+    let existing = dest.symlink_metadata().ok()?;
+    if existing.is_dir() {
+        return None;
+    }
+    match report.exists(source, dest) {
+        Clash::Replace => None,
+        Clash::Keep => {
+            // Counted as dealt with, so the bar still reaches the end.
+            let bytes = source.symlink_metadata().map_or(0, |metadata| if metadata.is_file() { metadata.len() } else { 0 });
+            let carry_on = report.step(Step::Starting(source)) && report.step(Step::Advanced(bytes));
+            Some(if carry_on { Outcome::Skipped } else { Outcome::Cancelled })
+        }
+        Clash::Abort => Some(Outcome::Cancelled),
+    }
 }
 
 /// Recreate a link, asking about it if that fails.
@@ -1136,10 +1182,12 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
         // link, copying the target's contents - and a link pointing at an
         // ancestor recurses until the path outgrows PATH_MAX. cp -r recreates
         // the link, so do the same.
-        let outcome = if file_type.is_symlink() {
-            copy_link(&entry_path, &dest_path, &mut *report)?
-        } else if file_type.is_dir() {
+        let outcome = if file_type.is_dir() {
             copy_dir_recursive(&entry_path, &dest_path, &mut *report)?
+        } else if let Some(outcome) = settle_clash(&entry_path, &dest_path, &mut *report) {
+            outcome
+        } else if file_type.is_symlink() {
+            copy_link(&entry_path, &dest_path, &mut *report)?
         } else {
             copy_file(&entry_path, &dest_path, &mut *report)?
         };
@@ -1160,19 +1208,13 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
     Ok(if skipped { Outcome::Skipped } else { Outcome::Done })
 }
 
-/// Move `source` to `dest`. With `overwrite`, whatever is at `dest` gives way:
-/// a file is replaced, and a directory moved onto a directory is merged into
-/// it - a rename cannot replace a directory that holds anything, so that goes
-/// entry by entry. Without it, a name that has been taken since the transfer
-/// was checked is refused rather than replaced.
-pub fn move_path(source: PathBuf, dest: PathBuf, overwrite: bool, report: Report<'_>) -> Result<Transfer, Error> {
-    if let Ok(existing) = dest.symlink_metadata() {
-        if !overwrite {
-            return Err(Error::new(ErrorKind::AlreadyExists, format!("Destination already exists: {}", dest.display())));
-        }
-        if is_real_dir(&source) && existing.is_dir() {
-            return Ok(move_across(&source, &dest, report)?.into());
-        }
+/// Move `source` to `dest`. Where something is already at `dest`, it goes
+/// by way of move_across: a file in the way is asked about, and a directory
+/// moved onto a directory is merged into it - a rename cannot replace a
+/// directory that holds anything, so that goes entry by entry.
+pub fn move_path(source: PathBuf, dest: PathBuf, report: Report<'_>) -> Result<Transfer, Error> {
+    if path_exists(&dest) {
+        return Ok(move_across(&source, &dest, report)?.into());
     }
 
     // Try rename first (fast, same filesystem)
@@ -1196,6 +1238,12 @@ fn move_across(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome
     let Some(metadata) = attempt(source, report, |_| fs::symlink_metadata(source))? else {
         return Ok(Outcome::Skipped);
     };
+    // Asked first, since the rename below would replace it without a word.
+    if !metadata.is_dir()
+        && let Some(outcome) = settle_clash(source, dest, report)
+    {
+        return Ok(outcome);
+    }
 
     // Within one filesystem - merging into a directory already there - a
     // rename does it at once: a file replaces the one in the way, and a
@@ -1750,6 +1798,29 @@ mod transfer_tests {
         assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
     }
 
+    /// Answers every file in the way the same way, and remembers which.
+    struct Clashing {
+        answer: Clash,
+        asked: Vec<(PathBuf, PathBuf)>,
+    }
+
+    impl Clashing {
+        fn new(answer: Clash) -> Self {
+            Clashing { answer, asked: Vec::new() }
+        }
+    }
+
+    impl Progress for Clashing {
+        fn step(&mut self, _step: Step<'_>) -> bool {
+            true
+        }
+
+        fn exists(&mut self, source: &Path, dest: &Path) -> Clash {
+            self.asked.push((source.to_path_buf(), dest.to_path_buf()));
+            self.answer
+        }
+    }
+
     /// Answers every failure the same way, and remembers what it was asked about.
     struct Answering {
         reply: Reply,
@@ -1977,7 +2048,7 @@ mod transfer_tests {
         }
 
         let mut progress = Answering::new(Reply::Skip);
-        assert_eq!(move_path(source.clone(), dest.clone(), true, &mut progress).unwrap(), Transfer::Done);
+        assert_eq!(move_path(source.clone(), dest.clone(), &mut progress).unwrap(), Transfer::Done);
         assert_eq!(progress.asked, [source.join("locked").join("stuck.txt")]);
         assert_eq!(fs::read_to_string(dest.join("free.txt")).unwrap(), "free");
         assert!(!path_exists(&source.join("free.txt")));
@@ -2318,12 +2389,18 @@ mod transfer_tests {
         fs::write(dest.join("clash"), "old").unwrap();
         fs::write(dest.join("only-in-dest"), "d").unwrap();
 
-        let mut report = |_: Step<'_>| true;
-        // Refused unless asked for.
-        assert!(move_path(source.clone(), dest.clone(), false, &mut report).is_err());
-        assert!(source.exists());
+        // Skipped: the rest merges, and the file in the way stays as it was -
+        // as does the one that would have replaced it, with its directory.
+        let mut keeping = Clashing::new(Clash::Keep);
+        assert_eq!(move_path(source.clone(), dest.clone(), &mut keeping).unwrap(), Transfer::Done);
+        assert_eq!(keeping.asked, [(source.join("clash"), dest.join("clash"))]);
+        assert_eq!(fs::read_to_string(dest.join("clash")).unwrap(), "old");
+        assert_eq!(fs::read_to_string(source.join("clash")).unwrap(), "new");
+        assert!(dest.join("sub").join("only-in-source").exists());
 
-        assert_eq!(move_path(source.clone(), dest.clone(), true, &mut report).unwrap(), Transfer::Done);
+        // Written over, which is what a caller with nobody to ask gets.
+        let mut report = |_: Step<'_>| true;
+        assert_eq!(move_path(source.clone(), dest.clone(), &mut report).unwrap(), Transfer::Done);
         assert!(!source.exists());
         assert_eq!(fs::read_to_string(dest.join("clash")).unwrap(), "new");
         assert_eq!(fs::read_to_string(dest.join("only-in-dest")).unwrap(), "d");
@@ -2354,7 +2431,7 @@ mod transfer_tests {
 
         let before = [inode(&source.join("shared").join("big.bin")), inode(&source.join("fresh")), inode(&source.join("clash"))];
         let mut report = |_: Step<'_>| true;
-        assert_eq!(move_path(source.clone(), dest.clone(), true, &mut report).unwrap(), Transfer::Done);
+        assert_eq!(move_path(source.clone(), dest.clone(), &mut report).unwrap(), Transfer::Done);
 
         // A file inside a directory both sides have, a directory only the
         // source has (moved whole), and a file replacing one in the way.
@@ -2372,7 +2449,7 @@ mod transfer_tests {
         fs::write(dir.join("a"), "new").unwrap();
         fs::write(dir.join("b"), "old").unwrap();
         let mut report = |_: Step<'_>| true;
-        assert_eq!(move_path(dir.join("a"), dir.join("b"), true, &mut report).unwrap(), Transfer::Done);
+        assert_eq!(move_path(dir.join("a"), dir.join("b"), &mut report).unwrap(), Transfer::Done);
         assert_eq!(fs::read_to_string(dir.join("b")).unwrap(), "new");
         assert!(!dir.join("a").exists());
         fs::remove_dir_all(&dir).unwrap();

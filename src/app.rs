@@ -1,5 +1,5 @@
 use crate::background::{Latest, Watch, WatchEvent};
-use crate::fs_ops::{Description, Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place};
+use crate::fs_ops::{Clash, Description, Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place};
 use crate::options::{OPTION_ROWS, OptionRow, Options};
 use crate::strip::{Strip, StripHit};
 use crate::viewer::Preview;
@@ -198,8 +198,6 @@ pub enum Dialog {
         opened_with: String,
         default: PathBuf,
     },
-    /// A copy or move held back because some of its names are taken.
-    Overwrite(OverwritePrompt),
     /// A file big enough to be worth asking about before it is opened.
     LargeFile(LargeFile),
     /// Unsaved edits, on the way out of the editor. `then_quit` when it was
@@ -357,6 +355,9 @@ pub struct TransferJob {
     /// all or Abort - or Delete, for what the trash would not take. The worker
     /// sits still until it hears which.
     pub problem: Option<JobProblem>,
+    /// A file in the way of one being copied or moved, waiting on whether to
+    /// write over it. The worker sits still until it hears.
+    pub clash: Option<JobClash>,
     answers: Sender<Answer>,
     /// Entries left where they were, by Skip or Skip all, to say so at the end.
     pub skipped: u64,
@@ -398,12 +399,36 @@ impl TransferJob {
         self.cancel.load(Ordering::Relaxed)
     }
 
-    /// Answer the problem on screen, letting the worker go on.
+    /// Answer the question on screen, letting the worker go on.
     pub fn answer(&mut self, answer: Answer) {
-        if self.problem.take().is_some() {
+        if self.problem.take().is_some() || self.clash.take().is_some() {
             let _ = self.answers.send(answer);
         }
     }
+}
+
+/// What the popup shows while the worker waits on whether to write over a
+/// file: both of them, so the sizes and dates can be weighed against each
+/// other.
+pub struct JobClash {
+    pub source: PathBuf,
+    pub dest: PathBuf,
+    pub source_size: Option<u64>,
+    pub source_modified: Option<SystemTime>,
+    pub dest_size: Option<u64>,
+    pub dest_modified: Option<SystemTime>,
+}
+
+/// How a copy or move deals with files already there. Starts as F11's "When
+/// destination exists" says, and the answers to Ask can change it partway.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Clashes {
+    /// Stop and ask about each.
+    Ask,
+    ReplaceAll,
+    KeepAll,
+    /// Write over a file only when it is older than the one replacing it.
+    ReplaceOlder,
 }
 
 /// What the popup shows while the worker waits for an answer.
@@ -412,16 +437,25 @@ pub struct JobProblem {
     pub message: String,
 }
 
-/// The answer to a JobProblem, sent back to the worker.
+/// The answer to a JobProblem or a JobClash, sent back to the worker.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Answer {
     Retry,
+    /// Leave this one where it is: the entry that failed, or the file that
+    /// would have been written over, along with the one that would have.
     Skip,
-    /// Skip this one and every failure after it without asking.
+    /// Skip this one and every other like it after it without asking.
     SkipAll,
     Abort,
     /// Delete it for good, when the trash would not take it.
     Delete,
+    /// Write over the file in the way.
+    Overwrite,
+    /// Write over this one and every other in the way without asking.
+    OverwriteAll,
+    /// Write over this one and every other in the way when it is older than
+    /// the one replacing it, and leave the rest - without asking again.
+    OverwriteOlder,
 }
 
 /// What the worker sends back. Bytes are per chunk rather than a running total,
@@ -432,6 +466,8 @@ enum JobUpdate {
     Advanced(u64),
     /// Stuck on this entry until an Answer comes back.
     Problem(JobProblem),
+    /// Stuck on a file in the way until an Answer comes back.
+    Clash(JobClash),
     /// One more entry left where it was.
     Skipped,
     Finished(Result<Transfer, String>),
@@ -444,18 +480,20 @@ struct JobProgress<'a> {
     cancel: &'a AtomicBool,
     answers: &'a Receiver<Answer>,
     skip_all: bool,
+    clashes: Clashes,
     /// Set once the answer was Abort, so the error it ends the job with is
     /// reported as the cancel it was rather than as a failure all over again.
     aborted: bool,
 }
 
 impl<'a> JobProgress<'a> {
-    fn new(updates: &'a Sender<JobUpdate>, cancel: &'a AtomicBool, answers: &'a Receiver<Answer>) -> Self {
+    fn new(updates: &'a Sender<JobUpdate>, cancel: &'a AtomicBool, answers: &'a Receiver<Answer>, clashes: Clashes) -> Self {
         JobProgress {
             updates,
             cancel,
             answers,
             skip_all: false,
+            clashes,
             aborted: false,
         }
     }
@@ -508,17 +546,66 @@ impl Progress for JobProgress<'_> {
                 Reply::Abort
             }
             Answer::Delete => Reply::Delete,
+            // Answers to a clash, which a failure is never asked.
+            Answer::Overwrite | Answer::OverwriteAll | Answer::OverwriteOlder => Reply::Skip,
         }
+    }
+
+    fn exists(&mut self, source: &Path, dest: &Path) -> Clash {
+        if self.cancel.load(Ordering::Relaxed) {
+            return Clash::Abort;
+        }
+        let modified = |path: &Path| std::fs::metadata(path).or_else(|_| path.symlink_metadata()).ok().and_then(|metadata| metadata.modified().ok());
+        let clash = match self.clashes {
+            Clashes::Ask => {
+                let size = |path: &Path| std::fs::metadata(path).or_else(|_| path.symlink_metadata()).ok().map(|metadata| metadata.len());
+                let question = JobClash {
+                    source: source.to_path_buf(),
+                    dest: dest.to_path_buf(),
+                    source_size: size(source),
+                    source_modified: modified(source),
+                    dest_size: size(dest),
+                    dest_modified: modified(dest),
+                };
+                // Nobody left to ask, or nobody answering, is an Abort.
+                let answer = if self.updates.send(JobUpdate::Clash(question)).is_err() { Answer::Abort } else { self.answers.recv().unwrap_or(Answer::Abort) };
+                match answer {
+                    Answer::Overwrite => Clash::Replace,
+                    Answer::Skip => Clash::Keep,
+                    Answer::OverwriteAll => {
+                        self.clashes = Clashes::ReplaceAll;
+                        Clash::Replace
+                    }
+                    Answer::SkipAll => {
+                        self.clashes = Clashes::KeepAll;
+                        Clash::Keep
+                    }
+                    Answer::OverwriteOlder => {
+                        self.clashes = Clashes::ReplaceOlder;
+                        replace_if_older(modified(source), modified(dest))
+                    }
+                    Answer::Abort | Answer::Retry | Answer::Delete => Clash::Abort,
+                }
+            }
+            Clashes::ReplaceAll => Clash::Replace,
+            Clashes::KeepAll => Clash::Keep,
+            Clashes::ReplaceOlder => replace_if_older(modified(source), modified(dest)),
+        };
+        if clash == Clash::Keep {
+            let _ = self.updates.send(JobUpdate::Skipped);
+        }
+        clash
     }
 }
 
-/// A copy or move held back because some of its names are taken, waiting for
-/// the answer to whether it may write over them.
-pub struct OverwritePrompt {
-    pub items: Vec<(PathBuf, PathBuf, bool)>,
-    pub is_copy: bool,
-    /// The destinations already taken, to name in the question.
-    pub taken: Vec<PathBuf>,
+/// Overwrite older: write over what is there only when it is older than what
+/// would replace it. When either time cannot be read, it is left alone - it
+/// cannot be shown to be older, and what is left can still be copied again.
+fn replace_if_older(source: Option<SystemTime>, dest: Option<SystemTime>) -> Clash {
+    match (source, dest) {
+        (Some(source), Some(dest)) if dest < source => Clash::Replace,
+        _ => Clash::Keep,
+    }
 }
 
 /// A tab in a panel: somewhere it was left, to go back to - the directory,
@@ -2339,7 +2426,7 @@ impl AppState {
     }
 
     /// Hand a long job to a worker thread and start following it.
-    fn start_job<F>(&mut self, kind: TransferKind, work: F)
+    fn start_job<F>(&mut self, kind: TransferKind, clashes: Clashes, work: F)
     where
         F: FnOnce(JobProgress<'_>) + Send + 'static,
     {
@@ -2347,7 +2434,7 @@ impl AppState {
         let (sender, updates) = mpsc::channel();
         let (answers, worker_answers) = mpsc::channel();
         let worker_cancel = Arc::clone(&cancel);
-        std::thread::spawn(move || work(JobProgress::new(&sender, &worker_cancel, &worker_answers)));
+        std::thread::spawn(move || work(JobProgress::new(&sender, &worker_cancel, &worker_answers, clashes)));
 
         self.job = Some(TransferJob {
             kind,
@@ -2358,29 +2445,31 @@ impl AppState {
             cancel,
             updates,
             problem: None,
+            clash: None,
             answers,
             skipped: 0,
         });
     }
 
-    /// `overwrite` lets it write over names already taken: files replaced,
-    /// directories merged. Without it, one taken since the check is refused.
-    pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: bool) {
+    /// `clashes` says what happens to a file already where one is going:
+    /// asked about, written over, or left. A directory onto a directory is
+    /// merged whichever it is.
+    pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, clashes: Clashes) {
         let kind = if is_copy { TransferKind::Copy } else { TransferKind::Move };
-        self.start_job(kind, move |progress| run_transfer(items, is_copy, overwrite, progress));
+        self.start_job(kind, clashes, move |progress| run_transfer(items, is_copy, progress));
     }
 
     pub fn start_delete(&mut self, items: Vec<(PathBuf, bool)>) {
-        self.start_job(TransferKind::Delete, move |progress| run_delete(items, progress));
+        self.start_job(TransferKind::Delete, Clashes::Ask, move |progress| run_delete(items, progress));
     }
 
     pub fn start_trash(&mut self, items: Vec<(PathBuf, bool)>) {
-        self.start_job(TransferKind::Trash, move |progress| run_trash(items, progress));
+        self.start_job(TransferKind::Trash, Clashes::Ask, move |progress| run_trash(items, progress));
     }
 
     /// Ask a running transfer to stop. It ends at the next chunk or file, so
     /// the job stays up for a moment afterwards rather than vanishing at once.
-    /// One waiting on a problem is answered Abort, which is the same thing.
+    /// One waiting on a question is answered Abort, which is the same thing.
     pub fn cancel_transfer(&mut self) {
         if let Some(job) = &mut self.job {
             job.cancel.store(true, Ordering::Relaxed);
@@ -2402,6 +2491,7 @@ impl AppState {
                 Ok(JobUpdate::Starting(path)) => job.current = path,
                 Ok(JobUpdate::Advanced(amount)) => job.done += amount,
                 Ok(JobUpdate::Problem(problem)) => job.problem = Some(problem),
+                Ok(JobUpdate::Clash(clash)) => job.clash = Some(clash),
                 Ok(JobUpdate::Skipped) => job.skipped += 1,
                 Ok(JobUpdate::Finished(result)) => {
                     finished = Some(result);
@@ -3200,13 +3290,13 @@ fn slot_at(slots: &[(u16, u16)], offset: u16) -> Option<usize> {
 /// Renames come first and on their own. A move within one filesystem is a
 /// rename, which takes no time and moves no bytes - measuring a large tree
 /// before doing it would hold up a transfer that was about to be instant.
-fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: bool, mut progress: JobProgress<'_>) {
+fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, mut progress: JobProgress<'_>) {
     let mut remaining = Vec::new();
     for (source, dest, is_dir) in items {
         // rename() replaces a file, or an empty directory, without a word, so
-        // it only goes over a taken name when that was asked for. A directory
-        // with anything in it refuses, and is merged by move_path instead.
-        if !is_copy && (overwrite || !path_exists(&dest)) && rename_in_place(&source, &dest) {
+        // only a name nothing has taken goes this way. One that is taken goes
+        // through move_path, which asks about a file and merges a directory.
+        if !is_copy && !path_exists(&dest) && rename_in_place(&source, &dest) {
             continue;
         }
         remaining.push((source, dest, is_dir));
@@ -3216,7 +3306,7 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, overwrite: 
     let _ = progress.updates.send(JobUpdate::Total(measure(&remaining)));
 
     for (source, dest, is_dir) in remaining {
-        let result = if is_copy { copy_path(source, dest, is_dir, &mut progress) } else { move_path(source, dest, overwrite, &mut progress) };
+        let result = if is_copy { copy_path(source, dest, is_dir, &mut progress) } else { move_path(source, dest, &mut progress) };
         match result {
             Ok(Transfer::Done) => {}
             outcome => return progress.finish(outcome),
@@ -3601,7 +3691,7 @@ mod tests {
 
         let mut app_state = AppState::new();
         app_state.options = Options::default();
-        app_state.start_transfer(vec![(tree.clone(), dir.join("copy"), true)], true, false);
+        app_state.start_transfer(vec![(tree.clone(), dir.join("copy"), true)], true, super::Clashes::Ask);
 
         let started = std::time::Instant::now();
         let wait = |app_state: &mut AppState, done: &dyn Fn(&AppState) -> bool| {
@@ -3622,11 +3712,86 @@ mod tests {
 
         // Esc on the question stops the job there, and says it was cancelled
         // rather than reporting the failure it was asked about.
-        app_state.start_transfer(vec![(tree.clone(), dir.join("again"), true)], true, false);
+        app_state.start_transfer(vec![(tree.clone(), dir.join("again"), true)], true, super::Clashes::Ask);
         wait(&mut app_state, &|app_state| app_state.job.as_ref().is_some_and(|job| job.problem.is_some()));
         app_state.cancel_transfer();
         wait(&mut app_state, &|app_state| app_state.job.is_none());
         assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy cancelled"), "{:?}", app_state.error);
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Each file already there is asked about as the job reaches it, and the
+    /// answers do what they say: one file, every file, or every older file.
+    #[test]
+    fn files_in_the_way_are_asked_about_one_at_a_time() {
+        use super::{Answer, Clashes};
+        let dir = std::env::temp_dir().join(format!("fm84-clashes-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let then = |seconds: u64| std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(seconds);
+        let write = |path: &std::path::Path, text: &str, at: u64| {
+            std::fs::write(path, text).unwrap();
+            std::fs::File::options().write(true).open(path).unwrap().set_modified(then(at)).unwrap();
+        };
+        // A tree to copy, onto one holding the same names: some older than
+        // what would replace them, one newer.
+        let fresh = |name: &str| {
+            let (from, onto) = (dir.join(name).join("from"), dir.join(name).join("onto"));
+            std::fs::create_dir_all(&from).unwrap();
+            std::fs::create_dir_all(&onto).unwrap();
+            for file in ["a", "b", "c"] {
+                write(&from.join(file), "new", 2_000_000_000);
+                write(&onto.join(file), "old", if file == "c" { 2_100_000_000 } else { 1_000_000_000 });
+            }
+            write(&from.join("only-new"), "new", 2_000_000_000);
+            (from, onto)
+        };
+        // Run a job to the end, answering by the name asked about. How many
+        // questions there were, and what each file holds afterwards.
+        let run = |clashes: Clashes, answer: &dyn Fn(&str) -> Answer, from: &std::path::Path, onto: &std::path::Path| {
+            let mut app_state = AppState::new();
+            app_state.start_transfer(vec![(from.to_path_buf(), onto.to_path_buf(), true)], true, clashes);
+            let (mut asked, started) = (0, std::time::Instant::now());
+            while let Some(job) = app_state.job.as_mut() {
+                assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
+                if let Some(clash) = &job.clash {
+                    let name = clash.dest.file_name().unwrap().to_string_lossy().into_owned();
+                    asked += 1;
+                    job.answer(answer(&name));
+                }
+                std::thread::sleep(std::time::Duration::from_millis(2));
+                app_state.poll_transfer();
+            }
+            let held: Vec<String> = ["a", "b", "c", "only-new"].iter().map(|file| std::fs::read_to_string(onto.join(file)).unwrap()).collect();
+            (asked, held, app_state.error)
+        };
+
+        // One at a time: overwrite a, skip b, overwrite c. A file with nothing
+        // in its way is never asked about.
+        let (from, onto) = fresh("each");
+        let (asked, held, said) = run(Clashes::Ask, &|name| if name == "b" { Answer::Skip } else { Answer::Overwrite }, &from, &onto);
+        assert_eq!(asked, 3);
+        assert_eq!(held, ["new", "old", "new", "new"]);
+        assert_eq!(said.as_deref(), Some("Copy finished, 1 entry skipped"));
+
+        // Overwrite all and skip all are asked once, and hold for the rest.
+        let (from, onto) = fresh("all");
+        let (asked, held, _) = run(Clashes::Ask, &|_| Answer::OverwriteAll, &from, &onto);
+        assert_eq!((asked, held), (1, vec!["new".to_string(); 4]));
+        let (from, onto) = fresh("none");
+        let (asked, held, said) = run(Clashes::Ask, &|_| Answer::SkipAll, &from, &onto);
+        assert_eq!((asked, held), (1, vec!["old".into(), "old".into(), "old".into(), "new".into()]));
+        assert_eq!(said.as_deref(), Some("Copy finished, 3 entries skipped"));
+
+        // Overwrite older: c is newer than what would replace it, and stays.
+        let (from, onto) = fresh("older");
+        let (asked, held, _) = run(Clashes::Ask, &|_| Answer::OverwriteOlder, &from, &onto);
+        assert_eq!((asked, held), (1, vec!["new".into(), "new".into(), "old".into(), "new".into()]));
+
+        // F11's Overwrite asks nothing at all.
+        let (from, onto) = fresh("overwrite");
+        let (asked, held, _) = run(Clashes::ReplaceAll, &|_| Answer::Abort, &from, &onto);
+        assert_eq!((asked, held), (0, vec!["new".to_string(); 4]));
 
         std::fs::remove_dir_all(&dir).unwrap();
     }

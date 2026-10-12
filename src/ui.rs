@@ -176,7 +176,6 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
             Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),
             Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_copy_move_popup(f, area, sources, *is_copy, input),
-            Some(Dialog::Overwrite(prompt)) => render_overwrite_popup(f, area, prompt),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. }) | None => {}
@@ -1682,30 +1681,43 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf
     popup_body(f, popup_area, lines);
 }
 
-/// Asks whether a copy or move may write over the names it found taken.
-fn render_overwrite_popup(f: &mut ratatui::Frame<'_>, area: Rect, prompt: &crate::app::OverwritePrompt) {
-    let count = prompt.taken.len();
-    let popup_area = centered_rect(60, 30, area);
-    let verb = if prompt.is_copy { "Copy" } else { "Move" };
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {verb}: overwrite? "), style_title())).centered()).borders(Borders::ALL).style(style_border());
+/// A file in the way of one being copied or moved: both of them, size and
+/// date, so which to keep can be weighed, and the answers.
+fn render_job_clash(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, clash: &crate::app::JobClash) {
+    let popup_area = centered_rect(64, 40, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(" Already there ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let name = |path: &std::path::PathBuf| shown_name(path);
-    let mut lines = Vec::new();
-    if count == 1 {
-        lines.push(Line::from(Span::styled(format!("\"{}\" already exists", name(&prompt.taken[0])), style_title())));
-    } else {
-        lines.push(Line::from(Span::styled(format!("{count} items already exist"), style_title())));
-        let names: Vec<String> = prompt.taken.iter().map(name).collect();
-        lines.push(Line::from(Span::styled(names.join(", "), style_file())));
+    let folder = clash.dest.parent().map(|parent| printable_name(&parent.to_string_lossy())).unwrap_or_default();
+    // Size and date, and which of the two is the newer - what Overwrite older
+    // goes by.
+    // Rounded as the panels round them, unless that makes two different
+    // sizes read the same - then to the byte, since telling them apart is
+    // what they are shown for.
+    let exact = clash.source_size != clash.dest_size && clash.source_size.map(format_size) == clash.dest_size.map(format_size);
+    let width = if exact { 15 } else { 9 };
+    let describe = |label: &str, size: Option<u64>, modified: Option<std::time::SystemTime>, other: Option<std::time::SystemTime>| {
+        let size = size.map(|bytes| if exact { format!("{} B", grouped(bytes)) } else { format_size(bytes) }).unwrap_or_else(|| "?".to_string());
+        let date = modified.map(|at| format_exact(at, app_state.options.date_format)).unwrap_or_else(|| "?".to_string());
+        let newer = matches!((modified, other), (Some(this), Some(that)) if this > that);
+        format!("{label}  {size:>width$}  {date}{}", if newer { "  newer" } else { "       " })
+    };
+    let mut lines = vec![Line::from(Span::styled(format!("\"{}\" is already in {folder}", shown_name(&clash.dest)), style_title()))];
+    // Copied under another name, the new one is not the name in the question.
+    if clash.source.file_name() != clash.dest.file_name() {
+        lines.push(Line::from(Span::styled(format!("to be replaced by \"{}\"", shown_name(&clash.source)), style_file())));
     }
-    // What yes does to a directory is less obvious than what it does to a file.
-    if prompt.taken.iter().any(|path| path.is_dir()) {
-        lines.push(Line::from(Span::styled("Directories are merged, replacing what clashes inside", style_file())));
+    lines.extend([
+        Line::from(Span::styled(describe("New     ", clash.source_size, clash.source_modified, clash.dest_modified), style_file())),
+        Line::from(Span::styled(describe("Existing", clash.dest_size, clash.dest_modified, clash.source_modified), style_file())),
+        Line::from(Span::styled("Y - Overwrite    N - Skip    O - Overwrite all older", style_columns())),
+        Line::from(Span::styled("A - Overwrite all    S - Skip all    Esc - Abort", style_columns())),
+    ]);
+    if app_state.quit_armed {
+        lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));
     }
-    lines.push(Line::from(Span::styled("Y / Enter - Overwrite    N / Esc - Cancel", style_columns())));
     popup_body(f, popup_area, lines);
 }
 
@@ -1724,6 +1736,10 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
     let Some(job) = &app_state.job else {
         return;
     };
+    if let Some(clash) = &job.clash {
+        render_job_clash(f, area, app_state, clash);
+        return;
+    }
     if let Some(problem) = &job.problem {
         render_job_problem(f, area, job.kind, problem, app_state.quit_armed);
         return;
