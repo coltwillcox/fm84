@@ -22,6 +22,9 @@ pub struct Query {
     /// Hidden entries are passed over unless the panels show them, since the
     /// panel could not put its cursor on one found there.
     pub show_hidden: bool,
+    /// Names are put in order as the panels put them: ignoring case, unless
+    /// F11 says otherwise.
+    pub case_sensitive: bool,
 }
 
 /// What the walk reports as it goes.
@@ -68,7 +71,15 @@ pub fn search(query: &Query, cancel: &AtomicBool, send: &mut dyn FnMut(Update) -
             match fs::read_dir(&dir) {
                 Ok(entries) => {
                     let mut entries: Vec<fs::DirEntry> = entries.flatten().collect();
-                    entries.sort_by_key(fs::DirEntry::file_name);
+                    // As the panels order them, so a result is where the
+                    // panel would have it - not byte by byte, which put every
+                    // capital first. The name itself settles a tie.
+                    let case_sensitive = query.case_sensitive;
+                    entries.sort_by_cached_key(|entry| {
+                        let name = entry.file_name();
+                        let shown = name.to_string_lossy().into_owned();
+                        (if case_sensitive { shown } else { shown.to_lowercase() }, name)
+                    });
                     levels.push(entries.into_iter());
                 }
                 Err(_) => unreadable += 1,
@@ -196,6 +207,7 @@ mod tests {
             name: Glob::new(name).unwrap(),
             containing: Needle::new(containing),
             show_hidden: false,
+            case_sensitive: false,
         }
     }
 
@@ -266,6 +278,7 @@ mod tests {
                 name: Glob::new("status").unwrap(),
                 containing: None,
                 show_hidden: true,
+                case_sensitive: false,
             };
             let mut found = Vec::new();
             search(&query, &AtomicBool::new(false), &mut |update| {
@@ -277,6 +290,21 @@ mod tests {
             assert!(found.contains(&PathBuf::from("/proc/self/status")));
             assert!(found.iter().any(|path| path.starts_with("/proc/self/task")), "{found:?}");
         }
+    }
+
+    #[test]
+    fn results_come_in_the_order_the_panels_list_them() {
+        let dir = std::env::temp_dir().join(format!("fm84-search-order-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        for name in ["README", "app.rs", "Zed", "build.rs"] {
+            fs::write(dir.join(name), "").unwrap();
+        }
+        // Either case together, as the panels have it by default.
+        assert_eq!(run(&query(&dir, "*", "")).0, ["app.rs", "build.rs", "README", "Zed"]);
+        // And capitals first when F11 sorts by case.
+        assert_eq!(run(&Query { case_sensitive: true, ..query(&dir, "*", "") }).0, ["README", "Zed", "app.rs", "build.rs"]);
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

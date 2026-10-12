@@ -2062,6 +2062,7 @@ impl AppState {
             name: crate::glob::Glob::new(pattern).unwrap_or_else(|| crate::glob::Glob::new("*").expect("* is a pattern")),
             containing: crate::find::Needle::new(&containing),
             show_hidden: self.options.show_hidden,
+            case_sensitive: self.options.case_sensitive,
         };
         let cancel = Arc::new(AtomicBool::new(false));
         let (sender, updates) = mpsc::channel();
