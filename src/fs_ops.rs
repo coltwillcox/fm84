@@ -1238,6 +1238,20 @@ fn move_across(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome
     let Some(metadata) = attempt(source, report, |_| fs::symlink_metadata(source))? else {
         return Ok(Outcome::Skipped);
     };
+    // Another name for the very same file - a hard link to it. It is there
+    // already, so what is left of the move is to take away the name it had,
+    // as mv does. A rename between the two would report success and do
+    // nothing, leaving the source where it was and its directory refusing to
+    // go as not empty. Nothing would be written over, so nothing is asked.
+    if !metadata.is_dir() && is_same_entry(source, dest) {
+        let bytes = if metadata.is_file() { metadata.len() } else { 0 };
+        if !report.step(Step::Starting(source)) || !report.step(Step::Advanced(bytes)) {
+            return Ok(Outcome::Cancelled);
+        }
+        let removed = attempt(source, report, |_| remove_file(source))?;
+        return Ok(if removed.is_some() { Outcome::Done } else { Outcome::Skipped });
+    }
+
     // Asked first, since the rename below would replace it without a word.
     if !metadata.is_dir()
         && let Some(outcome) = settle_clash(source, dest, report)
@@ -2440,6 +2454,30 @@ mod transfer_tests {
         assert_eq!(fs::read_to_string(dest.join("clash")).unwrap(), "new");
         assert_eq!(fs::read_to_string(dest.join("shared").join("keep.txt")).unwrap(), "k");
         assert!(!source.exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Merged into a directory holding another name for the same file - a
+    /// hard link - the move takes the source's name away and is done, rather
+    /// than leaving it and failing on its directory as not empty.
+    #[cfg(unix)]
+    #[test]
+    fn a_move_onto_its_own_hard_link_takes_the_old_name_away() {
+        let dir = scratch("move-hardlink");
+        let (source, dest) = (dir.join("src"), dir.join("dst"));
+        fs::create_dir_all(&source).unwrap();
+        fs::create_dir_all(&dest).unwrap();
+        fs::write(source.join("shared"), "one file, two names").unwrap();
+        fs::hard_link(source.join("shared"), dest.join("shared")).unwrap();
+        fs::write(source.join("other"), "o").unwrap();
+
+        // Not asked about: nothing would be written over.
+        let mut asking = Clashing::new(Clash::Keep);
+        assert_eq!(move_path(source.clone(), dest.clone(), &mut asking).unwrap(), Transfer::Done);
+        assert!(asking.asked.is_empty(), "{:?}", asking.asked);
+        assert!(!source.exists(), "the source directory is gone, emptied");
+        assert_eq!(fs::read_to_string(dest.join("shared")).unwrap(), "one file, two names");
+        assert_eq!(fs::read_to_string(dest.join("other")).unwrap(), "o");
         fs::remove_dir_all(&dir).unwrap();
     }
 
