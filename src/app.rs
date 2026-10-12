@@ -1926,8 +1926,13 @@ impl AppState {
         // just put in, so replacing "a" with "aa" cannot go on for ever.
         let next = self.editor_find(&needle, true, false);
         let at = self.editor().and_then(EditorState::selection).map(|(start, _)| start);
+        // Done once round the end and back to where it started - or round the
+        // end a second time, which is how it gets there when the last match
+        // before the start was replaced and none is left after it: a search
+        // that went on would find the text it put in, and never end.
+        let finished = |went_round: bool, at: (usize, usize)| (wrapped && went_round) || ((wrapped || went_round) && at >= stop_at);
         match (next, at) {
-            (Some(went_round), Some(at)) if !((wrapped || went_round) && at >= stop_at) => {
+            (Some(went_round), Some(at)) if !finished(went_round, at) => {
                 wrapped |= went_round;
                 self.dialog = Some(Dialog::Replacing { stop_at, wrapped, replaced });
                 true
@@ -4014,6 +4019,25 @@ mod editor_tests {
         assert_eq!(text(&app_state), "a a\na");
         app_state.editor_redo();
         assert_eq!(text(&app_state), "aa aa\naa");
+        std::fs::remove_file(path).unwrap();
+    }
+
+    /// Started past the last match, with a replacement that holds what it
+    /// replaces: once round, every match is done, and it stops - rather than
+    /// going round again into the text it put in, for ever.
+    #[test]
+    fn replace_stops_after_once_round_even_into_its_own_text() {
+        let (mut app_state, path) = editor_with("replace-once-round", "let x;\nlet y; z");
+        app_state.editor_state_cursor(1, 8);
+        replace(&mut app_state, "let", "/* let");
+        // Stepped, with a limit, so a regression fails rather than hangs.
+        let mut steps = 1;
+        while app_state.replace_step(true) {
+            steps += 1;
+            assert!(steps < 10, "still replacing: {}", text(&app_state));
+        }
+        assert_eq!(text(&app_state), "/* let x;\n/* let y; z");
+        assert_eq!(app_state.find_note.as_deref(), Some("Replaced 2"));
         std::fs::remove_file(path).unwrap();
     }
 
