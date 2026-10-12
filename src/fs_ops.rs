@@ -74,14 +74,14 @@ fn format_attributes(_metadata: &fs::Metadata, _is_dir: bool, _is_symlink: bool)
 /// Hidden the way the platform means it: a leading dot, or on Windows the
 /// hidden attribute, which is what Explorer goes by.
 #[cfg(windows)]
-fn is_hidden(_name: &str, metadata: Option<&fs::Metadata>) -> bool {
+pub fn is_hidden(_name: &str, metadata: Option<&fs::Metadata>) -> bool {
     use std::os::windows::fs::MetadataExt;
     const HIDDEN: u32 = 0x0000_0002;
     metadata.is_some_and(|metadata| metadata.file_attributes() & HIDDEN != 0)
 }
 
 #[cfg(not(windows))]
-fn is_hidden(name: &str, _metadata: Option<&fs::Metadata>) -> bool {
+pub fn is_hidden(name: &str, _metadata: Option<&fs::Metadata>) -> bool {
     name.starts_with('.')
 }
 

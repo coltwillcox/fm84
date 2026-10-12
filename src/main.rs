@@ -8,6 +8,7 @@ mod fs_ops;
 mod glob;
 mod input;
 mod options;
+mod search;
 mod strip;
 mod ui;
 mod utils;
@@ -160,6 +161,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.refresh_cursor_detail();
         app_state.refresh_preview();
         app_state.poll_transfer();
+        app_state.poll_find_files();
         app_state.poll_dir_sizes();
         app_state.image_cache.collect();
         render_ui(terminal, &mut app_state);

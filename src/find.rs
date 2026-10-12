@@ -22,6 +22,11 @@ impl Needle {
         Some(Needle { chars, fold })
     }
 
+    /// How many characters it is.
+    pub fn len(&self) -> usize {
+        self.chars.len()
+    }
+
     /// Every match in `line`, as character ranges, left to right and not
     /// overlapping - so "aa" in "aaaa" is found twice, as an editor would.
     pub fn find_all(&self, line: &str) -> Vec<(usize, usize)> {

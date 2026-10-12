@@ -1,4 +1,4 @@
-use crate::app::{AppState, Dialog, PromptKind, Screen, TextInput, TransferKind};
+use crate::app::{AppState, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
 use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options};
@@ -170,6 +170,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
 
         // The rename field, the prompt and the drive picker are drawn where
         // they sit, in the panel, the status bar and the drive strip.
+        let mut find_files_page = None;
         match &app_state.dialog {
             Some(Dialog::Help) => render_help_popup(f, area),
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
@@ -178,7 +179,17 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_copy_move_popup(f, area, sources, *is_copy, input),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
+            Some(Dialog::FindFiles(find)) => match find.as_ref() {
+                FindFiles::Asking { name, containing, on_containing } => {
+                    let start = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
+                    render_find_files_form(f, area, start, name, containing, *on_containing);
+                }
+                FindFiles::Found(search) => find_files_page = Some(render_find_files_results(f, area, search)),
+            },
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. }) | None => {}
+        }
+        if let Some(page) = find_files_page {
+            app_state.find_files_page = page;
         }
         // Over everything: a job, which holds the keys while it runs, or an
         // error, which holds them until it is put away.
@@ -1493,6 +1504,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F5 - Copy (to the other panel, or where typed)",
         "F6 - Move (to the other panel, or where typed)",
         "F7 - Create directory",
+        "  Alt+F7 (or Ctrl+F7) find files",
         "Shift+F4 - Create file",
         "F8 - Move to trash",
         "  Shift+F8 delete permanently",
@@ -1843,6 +1855,108 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));
     }
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
+}
+
+/// Alt+F7: where the search starts, the two fields, and what goes in them.
+fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, start: &Path, name: &TextInput, containing: &TextInput, on_containing: bool) {
+    let popup_area = centered_rect(70, 45, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(" Find files ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let width = popup_inner(popup_area).width as usize;
+    const LABEL: usize = 12;
+    // The field the keys go to has the cursor in it and a bar behind it; the
+    // other shows what it holds.
+    let field = |label: &str, input: &TextInput, focused: bool| {
+        let room = width.saturating_sub(LABEL);
+        let mut spans = vec![Span::styled(format!("{label:<LABEL$}"), style_columns())];
+        let typed = if focused {
+            input.cursor_spans_within(room, style_title(), style_title().add_modifier(Modifier::REVERSED))
+        } else {
+            vec![Span::styled(tail_of(&input.text, room), style_file())]
+        };
+        let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+        spans.extend(typed);
+        spans.push(Span::raw(" ".repeat(room.saturating_sub(typed_width))));
+        let line = Line::from(spans);
+        if focused { line.style(style_title().bg(palette().selected_background)) } else { line }
+    };
+    popup_body(
+        f,
+        popup_area,
+        vec![
+            // Padded out like the fields, so the labels line up.
+            Line::from(Span::styled(
+                format!("{:<LABEL$}{:<room$}", "In", tail_of(&start.to_string_lossy(), width.saturating_sub(LABEL)), room = width.saturating_sub(LABEL)),
+                style_file(),
+            )),
+            field("Name", name, !on_containing),
+            field("Containing", containing, on_containing),
+            Line::from(Span::styled("Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case", style_columns())),
+            Line::from(Span::styled("Tab - Next field    Enter - Find    Esc - Cancel", style_columns())),
+        ],
+    );
+}
+
+/// The Find files results: how the search is getting on, and what it has
+/// found, shown from where it started, with the cursor on one. The number of
+/// results that fit, for PageUp and PageDown.
+fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, search: &crate::app::Search) -> usize {
+    let popup_area = centered_rect(80, 80, area);
+    let title = format!(" Find: {} ", printable_name(&search.label));
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    // A row for how it is going, one blank under it, and one for the keys.
+    let rows = (inner.height as usize).saturating_sub(3);
+
+    let found = search.results.len();
+    let status = match &search.looking_in {
+        Some(dir) => {
+            let said = format!("{found} found, searching ");
+            format!("{said}{}", tail_of(&dir.to_string_lossy(), width.saturating_sub(display_width(&said) + 1)))
+        }
+        None if found == 0 => "Nothing found".to_string(),
+        None => format!("{found} found"),
+    };
+    let status = match search.unreadable {
+        0 => status,
+        1 => format!("{status} - 1 directory could not be read"),
+        many => format!("{status} - {many} directories could not be read"),
+    };
+
+    let mut lines = vec![Line::from(Span::styled(status, style_title())), Line::from("")];
+    // The scroll is kept where the cursor last pushed it, unless the list has
+    // since grown taller and could show more - and the cursor is always on
+    // it, however the terminal was resized.
+    let mut first = search.scroll.min(found.saturating_sub(rows)).min(search.cursor);
+    if rows > 0 && search.cursor >= first + rows {
+        first = search.cursor + 1 - rows;
+    }
+    for (index, (path, is_dir)) in search.results.iter().enumerate().skip(first).take(rows) {
+        let shown = path.strip_prefix(&search.start).unwrap_or(path).to_string_lossy().into_owned();
+        let shown = if *is_dir { format!("{shown}{}", std::path::MAIN_SEPARATOR) } else { shown };
+        // Shortened from the front, which keeps the name.
+        let text = tail_of(&shown, width);
+        let pad = " ".repeat(width.saturating_sub(display_width(&text)));
+        let style = match (index == search.cursor, *is_dir) {
+            (true, _) => style_title().bg(palette().selected_background),
+            (false, true) => style_dir(),
+            (false, false) => style_file(),
+        };
+        lines.push(Line::from(Span::styled(format!("{text}{pad}"), style)));
+    }
+    while lines.len() < rows + 2 {
+        lines.push(Line::from(""));
+    }
+    let hint = if search.done { "Enter - Go to    Esc - Close" } else { "Enter - Go to    Esc - Stop and close" };
+    lines.push(Line::from(Span::styled(hint, style_columns())).centered());
+    f.render_widget(Paragraph::new(lines), inner);
+    rows
 }
 
 /// The copy or move dialog: what is going, and a field for where to, opened

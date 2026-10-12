@@ -1,4 +1,4 @@
-use crate::app::{Answer, AppState, Clashes, Dialog, PromptKind, Screen, TextInput, TransferKind};
+use crate::app::{Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
 use crate::display::tab_width;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets};
 use crate::options::OnExisting;
@@ -177,6 +177,10 @@ fn job_key(app_state: &mut AppState, key: KeyEvent) -> bool {
 fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
     let code = key.code;
     let yes = matches!(code, KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y'));
+    let finding = match &app_state.dialog {
+        Some(Dialog::FindFiles(find)) => Some(matches!(**find, FindFiles::Asking { .. })),
+        _ => None,
+    };
     let no = matches!(code, KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N'));
 
     match app_state.dialog.as_ref() {
@@ -252,6 +256,28 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Left | KeyCode::Up => app_state.move_drive_picker(false),
             _ => {}
         },
+        // Find files: first what to look for, then what was found. Esc closes
+        // either, which stops a search still running.
+        Some(Dialog::FindFiles(_)) if finding == Some(true) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Enter => app_state.start_find_files(),
+            KeyCode::Tab | KeyCode::BackTab | KeyCode::Up | KeyCode::Down => app_state.find_files_switch_field(),
+            _ => edit_text(app_state, code),
+        },
+        Some(Dialog::FindFiles(_)) => {
+            let page = app_state.find_files_page.max(1) as isize;
+            match code {
+                KeyCode::Esc => app_state.dialog = None,
+                KeyCode::Enter => app_state.find_files_go(),
+                KeyCode::Up => app_state.find_files_move(-1),
+                KeyCode::Down => app_state.find_files_move(1),
+                KeyCode::PageUp => app_state.find_files_move(-page),
+                KeyCode::PageDown => app_state.find_files_move(page),
+                KeyCode::Home => app_state.find_files_move(isize::MIN),
+                KeyCode::End => app_state.find_files_move(isize::MAX),
+                _ => {}
+            }
+        }
         // Find or go to line, at the foot of the viewer or editor, or a
         // pattern to select by, at the foot of the panels.
         Some(&Dialog::Prompt(kind, _)) => match code {
@@ -412,6 +438,9 @@ fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(4) => handle_f4_edit(app_state),
         KeyCode::F(5) => open_transfer(app_state, true),
         KeyCode::F(6) => open_transfer(app_state, false),
+        // Alt+F7 finds files, as in Total Commander and MC. Ctrl is an alias,
+        // since desktops commonly take Alt+F7 for moving a window.
+        KeyCode::F(7) if drive_chord => app_state.open_find_files(),
         KeyCode::F(7) => toggle_create(app_state, true),
         // Shift deletes for good, whatever F11 says F8 does.
         KeyCode::F(8) | KeyCode::Delete => open_delete(app_state, key.modifiers.contains(KeyModifiers::SHIFT)),
@@ -1198,7 +1227,7 @@ fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: 
 #[cfg(test)]
 mod tests {
     use super::{handle_key, request_quit};
-    use crate::app::{AppState, Dialog, Screen};
+    use crate::app::{AppState, Dialog, FindFiles, Screen};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     fn press(app_state: &mut AppState, code: KeyCode) -> bool {
@@ -1393,6 +1422,61 @@ mod tests {
         type_in(&mut app_state, "one.txt");
         assert!(app_state.error.as_deref().is_some_and(|error| error.contains("2 items need a directory")), "{:?}", app_state.error);
         assert!(!left.join("one.txt").exists());
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Alt+F7 asks what to look for, offering the last search; Enter looks,
+    /// and Enter on a result takes the panel to it, cursor and all.
+    #[test]
+    fn find_files_finds_and_goes_there() {
+        let dir = std::env::temp_dir().join(format!("fm84-find-files-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("a").join("deep")).unwrap();
+        std::fs::write(dir.join("a").join("deep").join("notes.md"), "the needle is here").unwrap();
+        std::fs::write(dir.join("a").join("other.md"), "nothing").unwrap();
+        std::fs::write(dir.join("top.txt"), "needle").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), None);
+        let alt_f7 = KeyEvent::new(KeyCode::F(7), KeyModifiers::ALT);
+        handle_key(&mut app_state, alt_f7);
+        assert_eq!(app_state.dialog_input().unwrap().text, "*", "everything, the first time");
+
+        // *.md, then Tab to the text.
+        app_state.dialog_input().unwrap().set("*.md".to_string());
+        press(&mut app_state, KeyCode::Tab);
+        for c in "needle".chars() {
+            press(&mut app_state, KeyCode::Char(c));
+        }
+        press(&mut app_state, KeyCode::Enter);
+        let started = std::time::Instant::now();
+        let found = loop {
+            app_state.poll_find_files();
+            if let Some(Dialog::FindFiles(find)) = &app_state.dialog
+                && let FindFiles::Found(search) = find.as_ref()
+                && search.done
+            {
+                break search.results.iter().map(|(path, _)| path.clone()).collect::<Vec<_>>();
+            }
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "the search never finished");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        };
+        assert_eq!(found, [dir.join("a").join("deep").join("notes.md")]);
+
+        // Enter goes there: its directory, with the cursor on it.
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.dialog.is_none());
+        assert_eq!(app_state.dir_left, dir.join("a").join("deep"));
+        let on = app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone());
+        assert_eq!(on.as_deref(), Some("notes.md"));
+
+        // The next time, the last search is offered again.
+        handle_key(&mut app_state, KeyEvent::new(KeyCode::F(7), KeyModifiers::CONTROL));
+        assert_eq!(app_state.dialog_input().unwrap().text, "*.md");
+        press(&mut app_state, KeyCode::Esc);
+        assert!(app_state.dialog.is_none());
 
         std::fs::remove_dir_all(&dir).unwrap();
     }
