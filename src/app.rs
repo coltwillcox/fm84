@@ -1192,9 +1192,9 @@ impl AppState {
         OPTION_ROWS[self.options_cursor.min(OPTION_ROWS.len() - 1)]
     }
 
+    /// Move the highlight a row, stopping at the first and the last.
     pub fn options_move(&mut self, down: bool) {
-        let count = OPTION_ROWS.len();
-        self.options_cursor = if down { (self.options_cursor + 1) % count } else { (self.options_cursor + count - 1) % count };
+        self.options_cursor = if down { (self.options_cursor + 1).min(OPTION_ROWS.len() - 1) } else { self.options_cursor.saturating_sub(1) };
     }
 
     /// Step the highlighted option, or start typing into it if it is text.
@@ -4294,6 +4294,18 @@ mod tests {
     use super::{AppState, Item, prune_selection, recentre, slot_at};
     use crate::options::Options;
     use std::collections::HashSet;
+
+    #[test]
+    fn the_options_highlight_stops_at_either_end() {
+        let mut app_state = AppState::new();
+        app_state.options_move(false);
+        assert_eq!(app_state.options_cursor, 0, "Up on the first row stays there");
+        let last = crate::options::OPTION_ROWS.len() - 1;
+        for _ in 0..=last {
+            app_state.options_move(true);
+        }
+        assert_eq!(app_state.options_cursor, last, "Down on the last row stays there");
+    }
 
     /// A file name is bytes, and need not be valid UTF-8. The strings the
     /// interface shows come from to_string_lossy, so joining one back together
