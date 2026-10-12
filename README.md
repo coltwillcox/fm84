@@ -13,7 +13,7 @@
 
 > 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.26.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.26.2** ▀▄▀▄ *Neon Dreams Edition*
 
 ---
 
@@ -175,7 +175,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🪶 **Bounded** - reads at most 64 KiB of a text file and 4 KiB of a binary, never prompts, never loads a whole file, and never opens a pipe or a device
 
 ### ⚙️ Options (F11)
-Grouped under four headings; the list scrolls on a short terminal.
+Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ stop at its first and last row.
 
 **Panels**
 - 🙈 **Show hidden files** - dotfiles, or on Windows anything with the hidden attribute
@@ -308,7 +308,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.26.1
+fm84 --version       # fm84 0.26.2
 ```
 
 A directory given takes the place of the tab that would have shown; the panel's other tabs stay. A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
@@ -393,5 +393,5 @@ Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.26.1 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.26.2 ▄▀▄▀▄▀</code>
 </p>

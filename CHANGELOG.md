@@ -6,6 +6,13 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.26.2] - 2026-10-12
+
+### 🐛 Fixed
+- ⚙️ **The Options list went round** - Up on the first row jumped to the last, and Down on the last to the first. The highlight now stops at either end
+
+---
+
 ## [0.26.1] - 2026-10-12
 
 ### 🐛 Fixed
