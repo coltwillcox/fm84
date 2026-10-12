@@ -725,6 +725,10 @@ fn make_header_row(columns: &[Column]) -> Row<'static> {
     Row::new(cells)
 }
 
+/// A line of the viewer laid out for drawing: which line it is, its
+/// characters, and where the matches on it are.
+type LaidOut = (usize, Vec<char>, Vec<(usize, usize)>);
+
 fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect) {
     if let Some(viewer_state) = app_state.viewer() {
         let filename = shown_name(&viewer_state.file_path);
@@ -785,6 +789,11 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
             // Not on a picture, whose characters only happen to be letters.
             let marking = app_state.find_shown && viewer_state.mode != ViewMode::Image;
             let needle = marking.then(|| crate::find::Needle::new(&app_state.find_term)).flatten();
+            // The line the last row came from, as characters, with its
+            // matches: a wrapped line fills row after row, and a minified one
+            // can be megabytes, so it is laid out once a frame rather than
+            // once for every row it fills.
+            let mut held: Option<LaidOut> = None;
             let content_lines: Vec<Line> = (start..end)
                 .map(|index| {
                     // The row's piece of its line - the whole line, unless
@@ -792,20 +801,28 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
                     // the whole line and cut down to the piece, so one that
                     // crosses from one row to the next shows on both.
                     let (line, row_from, row_to) = viewer_state.row(index);
-                    let whole = viewer_state.line_text(line);
-                    let width = whole.chars().count();
+                    if held.as_ref().is_none_or(|(held_line, _, _)| *held_line != line) {
+                        let whole = viewer_state.line_text(line);
+                        let matches = needle.as_ref().map(|needle| needle.find_all(&whole)).unwrap_or_default();
+                        held = Some((line, whole.chars().collect(), matches));
+                    }
+                    let (_, characters, matches) = held.as_ref().expect("held just above");
+                    let width = characters.len();
                     let (row_from, row_to) = (row_from.min(width), row_to.min(width));
                     let on_row = |from: usize, to: usize| {
                         let (from, to) = (from.clamp(row_from, row_to), to.clamp(row_from, row_to));
                         (from < to).then(|| (from - row_from, to - row_from))
                     };
-                    let matches = needle.as_ref().map(|needle| needle.find_all(&whole)).unwrap_or_default();
-                    let text: String = whole.chars().skip(row_from).take(row_to - row_from).collect();
+                    let text: String = characters[row_from..row_to].iter().collect();
                     let mut spans = match viewer_state.image_colors.get(line) {
                         Some(colors) if viewer_state.mode == ViewMode::Image => colored_spans(&text, colors, viewer_state.image_backgrounds.get(line).map(Vec::as_slice)),
                         _ => vec![Span::styled(text, style_file())],
                     };
-                    for (from, to) in matches.into_iter().filter_map(|(from, to)| on_row(from, to)) {
+                    // Matches come left to right and never overlap, so the
+                    // ones on this row are found by halving rather than by
+                    // going through every one the line has.
+                    let first = matches.partition_point(|&(_, to)| to <= row_from);
+                    for (from, to) in matches[first..].iter().take_while(|&&(from, _)| from < row_to).filter_map(|&(from, to)| on_row(from, to)) {
                         spans = overlay_range(spans, from, to, style_match());
                     }
 
@@ -2315,6 +2332,44 @@ mod tests {
         assert_eq!(rows.len(), 7);
         assert!(rows[4].ends_with('…'), "{rows:?}");
         assert_eq!(rows[5..], ["to: /tmp", "Y / Enter - Yes"]);
+    }
+
+    /// On a wrapped line, the matches on each row are marked where they are,
+    /// however far along the line the row is - and only those.
+    #[test]
+    fn matches_on_wrapped_rows_are_marked_where_they_fall() {
+        let path = std::env::temp_dir().join(format!("fm84-wrap-marks-{}.txt", std::process::id()));
+        let words: Vec<String> = (0..40).map(|n| if n % 7 == 3 { "needle".to_string() } else { format!("w{n:02}") }).collect();
+        std::fs::write(&path, words.join(" ")).unwrap();
+        let mut app_state = AppState::new();
+        app_state.open_viewer(path.clone()).unwrap();
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(40, 20)).unwrap();
+        render_ui(&mut terminal, &mut app_state);
+        app_state.viewer_toggle_wrap();
+        app_state.find_term = "needle".to_string();
+        app_state.find_shown = true;
+        render_ui(&mut terminal, &mut app_state);
+
+        // Every run of marked cells, row by row, reads "needle" - one for each
+        // of the six in the line.
+        let buffer = terminal.backend().buffer().clone();
+        let mut marked = Vec::new();
+        for y in 0..20 {
+            let mut run = String::new();
+            for x in 0..40 {
+                let cell = &buffer[(x, y)];
+                if cell.modifier.contains(Modifier::UNDERLINED) {
+                    run.push_str(cell.symbol());
+                } else if !run.is_empty() {
+                    marked.push(std::mem::take(&mut run));
+                }
+            }
+            if !run.is_empty() {
+                marked.push(run);
+            }
+        }
+        assert_eq!(marked, vec!["needle"; 6]);
+        std::fs::remove_file(path).unwrap();
     }
 
     #[test]
