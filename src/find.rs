@@ -172,4 +172,42 @@ mod tests {
         assert_eq!(search(&missing, count, &line_at, (0, 0), true), None);
         assert_eq!(search(&missing, 0, |_| String::new(), (0, 0), true), None);
     }
+
+    #[test]
+    fn matches_do_not_overlap() {
+        let needle = Needle::new("aa").unwrap();
+        assert_eq!(needle.find_all("aaaaa"), [(0, 2), (2, 4)]);
+        assert_eq!(needle.len(), 2);
+    }
+
+    #[test]
+    fn a_letter_folds_to_one_lower_case_letter_or_stays() {
+        assert_eq!(fold_char('Ä'), 'ä');
+        assert_eq!(fold_char('Ж'), 'ж');
+        assert_eq!(fold_char('7'), '7');
+        // Its lower case is two characters.
+        assert_eq!(fold_char('İ'), 'İ');
+    }
+
+    #[test]
+    fn a_start_past_the_last_line_searches_from_the_last() {
+        let (count, line_at) = lines(
+            "two
+one two",
+        );
+        let needle = Needle::new("two").unwrap();
+        let found = search(&needle, count, &line_at, (9, 0), true).unwrap();
+        assert_eq!(found, Found { line: 1, start: 4, end: 7, wrapped: false });
+    }
+
+    #[test]
+    fn backward_from_the_middle_of_a_line_finds_what_is_before_it_there() {
+        let (count, line_at) = lines(
+            "x
+two and two",
+        );
+        let needle = Needle::new("two").unwrap();
+        let found = search(&needle, count, &line_at, (1, 8), false).unwrap();
+        assert_eq!(found, Found { line: 1, start: 0, end: 3, wrapped: false });
+    }
 }

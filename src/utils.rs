@@ -228,6 +228,76 @@ pub fn limit_path_string(path: &Path, n: usize) -> String {
 }
 
 #[cfg(test)]
+mod text_tests {
+    use super::*;
+
+    #[test]
+    fn a_size_is_rounded_to_the_largest_unit_under_it() {
+        // Binary, as F11 starts out; no test turns decimal on.
+        assert_eq!(format_size(0), "0 B");
+        assert_eq!(format_size(1023), "1023 B");
+        assert_eq!(format_size(1024), "1 KiB");
+        assert_eq!(format_size(10 * 1024 * 1024), "10 MiB");
+        assert_eq!(format_size(3 << 30), "3 GiB");
+        // Past the last unit the figure just grows.
+        assert_eq!(format_size(1u64 << 50), "1024 TiB");
+    }
+
+    #[test]
+    fn thousands_are_marked_off_in_threes_from_the_right() {
+        assert_eq!(grouped(0), "0");
+        assert_eq!(grouped(999), "999");
+        assert_eq!(grouped(1000), "1 000");
+        assert_eq!(grouped(12_345), "12 345");
+        assert_eq!(grouped(1_234_567), "1 234 567");
+        assert_eq!(grouped(u64::MAX), "18 446 744 073 709 551 615");
+    }
+
+    #[test]
+    fn control_characters_in_a_name_are_drawn_as_dots() {
+        assert_eq!(printable_name("plain.txt"), "plain.txt");
+        assert_eq!(printable_name("日本語.txt"), "日本語.txt");
+        assert_eq!(printable_name("a\tb\x1b[2J\n"), "a.b.[2J.");
+        assert_eq!(display_width(&printable_name("x\x07y")), 3);
+    }
+
+    #[test]
+    fn a_long_path_keeps_its_end() {
+        let path = Path::new("/home/user/projects");
+        assert_eq!(limit_path_string(path, 40), "/home/user/projects");
+        assert_eq!(limit_path_string(path, 8), "...projects");
+        // Wide characters are counted by the columns they take, and never cut.
+        assert_eq!(limit_path_string(Path::new("/日本語"), 4), "...本語");
+        assert_eq!(limit_path_string(Path::new("/日本語"), 5), "...本語");
+        // A control character in it is made safe before it is measured.
+        assert_eq!(limit_path_string(Path::new("/tmp/a\x1bb"), 3), "...a.b");
+    }
+
+    #[test]
+    fn an_extension_always_gets_the_same_colour() {
+        assert_eq!(extension_color("rs", false), extension_color("rs", false));
+        assert_ne!(extension_color("rs", false), extension_color("rs", true));
+        assert_ne!(extension_color("rs", false), extension_color("toml", false));
+    }
+
+    #[test]
+    fn a_line_is_made_safe_to_draw_and_measured_as_drawn() {
+        // A tab is four columns until F11 says otherwise.
+        assert_eq!(printable_line("a\tb"), "a    b");
+        assert_eq!(printable_line("\x1b[31mred"), ".[31mred");
+        assert_eq!(line_display_width("a\tb"), 6);
+        assert_eq!(line_display_width("日本"), 4);
+    }
+
+    #[test]
+    fn a_word_without_braces_is_left_as_it_is() {
+        assert_eq!(substitute("--wait", OsStr::new("/x")), "--wait");
+        assert_eq!(substitute("{}{}", OsStr::new("ab")), "abab");
+        assert_eq!(substitute("", OsStr::new("ab")), "");
+    }
+}
+
+#[cfg(test)]
 mod format_tests {
     use super::format_modified;
     use crate::options::DateFormat;

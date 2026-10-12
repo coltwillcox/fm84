@@ -1350,6 +1350,48 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
+    /// Moving about the Options dialog and typing into a text row, put
+    /// back with Esc. Nothing here changes a value, so nothing is saved over
+    /// the real config.
+    #[test]
+    fn the_options_dialog_moves_and_edits_from_the_keys() {
+        use crate::options::{OPTION_ROWS, OptionRow};
+        let mut app_state = AppState::new();
+        press(&mut app_state, KeyCode::F(11));
+        assert!(matches!(app_state.dialog, Some(Dialog::Options { editing: None })));
+
+        press(&mut app_state, KeyCode::Up);
+        assert_eq!(app_state.options_cursor, 0);
+        press(&mut app_state, KeyCode::Down);
+        press(&mut app_state, KeyCode::Down);
+        assert_eq!(app_state.options_cursor, 2);
+        for _ in 0..OPTION_ROWS.len() {
+            press(&mut app_state, KeyCode::Down);
+        }
+        assert_eq!(app_state.options_cursor, OPTION_ROWS.len() - 1);
+
+        // A text row opens for typing, with what it holds; Esc puts it back.
+        app_state.options_cursor = OPTION_ROWS.iter().position(|&row| row == OptionRow::Terminal).unwrap();
+        let before = app_state.options.text(OptionRow::Terminal).to_string();
+        press(&mut app_state, KeyCode::Enter);
+        let Some(Dialog::Options { editing: Some(input) }) = &app_state.dialog else { panic!("not editing") };
+        assert_eq!(input.text, before);
+        press(&mut app_state, KeyCode::Char('x'));
+        // Up and Down belong to the text while it is being typed into.
+        let row = app_state.options_cursor;
+        press(&mut app_state, KeyCode::Down);
+        assert_eq!(app_state.options_cursor, row);
+        press(&mut app_state, KeyCode::Esc);
+        assert!(matches!(app_state.dialog, Some(Dialog::Options { editing: None })));
+        assert_eq!(app_state.options.text(OptionRow::Terminal), before);
+
+        press(&mut app_state, KeyCode::F(11));
+        assert!(app_state.dialog.is_none());
+        press(&mut app_state, KeyCode::F(11));
+        press(&mut app_state, KeyCode::Esc);
+        assert!(app_state.dialog.is_none());
+    }
+
     #[test]
     fn a_typed_path_starts_from_the_panel_or_from_home() {
         let base = std::path::Path::new("/panel/dir");

@@ -183,4 +183,25 @@ mod tests {
         assert!(Glob::new("").is_none());
         assert!(Glob::new(" ; /").is_none());
     }
+
+    #[test]
+    fn a_caret_negates_as_an_exclamation_mark_does() {
+        assert!(file("[^0-9]x", "ax"));
+        assert!(!file("[^0-9]x", "1x"));
+    }
+
+    #[test]
+    fn a_question_mark_is_one_character_not_one_byte() {
+        assert!(file("caf?", "café"));
+        assert!(file("??", "日本"));
+        assert!(!file("?", "日本"));
+    }
+
+    #[test]
+    fn many_stars_against_a_long_name_that_misses_still_ends() {
+        let name = "a".repeat(10_000);
+        let started = std::time::Instant::now();
+        assert!(!file("*a*a*a*a*a*b", &name));
+        assert!(started.elapsed() < std::time::Duration::from_secs(1), "{:?}", started.elapsed());
+    }
 }
