@@ -1955,9 +1955,28 @@ impl AppState {
         // Each replacement records its own step; those are put aside, and
         // one for the lot recorded in their place.
         let history = std::mem::take(&mut state.undo_stack);
+        // Highlighting is held off while it replaces - redone after each, a
+        // line with three matches was parsed three times over, and 60,000
+        // replacements took over a second - and done once at the end, over
+        // the lines that changed.
+        let line_states = std::mem::take(&mut state.line_states);
         while self.replace_step(true) {}
         if let Some(state) = self.editor_mut() {
+            state.line_states = line_states;
             let changed = state.lines != before;
+            if changed && !state.line_states.is_empty() {
+                // A replacement holds no line break, so the lines stay where
+                // they were; should they not have, it is the whole file.
+                let differs = |index: &usize| state.lines.get(*index) != before.get(*index);
+                let (first, last) = if state.lines.len() == before.len() {
+                    let last_index = state.lines.len().saturating_sub(1);
+                    ((0..state.lines.len()).find(differs).unwrap_or(0), (0..state.lines.len()).rev().find(differs).unwrap_or(last_index))
+                } else {
+                    (0, state.lines.len().saturating_sub(1))
+                };
+                let extension = state.file_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_string();
+                crate::viewer::highlight_through(&state.lines, &extension, first, last, &mut state.highlighted_lines, &mut state.line_states);
+            }
             state.undo_stack = history;
             if changed {
                 state.undo_stack.push(EditStep {
@@ -4038,6 +4057,29 @@ mod editor_tests {
         }
         assert_eq!(text(&app_state), "/* let x;\n/* let y; z");
         assert_eq!(app_state.find_note.as_deref(), Some("Replaced 2"));
+        std::fs::remove_file(path).unwrap();
+    }
+
+    /// Replace all highlights once, at the end, and comes out coloured just
+    /// as the file would be read afresh - including a change that turns the
+    /// rest of the file into a comment.
+    #[test]
+    fn replace_all_highlights_as_a_fresh_read_would() {
+        let text: String = (0..40).map(|n| format!("let foo_{n} = foo(\"foo\"); // foo\n")).collect::<String>() + "fn tail() {}\n";
+        let path = std::env::temp_dir().join(format!("fm84-replace-highlight-{}.rs", std::process::id()));
+        std::fs::write(&path, &text).unwrap();
+        let mut app_state = AppState::new();
+        app_state.open_editor(path.clone()).unwrap();
+        let shape = |spans: &[Vec<ratatui::text::Span<'static>>]| -> Vec<Vec<(String, Option<ratatui::style::Color>)>> { spans.iter().map(|line| line.iter().map(|span| (span.content.to_string(), span.style.fg)).collect()).collect() };
+
+        for (what, with) in [("foo", "bar"), ("let", "/* let")] {
+            replace(&mut app_state, what, with);
+            app_state.replace_all();
+            let state = app_state.editor().unwrap();
+            assert!(!state.line_states.is_empty(), "highlighting back on");
+            let (fresh, _) = crate::viewer::highlight_all(&state.lines, "rs");
+            assert_eq!(shape(&state.highlighted_lines), shape(&fresh), "after {what} -> {with}");
+        }
         std::fs::remove_file(path).unwrap();
     }
 

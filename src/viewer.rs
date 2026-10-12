@@ -664,6 +664,14 @@ pub fn highlight_all(content: &[String], extension: &str) -> (Vec<Vec<Span<'stat
 /// Both vectors are edited in place, so an ordinary keystroke touches a couple
 /// of entries no matter how long the file is.
 pub fn highlight_from(content: &[String], extension: &str, from: usize, spans: &mut Vec<Vec<Span<'static>>>, states: &mut Vec<LineState>) {
+    highlight_through(content, extension, from, from, spans, states);
+}
+
+/// highlight_from for an edit that changed every line from `from` to
+/// `through` - Replace all, done in one go and highlighted once. The parse
+/// may not stop on meeting the cache before `through`: below a line the
+/// cache agrees with, the lines changed since still have to be read again.
+pub fn highlight_through(content: &[String], extension: &str, from: usize, through: usize, spans: &mut Vec<Vec<Span<'static>>>, states: &mut Vec<LineState>) {
     let ps = syntax_set();
     let hlr = highlighter();
     let syntax = ps.find_syntax_by_extension(extension).unwrap_or_else(|| ps.find_syntax_plain_text());
@@ -704,7 +712,7 @@ pub fn highlight_from(content: &[String], extension: &str, from: usize, spans: &
 
     let (mut parse, mut hl) = if resumable { states[start].clone() } else { fresh() };
     // The cache is only trustworthy below the spliced region.
-    let min_converge = if resumable { start + 1 + delta.max(0) as usize } else { usize::MAX };
+    let min_converge = if resumable { (start + 1 + delta.max(0) as usize).max(through.saturating_add(1)) } else { usize::MAX };
 
     let mut index = start;
     while index < content.len() {
