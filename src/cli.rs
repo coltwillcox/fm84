@@ -90,6 +90,15 @@ mod tests {
         parse(args.iter().map(OsString::from))
     }
 
+    /// The man page names the version it describes; a version bump that
+    /// leaves it behind fails here rather than shipping a stale page.
+    #[test]
+    fn the_man_page_is_for_this_version() {
+        let page = include_str!("../doc/fm84.1");
+        let title = page.lines().find(|line| line.starts_with(".TH ")).unwrap();
+        assert!(title.contains(&format!("\"{}\"", version())), "{title}");
+    }
+
     #[test]
     fn help_and_version_win_wherever_they_are() {
         assert_eq!(parse_strs(&["--help"]), Ok(Command::Help));

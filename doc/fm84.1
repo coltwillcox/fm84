@@ -1,0 +1,323 @@
+.\" Manual page for fm84. View with: man ./doc/fm84.1
+.TH FM84 1 "2026-10-13" "fm84 0.26.2" "User Commands"
+.SH NAME
+fm84 \- a synthwave dual\-pane TUI file manager
+.SH SYNOPSIS
+.B fm84
+.RI [ OPTIONS ]
+.RI [ LEFT
+.RI [ RIGHT ]]
+.SH DESCRIPTION
+.B fm84
+is a two\-panel file manager for the terminal, in the line of Norton
+Commander and Midnight Commander.
+Each panel lists a directory, with tabs of its own; files are copied and
+moved from the active panel to the other one.
+It has a built\-in viewer with syntax highlighting, hex and image views, a
+built\-in editor, find files by name and content, and directory sizes counted
+in the background.
+.PP
+Anything that touches the disk is done off the thread that draws the screen,
+so a network mount that has stopped answering never freezes the interface;
+Esc stops waiting on it.
+.SH ARGUMENTS
+.TP
+.I LEFT
+Directory for the left panel.
+.TP
+.I RIGHT
+Directory for the right panel.
+.PP
+A directory given takes the place of the tab that would have shown; the
+panel's other tabs stay.
+Without one, a panel opens where it was when fm84 last quit if
+.B Remember directories
+is on (F11), and in the current directory otherwise.
+A directory that does not exist is reported before anything starts.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Print a short help, with where the config file is, and exit.
+.TP
+.BR \-V ", " \-\-version
+Print the version and exit.
+.TP
+.B \-\-
+End the options, for a directory whose name starts with a dash.
+.SH KEYS
+F1 inside fm84 lists these too.
+.SS Panels
+.TP 18
+.B Up Down Left Right
+Move the cursor.
+.TP
+.B Tab
+Switch panels.
+.TP
+.B Enter
+Open the directory, or run the file.
+.TP
+.B Backspace
+Go to the parent directory.
+.TP
+.B Home End
+First or last entry.
+.TP
+.B PageUp PageDown
+A page up or down.
+.TP
+.B Ctrl+Left Ctrl+Right
+Open the directory under the cursor in the left or right panel.
+.TP
+.I letters and digits
+Quick search: jump to the first name starting so, either case; Up and Down
+go between the names that do.
+.TP
+.B Esc
+Clear the search; close a dialog, the viewer or the editor; stop counting
+directory sizes; stop waiting on a directory that has not answered.
+.TP
+.B Space Insert
+Select or deselect the entry.
+Space on a directory also counts its size.
+.TP
+.B + \-
+Select or deselect by pattern:
+.B *
+any run of characters,
+.B ?
+any one,
+.B [abc]
+and
+.B [!a\-z]
+classes, several separated by
+.BR ; .
+A pattern ending in
+.B /
+is for directories.
+All in lower case matches either case.
+.TP
+.B *
+Invert the selection of files.
+.TP
+.B Alt+*
+Invert the selection of files and directories.
+.TP
+.B Ctrl+R
+Reload both panels.
+.TP
+.B Ctrl+T Ctrl+W
+New tab, close tab.
+.TP
+.B Ctrl+PgUp Ctrl+PgDn
+Previous or next tab.
+.TP
+.B Alt+1 ... Alt+9
+Go to tab 1 to 8, or the last.
+.TP
+.B Alt+F1 Alt+F2
+Choose a drive for the left or right panel.
+Ctrl works too.
+.SS Function keys
+.TP 18
+.B F1
+Help.
+.TP
+.B F2
+Rename.
+.TP
+.B F3
+View the file.
+.TP
+.B F4
+Edit the file, in the built\-in editor or the one set under F11.
+.TP
+.B F5
+Copy to the other panel, or wherever the dialog is told.
+A single file can be given a new name on the way.
+.TP
+.B F6
+Move, as F5 copies.
+.TP
+.B F7
+Create a directory.
+.TP
+.B Shift+F4
+Create an empty file.
+.TP
+.B F8 Delete
+Move to the trash, or delete if F11 says so.
+.TP
+.B Shift+F8 Shift+Delete
+Delete for good.
+.TP
+.B F9
+Open a terminal in the panel's directory.
+.TP
+.B F10
+Quit.
+Twice while a copy, move or delete runs; asks first about unsaved edits.
+.TP
+.B F11
+Options.
+.TP
+.B F12
+Preview the file under the cursor in the other panel.
+.TP
+.B Alt+F7 Ctrl+F7
+Find files by name and, if asked, by content, down from the active panel's
+directory.
+.SS During a copy, move or delete
+.TP 18
+.B Esc
+Cancel it.
+.TP
+.B R S A
+Retry, Skip, or Skip all, when an entry fails.
+.TP
+.B Y N A S O
+Overwrite, Skip, Overwrite all, Skip all, or Overwrite all older, when a
+file is already there.
+.TP
+.B D
+Delete for good, when the trash will not take an entry.
+.SS Viewer
+.TP 18
+.B X
+Hex view on or off; for an image, cycle Image, Text and Hex.
+.TP
+.B W
+Wrap long lines, or scroll them sideways.
+.TP
+.B F
+Fit or fill an image.
+.TP
+.B + \-
+Zoom an image in or out.
+.TP
+.B PageUp PageDown
+Previous or next picture in the folder, when one is open.
+.TP
+.B Ctrl+C
+Copy the selection.
+.SS Editor
+.TP 18
+.B Shift+arrows
+Select text.
+.TP
+.B Ctrl+A
+Select all.
+.TP
+.B Ctrl+X Ctrl+C Ctrl+V
+Cut, copy, paste.
+.TP
+.B Ctrl+Z
+Undo.
+.TP
+.B Ctrl+Y Ctrl+Shift+Z
+Redo.
+.TP
+.B Ctrl+R F4
+Replace; then
+.BR Y ,
+.B N
+or
+.B A
+to replace, skip or replace all.
+.TP
+.B O R
+Overwrite or reload, when the file changed on disk since it was opened.
+.SS Viewer and editor
+.TP 18
+.B Ctrl+F
+Find.
+All in lower case matches either case.
+.TP
+.B F3 Shift+F3
+Next or previous match.
+.TP
+.B Ctrl+G
+Go to line.
+.SH OPTIONS DIALOG
+F11 opens the options, changed in place with Enter, Space, Left or Right and
+saved as they change.
+Among them: hidden files, sort order, columns, date format and size units;
+confirmations, delete to trash, what to do when a destination exists, the
+terminal and editor commands, remembering directories; the theme, icons and
+clock; tab width, line numbers, highlighting and image settings.
+.PP
+In the
+.B Terminal
+and
+.B Editor
+commands,
+.B {}
+stands for the directory or the file.
+An editor without
+.B {}
+gets the file last.
+.SH FILES
+.TP
+.I $XDG_CONFIG_HOME/fm84/config
+The options, as plain
+.I key = value
+lines, fine to edit by hand.
+.I ~/.config/fm84/config
+when XDG_CONFIG_HOME is not set, and
+.I %APPDATA%\efm84\econfig
+on Windows.
+.TP
+.I $XDG_CONFIG_HOME/fm84/session
+The panels' directories and tabs, kept when
+.B Remember directories
+is on.
+.SH ENVIRONMENT
+.TP
+.B XDG_CONFIG_HOME
+Where the config directory is; see
+.BR FILES .
+.TP
+.B HOME
+The config directory when XDG_CONFIG_HOME is not set, and where a typed
+.B ~
+leads.
+.TP
+.B TERMINAL
+The terminal F9 opens when none is set under F11.
+Without either, fm84 tries
+.BR xdg\-terminal\-emulator ,
+.BR alacritty ,
+.BR kitty ,
+.BR foot ,
+.BR gnome\-terminal ,
+.BR konsole ,
+.B xfce4\-terminal
+and
+.BR xterm ,
+in that order.
+.TP
+.B XDG_DATA_HOME
+Where the trash is, as the freedesktop.org trash specification has it.
+.SH EXIT STATUS
+.TP
+.B 0
+Quit normally.
+.TP
+.B 1
+Not run from a terminal, or an error that stopped it.
+.TP
+.B 2
+A mistake on the command line, such as an unknown option or a directory
+that does not exist.
+.SH NOTES
+Icons need a Nerd Font; F11 can switch them to plain letters.
+Images are drawn as ASCII art in colour, and look best in a terminal with
+true colour.
+.SH SEE ALSO
+.BR mc (1),
+.BR find (1),
+.BR mv (1)
+.PP
+https://github.com/coltwillcox/fm84
+.SH AUTHOR
+Written by coltwillcox.
