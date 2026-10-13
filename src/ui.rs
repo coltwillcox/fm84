@@ -153,7 +153,11 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             .split(area);
 
         render_top_panel(f, chunks_main[0], app_state);
-        render_path_bar(f, chunks_main[1], &app_state.dir_left, &app_state.dir_right, area.width, app_state.is_left_active);
+        let going_to = match &app_state.dialog {
+            Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input),
+            _ => None,
+        };
+        render_path_bar(f, chunks_main[1], &app_state.dir_left, &app_state.dir_right, area.width, app_state.is_left_active, going_to);
         match app_state.screen {
             Screen::Viewer(_) => {
                 let (height, width, content_area) = render_viewer(f, chunks_main[2], app_state);
@@ -454,22 +458,36 @@ fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppS
     }
 }
 
-fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &std::path::Path, dir_right: &std::path::Path, total_width: u16, is_left_active: bool) {
+/// The directory each panel is in, along the line over them. Ctrl+L edits
+/// the active one's in place: `going_to` is what is being typed there.
+fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &std::path::Path, dir_right: &std::path::Path, total_width: u16, is_left_active: bool, going_to: Option<&TextInput>) {
     let length_left = ((total_width as usize).saturating_sub(3)) / 2;
     let length_right = ((total_width as usize).saturating_sub(2)) / 2;
 
-    let path_left = limit_path_string(dir_left, length_left.saturating_sub(8));
-    let path_right = limit_path_string(dir_right, length_right.saturating_sub(8));
-
     let (color_left, color_right) = if is_left_active { (style_dir(), style_dir_dark()) } else { (style_dir_dark(), style_dir()) };
+    // One side's path, padded and followed by the border up to where the next
+    // part of the line starts.
+    let side = |dir: &std::path::Path, length: usize, style: Style, editing: Option<&TextInput>, end: &'static str| -> Vec<Span<'static>> {
+        let mut spans = vec![Span::styled(" ", style)];
+        match editing {
+            // As wide as the side has room for, the cursor kept in view, and
+            // in the colours of a name being renamed: the row's highlight
+            // there sets them over whatever the name was drawn in.
+            Some(input) => {
+                let field_style = Style::default().fg(palette().selected_foreground).bg(palette().rename_background).add_modifier(Modifier::BOLD);
+                spans.extend(input.cursor_spans_within(length.saturating_sub(7), field_style, field_style.add_modifier(Modifier::REVERSED)));
+            }
+            None => spans.push(Span::styled(limit_path_string(dir, length.saturating_sub(8)), style)),
+        }
+        spans.push(Span::styled(" ", style));
+        let used: usize = spans.iter().map(|span| display_width(&span.content)).sum();
+        spans.push(Span::styled(format!("{}{end}", "─".repeat(length.saturating_sub(used + 3))), style_border()));
+        spans
+    };
 
-    let border_line = vec![
-        Span::styled("├──", style_border()),
-        Span::styled(format!(" {} ", path_left), color_left),
-        Span::styled(format!("{}─┬──", "─".repeat(length_left.saturating_sub(display_width(&path_left).saturating_add(5)))), style_border()),
-        Span::styled(format!(" {} ", path_right), color_right),
-        Span::styled(format!("{}─┤", "─".repeat(length_right.saturating_sub(display_width(&path_right).saturating_add(5)))), style_border()),
-    ];
+    let mut border_line = vec![Span::styled("├──", style_border())];
+    border_line.extend(side(dir_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"));
+    border_line.extend(side(dir_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"));
 
     f.render_widget(Paragraph::new(Line::from(border_line)), area);
 }
@@ -1166,7 +1184,10 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         render_status_bar(f, area, question, status_style);
         return;
     }
-    if let Some(Dialog::Prompt(kind, input)) = &app_state.dialog {
+    // Ctrl+L's path is typed over the panel's own, at the top.
+    if let Some(Dialog::Prompt(kind, input)) = &app_state.dialog
+        && *kind != PromptKind::GoTo
+    {
         let label = match kind {
             PromptKind::Find => " Find: ",
             PromptKind::GoToLine => " Go to line: ",
@@ -1174,6 +1195,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             PromptKind::Deselect => " Deselect: ",
             PromptKind::Replace => " Replace: ",
             PromptKind::ReplaceWith => " With: ",
+            PromptKind::GoTo => unreachable!("typed in the path bar"),
         };
         render_prompt_bar(f, area, label, input, status_style);
         return;
@@ -1565,6 +1587,8 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F11 - Options (Alt+F1/F2 drives)",
         "F12 - Preview in other panel",
         "Ctrl+Left/Right - Dir to that panel",
+        "Ctrl+L - Go to path (Tab completes)",
+        "  Alt+Left/Right back/forward",
         "Ctrl+T/Ctrl+W - New/close tab",
         "  Ctrl+PgUp/PgDn, Alt+1..9 switch",
         "Space - Select/deselect file",
@@ -2263,12 +2287,47 @@ mod tests {
         input.set(nasty.to_string());
         app_state.dialog = Some(Dialog::Rename(input));
         clean(&mut app_state, "the rename field");
+        let mut input = TextInput::new();
+        input.set(nasty.to_string());
+        app_state.dialog = Some(Dialog::Prompt(crate::app::PromptKind::GoTo, input));
+        clean(&mut app_state, "the go to field");
         app_state.dialog = None;
 
         app_state.error = Some(format!("No such file or directory: {nasty}"));
         clean(&mut app_state, "the error popup");
 
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Ctrl+L types over the active panel's path, in the line above it, and
+    /// leaves the other panel's and the foot of the screen as they were. A
+    /// path longer than the room keeps its end, where the typing is, in view.
+    #[test]
+    fn go_to_is_typed_over_the_panels_own_path() {
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.dir_left = std::path::PathBuf::from("/left/dir");
+        app_state.dir_right = std::path::PathBuf::from("/right/dir");
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 20)).unwrap();
+        let row = |terminal: &Terminal<ratatui::backend::TestBackend>, y: u16| -> String {
+            let buffer = terminal.backend().buffer();
+            (0..buffer.area.width).map(|x| buffer[(x, y)].symbol().to_string()).collect()
+        };
+
+        for (is_left, typed) in [(true, "/typed/here"), (false, "/somewhere/else"), (true, &format!("/{}/end", "long".repeat(30))[..])] {
+            app_state.is_left_active = is_left;
+            let mut input = TextInput::new();
+            input.set(typed.to_string());
+            app_state.dialog = Some(Dialog::Prompt(PromptKind::GoTo, input));
+            render_ui(&mut terminal, &mut app_state);
+            let bar = row(&terminal, 3);
+            let (left, right) = bar.split_at(bar.find('┬').unwrap());
+            let (typed_in, other) = if is_left { (left, right) } else { (right, left) };
+            assert!(typed_in.contains(if typed.len() > 40 { "long/end" } else { typed }), "{bar}");
+            assert!(other.contains(if is_left { "/right/dir" } else { "/left/dir" }), "{bar}");
+            assert!(bar.starts_with("├──") && bar.ends_with("─┤") && bar.chars().count() == 80, "{bar}");
+            assert!(!row(&terminal, 19).contains("Go to"));
+        }
     }
 
     /// The hexdump takes the widest layout its pane holds and never runs past

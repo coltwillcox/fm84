@@ -30,6 +30,10 @@ pub const ICON_OPTICAL: &str = "";
 // is bounded by what was edited rather than by the size of the file.
 pub const UNDO_LIMIT: usize = 200;
 
+// Directories a tab remembers having been in, for Alt+Left. A browser keeps
+// more, but nobody steps back fifty directories by key.
+pub const HISTORY_MAX: usize = 50;
+
 // Terminals commonly reject oversized OSC 52 payloads, and a megabyte of
 // base64 is not worth sending anyway; the internal clipboard still holds it.
 pub const OSC52_MAX_BYTES: usize = 64 * 1024;

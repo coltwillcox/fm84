@@ -162,6 +162,9 @@ pub enum PromptKind {
     Replace,
     /// What to replace it with.
     ReplaceWith,
+    /// Ctrl+L: a path for the panel to go to, typed over the panel's own in
+    /// the line above it rather than at the foot of the screen.
+    GoTo,
 }
 
 /// What fills the space between the top bar and the bottom one: the two
@@ -214,7 +217,8 @@ pub enum Dialog {
     /// Alt+F1 or Alt+F2: which panel is choosing, and the mount highlighted.
     DrivePicker { is_left: bool, index: usize },
     /// The line at the foot of the screen, asking for something to find, a
-    /// line to go to or a pattern to select by.
+    /// line to go to or a pattern to select by - or, for Ctrl+L, the panel's
+    /// path, edited where it is shown.
     Prompt(PromptKind, TextInput),
     /// Alt+F7: what to look for, and then what was found.
     FindFiles(Box<FindFiles>),
@@ -716,18 +720,52 @@ fn replace_if_older(source: Option<SystemTime>, dest: Option<SystemTime>) -> Cla
 }
 
 /// A tab in a panel: somewhere it was left, to go back to - the directory,
-/// the entry the cursor was on and what was selected there.
+/// the entry the cursor was on and what was selected there - and where it
+/// has been, for Alt+Left and Alt+Right. The history lives here even for the
+/// tab on show, since nothing else in the panel keeps it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Tab {
     pub dir: PathBuf,
     pub cursor: Option<OsString>,
     pub selected: HashSet<OsString>,
+    pub back: Vec<Visit>,
+    pub forward: Vec<Visit>,
 }
 
 impl Tab {
     pub fn new(dir: PathBuf) -> Self {
-        Tab { dir, cursor: None, selected: HashSet::new() }
+        Tab {
+            dir,
+            cursor: None,
+            selected: HashSet::new(),
+            back: Vec::new(),
+            forward: Vec::new(),
+        }
     }
+}
+
+/// A directory a tab has been in, and the entry the cursor was on as it left,
+/// to land on again on the way back.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Visit {
+    pub dir: PathBuf,
+    pub cursor: Option<OsString>,
+}
+
+/// How a panel's move to another directory counts in its tab's history.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Travel {
+    /// Not at all: a reread, or a tab switched to.
+    Stay,
+    /// A step forward, which drops what Alt+Right could have gone back to.
+    Go,
+    /// Ctrl+L, to a path that has to be there as typed: a directory, or a
+    /// file to land on in its own. Unlike anywhere else, one that is gone
+    /// is not climbed out of; it was a mistyping, and is said to be one.
+    GoTo,
+    /// Alt+Left and Alt+Right.
+    Back,
+    Forward,
 }
 
 /// One panel's tabs. The panel's own fields - its directory, cursor and
@@ -761,6 +799,7 @@ pub struct PendingListing {
     select: Option<OsString>,
     /// Set when it is a tab being switched to.
     tab: Option<TabSwitch>,
+    travel: Travel,
     answer: Receiver<Listed>,
 }
 
@@ -774,6 +813,7 @@ impl PendingListing {
             navigate: true,
             select: None,
             tab: None,
+            travel: Travel::Go,
             answer,
         }
     }
@@ -1885,6 +1925,7 @@ impl AppState {
                 self.replace_with = input.text;
                 self.start_replace();
             }
+            PromptKind::GoTo => self.go_to_path(&input.text),
         }
     }
 
@@ -3093,7 +3134,7 @@ impl AppState {
     /// False when the directory was refused and the panel stayed put; true
     /// when it went there, or is still on its way.
     pub fn open_dir(&mut self, is_left: bool, dir: PathBuf, select: Option<&std::ffi::OsStr>) -> bool {
-        self.request_listing(is_left, dir, true, select.map(std::ffi::OsStr::to_os_string), None).unwrap_or(true)
+        self.request_listing(is_left, dir, true, select.map(std::ffi::OsStr::to_os_string), None, Travel::Go).unwrap_or(true)
     }
 
     /// Ctrl+Left and Ctrl+Right, as in Total Commander: the arrow names the
@@ -3131,7 +3172,7 @@ impl AppState {
             return;
         }
         let dir = if is_left { self.dir_left.clone() } else { self.dir_right.clone() };
-        self.request_listing(is_left, dir, false, prefer.map(std::ffi::OsStr::to_os_string), None);
+        self.request_listing(is_left, dir, false, prefer.map(std::ffi::OsStr::to_os_string), None, Travel::Stay);
     }
 
     /// Read a panel's directory on a thread of its own, and take it in at
@@ -3141,13 +3182,13 @@ impl AppState {
     /// listing in when it lands. Some(false) when it was refused there and
     /// then, None while it is still being read. A listing already on its way
     /// for this panel is dropped for this one.
-    fn request_listing(&mut self, is_left: bool, dir: PathBuf, navigate: bool, select: Option<OsString>, tab: Option<TabSwitch>) -> Option<bool> {
+    fn request_listing(&mut self, is_left: bool, dir: PathBuf, navigate: bool, select: Option<OsString>, tab: Option<TabSwitch>, travel: Travel) -> Option<bool> {
         let (sender, answer) = mpsc::channel();
         let (worker_dir, options) = (dir.clone(), self.options.clone());
         std::thread::spawn(move || {
             let _ = sender.send(read_listing(&worker_dir, &options));
         });
-        let pending = PendingListing { dir, navigate, select, tab, answer };
+        let pending = PendingListing { dir, navigate, select, tab, travel, answer };
         match pending.answer.recv_timeout(self.listing_wait) {
             Ok(listed) => Some(self.apply_listing(is_left, pending, listed)),
             Err(mpsc::RecvTimeoutError::Timeout) => {
@@ -3201,6 +3242,7 @@ impl AppState {
         let Some(found) = listed.dir else {
             self.display_error(format!("No such directory: {}", pending.dir.display()));
             self.undo_tab(is_left, pending.tab);
+            self.forget_travel(is_left, pending.travel);
             return false;
         };
         if pending.navigate
@@ -3209,11 +3251,20 @@ impl AppState {
         {
             self.display_error(format!("Cannot open {}: {}", pending.dir.display(), e));
             self.undo_tab(is_left, pending.tab);
+            self.forget_travel(is_left, pending.travel);
             return false;
         }
+        // Ctrl+L to a file lands on it, in the directory it is in. Anything
+        // else that is not there as typed stays where it is, and says so.
+        let to_file = pending.travel == Travel::GoTo && found != pending.dir && pending.dir.parent() == Some(found.as_path()) && listed.items.as_ref().is_ok_and(|items| items.iter().any(|item| Some(item.name_os.as_os_str()) == pending.dir.file_name()));
+        if pending.travel == Travel::GoTo && found != pending.dir && !to_file {
+            self.display_error(format!("No such file or directory: {}", pending.dir.display()));
+            return false;
+        }
+        let leaving = self.panel_as_tab(is_left);
 
         // Gone from under it, and climbed out of to `found`.
-        let relocated = found != pending.dir;
+        let relocated = found != pending.dir && !to_file;
         if pending.navigate || relocated {
             // Cursor, search and selection all referred to entries elsewhere.
             if is_left {
@@ -3230,7 +3281,9 @@ impl AppState {
 
         let (children, state) = if is_left { (&self.children_left, &self.state_left) } else { (&self.children_right, &self.state_right) };
         let previous_index = state.selected().unwrap_or(0);
-        let wanted = if relocated {
+        let wanted = if to_file {
+            pending.dir.file_name().map(std::ffi::OsStr::to_os_string)
+        } else if relocated {
             None
         } else if pending.navigate {
             pending.select
@@ -3294,7 +3347,128 @@ impl AppState {
         // refreshes both on its way to drawing one.
         self.preview = None;
         self.cursor_detail = None;
+        if pending.navigate {
+            let stepped = matches!(pending.travel, Travel::Back | Travel::Forward);
+            let moved = self.record_travel(is_left, pending.travel, leaving, &found);
+            // A step onto a directory gone since, climbed out of to where the
+            // panel already was, did nothing anyone could see. Go on to the
+            // one after it instead.
+            if stepped && !moved {
+                self.travel(pending.travel == Travel::Back);
+            }
+        }
         true
+    }
+
+    /// Keep a move that landed in the tab's history. `leaving` is the panel
+    /// as it was before it moved, and `found` where it ended up. True when
+    /// that is somewhere else.
+    fn record_travel(&mut self, is_left: bool, travel: Travel, leaving: Tab, found: &Path) -> bool {
+        let moved = leaving.dir != found;
+        let visit = Visit { dir: leaving.dir, cursor: leaving.cursor };
+        let tabs = self.tabs_mut(is_left);
+        let tab = &mut tabs.list[tabs.active];
+        match travel {
+            Travel::Stay => return moved,
+            Travel::Go | Travel::GoTo if moved => {
+                tab.back.push(visit);
+                tab.forward.clear();
+            }
+            Travel::Go | Travel::GoTo => {}
+            // The visit stepped to is taken off, even when it turned out to be
+            // where the panel already was - its directory gone, and climbed
+            // out of to here - or the key would go there again and again.
+            Travel::Back => {
+                tab.back.pop();
+                if moved {
+                    tab.forward.push(visit);
+                }
+            }
+            Travel::Forward => {
+                tab.forward.pop();
+                if moved {
+                    tab.back.push(visit);
+                }
+            }
+        }
+        if tab.back.len() > crate::constants::HISTORY_MAX {
+            tab.back.remove(0);
+        }
+        moved
+    }
+
+    /// A step back or forward to a directory that could not be shown: it is
+    /// dropped, so the next press goes on past it.
+    fn forget_travel(&mut self, is_left: bool, travel: Travel) {
+        let tabs = self.tabs_mut(is_left);
+        let tab = &mut tabs.list[tabs.active];
+        match travel {
+            Travel::Back => {
+                tab.back.pop();
+            }
+            Travel::Forward => {
+                tab.forward.pop();
+            }
+            _ => {}
+        }
+    }
+
+    /// Alt+Left and Alt+Right: back to the directory the active panel's tab
+    /// was in before, or forward again, landing on the entry the cursor was on
+    /// there. The history is taken in step only as the panel gets there.
+    pub fn travel(&mut self, back: bool) {
+        let is_left = self.is_left_active;
+        if self.panel_busy(is_left) {
+            return;
+        }
+        let tabs = self.tabs_mut(is_left);
+        let tab = &tabs.list[tabs.active];
+        let Some(visit) = (if back { tab.back.last() } else { tab.forward.last() }).cloned() else {
+            return;
+        };
+        let travel = if back { Travel::Back } else { Travel::Forward };
+        self.request_listing(is_left, visit.dir, true, visit.cursor, None, travel);
+    }
+
+    /// Ctrl+L: edit the active panel's path where it is shown, as it stands.
+    pub fn open_go_to(&mut self) {
+        let mut text = self.panel_dir(self.is_left_active).display().to_string();
+        if !text.ends_with(std::path::is_separator) {
+            text.push(std::path::MAIN_SEPARATOR);
+        }
+        let mut input = TextInput::new();
+        input.set(text);
+        self.dialog = Some(Dialog::Prompt(PromptKind::GoTo, input));
+    }
+
+    /// Enter on Ctrl+L's prompt: go to the path typed, a directory or a file
+    /// to land on. `~` and a path from the panel are read as F5 reads them.
+    fn go_to_path(&mut self, text: &str) {
+        if text.trim().is_empty() {
+            return;
+        }
+        let is_left = self.is_left_active;
+        let path = crate::fs_ops::tidy_path(&crate::fs_ops::typed_path(text, &self.panel_dir(is_left)));
+        self.request_listing(is_left, path, true, None, None, Travel::GoTo);
+    }
+
+    /// Tab on Ctrl+L's prompt: fill out the name being typed. Read on a
+    /// thread, waited for only as long as a listing is: on a mount that does
+    /// not answer, Tab does nothing rather than hang.
+    pub fn complete_go_to(&mut self) {
+        let Some(Dialog::Prompt(PromptKind::GoTo, input)) = &self.dialog else {
+            return;
+        };
+        let (text, base, hidden) = (input.text.clone(), self.panel_dir(self.is_left_active), self.options.show_hidden);
+        let (sender, answer) = mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = sender.send(crate::fs_ops::complete_path(&text, &base, hidden));
+        });
+        if let Ok(Some(completed)) = answer.recv_timeout(self.listing_wait)
+            && let Some(Dialog::Prompt(PromptKind::GoTo, input)) = &mut self.dialog
+        {
+            input.set(completed);
+        }
     }
 
     /// A tab switch that did not happen, put back as it was.
@@ -3411,10 +3585,14 @@ impl AppState {
         } else {
             (&self.dir_right, &self.children_right, &self.state_right, &self.selected_right)
         };
+        let tabs = if is_left { &self.tabs_left } else { &self.tabs_right };
+        let shown = &tabs.list[tabs.active];
         Tab {
             dir: dir.clone(),
             cursor: state.selected().and_then(|index| children.get(index)).map(|item| item.name_os.clone()),
             selected: selected.clone(),
+            back: shown.back.clone(),
+            forward: shown.forward.clone(),
         }
     }
 
@@ -3438,7 +3616,16 @@ impl AppState {
         let here = self.panel_as_tab(is_left);
         let tabs = self.tabs_mut(is_left);
         tabs.list[tabs.active] = here.clone();
-        tabs.list.insert(tabs.active + 1, Tab { selected: HashSet::new(), ..here });
+        // A history of its own, starting here.
+        tabs.list.insert(
+            tabs.active + 1,
+            Tab {
+                selected: HashSet::new(),
+                back: Vec::new(),
+                forward: Vec::new(),
+                ..here
+            },
+        );
         tabs.active += 1;
         if is_left { self.selected_left.clear() } else { self.selected_right.clear() }
     }
@@ -3504,7 +3691,7 @@ impl AppState {
     fn show_tab(&mut self, is_left: bool, undo: TabUndo) {
         let tabs = self.tabs_mut(is_left);
         let tab = tabs.list[tabs.active].clone();
-        self.request_listing(is_left, tab.dir, true, tab.cursor, Some(TabSwitch { selected: tab.selected, undo }));
+        self.request_listing(is_left, tab.dir, true, tab.cursor, Some(TabSwitch { selected: tab.selected, undo }), Travel::Stay);
     }
 
     /// The mount a panel is sitting on: the longest one its directory is under.
@@ -4582,6 +4769,36 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
+    /// Each tab has a history of its own: a new one starts with none, and one
+    /// switched away from and back still has its own.
+    #[test]
+    fn each_tab_keeps_its_own_way_back() {
+        let dir = std::env::temp_dir().join(format!("fm84-tab-history-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("a")).unwrap();
+        std::fs::create_dir_all(dir.join("b")).unwrap();
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.join("a"), None);
+        app_state.open_dir(true, dir.join("b"), None);
+
+        app_state.new_tab();
+        app_state.travel(true);
+        assert_eq!(app_state.dir_left, dir.join("b"), "a new tab has nowhere to go back to");
+        app_state.open_dir(true, dir.clone(), None);
+
+        app_state.select_tab(true, 0);
+        app_state.travel(true);
+        assert_eq!(app_state.dir_left, dir.join("a"));
+        app_state.select_tab(true, 1);
+        app_state.travel(true);
+        assert_eq!(app_state.dir_left, dir.join("b"));
+        // Switching tabs is not a step of either's.
+        app_state.travel(true);
+        assert_eq!(app_state.dir_left, dir.join("b"));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
     #[test]
     fn ctrl_arrows_send_the_entry_under_the_cursor_to_a_panel() {
         let dir = std::env::temp_dir().join(format!("fm84-open-in-panel-{}", std::process::id()));
@@ -4872,6 +5089,7 @@ mod tests {
             navigate: true,
             select: None,
             tab: None,
+            travel: super::Travel::Go,
             answer,
         });
         assert!(app_state.panel_busy(true));
@@ -4917,6 +5135,7 @@ mod tests {
                 navigate: true,
                 select: None,
                 tab: Some(tab),
+                travel: super::Travel::Stay,
                 answer,
             });
             if refused {

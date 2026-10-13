@@ -1,6 +1,6 @@
 use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, TextInput, TransferKind};
 use crate::display::tab_width;
-use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets};
+use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets, typed_path};
 use crate::options::OnExisting;
 use crate::strip::StripHit;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
@@ -125,6 +125,8 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
                 app_state.reload_panel(true, None);
                 app_state.reload_panel(false, None);
             }
+            // Ctrl+L, as a browser's address bar.
+            'l' if in_panel => app_state.open_go_to(),
             't' if in_panel => app_state.new_tab(),
             'w' if in_panel => {
                 let is_left = app_state.is_left_active;
@@ -314,6 +316,7 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc => app_state.dialog = None,
             KeyCode::Enter => app_state.confirm_prompt(),
             KeyCode::Char(c) if kind == PromptKind::GoToLine && !c.is_ascii_digit() => {}
+            KeyCode::Tab if kind == PromptKind::GoTo => app_state.complete_go_to(),
             _ => edit_text(app_state, code),
         },
         Some(_) => {}
@@ -479,6 +482,9 @@ fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(9) => open_terminal(app_state),
         KeyCode::F(11) => app_state.dialog = Some(Dialog::Options { editing: None }),
         KeyCode::F(12) => app_state.show_preview = !app_state.show_preview,
+        // Back and forward through where this tab has been, as a browser.
+        KeyCode::Left if key.modifiers.contains(KeyModifiers::ALT) => app_state.travel(true),
+        KeyCode::Right if key.modifiers.contains(KeyModifiers::ALT) => app_state.travel(false),
         KeyCode::Left if control => app_state.open_in_panel(true),
         KeyCode::Right if control => app_state.open_in_panel(false),
         // Space toggles the selection and moves on, working out the size of a
@@ -1081,19 +1087,6 @@ fn go_transfer(app_state: &mut AppState, sources: &[(PathBuf, bool)], destinatio
     }
 }
 
-/// A path as typed into a dialog. `~` at the start is the home directory,
-/// as in a shell, and a path that is not absolute is taken from `base`, the
-/// directory the active panel is in - so a bare name copies beside the file.
-fn typed_path(text: &str, base: &Path) -> PathBuf {
-    let home = || std::env::home_dir().unwrap_or_default();
-    let path = match text.strip_prefix('~') {
-        Some("") => home(),
-        Some(rest) if rest.starts_with(std::path::is_separator) => home().join(rest.trim_start_matches(std::path::is_separator)),
-        _ => PathBuf::from(text),
-    };
-    base.join(path)
-}
-
 /// Start a confirmed copy or move. Every destination is checked before
 /// anything is written, for what no answer could make safe - an item onto
 /// itself, a directory into itself, a file and a directory in each other's
@@ -1293,7 +1286,7 @@ fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: 
 #[cfg(test)]
 mod tests {
     use super::{handle_key, request_quit};
-    use crate::app::{AppState, Dialog, FindFiles, Screen};
+    use crate::app::{AppState, Dialog, FindFiles, PromptKind, Screen};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     fn press(app_state: &mut AppState, code: KeyCode) -> bool {
@@ -1390,6 +1383,83 @@ mod tests {
         press(&mut app_state, KeyCode::F(11));
         press(&mut app_state, KeyCode::Esc);
         assert!(app_state.dialog.is_none());
+    }
+
+    /// Ctrl+L goes where it is told - a directory, or a file to land on -
+    /// and Alt+Left and Alt+Right step back and forth through where the tab
+    /// has been, landing on the entry the cursor was on.
+    #[test]
+    fn go_to_a_path_and_back_and_forward() {
+        let dir = std::env::temp_dir().join(format!("fm84-go-to-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("sub/deeper")).unwrap();
+        std::fs::write(dir.join("a.txt"), "text").unwrap();
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
+        let alt = |app_state: &mut AppState, code: KeyCode| handle_key(app_state, KeyEvent::new(code, KeyModifiers::ALT));
+        let ctrl_l = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL));
+        let cursor = |app_state: &AppState| {
+            let index = app_state.state_left.selected().unwrap();
+            app_state.children_left[index].name.clone()
+        };
+        let type_in = |app_state: &mut AppState, text: &str| {
+            let Some(Dialog::Prompt(PromptKind::GoTo, input)) = &mut app_state.dialog else { panic!("no prompt") };
+            input.set(text.to_string());
+        };
+
+        // It opens on where the panel is, ready to have a name typed on.
+        ctrl_l(&mut app_state);
+        let Some(Dialog::Prompt(PromptKind::GoTo, input)) = &app_state.dialog else { panic!("no prompt") };
+        assert_eq!(input.text, format!("{}{}", dir.display(), std::path::MAIN_SEPARATOR));
+        // Tab fills out the name, and Enter goes there.
+        press(&mut app_state, KeyCode::Char('s'));
+        press(&mut app_state, KeyCode::Tab);
+        press(&mut app_state, KeyCode::Char('d'));
+        press(&mut app_state, KeyCode::Tab);
+        press(&mut app_state, KeyCode::Enter);
+        assert_eq!(app_state.dir_left, dir.join("sub/deeper"));
+
+        // A path from the panel, `..` and all, to a file: landed on, in the
+        // directory it is in.
+        ctrl_l(&mut app_state);
+        type_in(&mut app_state, "../../a.txt");
+        press(&mut app_state, KeyCode::Enter);
+        assert_eq!((app_state.dir_left.clone(), cursor(&app_state)), (dir.clone(), "a".to_string()));
+
+        // Somewhere that is not there is said to be, and the panel stays.
+        ctrl_l(&mut app_state);
+        type_in(&mut app_state, "nowhere");
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.error.take().unwrap().contains("nowhere"));
+        assert_eq!(app_state.dir_left, dir);
+
+        // Back the way it came, onto what the cursor was on, and forward.
+        alt(&mut app_state, KeyCode::Left);
+        assert_eq!(app_state.dir_left, dir.join("sub/deeper"));
+        alt(&mut app_state, KeyCode::Left);
+        assert_eq!((app_state.dir_left.clone(), cursor(&app_state)), (dir.clone(), "sub".to_string()));
+        alt(&mut app_state, KeyCode::Right);
+        assert_eq!(app_state.dir_left, dir.join("sub/deeper"));
+
+        // A step somewhere new drops what was ahead.
+        press(&mut app_state, KeyCode::Backspace);
+        assert_eq!(app_state.dir_left, dir.join("sub"));
+        alt(&mut app_state, KeyCode::Right);
+        assert_eq!(app_state.dir_left, dir.join("sub"));
+        alt(&mut app_state, KeyCode::Left);
+        assert_eq!(app_state.dir_left, dir.join("sub/deeper"));
+
+        // A directory gone since is passed over, rather than stuck on: from
+        // sub, back to deeper climbs out of it to sub again, and on to dir.
+        std::fs::remove_dir(dir.join("sub/deeper")).unwrap();
+        alt(&mut app_state, KeyCode::Right);
+        assert_eq!(app_state.dir_left, dir.join("sub"));
+        alt(&mut app_state, KeyCode::Left);
+        assert_eq!(app_state.dir_left, dir, "the gone one was passed over");
+        alt(&mut app_state, KeyCode::Right);
+        assert_eq!(app_state.dir_left, dir.join("sub"));
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
