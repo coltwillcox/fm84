@@ -119,3 +119,42 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
           files: artifacts/*
+
+  # The same tag goes to crates.io, once every platform has built. Trusted
+  # Publishing: crates.io is told, under the crate's settings, to accept this
+  # repository's release.yml, and the auth action trades the run's GitHub
+  # identity for a token that lasts only this job. No secret is stored.
+  publish:
+    name: Publish to crates.io
+    needs: build
+    runs-on: ubuntu-24.04
+    # A pre-release tag stays on GitHub; crates.io gets the real ones.
+    if: ${{ !contains(github.ref_name, 'alpha') && !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc') }}
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      # A tag that is not the version in Cargo.toml would publish one number
+      # under another's release. Stop before anything goes out.
+      - name: Check the tag matches Cargo.toml
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          if [ "${{ github.ref_name }}" != "v$version" ]; then
+            echo "Tag ${{ github.ref_name }} does not match Cargo.toml version $version"
+            exit 1
+          fi
+
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
