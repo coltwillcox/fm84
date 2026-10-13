@@ -287,7 +287,14 @@ Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ s
 
 ---
 
-## 🛠️ Build & Run
+## 🛠️ Install, Build & Run
+
+```bash
+# 📦 Straight from crates.io
+cargo install --locked fm84
+```
+
+*`--locked` builds with the exact dependency versions fm84 was tested against. The binary lands in `~/.cargo/bin`, and the same command again updates it.*
 
 ```bash
 # 🦀 Clone the future
@@ -386,7 +393,7 @@ The default Synthwave palette channels pure 80s energy (F11 swaps it for any of 
 
 *Ride free through the neon grid.*
 
-Released under the [MIT License](LICENSE) - use it, change it, ship it, keep the notice.
+Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master/LICENSE) - use it, change it, ship it, keep the notice.
 
 ---
 
