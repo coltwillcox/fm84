@@ -36,6 +36,15 @@ fn style_dir() -> Style {
 fn style_dir_dark() -> Style {
     Style::new().fg(palette().directory_dark)
 }
+// A field being typed into, wherever it is: the colours of a name being
+// renamed in a panel, so every one reads the same and stands out from what is
+// around it. The cursor is the same, reversed.
+fn style_input() -> Style {
+    Style::new().fg(palette().selected_foreground).bg(palette().rename_background).add_modifier(Modifier::BOLD)
+}
+fn style_input_cursor() -> Style {
+    style_input().add_modifier(Modifier::REVERSED)
+}
 fn style_selection() -> Style {
     Style::new().bg(palette().selected_background_inactive)
 }
@@ -470,13 +479,8 @@ fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &std::path:
     let side = |dir: &std::path::Path, length: usize, style: Style, editing: Option<&TextInput>, end: &'static str| -> Vec<Span<'static>> {
         let mut spans = vec![Span::styled(" ", style)];
         match editing {
-            // As wide as the side has room for, the cursor kept in view, and
-            // in the colours of a name being renamed: the row's highlight
-            // there sets them over whatever the name was drawn in.
-            Some(input) => {
-                let field_style = Style::default().fg(palette().selected_foreground).bg(palette().rename_background).add_modifier(Modifier::BOLD);
-                spans.extend(input.cursor_spans_within(length.saturating_sub(7), field_style, field_style.add_modifier(Modifier::REVERSED)));
-            }
+            // As wide as the side has room for, the cursor kept in view.
+            Some(input) => spans.extend(input.cursor_spans_within(length.saturating_sub(7), style_input(), style_input_cursor())),
             None => spans.push(Span::styled(limit_path_string(dir, length.saturating_sub(8)), style)),
         }
         spans.push(Span::styled(" ", style));
@@ -1137,9 +1141,9 @@ fn render_prompt_bar(f: &mut ratatui::Frame<'_>, area: Rect, label: &str, input:
     let line = vec![
         Span::styled("├─", style_border()),
         Span::styled(label.to_string(), style),
-        Span::styled(before, style),
-        Span::styled(under, style.add_modifier(Modifier::REVERSED)),
-        Span::styled(after, style),
+        Span::styled(before, style_input()),
+        Span::styled(under, style_input_cursor()),
+        Span::styled(after, style_input()),
         Span::styled(" ", style),
         Span::styled("─".repeat((area.width as usize).saturating_sub(used)), style_border()),
         Span::styled("┤", style_border()),
@@ -1680,7 +1684,7 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppS
 fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: bool, row_width: usize, cursor_style: Style, editing: Option<&TextInput>) -> Line<'static> {
     let label = format!("   {}", row.label());
     if is_cursor && let Some(input) = editing {
-        let typed = input.cursor_spans(cursor_style, cursor_style.add_modifier(Modifier::REVERSED));
+        let typed = input.cursor_spans(style_input(), style_input_cursor());
         let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
         let gap = row_width.saturating_sub(display_width(&label) + typed_width + 1);
         let mut spans = vec![Span::styled(label, cursor_style), Span::styled(" ".repeat(gap), cursor_style)];
@@ -1717,19 +1721,17 @@ fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir: bool, inp
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    // Show input with block cursor (REVERSED so it's visible against paragraph bg)
-    let cursor_style = style_title().add_modifier(Modifier::REVERSED);
     // Padded out to the full width so the highlight reads as an input field.
     // Paragraph styles the spans rather than the row, so a bare line would
     // colour only the characters typed so far.
-    let typed = input.cursor_spans(style_title(), cursor_style);
+    let typed = input.cursor_spans(style_input(), style_input_cursor());
     let width = popup_inner(popup_area).width as usize;
     let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
     let left = width.saturating_sub(typed_width) / 2;
     let mut spans = vec![Span::raw(" ".repeat(left))];
     spans.extend(typed);
     spans.push(Span::raw(" ".repeat(width.saturating_sub(left + typed_width))));
-    let input_line = Line::from(spans).style(style_title().bg(palette().selected_background));
+    let input_line = Line::from(spans).style(style_input());
     popup_body(f, popup_area, vec![input_line, Line::from(Span::styled("Enter - Create    Esc - Cancel", style_columns()))]);
 }
 
@@ -1983,15 +1985,17 @@ fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, start: &Path, 
         let room = width.saturating_sub(LABEL);
         let mut spans = vec![Span::styled(format!("{label:<LABEL$}"), style_columns())];
         let typed = if focused {
-            input.cursor_spans_within(room, style_title(), style_title().add_modifier(Modifier::REVERSED))
+            input.cursor_spans_within(room, style_input(), style_input_cursor())
         } else {
             vec![Span::styled(tail_of(&input.text, room), style_file())]
         };
         let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
         spans.extend(typed);
-        spans.push(Span::raw(" ".repeat(room.saturating_sub(typed_width))));
-        let line = Line::from(spans);
-        if focused { line.style(style_title().bg(palette().selected_background)) } else { line }
+        // The bar is the field's alone; the label beside it keeps its colour
+        // on the background it was picked for.
+        let padding = " ".repeat(room.saturating_sub(typed_width));
+        spans.push(if focused { Span::styled(padding, style_input()) } else { Span::raw(padding) });
+        Line::from(spans)
     };
     popup_body(
         f,
@@ -2102,12 +2106,11 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(Pa
     // in view on a path longer than that. Padded out to the full width so the
     // highlight reads as an input field.
     let width = popup_inner(popup_area).width as usize;
-    let cursor_style = style_title().add_modifier(Modifier::REVERSED);
-    let typed = input.cursor_spans_within(width, style_title(), cursor_style);
+    let typed = input.cursor_spans_within(width, style_input(), style_input_cursor());
     let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
     let mut spans = typed;
     spans.push(Span::raw(" ".repeat(width.saturating_sub(typed_width))));
-    let input_line = Line::from(spans).style(style_title().bg(palette().selected_background));
+    let input_line = Line::from(spans).style(style_input());
 
     popup_body(
         f,
@@ -2297,6 +2300,52 @@ mod tests {
         clean(&mut app_state, "the error popup");
 
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Every field being typed into is drawn as a name being renamed is: the
+    /// same colours, and the cursor in them reversed.
+    #[test]
+    fn every_input_field_wears_the_rename_colours() {
+        use crate::app::PromptKind;
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        let typed = || {
+            let mut input = TextInput::new();
+            input.set("typed".to_string());
+            input
+        };
+        let dialogs: Vec<(&str, Dialog)> = vec![
+            ("F7", Dialog::Create { is_dir: true, input: typed() }),
+            (
+                "F5",
+                Dialog::Transfer {
+                    sources: vec![(std::path::PathBuf::from("/a"), false)],
+                    is_copy: true,
+                    input: typed(),
+                    opened_with: String::new(),
+                    default: std::path::PathBuf::from("/b"),
+                },
+            ),
+            ("+", Dialog::Prompt(PromptKind::Select, typed())),
+            ("Ctrl+L", Dialog::Prompt(PromptKind::GoTo, typed())),
+            ("Options", Dialog::Options { editing: Some(typed()) }),
+        ];
+        for (what, dialog) in dialogs {
+            app_state.dialog = Some(dialog);
+            render_ui(&mut terminal, &mut app_state);
+            let cells = terminal.backend().buffer().content();
+            let cursor = cells.iter().find(|cell| cell.modifier.contains(Modifier::REVERSED) && cell.bg == palette().rename_background);
+            assert!(cursor.is_some(), "{what}: no cursor in the rename colours");
+            let text = cells
+                .iter()
+                .filter(|cell| cell.bg == palette().rename_background && cell.fg == palette().selected_foreground && !cell.modifier.contains(Modifier::REVERSED))
+                .count();
+            assert!(text >= "typed".len() - 1, "{what}: typed text not in the rename colours");
+        }
+        app_state.open_find_files();
+        render_ui(&mut terminal, &mut app_state);
+        assert!(terminal.backend().buffer().content().iter().any(|cell| cell.modifier.contains(Modifier::REVERSED) && cell.bg == palette().rename_background), "Alt+F7");
     }
 
     /// Ctrl+L types over the active panel's path, in the line above it, and
