@@ -11,9 +11,13 @@
 </pre>
 </div>
 
-> 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
+<div align="center">
+
+💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
 **Version 0.27.0** ▀▄▀▄ *Neon Dreams Edition*
+
+</div>
 
 ---
 
