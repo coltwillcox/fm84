@@ -6,6 +6,17 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.28.0] - 2026-10-13
+
+### ✨ Added
+- 🧭 **Go to path** - Ctrl+L edits the active panel's path in place, in the line above it, and Enter goes there. Tab fills out a name as far as the entries agree, smart case, offering hidden ones only when they are shown or a dot asks for them; it reads on a thread of its own, so a mount that does not answer leaves Tab doing nothing rather than hanging. `~` is home, a path without a leading `/` starts from the panel, and `..` is worked out as `cd` does. A file is landed on, in the directory it is in. Somewhere that is not there is said to be, and the panel stays put, rather than climbing to the nearest parent as it does for a directory gone from under it
+- ⏪ **Back and forward** - Alt+← and Alt+→ step through where the tab has been, as in a browser, landing on the entry the cursor was on. Each tab keeps its own, up to 50 steps back, and a new one starts with none. Every move counts - Enter, Backspace, Ctrl+←/→, a drive, Find files and Ctrl+L - but not a reread or a tab switched to, and a step is kept only once the panel gets there. A directory gone since is passed over, and one that cannot be read is dropped
+
+### 🎨 Changed
+- ✏️ **Every input field in the rename colours** - F5 and F6, F7 and Shift+F4, Alt+F7, the select, find, go to line and replace prompts, and a command typed in F11 were each drawn in colours of their own, some barely set apart from what was around them. They now all look like a name being renamed with F2, which every theme is checked to keep readable
+
+---
+
 ## [0.27.0] - 2026-10-13
 
 ### ✨ Added

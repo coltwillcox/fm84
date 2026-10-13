@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.27.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.28.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -70,6 +70,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↔️ **Ctrl+← / Ctrl+→** - send the left or right panel to the directory under the cursor, keeping the focus where it is; on a file, to the directory it is in
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
+- 🧭 **Ctrl+L** - edit the active panel's path in place, in the line above it, and go there with **Enter** (**Esc** leaves it as it was). **Tab** fills out a name as far as the entries agree, `~` is home, and a path without a leading `/` starts from the panel. A file is landed on, in the directory it is in; somewhere that is not there is said to be, and the panel stays put
+- ⏪ **Alt+← / Alt+→** - back and forward through where the tab has been, as in a browser, landing on the entry the cursor was on. Each tab keeps its own, up to 50 steps back; a directory gone since is passed over
 - 🔗 **Symlinked directories** - listed and entered like the real thing
 - 🔒 **Directories you cannot read** - refused with the reason, and the panel stays where it was
 - 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`. With more drives than fit, the strip shows a window onto them: `<` and `>` at its ends, or the wheel over it, move it a page along, and it follows the panel's drive and the one being chosen
@@ -235,6 +237,8 @@ Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ s
 | `↑` `↓` `←` `→` | Navigate |
 | `Tab` | Switch panels |
 | `Ctrl+←` / `Ctrl+→` | Open the directory under the cursor in the left / right panel |
+| `Ctrl+L` | Go to a path (`Tab` completes a name) |
+| `Alt+←` / `Alt+→` | Back / forward through where the tab has been |
 | `Enter` | Open directory / Execute |
 | `Backspace` | Go to parent directory |
 | `Home` / `End` | Jump to first / last item |
@@ -319,7 +323,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.27.0
+fm84 --version       # fm84 0.28.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -406,5 +410,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.27.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.28.0 ▄▀▄▀▄▀</code>
 </p>

@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-13" "fm84 0.27.0" "User Commands"
+.TH FM84 1 "2026-10-13" "fm84 0.28.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -68,6 +68,22 @@ A page up or down.
 .TP
 .B Ctrl+Left Ctrl+Right
 Open the directory under the cursor in the left or right panel.
+.TP
+.B Ctrl+L
+Edit the active panel's path in place, in the line above it, and go there
+with Enter; Esc leaves it as it was.
+.B Tab
+fills out a name as far as the entries agree;
+.B ~
+is the home directory, and a path not starting with
+.B /
+is taken from the panel.
+A file is landed on, in the directory it is in.
+.TP
+.B Alt+Left Alt+Right
+Back and forward through the directories the tab has been in, landing on
+the entry the cursor was on.
+Each tab keeps its own.
 .TP
 .I letters and digits
 Quick search: jump to the first name starting so, either case; Up and Down
