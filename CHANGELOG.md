@@ -6,6 +6,17 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.27.0] - 2026-10-13
+
+### ✨ Added
+- 📖 **A man page** - `doc/fm84.1`: the command line, every key, the options, the files and environment fm84 reads, and its exit status. `man ./doc/fm84.1` reads it from a checkout, and the release archives carry it beside the binary. A test keeps its version in step with the program's
+- 📦 **On crates.io** - `cargo install --locked fm84` builds and installs it, and the README says so
+
+### 🧪 Tests
+- Sizes, thousands, names and paths as they are drawn, find's matching and case folding, globs, and the Options dialog driven from the keys
+
+---
+
 ## [0.26.2] - 2026-10-12
 
 ### 🐛 Fixed
