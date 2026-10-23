@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-13" "fm84 0.28.0" "User Commands"
+.TH FM84 1 "2026-10-23" "fm84 0.29.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -69,9 +69,17 @@ A page up or down.
 .B Ctrl+Left Ctrl+Right
 Open the directory under the cursor in the left or right panel.
 .TP
+.B Ctrl+U
+Swap the panels, each with its tabs, cursor, selection and history;
+the focus goes with the one it was in.
+.TP
+.B Alt+I
+Send the other panel to the active one's directory.
+.TP
 .B Ctrl+L
 Edit the active panel's path in place, in the line above it, and go there
-with Enter; Esc leaves it as it was.
+with Enter; Esc, or a click anywhere else, leaves it as it was.
+A click on either panel's path does the same, in that panel.
 .B Tab
 fills out a name as far as the entries agree;
 .B ~
@@ -84,6 +92,23 @@ A file is landed on, in the directory it is in.
 Back and forward through the directories the tab has been in, landing on
 the entry the cursor was on.
 Each tab keeps its own.
+.TP
+.B Ctrl+D
+Bookmarks.
+.B Enter
+or
+.BR 1 ... 9
+goes to one,
+.B A
+or
+.B Insert
+keeps the panel's directory,
+.B D
+or
+.B Delete
+forgets the one highlighted, and
+.B Shift+Up Shift+Down
+move it in the list.
 .TP
 .I letters and digits
 Quick search: jump to the first name starting so, either case; Up and Down
@@ -119,6 +144,18 @@ Invert the selection of files.
 .B Alt+*
 Invert the selection of files and directories.
 .TP
+.B Ctrl+C Alt+C
+Copy the full paths, or the names, of what is selected, or of the entry
+under the cursor, to the clipboard, a line each; on
+.BR .. ,
+the panel's own directory.
+Sent over OSC 52, which the terminal has to allow.
+.TP
+.B Ctrl+F3 Ctrl+F4 Ctrl+F5 Ctrl+F6
+Sort both panels by name, extension, date or size;
+the same key again reverses the order.
+A click on a column heading does the same.
+.TP
 .B Ctrl+R
 Reload both panels.
 .TP
@@ -135,6 +172,8 @@ Go to tab 1 to 8, or the last.
 Choose a drive for the left or right panel.
 Ctrl works too.
 .SS Function keys
+The ones the screen answers are listed along the bottom border;
+a click on one presses it.
 .TP 18
 .B F1
 Help.
@@ -287,6 +326,13 @@ on Windows.
 The panels' directories and tabs, kept when
 .B Remember directories
 is on.
+.TP
+.I $XDG_CONFIG_HOME/fm84/bookmarks
+The directories kept with
+.BR Ctrl+D ,
+a
+.I bookmark = path
+line each, in order.
 .SH ENVIRONMENT
 .TP
 .B XDG_CONFIG_HOME

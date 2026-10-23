@@ -6,6 +6,26 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.29.0] - 2026-10-23
+
+### ✨ Added
+- 🔖 **Bookmarks** - Ctrl+D lists the directories kept to go back to. Enter, or 1 to 9, takes the active panel there; A or Insert keeps the panel's directory, after the one highlighted, and only highlights it when it is kept already; D or Delete forgets one, and Shift+Up and Shift+Down move it in the list. The panel's own directory is marked, and the list opens on it. One gone since is said to be, as Ctrl+L says, and the panel stays put. They are kept in `bookmarks` beside the config, a `bookmark = path` line each, read afresh each time so a hand edit shows
+- 🔃 **Sorting from the panel** - Ctrl+F3 sorts by name, Ctrl+F4 by extension, Ctrl+F5 by date and Ctrl+F6 by size, as in Total Commander, and a click on a column heading does the same. The key they are sorted by already turns the order round; another starts ascending. The heading sorted by carries ↑ or ↓, and both panels follow, kept as F11 keeps it
+- 🔁 **Swap the panels** - Ctrl+U, as in Midnight Commander: each takes its tabs, cursor, selection and history to the other side, and the focus goes with the one it was in
+- 🪞 **Same directory in the other panel** - Alt+I sends the other panel to the active one's directory, its cursor on the same entry
+- 📋 **Copy paths and names** - Ctrl+C puts the full paths of what is selected, or of the entry under the cursor, on the clipboard, a line each, and Alt+C the names alone; on `..`, the panel's own directory. It goes over OSC 52, and the built-in editor pastes it either way. The status bar says what was copied until the next key
+- 🖱️ **A click on a panel's path edits it**, as Ctrl+L does, in that panel. A click anywhere else puts the field away, as Esc does, and is still the click it was
+- 🎹 **The key bar answers clicks** - a click on a label along the bottom presses that key, F10 quitting as the key does
+
+### 🛠️ Changed
+- 🎹 **The key bar shows what the screen answers** - in the Viewer F3 and F10, in the Editor F2, F3, F4 and F10, rather than the panels' twelve everywhere. F8 is named Trash or Delete as F11 has it, and F7 is Mkdir, Shift+F4 being the one that makes files
+
+### 🧪 Tests
+- Tests never write the config, session or bookmarks files, so one that changes an option cannot touch the config of whoever runs them
+- Sorting, bookmarks, swapping the panels, copying paths, and clicks on paths, headings and the key bar
+
+---
+
 ## [0.28.0] - 2026-10-13
 
 ### ✨ Added

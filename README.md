@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.28.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.29.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -68,10 +68,13 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📄 **PageUp/PageDown** - cruise in style
 - 🔀 **Tab** - switch between panels like flipping cassettes
 - ↔️ **Ctrl+← / Ctrl+→** - send the left or right panel to the directory under the cursor, keeping the focus where it is; on a file, to the directory it is in
+- 🔁 **Ctrl+U** - swap the panels, as in Midnight Commander: each takes its tabs, cursor, selection and history to the other side, and the focus goes with the one it was in
+- 🪞 **Alt+I** - send the other panel to this one's directory, its cursor on the same entry
 - ↩️ **Enter** - dive into directories
 - ⬅️ **Backspace** - ascend to parent realm
-- 🧭 **Ctrl+L** - edit the active panel's path in place, in the line above it, and go there with **Enter** (**Esc** leaves it as it was). **Tab** fills out a name as far as the entries agree, `~` is home, and a path without a leading `/` starts from the panel. A file is landed on, in the directory it is in; somewhere that is not there is said to be, and the panel stays put
+- 🧭 **Ctrl+L** - or a click on a panel's path - edit the active panel's path in place, in the line above it, and go there with **Enter** (**Esc**, or a click anywhere else, leaves it as it was). **Tab** fills out a name as far as the entries agree, `~` is home, and a path without a leading `/` starts from the panel. A file is landed on, in the directory it is in; somewhere that is not there is said to be, and the panel stays put
 - ⏪ **Alt+← / Alt+→** - back and forward through where the tab has been, as in a browser, landing on the entry the cursor was on. Each tab keeps its own, up to 50 steps back; a directory gone since is passed over
+- 🔖 **Bookmarks** - **Ctrl+D** lists the directories kept to go back to: **Enter**, or **1**…**9**, takes the panel there, **A** or **Insert** keeps the panel's directory, **D** or **Delete** forgets the one highlighted, **Shift+↑/↓** move it up or down the list. The panel's own directory is marked. One that has gone since is said to be, and the panel stays put. Kept in `bookmarks` beside the config, a `bookmark = path` line each, fine to edit by hand
 - 🔗 **Symlinked directories** - listed and entered like the real thing
 - 🔒 **Directories you cannot read** - refused with the reason, and the panel stays where it was
 - 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`. With more drives than fit, the strip shows a window onto them: `<` and `>` at its ends, or the wheel over it, move it a page along, and it follows the panel's drive and the one being chosen
@@ -107,6 +110,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F10** 🚪 - Exit to the void - asking first about unsaved changes in the editor
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
 - **+** / **-** / **\*** 🎯 - Select or deselect by a pattern such as `*.jpg;*.png` (`*`, `?`, `[a-z]`, `[!0-9]`; lower case matches either case), or invert the selection of files - **Alt+\*** inverts directories too. Patterns pick files; end one with `/` for directories, as in `*/`. Once a quick search is under way, `-` types into it instead
+- 📋 **Ctrl+C** / **Alt+C** - copy the full paths, or just the names, of what is selected - or of the entry under the cursor - to the clipboard, a line each; on `..`, the panel's own directory. It goes over OSC 52, so it reaches the system clipboard over SSH too, and the built-in editor pastes it either way
 - 🖱️ **Double-click** - open directories or view files
 - 🖱️ **Mouse scroll** - scroll content in Viewer, Editor, and file panels
 
@@ -120,6 +124,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 🧱 Columns
 - 📋 **Name, Ext, Size, Modified, Attributes** - permissions written the way `ls -l` writes them
 - 📐 **Priority when space runs short** - columns drop from the right, Name always stays and keeps the leftover width
+- 🔃 **Sort from the panel** - **Ctrl+F3** by name, **Ctrl+F4** by extension, **Ctrl+F5** by date and **Ctrl+F6** by size, as in Total Commander, or click a column heading; the same one again turns the order round. The heading sorted by carries an arrow, ↑ or ↓, and both panels follow, kept as F11 keeps it
 - 🎛️ **Your choice of them** - F11 turns each one off, and sets how dates and sizes are written
 - 🔤 **Any name the filesystem allows** - a name that is not valid UTF-8 is shown as near as it can be read and still opens, renames, copies and deletes as itself; operations work from the name the filesystem holds, never from what it looked like on screen - selection, the F4 and F9 commands and remembered directories included
 - 🛡️ **Names neutralised** - a file name can hold anything but `/`, escape sequences and tabs included. They are drawn as dots rather than sent to the terminal, wherever a name appears: the rows, the detail lines, the preview, the titles and every popup
@@ -128,6 +133,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📈 **Panel stats** - selected/total file count and size shown per panel
 - 💽 **Disk usage** - a meter and used/total for each panel's filesystem, shortening then stepping aside on narrow terminals
 - 🎨 **Active/inactive styling** - active panel stats highlighted, inactive dimmed
+- 🎹 **Key bar** - the F-keys along the bottom border, as in Midnight Commander: those the panels, the Viewer or the Editor answer, F8 named Trash or Delete as F11 has it. Click one to press it. On a narrow terminal they drop off whole from the end
 
 ### 🔎 Detail Lines
 - 📋 **Two lines under the panels** - what the columns have no room for: the whole name however long, the exact byte count, the timestamp to the second, `owner:group`, the permission bits, and where a symlink points
@@ -221,7 +227,7 @@ Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ s
 - ⚡ **Read pictures ahead** - decode the pictures either side of the one open, so PageUp and PageDown do not wait for each. Costs a few megabytes and a thread that wakes only while a picture is open
 
 - ⌨️ **Up/Down** to move, **Enter**, **Space** or **Left/Right** to change, Enter again to save a typed command
-- 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it
+- 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it, and bookmarks in `bookmarks`
 
 ### 📂 Directory Sizes
 - 📏 **Calculated on select** - press Space on a directory to calculate its size
@@ -237,8 +243,11 @@ Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ s
 | `↑` `↓` `←` `→` | Navigate |
 | `Tab` | Switch panels |
 | `Ctrl+←` / `Ctrl+→` | Open the directory under the cursor in the left / right panel |
-| `Ctrl+L` | Go to a path (`Tab` completes a name) |
+| `Ctrl+U` | Swap the panels |
+| `Alt+I` | Same directory in the other panel |
+| `Ctrl+L` | Go to a path (`Tab` completes a name; or click the path) |
 | `Alt+←` / `Alt+→` | Back / forward through where the tab has been |
+| `Ctrl+D` | Bookmarks (`A` add, `D` remove, `Enter` or `1`…`9` go) |
 | `Enter` | Open directory / Execute |
 | `Backspace` | Go to parent directory |
 | `Home` / `End` | Jump to first / last item |
@@ -287,6 +296,8 @@ Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ s
 | `+` / `-` | Select / deselect by pattern |
 | `*` | Invert the selection of files |
 | `Alt+*` | Invert the selection of files and directories |
+| `Ctrl+C` / `Alt+C` | Copy full paths / names to the clipboard |
+| `Ctrl+F3` / `Ctrl+F4` / `Ctrl+F5` / `Ctrl+F6` | Sort by name / extension / date / size, again to reverse (or click a heading) |
 | `Ctrl+R` | Reload both panels |
 | `Ctrl+T` / `Ctrl+W` | New tab / close tab |
 | `Ctrl+PgUp` / `Ctrl+PgDn` | Previous / next tab |
@@ -323,7 +334,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.28.0
+fm84 --version       # fm84 0.29.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -410,5 +421,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.28.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.29.0 ▄▀▄▀▄▀</code>
 </p>
