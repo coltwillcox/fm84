@@ -189,7 +189,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             Screen::Panels => app_state.page_size = render_file_tables(f, chunks_main[2], app_state),
         }
         render_bottom_panel(f, chunks_main[3], app_state);
-        render_fkey_bar(f, chunks_main[4]);
+        render_fkey_bar(f, chunks_main[4], app_state);
         render_detail(f, chunks_main[4].inner(Margin { vertical: 0, horizontal: 2 }), app_state);
 
         // The rename field, the prompt and the drive picker are drawn where
@@ -1354,22 +1354,28 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
     }
 }
 
-/// The F-key hints, dropped from the end when the terminal cannot hold them
-/// whole - a half-drawn label reads worse than a missing one.
-const FKEY_LABELS: [&str; 12] = [
-    " F1 Help ",
-    " F2 Rename ",
-    " F3 View ",
-    " F4 Edit ",
-    " F5 Copy ",
-    " F6 Move ",
-    " F7 Create ",
-    " F8 Delete ",
-    " F9 Terminal ",
-    " F10 Quit ",
-    " F11 Options ",
-    " F12 Preview ",
-];
+/// The F-keys the screen showing answers, and what each does there. F8 is
+/// named for what F11 has it do.
+fn fkey_labels(app_state: &AppState) -> Vec<(u8, &'static str)> {
+    match app_state.screen {
+        Screen::Viewer(_) => vec![(3, "Next"), (10, "Quit")],
+        Screen::Editor(_) => vec![(2, "Save"), (3, "Next"), (4, "Replace"), (10, "Quit")],
+        Screen::Panels => vec![
+            (1, "Help"),
+            (2, "Rename"),
+            (3, "View"),
+            (4, "Edit"),
+            (5, "Copy"),
+            (6, "Move"),
+            (7, "Mkdir"),
+            (8, if app_state.options.delete_to_trash { "Trash" } else { "Delete" }),
+            (9, "Terminal"),
+            (10, "Quit"),
+            (11, "Options"),
+            (12, "Preview"),
+        ],
+    }
+}
 
 /// The two rows inside the bottom block, which the F-key labels leave empty.
 /// They spell out what the columns cannot hold: the whole name however long,
@@ -1453,22 +1459,39 @@ fn tail_of(text: &str, room: usize) -> String {
     format!("...{}", kept.into_iter().collect::<String>())
 }
 
-fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect) {
-    let mut block_bottom = Block::default().borders(Borders::LEFT | Borders::BOTTOM | Borders::RIGHT).border_style(style_border());
+/// The F-key hints along the bottom border, centred with a dash between
+/// each, as titles of the block would be - drawn one by one instead, so a
+/// click can be told which it landed on. Those that do not fit whole are
+/// dropped from the end: a half-drawn label reads worse than a missing one.
+fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
+    f.render_widget(Block::default().borders(Borders::LEFT | Borders::BOTTOM | Borders::RIGHT).border_style(style_border()), area);
 
     // Two corners, then each label with a dash between. The last label's
     // trailing space can fall off the end unnoticed, hence the one spare column.
+    let mut labels = Vec::new();
     let mut used = 2;
-    for (index, label) in FKEY_LABELS.iter().enumerate() {
-        let needed = used + display_width(label) + usize::from(index > 0);
+    for (key, name) in fkey_labels(app_state) {
+        let label = format!(" F{key} {name} ");
+        let needed = used + display_width(&label) + usize::from(!labels.is_empty());
         if needed > area.width as usize + 1 {
             break;
         }
         used = needed;
-        block_bottom = block_bottom.title_bottom(Line::from(Span::styled(*label, style_title())).centered());
+        labels.push((key, label));
     }
 
-    f.render_widget(block_bottom, area);
+    app_state.fkey_hits.clear();
+    let room = area.width.saturating_sub(2);
+    let total = (used - 2) as u16;
+    let mut x = area.x + 1 + room.saturating_sub(total) / 2;
+    let y = area.bottom().saturating_sub(1);
+    for (key, label) in labels {
+        let width = (display_width(&label) as u16).min(area.right().saturating_sub(x));
+        let cell = Rect::new(x, y, width, 1);
+        f.render_widget(Paragraph::new(Span::styled(label, style_title())), cell);
+        app_state.fkey_hits.push((cell, key));
+        x += width + 1;
+    }
 }
 
 /// The area inside a popup's border that its body is laid out in.

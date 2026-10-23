@@ -597,6 +597,15 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
 fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) -> bool {
     let (column, row) = (mouse_event.column, mouse_event.row);
     let (viewing, editing) = (app_state.is_viewing(), app_state.is_editing());
+    // A click anywhere but on the path being edited puts Ctrl+L's field
+    // away, as one off the name being renamed does, and then goes on to be
+    // the click it was.
+    if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::GoTo, _))) {
+        let on_left = column < app_state.table_area_right.x;
+        if !app_state.path_bar_area.contains(Position::new(column, row)) || on_left != app_state.is_left_active {
+            app_state.dialog = None;
+        }
+    }
     // A label on the key bar is its key. Not under the rename field or a
     // prompt, which would take the key as one of theirs.
     if mouse_event.kind == MouseEventKind::Down(MouseButton::Left)
@@ -1601,17 +1610,18 @@ mod tests {
         let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
         crate::ui::render_ui(&mut terminal, &mut app_state);
         let bar = app_state.path_bar_area;
-        let click = |app_state: &mut AppState, column| {
+        let click_at = |app_state: &mut AppState, column, row| {
             super::handle_mouse(
                 app_state,
                 MouseEvent {
                     kind: MouseEventKind::Down(MouseButton::Left),
                     column,
-                    row: bar.y,
+                    row,
                     modifiers: KeyModifiers::NONE,
                 },
             );
         };
+        let click = |app_state: &mut AppState, column| click_at(app_state, column, bar.y);
         let going_to = |app_state: &AppState| match &app_state.dialog {
             Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input.text.clone()),
             _ => None,
@@ -1629,6 +1639,17 @@ mod tests {
         click(&mut app_state, bar.x + 5);
         assert!(app_state.is_left_active);
         assert!(going_to(&app_state).unwrap().starts_with(&*app_state.dir_left.to_string_lossy()));
+
+        // A click anywhere else puts it away and is a click there too: on a
+        // row of the other panel, that panel becomes the active one.
+        let right = app_state.table_area_right;
+        click_at(&mut app_state, right.x + 3, right.y + 1);
+        assert!(going_to(&app_state).is_none());
+        assert!(!app_state.is_left_active);
+        // As does one on the top bar, which has nothing of its own there.
+        click(&mut app_state, bar.x + bar.width - 10);
+        click_at(&mut app_state, bar.x + 1, 0);
+        assert!(going_to(&app_state).is_none());
     }
 
     /// Ctrl+C copies full paths and Alt+C names: of the selection, of the
