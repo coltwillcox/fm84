@@ -3770,6 +3770,32 @@ impl AppState {
         self.show_tab(is_left, TabUndo::Active(previous));
     }
 
+    /// Ctrl+U, as in Midnight Commander: the panels change sides, each with
+    /// its tabs, cursors, selections and history, and the focus goes with the
+    /// panel it was in. Not while either is still being read.
+    pub fn swap_panels(&mut self) {
+        if self.panel_busy(true) || self.panel_busy(false) {
+            return;
+        }
+        let (left, right) = (self.panel_as_tab(true), self.panel_as_tab(false));
+        self.tabs_left.list[self.tabs_left.active] = left;
+        self.tabs_right.list[self.tabs_right.active] = right;
+        std::mem::swap(&mut self.tabs_left, &mut self.tabs_right);
+        for is_left in [true, false] {
+            let active = self.tabs_mut(is_left).active;
+            self.show_tab(is_left, TabUndo::Active(active));
+        }
+        self.is_left_active = !self.is_left_active;
+    }
+
+    /// Alt+I, as in Midnight Commander: the other panel goes to the active
+    /// one's directory, its cursor on the same entry.
+    pub fn same_dir_in_other_panel(&mut self) {
+        let is_left = self.is_left_active;
+        let here = self.panel_as_tab(is_left);
+        self.open_dir(!is_left, here.dir, here.cursor.as_deref());
+    }
+
     /// Ctrl+PageDown and Ctrl+PageUp: the next tab in the active panel, or the
     /// one before, round from the end to the start.
     pub fn cycle_tab(&mut self, forward: bool) {

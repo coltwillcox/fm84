@@ -1622,6 +1622,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F11 - Options (Alt+F1/F2 drives)",
         "F12 - Preview in other panel",
         "Ctrl+Left/Right - Dir to that panel",
+        "  Ctrl+U swap panels, Alt+I same dir there",
         "Ctrl+L - Go to path (Tab completes)",
         "  Alt+Left/Right back/forward",
         "Ctrl+D - Bookmarks",

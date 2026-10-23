@@ -102,6 +102,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             let index = if digit == 9 { count - 1 } else { digit as usize - 1 };
             app_state.select_tab(is_left, index);
         }
+        // Alt+I sends the other panel to this one's directory.
+        if in_panel && c == 'i' {
+            app_state.same_dir_in_other_panel();
+        }
     } else {
         match c {
             'f' if in_editor || in_viewer => app_state.open_prompt(PromptKind::Find),
@@ -130,6 +134,8 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             // Ctrl+D, Total Commander's directory hotlist; again closes it.
             'd' if in_panel => app_state.open_bookmarks(),
             'd' if app_state.error.is_none() && matches!(app_state.dialog, Some(Dialog::Bookmarks { .. })) => app_state.dialog = None,
+            // Ctrl+U swaps the panels, as in Midnight Commander.
+            'u' if in_panel => app_state.swap_panels(),
             't' if in_panel => app_state.new_tab(),
             'w' if in_panel => {
                 let is_left = app_state.is_left_active;
@@ -1481,6 +1487,50 @@ mod tests {
         assert_eq!(list(&app_state), (vec![dir.join("gone")], 0));
         handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL));
         assert!(app_state.dialog.is_none());
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Ctrl+U swaps the panels, tabs, cursors and selections with them, and
+    /// the focus goes along; Alt+I sends the other panel here.
+    #[test]
+    fn swap_the_panels_and_send_the_other_one_here() {
+        let dir = std::env::temp_dir().join(format!("fm84-swap-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        for name in ["one", "two", "three"] {
+            std::fs::create_dir_all(dir.join(name)).unwrap();
+        }
+        std::fs::write(dir.join("one").join("a.txt"), "").unwrap();
+        std::fs::write(dir.join("one").join("b.txt"), "").unwrap();
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.join("one"), Some("b.txt".as_ref()));
+        app_state.selected_left.insert("a.txt".into());
+        app_state.open_dir(false, dir.join("two"), None);
+        app_state.is_left_active = false;
+        app_state.new_tab();
+        app_state.open_dir(false, dir.join("three"), None);
+        app_state.is_left_active = true;
+        let chord = |app_state: &mut AppState, c, modifiers| handle_key(app_state, KeyEvent::new(KeyCode::Char(c), modifiers));
+        let cursor = |app_state: &AppState, is_left: bool| {
+            let (children, state) = if is_left { (&app_state.children_left, &app_state.state_left) } else { (&app_state.children_right, &app_state.state_right) };
+            children[state.selected().unwrap()].name_full.clone()
+        };
+
+        chord(&mut app_state, 'u', KeyModifiers::CONTROL);
+        assert_eq!((app_state.dir_left.clone(), app_state.dir_right.clone()), (dir.join("three"), dir.join("one")));
+        assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active, app_state.tabs_right.list.len()), (2, 1, 1));
+        assert!(!app_state.is_left_active);
+        assert_eq!(cursor(&app_state, false), "b.txt");
+        assert!(app_state.selected_right.contains(std::ffi::OsStr::new("a.txt")) && app_state.selected_left.is_empty());
+        // The other tab went across too, as it was.
+        app_state.select_tab(true, 0);
+        assert_eq!(app_state.dir_left, dir.join("two"));
+
+        chord(&mut app_state, 'i', KeyModifiers::ALT);
+        assert_eq!(app_state.dir_left, dir.join("one"));
+        assert_eq!(cursor(&app_state, true), "b.txt");
+        assert!(!app_state.is_left_active);
 
         std::fs::remove_dir_all(&dir).unwrap();
     }
