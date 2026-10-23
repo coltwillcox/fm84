@@ -507,6 +507,11 @@ pub struct AppState {
     // (used, total) bytes for each panel's filesystem.
     pub disk_left: Option<(u64, u64)>,
     pub disk_right: Option<(u64, u64)>,
+    /// The git branch each panel's directory is on, shown after its path.
+    pub branch_left: Option<String>,
+    pub branch_right: Option<String>,
+    /// `user@host`, for the top border, and whether that is root.
+    pub user_at_host: (String, bool),
     /// Set while a copy, move or delete is running on its own thread.
     pub job: Option<TransferJob>,
     /// Directories Space is working out the size of, each on its own thread.
@@ -914,6 +919,8 @@ struct Listed {
     /// still there. None if not even the root could be reached.
     dir: Option<PathBuf>,
     items: std::io::Result<Vec<Item>>,
+    /// The git branch it is on, if it is in a repository.
+    branch: Option<String>,
     /// The directory's modified time, taken before it was read, so a change
     /// made during the read is still seen as one.
     stamp: Option<SystemTime>,
@@ -926,6 +933,7 @@ fn read_listing(dir: &Path, options: &Options) -> Listed {
         return Listed {
             dir: None,
             items: Err(std::io::ErrorKind::NotFound.into()),
+            branch: None,
             stamp: None,
             disk: None,
         };
@@ -933,7 +941,8 @@ fn read_listing(dir: &Path, options: &Options) -> Listed {
     let stamp = std::fs::metadata(&found).and_then(|metadata| metadata.modified()).ok();
     let items = load_directory_rows(&found, options);
     let disk = disk_usage(&found);
-    Listed { dir: Some(found), items, stamp, disk }
+    let branch = crate::fs_ops::git_branch(&found);
+    Listed { dir: Some(found), items, branch, stamp, disk }
 }
 
 /// What the preview shows of an entry, read on the preview thread: the head
@@ -1235,6 +1244,9 @@ impl AppState {
             preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
             disk_left: None,
             disk_right: None,
+            branch_left: None,
+            branch_right: None,
+            user_at_host: crate::fs_ops::user_at_host(),
             job: None,
             dir_sizing: Vec::new(),
             image_cache: ImageCache::default(),
@@ -3406,8 +3418,10 @@ impl AppState {
 
         if is_left {
             self.disk_left = listed.disk;
+            self.branch_left = listed.branch;
         } else {
             self.disk_right = listed.disk;
+            self.branch_right = listed.branch;
         }
         let watch = if is_left { &self.watch_left } else { &self.watch_right };
         if watch.as_ref().is_none_or(|watch| watch.dir != found) {
@@ -5467,6 +5481,7 @@ mod tests {
                     .send(super::Listed {
                         dir: Some(dir.join("locked")),
                         items: Err(denied),
+                        branch: None,
                         stamp: None,
                         disk: None,
                     })

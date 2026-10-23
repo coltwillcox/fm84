@@ -18,6 +18,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const ICON_FOLDER: &str = " "; // Added space after icon is workaround for small icons bug in table columns
 pub const ICON_FILE: &str = " ";
 pub const ICON_LOGO: &str = " ";
+// Powerline's branch, which Nerd Fonts carry; one cell wide in every style.
+pub const ICON_BRANCH: &str = "\u{e0a0}";
 
 // Drive icons for the mount strip, same Nerd Font range as the icons above.
 pub const ICON_DRIVE: &str = "";

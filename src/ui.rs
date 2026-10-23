@@ -176,7 +176,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input),
             _ => None,
         };
-        render_path_bar(f, chunks_main[1], &app_state.dir_left, &app_state.dir_right, area.width, app_state.is_left_active, going_to);
+        render_path_bar(f, chunks_main[1], app_state, going_to);
         app_state.path_bar_area = chunks_main[1];
         match app_state.screen {
             Screen::Viewer(_) => {
@@ -447,9 +447,21 @@ fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppS
     let logo = Span::styled(format!(" {} ", logo_icon(app_state.options.icon_style)), style_title());
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), style_title());
     let clock = Span::styled(cached_clock, style_title());
+    // Who and where, beside the logo - reversed as root, which is worth
+    // seeing before a delete. Left off where it would run into the title.
+    let (user_at_host, root) = &app_state.user_at_host;
+    let user_style = if *root { style_title().add_modifier(Modifier::REVERSED) } else { style_title() };
+    let user = Span::styled(format!(" {} ", printable_name(user_at_host)), user_style);
+    // A title of its own, so the border runs between it and the logo as it
+    // does between the F-keys.
+    let left_width = display_width(&logo.content) + 1 + display_width(&user.content);
+    let fits = left_width.max(display_width(&clock.content)) * 2 + display_width(&title.content) + 4 <= area.width as usize;
 
-    let block_top = Block::default()
-        .title_top(Line::from(logo).left_aligned())
+    let mut block_top = Block::default().title_top(Line::from(logo).left_aligned());
+    if fits {
+        block_top = block_top.title_top(Line::from(user).left_aligned());
+    }
+    let block_top = block_top
         .title_top(Line::from(title).centered())
         .title_top(Line::from(clock).right_aligned())
         .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT)
@@ -484,29 +496,49 @@ fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppS
 
 /// The directory each panel is in, along the line over them. Ctrl+L edits
 /// the active one's in place: `going_to` is what is being typed there.
-fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, dir_left: &std::path::Path, dir_right: &std::path::Path, total_width: u16, is_left_active: bool, going_to: Option<&TextInput>) {
+///
+/// After each path, the git branch its directory is on, while the path keeps
+/// room enough to read; it is the branch that goes first.
+fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, going_to: Option<&TextInput>) {
+    let total_width = area.width;
+    let is_left_active = app_state.is_left_active;
     let length_left = ((total_width as usize).saturating_sub(3)) / 2;
     let length_right = ((total_width as usize).saturating_sub(2)) / 2;
+    // Fewer columns than this for the path, and the branch is left off.
+    const PATH_ROOM: usize = 12;
 
     let (color_left, color_right) = if is_left_active { (style_dir(), style_dir_dark()) } else { (style_dir_dark(), style_dir()) };
+    let branch_label = |branch: &Option<String>| {
+        branch.as_ref().map(|branch| match app_state.options.icon_style {
+            IconStyle::Plain => format!(" git:{} ", printable_name(branch)),
+            _ => format!(" {ICON_BRANCH} {} ", printable_name(branch)),
+        })
+    };
     // One side's path, padded and followed by the border up to where the next
     // part of the line starts.
-    let side = |dir: &std::path::Path, length: usize, style: Style, editing: Option<&TextInput>, end: &'static str| -> Vec<Span<'static>> {
+    let side = |dir: &std::path::Path, branch: Option<String>, length: usize, style: Style, editing: Option<&TextInput>, end: &'static str| -> Vec<Span<'static>> {
         let mut spans = vec![Span::styled(" ", style)];
+        // The branch, and the dash before it.
+        let branch = branch.filter(|label| editing.is_none() && length.saturating_sub(8 + display_width(label) + 1) >= PATH_ROOM);
+        let branch_width = branch.as_ref().map_or(0, |label| display_width(label) + 1);
         match editing {
             // As wide as the side has room for, the cursor kept in view.
             Some(input) => spans.extend(input.cursor_spans_within(length.saturating_sub(7), style_input(), style_input_cursor())),
-            None => spans.push(Span::styled(limit_path_string(dir, length.saturating_sub(8)), style)),
+            None => spans.push(Span::styled(limit_path_string(dir, length.saturating_sub(8 + branch_width)), style)),
         }
         spans.push(Span::styled(" ", style));
+        if let Some(label) = branch {
+            spans.push(Span::styled("─", style_border()));
+            spans.push(Span::styled(label, style_columns()));
+        }
         let used: usize = spans.iter().map(|span| display_width(&span.content)).sum();
         spans.push(Span::styled(format!("{}{end}", "─".repeat(length.saturating_sub(used + 3))), style_border()));
         spans
     };
 
     let mut border_line = vec![Span::styled("├──", style_border())];
-    border_line.extend(side(dir_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"));
-    border_line.extend(side(dir_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"));
+    border_line.extend(side(&app_state.dir_left, branch_label(&app_state.branch_left), length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"));
+    border_line.extend(side(&app_state.dir_right, branch_label(&app_state.branch_right), length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"));
 
     f.render_widget(Paragraph::new(Line::from(border_line)), area);
 }
@@ -2358,6 +2390,35 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The branch follows the path, and is the first to go when the path
+    /// needs the room; who and where sit by the logo while they fit.
+    #[test]
+    fn the_branch_after_the_path_and_who_by_the_logo() {
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.dir_left = PathBuf::from("/home/colt/fm84");
+        app_state.branch_left = Some("main".to_string());
+        app_state.user_at_host = ("colt@laserbeak".to_string(), false);
+        let row = |width: u16, y: u16, app_state: &mut AppState| {
+            let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(width, 30)).unwrap();
+            render_ui(&mut terminal, app_state);
+            (0..width).map(|x| terminal.backend().buffer()[(x, y)].symbol().to_string()).collect::<String>()
+        };
+
+        let path_bar = row(100, 3, &mut app_state);
+        assert!(path_bar.contains(&format!("/home/colt/fm84 ─ {ICON_BRANCH} main ─")), "{path_bar}");
+        let top = row(100, 0, &mut app_state);
+        assert!(top.contains(&format!("{} ─ colt@laserbeak ─", logo_icon(IconStyle::NerdFont))), "{top}");
+        app_state.options.icon_style = IconStyle::Plain;
+        assert!(row(100, 3, &mut app_state).contains("/home/colt/fm84 ─ git:main ─"));
+
+        // Too narrow for both: the path stays and the branch goes, and so does
+        // who and where.
+        let narrow = row(44, 3, &mut app_state);
+        assert!(!narrow.contains("git:main"), "{narrow}");
+        assert!(!row(44, 0, &mut app_state).contains("colt@"));
+    }
 
     /// A tab is clicked where it is drawn, and a long name is cut short.
     #[test]

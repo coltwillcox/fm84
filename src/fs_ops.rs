@@ -186,6 +186,60 @@ fn compare_rows(a: &Item, b: &Item, options: &Options) -> std::cmp::Ordering {
     if options.sort_descending { order.reverse() } else { order }
 }
 
+/// The branch checked out in the repository `dir` is in, or the start of
+/// the commit when none is. Read from the files, as a prompt does, rather
+/// than by running git: up from `dir` to the first `.git`, a directory or,
+/// in a worktree or submodule, a file naming one. None outside a repository.
+pub fn git_branch(dir: &Path) -> Option<String> {
+    for ancestor in dir.ancestors() {
+        let dot_git = ancestor.join(".git");
+        let Ok(metadata) = fs::metadata(&dot_git) else {
+            continue;
+        };
+        let git_dir = if metadata.is_dir() {
+            dot_git
+        } else {
+            let text = fs::read_to_string(&dot_git).ok()?;
+            ancestor.join(text.trim().strip_prefix("gitdir:")?.trim())
+        };
+        let head = fs::read_to_string(git_dir.join("HEAD")).ok()?;
+        let head = head.trim();
+        return Some(match head.strip_prefix("ref:") {
+            Some(reference) => {
+                let reference = reference.trim();
+                reference.strip_prefix("refs/heads/").unwrap_or(reference).to_string()
+            }
+            None => head.chars().take(7).collect(),
+        });
+    }
+    None
+}
+
+/// Who fm84 runs as and on what machine, `colt@laserbeak`, and whether that
+/// is root - worth seeing before a delete.
+#[cfg(unix)]
+pub fn user_at_host() -> (String, bool) {
+    // SAFETY: geteuid cannot fail, and gethostname writes at most the length
+    // it is given into a buffer of ours, NUL-terminated when it fits.
+    let uid = unsafe { libc::geteuid() };
+    let mut buffer = [0 as libc::c_char; 256];
+    let host = if unsafe { libc::gethostname(buffer.as_mut_ptr(), buffer.len() - 1) } == 0 {
+        // SAFETY: the last byte was never written, so the string ends by it.
+        unsafe { std::ffi::CStr::from_ptr(buffer.as_ptr()) }.to_string_lossy().into_owned()
+    } else {
+        String::new()
+    };
+    // A domain on the end says nothing a glance needs.
+    let host = host.split('.').next().unwrap_or_default().to_string();
+    (format!("{}@{}", user_name(uid), host), uid == 0)
+}
+
+#[cfg(not(unix))]
+pub fn user_at_host() -> (String, bool) {
+    let variable = |name: &str| std::env::var(name).unwrap_or_default();
+    (format!("{}@{}", variable("USERNAME"), variable("COMPUTERNAME")), false)
+}
+
 /// What kind of place a mount is, so the UI can pick an icon for it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MountKind {
@@ -1676,6 +1730,38 @@ mod path_tests {
         assert_eq!(complete("", true).as_deref(), None);
         // Not a directory at all.
         assert_eq!(complete(&format!("{base}/nope/x"), false), None);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// The branch, from anywhere under the repository; the commit when
+    /// there is none; through a `.git` file, as a worktree has; and nothing
+    /// outside one.
+    #[test]
+    fn the_git_branch_a_directory_is_on() {
+        let dir = std::env::temp_dir().join(format!("fm84-git-branch-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let repo = dir.join("repo");
+        fs::create_dir_all(repo.join(".git")).unwrap();
+        fs::create_dir_all(repo.join("src").join("deep")).unwrap();
+        fs::write(repo.join(".git").join("HEAD"), "ref: refs/heads/feature/tabs\n").unwrap();
+        assert_eq!(git_branch(&repo).as_deref(), Some("feature/tabs"));
+        assert_eq!(git_branch(&repo.join("src").join("deep")).as_deref(), Some("feature/tabs"));
+
+        fs::write(repo.join(".git").join("HEAD"), "3d8eea0a1b2c3d4e5f60718293a4b5c6d7e8f901\n").unwrap();
+        assert_eq!(git_branch(&repo).as_deref(), Some("3d8eea0"));
+
+        let worktree = dir.join("worktree");
+        let worktree_git = dir.join("gitdirs").join("worktree");
+        fs::create_dir_all(&worktree).unwrap();
+        fs::create_dir_all(&worktree_git).unwrap();
+        fs::write(worktree.join(".git"), "gitdir: ../gitdirs/worktree\n").unwrap();
+        fs::write(worktree_git.join("HEAD"), "ref: refs/heads/main\n").unwrap();
+        assert_eq!(git_branch(&worktree).as_deref(), Some("main"));
+
+        let outside = dir.join("outside");
+        fs::create_dir_all(&outside).unwrap();
+        // Unless the temporary directory is itself in a repository.
+        assert_eq!(git_branch(&outside), git_branch(&std::env::temp_dir()));
         fs::remove_dir_all(&dir).unwrap();
     }
 }
