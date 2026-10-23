@@ -392,6 +392,9 @@ pub struct AppState {
     // instead of recomputing the layout from hardcoded row numbers.
     pub table_area_left: Rect,
     pub table_area_right: Rect,
+    /// The row of the panels' paths, a click on either of which edits it as
+    /// Ctrl+L does.
+    pub path_bar_area: Rect,
     /// The column headings a click sorts by, both panels', as last drawn.
     pub sort_headers: Vec<(Rect, SortKey)>,
     pub viewport_start_left: usize,
@@ -1141,6 +1144,7 @@ impl AppState {
             last_click_pos: (0, 0),
             table_area_left: Rect::default(),
             table_area_right: Rect::default(),
+            path_bar_area: Rect::default(),
             sort_headers: Vec::new(),
             viewport_start_left: 0,
             viewport_start_right: 0,

@@ -177,6 +177,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             _ => None,
         };
         render_path_bar(f, chunks_main[1], &app_state.dir_left, &app_state.dir_right, area.width, app_state.is_left_active, going_to);
+        app_state.path_bar_area = chunks_main[1];
         match app_state.screen {
             Screen::Viewer(_) => {
                 let (height, width, content_area) = render_viewer(f, chunks_main[2], app_state);
@@ -1621,7 +1622,8 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "F12 - Preview in other panel",
         "Ctrl+Left/Right - Dir to that panel",
         "  Ctrl+U swap panels, Alt+I same dir there",
-        "Ctrl+L - Go to path (Tab completes)",
+        "Ctrl+L - Go to path (or click it)",
+        "  Tab completes a name",
         "  Alt+Left/Right back/forward",
         "Ctrl+D - Bookmarks",
         "Ctrl+T/Ctrl+W - New/close tab",

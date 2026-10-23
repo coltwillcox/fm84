@@ -1224,6 +1224,19 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
         return;
     }
 
+    // A panel's path, in the row above it, is edited where it is as Ctrl+L
+    // edits it; the panel becomes the active one. The split between the two
+    // is where the right panel starts.
+    if app_state.path_bar_area.contains(Position::new(column, row)) {
+        let is_left = column < app_state.table_area_right.x;
+        let editing = matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::GoTo, _)));
+        if app_state.job.is_none() && !app_state.panel_busy(is_left) && !(editing && is_left == app_state.is_left_active) {
+            app_state.is_left_active = is_left;
+            app_state.open_go_to();
+        }
+        return;
+    }
+
     // Check for double-click (same position within 500ms)
     let now = Instant::now();
     let is_double_click = if let Some(last_time) = app_state.last_click_time {
@@ -1521,6 +1534,45 @@ mod tests {
         assert!(app_state.dialog.is_none());
 
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A click on a panel's path edits it as Ctrl+L does, in that panel.
+    #[test]
+    fn a_click_on_a_path_edits_it() {
+        use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let bar = app_state.path_bar_area;
+        let click = |app_state: &mut AppState, column| {
+            super::handle_mouse(
+                app_state,
+                MouseEvent {
+                    kind: MouseEventKind::Down(MouseButton::Left),
+                    column,
+                    row: bar.y,
+                    modifiers: KeyModifiers::NONE,
+                },
+            );
+        };
+        let going_to = |app_state: &AppState| match &app_state.dialog {
+            Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input.text.clone()),
+            _ => None,
+        };
+
+        click(&mut app_state, bar.x + bar.width - 10);
+        assert!(!app_state.is_left_active);
+        assert!(going_to(&app_state).unwrap().starts_with(&*app_state.dir_right.to_string_lossy()));
+        // Typed into, a click on the same path leaves it be.
+        press(&mut app_state, KeyCode::Char('x'));
+        let typed = going_to(&app_state);
+        click(&mut app_state, bar.x + bar.width - 10);
+        assert_eq!(going_to(&app_state), typed);
+        // The other one starts again, there.
+        click(&mut app_state, bar.x + 5);
+        assert!(app_state.is_left_active);
+        assert!(going_to(&app_state).unwrap().starts_with(&*app_state.dir_left.to_string_lossy()));
     }
 
     /// Ctrl+C copies full paths and Alt+C names: of the selection, of the
