@@ -56,6 +56,21 @@ impl TextInput {
         self.cursor = self.text.chars().count();
     }
 
+    /// Put the cursor on the character drawn `column` cells in, or after
+    /// the last when the column is past it - for a click on a field drawn
+    /// from its start, as one whose text fits is.
+    pub fn cursor_to_column(&mut self, column: usize) {
+        let mut used = 0;
+        self.cursor = self
+            .text
+            .chars()
+            .take_while(|&character| {
+                used += crate::utils::display_width(&character.to_string()).max(1);
+                used <= column
+            })
+            .count();
+    }
+
     pub fn insert(&mut self, c: char) {
         let idx = self.byte_index();
         self.text.insert(idx, c);
@@ -442,6 +457,9 @@ pub struct AppState {
     /// The row of the panels' paths, a click on either of which edits it as
     /// Ctrl+L does.
     pub path_bar_area: Rect,
+    /// Alt+A's fields as last drawn: each one's row, and the column its text
+    /// starts at, for a click to land in.
+    pub attribute_rows: Vec<(Rect, u16)>,
     /// The F-key labels along the bottom, as last drawn, and their keys.
     pub fkey_hits: Vec<(Rect, u8)>,
     /// The column headings a click sorts by, both panels', as last drawn.
@@ -1194,6 +1212,7 @@ impl AppState {
             table_area_left: Rect::default(),
             table_area_right: Rect::default(),
             path_bar_area: Rect::default(),
+            attribute_rows: Vec::new(),
             fkey_hits: Vec::new(),
             sort_headers: Vec::new(),
             viewport_start_left: 0,
@@ -3559,6 +3578,24 @@ impl AppState {
         if let Some(Dialog::Attributes(form)) = &mut self.dialog {
             let count = form.fields.len();
             form.focus = if forward { (form.focus + 1) % count } else { (form.focus + count - 1) % count };
+        }
+    }
+
+    /// A click on one of the fields: the keys go to it, and when what it
+    /// holds fits, the cursor goes where the click was.
+    pub fn attributes_click(&mut self, column: u16, row: u16) {
+        let Some(index) = self.attribute_rows.iter().position(|(cell, _)| cell.contains(Position::new(column, row))) else {
+            return;
+        };
+        let (cell, text_x) = self.attribute_rows[index];
+        if let Some(Dialog::Attributes(form)) = &mut self.dialog
+            && let Some(field) = form.fields.get_mut(index)
+        {
+            form.focus = index;
+            let room = cell.right().saturating_sub(text_x) as usize;
+            if crate::utils::display_width(&field.input.text) < room {
+                field.input.cursor_to_column(column.saturating_sub(text_x) as usize);
+            }
         }
     }
 

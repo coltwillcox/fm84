@@ -196,6 +196,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         // they sit, in the panel, the status bar and the drive strip - and so
         // is the replace question, under the match it is asking about.
         let mut find_files_page = None;
+        let mut attribute_rows = Vec::new();
         match &app_state.dialog {
             Some(Dialog::Help) => render_help_popup(f, area),
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
@@ -212,13 +213,14 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
                 }
                 FindFiles::Found(search) => find_files_page = Some(render_find_files_results(f, area, search)),
             },
-            Some(Dialog::Attributes(form)) => render_attributes_popup(f, area, form),
+            Some(Dialog::Attributes(form)) => attribute_rows = render_attributes_popup(f, area, form),
             Some(Dialog::Bookmarks { list, index }) => render_bookmarks_popup(f, area, list, *index, &app_state.panel_dir(app_state.is_left_active)),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {
             app_state.find_files_page = page;
         }
+        app_state.attribute_rows = attribute_rows;
         // Over everything: a job, which holds the keys while it runs, or an
         // error, which holds them until it is put away.
         if app_state.job.is_some() {
@@ -1516,7 +1518,9 @@ fn popup_inner(area: Rect) -> Rect {
 /// the border - an error naming a long path, or the names of a dozen files
 /// being copied. When that comes to more rows than there is room for, the
 /// longest is shortened, so the line naming the keys still shows.
-fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>) {
+///
+/// Gives back the row each line starts on, or None for one past the bottom.
+fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>) -> Vec<Option<u16>> {
     let inner = popup_inner(area);
     let room = inner.height as usize;
 
@@ -1524,10 +1528,12 @@ fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>)
     let rows: usize = blocks.iter().map(Vec::len).sum();
     let airy = (rows + blocks.len()).saturating_sub(1);
     let mut body: Vec<Line> = Vec::with_capacity(airy.max(rows));
+    let mut starts = Vec::with_capacity(blocks.len());
     for (index, block) in blocks.into_iter().enumerate() {
         if index > 0 && airy <= room {
             body.push(Line::from(""));
         }
+        starts.push(body.len());
         body.extend(block);
     }
 
@@ -1536,6 +1542,7 @@ fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>)
     let mut out = vec![Line::from(""); padding];
     out.extend(body);
     f.render_widget(Paragraph::new(out).alignment(Alignment::Center), inner);
+    starts.into_iter().map(|start| (padding + start < room).then(|| inner.y + (padding + start) as u16)).collect()
 }
 
 /// The rows a popup line takes at `width`. Only a line in one style is
@@ -2139,7 +2146,7 @@ fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, search: &cr
 /// Alt+A: a field for each thing to change, the one being typed into barred
 /// as Find files' are. With one entry, the mode as it would come out is
 /// written beside its field.
-fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &AttributesForm) {
+fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &AttributesForm) -> Vec<(Rect, u16)> {
     let popup_area = centered_rect(70, 50, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Attributes ", style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
@@ -2181,7 +2188,11 @@ fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &Attrib
         lines.push(Line::from(Span::styled("Mode as 755 or u+x,go-w; owner and group by name or number", style_columns())));
     }
     lines.push(Line::from(Span::styled("Tab - Next field    Enter - Apply    Esc - Cancel", style_columns())));
-    popup_body(f, popup_area, lines);
+    // Each field's row, for a click: the lines are as wide as the body, so
+    // the text starts just after the label.
+    let inner = popup_inner(popup_area);
+    let starts = popup_body(f, popup_area, lines);
+    starts[1..=form.fields.len()].iter().flatten().map(|&y| (Rect::new(inner.x, y, inner.width, 1), inner.x + LABEL as u16)).collect()
 }
 
 #[cfg(unix)]

@@ -21,10 +21,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
         // themselves out. Repeat is kept so held keys still work.
         Event::Key(key) if key.kind != KeyEventKind::Release => return Ok(handle_key(app_state, key)),
         Event::Paste(text) => handle_paste(app_state, &text),
-        // Nothing behind a popup responds to the mouse - not clicks and not
-        // the wheel, which would otherwise scroll a panel out of sight of the
-        // dialog asking about it.
-        Event::Mouse(mouse_event) if !app_state.popup_is_open() => return Ok(handle_mouse(app_state, mouse_event)),
+        Event::Mouse(mouse_event) => return Ok(mouse_to(app_state, mouse_event)),
         _ => {}
     }
     Ok(true)
@@ -606,6 +603,20 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
     } else if app_state.dialog.is_none() && app_state.is_editing() {
         app_state.editor_insert_text(text);
     }
+}
+
+/// The mouse, to what is on top. Nothing behind a popup responds to it - not
+/// clicks and not the wheel, which would otherwise scroll a panel out of
+/// sight of the dialog asking about it. Alt+A's fields are the one thing in a
+/// popup a click reaches. False to quit.
+fn mouse_to(app_state: &mut AppState, mouse_event: MouseEvent) -> bool {
+    if !app_state.popup_is_open() {
+        return handle_mouse(app_state, mouse_event);
+    }
+    if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && app_state.error.is_none() && app_state.job.is_none() && matches!(app_state.dialog, Some(Dialog::Attributes(_))) {
+        app_state.attributes_click(mouse_event.column, mouse_event.row);
+    }
+    true
 }
 
 /// False to quit, which F10 clicked on the key bar does.
@@ -1557,6 +1568,36 @@ mod tests {
             assert_eq!(std::fs::metadata(dir.join(name)).unwrap().modified().unwrap(), then);
         }
         assert_eq!((mode("a.txt"), mode("b.txt")), (0o744, 0o600));
+
+        // A click on a field takes the keys there, the cursor where it
+        // landed; one on the rest of the popup does nothing.
+        alt_a(&mut app_state);
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let click = |app_state: &mut AppState, column, row| {
+            super::mouse_to(
+                app_state,
+                crossterm::event::MouseEvent {
+                    kind: crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left),
+                    column,
+                    row,
+                    modifiers: KeyModifiers::NONE,
+                },
+            );
+        };
+        let (group_row, text_x) = app_state.attribute_rows[2];
+        click(&mut app_state, text_x + 1, group_row.y);
+        let focus = |app_state: &AppState| match &app_state.dialog {
+            Some(Dialog::Attributes(form)) => (form.focus, form.fields[form.focus].input.cursor),
+            _ => panic!("not open"),
+        };
+        assert_eq!(focus(&app_state), (2, 1));
+        let (modified_row, _) = app_state.attribute_rows[3];
+        click(&mut app_state, modified_row.right() - 1, modified_row.y);
+        assert_eq!(focus(&app_state), (3, "2001-02-03 04:05:06".len()));
+        click(&mut app_state, modified_row.x, modified_row.y - 1);
+        assert_eq!(focus(&app_state).0, 3);
+        press(&mut app_state, KeyCode::Esc);
 
         // Not a mode: said so, and the form is still there to fix.
         alt_a(&mut app_state);
