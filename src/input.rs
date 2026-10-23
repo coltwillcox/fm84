@@ -102,6 +102,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             let index = if digit == 9 { count - 1 } else { digit as usize - 1 };
             app_state.select_tab(is_left, index);
         }
+        // Alt+C copies the names of what Ctrl+C would copy the paths of.
+        if in_panel && c == 'c' {
+            copy_names(app_state, false);
+        }
         // Alt+I sends the other panel to this one's directory.
         if in_panel && c == 'i' {
             app_state.same_dir_in_other_panel();
@@ -122,6 +126,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             'y' | 'Y' if in_editor => app_state.editor_redo(),
             'c' if in_editor => app_state.editor_copy(),
             'c' if app_state.is_viewing() => app_state.viewer_copy(),
+            'c' if in_panel => copy_names(app_state, true),
             'x' if in_editor => app_state.editor_cut(),
             'v' if in_editor => app_state.editor_paste(),
             // Ctrl+R rereads both panels from disk.
@@ -890,6 +895,33 @@ fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
     chosen.into_iter().filter(|item| item.name != "..").map(|item| (item.path_in(dir), item.is_dir)).collect()
 }
 
+/// Ctrl+C copies the full paths of what is selected, or of the entry under
+/// the cursor, to the clipboard, a line each; Alt+C the names alone. On the
+/// parent entry, the panel's own directory. Names that are not valid UTF-8
+/// go as near as they can be read: a clipboard holds text.
+fn copy_names(app_state: &mut AppState, full: bool) {
+    let mut items: Vec<PathBuf> = chosen_items(app_state).into_iter().map(|(path, _)| path).collect();
+    if items.is_empty() {
+        items.push(app_state.panel_dir(app_state.is_left_active));
+    }
+    let text = items
+        .iter()
+        .map(|path| match path.file_name() {
+            Some(name) if !full => name.to_string_lossy().into_owned(),
+            _ => path.to_string_lossy().into_owned(),
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    crate::utils::set_system_clipboard(&text);
+    let what = if full { "path" } else { "name" };
+    app_state.find_note = Some(match items.len() {
+        1 => format!("Copied {what}: {text}"),
+        count => format!("Copied {count} {what}s"),
+    });
+    // The editor pastes from it too, which works where OSC 52 does not.
+    app_state.clipboard = text;
+}
+
 /// F8 or Delete, to the trash unless F11 says otherwise, and Shift+F8 or
 /// Shift+Delete for good. That one always asks first, whatever Confirm delete
 /// is set to: there is no getting it back.
@@ -1487,6 +1519,44 @@ mod tests {
         assert_eq!(list(&app_state), (vec![dir.join("gone")], 0));
         handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL));
         assert!(app_state.dialog.is_none());
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Ctrl+C copies full paths and Alt+C names: of the selection, of the
+    /// entry under the cursor, or on the parent entry of the panel itself.
+    #[test]
+    fn copy_paths_and_names_from_a_panel() {
+        let dir = std::env::temp_dir().join(format!("fm84-copy-names-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("a.txt"), "").unwrap();
+        std::fs::write(dir.join("b.txt"), "").unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), Some("b.txt".as_ref()));
+        let chord = |app_state: &mut AppState, modifiers| handle_key(app_state, KeyEvent::new(KeyCode::Char('c'), modifiers));
+
+        chord(&mut app_state, KeyModifiers::CONTROL);
+        assert_eq!(app_state.clipboard, dir.join("b.txt").to_string_lossy());
+        assert!(app_state.find_note.as_deref().unwrap().starts_with("Copied path: "));
+        chord(&mut app_state, KeyModifiers::ALT);
+        assert_eq!(app_state.clipboard, "b.txt");
+
+        app_state.selected_left.insert("a.txt".into());
+        app_state.selected_left.insert("b.txt".into());
+        chord(&mut app_state, KeyModifiers::ALT);
+        assert_eq!(app_state.clipboard, "a.txt\nb.txt");
+        assert_eq!(app_state.find_note.as_deref(), Some("Copied 2 names"));
+        // The note goes with the next key.
+        press(&mut app_state, KeyCode::Down);
+        assert!(app_state.find_note.is_none());
+
+        app_state.selected_left.clear();
+        app_state.state_left.select(Some(0));
+        chord(&mut app_state, KeyModifiers::CONTROL);
+        assert_eq!(app_state.clipboard, dir.to_string_lossy());
 
         std::fs::remove_dir_all(&dir).unwrap();
     }

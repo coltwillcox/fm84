@@ -376,7 +376,8 @@ pub struct AppState {
     /// first search until the viewer or editor closes.
     pub find_shown: bool,
     /// What the last search came to - "Not found", or that it went round the
-    /// end - shown in the status bar until the next key.
+    /// end - or what Ctrl+C copied in a panel, shown in the status bar until
+    /// the next key.
     pub find_note: Option<String>,
     // Keyed by file name, not row index: a reload can re-sort the rows, and an
     // index would then point at a different file than the one the user picked.

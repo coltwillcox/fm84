@@ -1235,9 +1235,7 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
         render_prompt_bar(f, area, label, input, status_style);
         return;
     }
-    if !matches!(app_state.screen, Screen::Panels)
-        && let Some(note) = &app_state.find_note
-    {
+    if let Some(note) = &app_state.find_note {
         render_status_bar(f, area, format!(" {} ", printable_name(note)), status_style);
         return;
     }
@@ -1631,6 +1629,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "Space - Select/deselect file",
         "+/- select/deselect by pattern, * invert",
         "  Alt+* invert with directories",
+        "Ctrl+C/Alt+C - Copy paths/names",
         "Ctrl+F3..F6 - Sort name/ext/date/size",
         "Ctrl+R - Reload both panels",
         "Type to search, Esc to clear",
