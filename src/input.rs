@@ -1,7 +1,7 @@
 use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, TextInput, TransferKind};
 use crate::display::tab_width;
 use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets, typed_path};
-use crate::options::OnExisting;
+use crate::options::{OnExisting, SortKey};
 use crate::strip::StripHit;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
@@ -467,6 +467,12 @@ fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(2) if drive_chord => app_state.open_drive_picker(false),
         KeyCode::F(1) => app_state.dialog = Some(Dialog::Help),
         KeyCode::F(2) => open_rename(app_state),
+        // Ctrl+F3 to Ctrl+F6 sort by name, extension, date and size, as in
+        // Total Commander; the same one again turns the order round.
+        KeyCode::F(3) if control => app_state.sort_panels_by(SortKey::Name),
+        KeyCode::F(4) if control => app_state.sort_panels_by(SortKey::Extension),
+        KeyCode::F(5) if control => app_state.sort_panels_by(SortKey::Modified),
+        KeyCode::F(6) if control => app_state.sort_panels_by(SortKey::Size),
         KeyCode::F(3) => handle_f3_view(app_state),
         // Shift+F4 creates an empty file, as MC does.
         KeyCode::F(4) if key.modifiers.contains(KeyModifiers::SHIFT) => toggle_create(app_state, false),
@@ -1179,8 +1185,12 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
         return;
     }
 
-    // The table draws its header on the first row of its area.
+    // The table draws its header on the first row of its area, and a click
+    // on a heading sorts by it.
     if row <= area.y {
+        if let Some(&(_, key)) = app_state.sort_headers.iter().find(|(cell, _)| cell.contains(position)) {
+            app_state.sort_panels_by(key);
+        }
         return;
     }
     let clicked_table_row = (row - area.y - 1) as usize;
@@ -1383,6 +1393,57 @@ mod tests {
         press(&mut app_state, KeyCode::F(11));
         press(&mut app_state, KeyCode::Esc);
         assert!(app_state.dialog.is_none());
+    }
+
+    /// Ctrl+F3 to Ctrl+F6 and a click on a heading sort both panels.
+    #[test]
+    fn sort_from_the_keys_and_the_headings() {
+        use crate::options::{Options, SortKey};
+        use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+        let dir = std::env::temp_dir().join(format!("fm84-sort-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("a.txt"), "a long one").unwrap();
+        std::fs::write(dir.join("b.rs"), "short").unwrap();
+        std::fs::write(dir.join("c.md"), "mid size").unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), Some("b.rs".as_ref()));
+        let names = |app_state: &AppState| app_state.children_left.iter().skip(1).map(|item| item.name_full.clone()).collect::<Vec<_>>();
+        let control = |app_state: &mut AppState, n| handle_key(app_state, KeyEvent::new(KeyCode::F(n), KeyModifiers::CONTROL));
+
+        // Ctrl+F3 sorts by name, and again turns it round, the cursor
+        // staying on the entry it was on.
+        control(&mut app_state, 3);
+        assert_eq!(names(&app_state), ["a.txt", "b.rs", "c.md"]);
+        control(&mut app_state, 3);
+        assert!(app_state.options.sort_descending);
+        assert_eq!(names(&app_state), ["c.md", "b.rs", "a.txt"]);
+        control(&mut app_state, 4);
+        assert_eq!((app_state.options.sort_key, app_state.options.sort_descending), (SortKey::Extension, false));
+        assert_eq!(names(&app_state), ["c.md", "b.rs", "a.txt"]);
+        let cursor = app_state.state_left.selected().unwrap();
+        assert_eq!(app_state.children_left[cursor].name_full, "b.rs");
+
+        // A click on the Size heading sorts by size, arrow and all.
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let (cell, _) = *app_state.sort_headers.iter().find(|(_, key)| *key == SortKey::Size).unwrap();
+        let click = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: cell.x,
+            row: cell.y,
+            modifiers: KeyModifiers::NONE,
+        };
+        super::handle_mouse(&mut app_state, click);
+        assert_eq!(app_state.options.sort_key, SortKey::Size);
+        assert_eq!(names(&app_state), ["b.rs", "c.md", "a.txt"]);
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let heading: String = (cell.x..cell.x + cell.width).map(|x| terminal.backend().buffer()[(x, cell.y)].symbol().to_string()).collect();
+        assert_eq!(heading.trim_end(), "Size ↑");
+
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// Ctrl+L goes where it is told - a directory, or a file to land on -

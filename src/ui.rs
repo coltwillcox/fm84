@@ -1,7 +1,7 @@
 use crate::app::{AppState, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
-use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options};
+use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options, SortKey};
 use crate::strip::{ARROW, Strip, StripHit};
 use crate::utils::*;
 use crate::viewer::ViewMode;
@@ -75,6 +75,16 @@ impl Column {
             Column::Size => "Size",
             Column::Modified => "Modified",
             Column::Attributes => "Attributes",
+        }
+    }
+
+    /// What a click on its heading sorts by. Attributes are not a key.
+    fn sort_key(self) -> Option<SortKey> {
+        match self {
+            Column::Ext => Some(SortKey::Extension),
+            Column::Size => Some(SortKey::Size),
+            Column::Modified => Some(SortKey::Modified),
+            Column::Attributes => None,
         }
     }
 
@@ -521,7 +531,7 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     // Viewport height (subtract 1 for header row)
     let viewport_height = chunks[0].height.saturating_sub(1) as usize;
 
-    let header = make_header_row(&columns);
+    let header = make_header_row(&columns, &app_state.options);
 
     // Build only visible rows for left panel
     let field = name_width(&app_state.options, chunks[0].width);
@@ -529,11 +539,28 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     let mut state_left_view = TableState::default();
     state_left_view.select(app_state.state_left.selected().map(|s| s.saturating_sub(offset_left)));
 
-    let table_left = Table::new(rows_left, widths.clone())
-        .block(Block::default().borders(Borders::LEFT).border_style(style_border()))
-        .header(header.clone())
-        .row_highlight_style(table_style(app_state.is_left_active))
-        .column_spacing(1);
+    let block_left = Block::default().borders(Borders::LEFT).border_style(style_border());
+    let block_right = Block::default().borders(Borders::RIGHT).border_style(style_border());
+    // Where each heading lands, laid out as the table lays out its columns,
+    // for a click to sort by. Not under the preview, which covers one panel.
+    app_state.sort_headers.clear();
+    for (area, block, is_left) in [(chunks[0], &block_left, true), (chunks[2], &block_right, false)] {
+        if app_state.preview.is_some() && is_left != app_state.is_left_active {
+            continue;
+        }
+        let inner = block.inner(area);
+        let cells = Layout::horizontal(widths.clone()).spacing(1).split(Rect { height: 1, ..inner });
+        // The icon and Name both sort by name; then a spacer and a column each.
+        let name = cells[0].union(cells[1]);
+        app_state.sort_headers.push((name, SortKey::Name));
+        for (index, column) in columns.iter().enumerate() {
+            if let Some(key) = column.sort_key() {
+                app_state.sort_headers.push((cells[3 + 2 * index], key));
+            }
+        }
+    }
+
+    let table_left = Table::new(rows_left, widths.clone()).block(block_left).header(header.clone()).row_highlight_style(table_style(app_state.is_left_active)).column_spacing(1);
     f.render_stateful_widget(table_left, chunks[0], &mut state_left_view);
 
     // Cache the separator string based on height
@@ -550,11 +577,7 @@ fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut A
     let mut state_right_view = TableState::default();
     state_right_view.select(app_state.state_right.selected().map(|s| s.saturating_sub(offset_right)));
 
-    let table_right = Table::new(rows_right, widths)
-        .block(Block::default().borders(Borders::RIGHT).border_style(style_border()))
-        .header(header)
-        .row_highlight_style(table_style(!app_state.is_left_active))
-        .column_spacing(1);
+    let table_right = Table::new(rows_right, widths).block(block_right).header(header).row_highlight_style(table_style(!app_state.is_left_active)).column_spacing(1);
     f.render_stateful_widget(table_right, chunks[2], &mut state_right_view);
 
     // Preview takes over the panel the cursor is not in.
@@ -738,11 +761,18 @@ fn hex_preview(bytes: &[u8], width: u16, rows: usize) -> Vec<String> {
     bytes.chunks(per_line).take(rows).enumerate().map(|(index, chunk)| crate::viewer::hex_row(index * per_line, chunk, per_line, digits)).collect()
 }
 
-fn make_header_row(columns: &[Column]) -> Row<'static> {
-    let mut cells = vec![Cell::from(Span::styled("", style_columns())), Cell::from(Span::styled("Name", style_columns()))];
+/// The headings, the one the panels are sorted by marked with which way.
+/// Every column is wide enough for its title and the arrow.
+fn make_header_row(columns: &[Column], options: &Options) -> Row<'static> {
+    let arrow = if options.sort_descending { " ↓" } else { " ↑" };
+    let heading = |title: &str, key: Option<SortKey>| {
+        let title = if key == Some(options.sort_key) { format!("{title}{arrow}") } else { title.to_string() };
+        Cell::from(Span::styled(title, style_columns()))
+    };
+    let mut cells = vec![Cell::from(Span::styled("", style_columns())), heading("Name", Some(SortKey::Name))];
     for column in columns {
         cells.push(Cell::from(Span::styled("", style_columns())));
-        cells.push(Cell::from(Span::styled(column.title(), style_columns())));
+        cells.push(heading(column.title(), column.sort_key()));
     }
     Row::new(cells)
 }
@@ -1598,6 +1628,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "Space - Select/deselect file",
         "+/- select/deselect by pattern, * invert",
         "  Alt+* invert with directories",
+        "Ctrl+F3..F6 - Sort name/ext/date/size",
         "Ctrl+R - Reload both panels",
         "Type to search, Esc to clear",
     ];

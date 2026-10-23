@@ -1,6 +1,6 @@
 use crate::background::{Latest, Watch, WatchEvent};
 use crate::fs_ops::{Clash, Description, Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place};
-use crate::options::{OPTION_ROWS, OptionRow, Options};
+use crate::options::{OPTION_ROWS, OptionRow, Options, SortKey};
 use crate::strip::{Strip, StripHit};
 use crate::viewer::Preview;
 use crate::viewer::{ViewMode, ViewerState};
@@ -389,6 +389,8 @@ pub struct AppState {
     // instead of recomputing the layout from hardcoded row numbers.
     pub table_area_left: Rect,
     pub table_area_right: Rect,
+    /// The column headings a click sorts by, both panels', as last drawn.
+    pub sort_headers: Vec<(Rect, SortKey)>,
     pub viewport_start_left: usize,
     pub viewport_start_right: usize,
     pub editor_content_area: Rect,
@@ -1136,6 +1138,7 @@ impl AppState {
             last_click_pos: (0, 0),
             table_area_left: Rect::default(),
             table_area_right: Rect::default(),
+            sort_headers: Vec::new(),
             viewport_start_left: 0,
             viewport_start_right: 0,
             editor_content_area: Rect::default(),
@@ -1266,6 +1269,19 @@ impl AppState {
         if let Some(Dialog::Options { editing }) = &mut self.dialog {
             *editing = None;
         }
+    }
+
+    /// Sort both panels by `key`, from Ctrl+F3 to Ctrl+F6 or a click on a
+    /// column heading. The key they are already sorted by turns the order
+    /// round; another starts ascending. Kept as F11 would keep it.
+    pub fn sort_panels_by(&mut self, key: SortKey) {
+        if self.options.sort_key == key {
+            self.options.sort_descending = !self.options.sort_descending;
+        } else {
+            self.options.sort_key = key;
+            self.options.sort_descending = false;
+        }
+        self.options_changed(OptionRow::SortKey);
     }
 
     /// Keep a change: write it out, and reread the panels if it changes what

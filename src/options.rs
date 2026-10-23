@@ -903,6 +903,11 @@ fn parse_bool(value: &str) -> Option<bool> {
 /// every option with it - and two fm84s quitting at once could each catch the
 /// other's half-written session.
 fn write_config_file(name: &str, contents: &str) -> io::Result<()> {
+    // A test that changes an option must not write over the config of
+    // whoever runs the tests.
+    if cfg!(test) {
+        return Ok(());
+    }
     let path = config_path(name).ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No config directory"))?;
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)?;
