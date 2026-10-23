@@ -127,6 +127,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             }
             // Ctrl+L, as a browser's address bar.
             'l' if in_panel => app_state.open_go_to(),
+            // Ctrl+D, Total Commander's directory hotlist; again closes it.
+            'd' if in_panel => app_state.open_bookmarks(),
+            'd' if app_state.error.is_none() && matches!(app_state.dialog, Some(Dialog::Bookmarks { .. })) => app_state.dialog = None,
             't' if in_panel => app_state.new_tab(),
             'w' if in_panel => {
                 let is_left = app_state.is_left_active;
@@ -281,6 +284,32 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => app_state.dialog = None,
             _ => {}
         },
+        Some(Dialog::Bookmarks { .. }) => {
+            let shift = key.modifiers.contains(KeyModifiers::SHIFT);
+            match code {
+                KeyCode::Esc => app_state.dialog = None,
+                KeyCode::Enter => app_state.go_to_bookmark(),
+                KeyCode::Up if shift => app_state.shift_bookmark(true),
+                KeyCode::Down if shift => app_state.shift_bookmark(false),
+                KeyCode::Up => app_state.move_bookmark_cursor(-1),
+                KeyCode::Down => app_state.move_bookmark_cursor(1),
+                KeyCode::Home => app_state.move_bookmark_cursor(isize::MIN),
+                KeyCode::End => app_state.move_bookmark_cursor(isize::MAX),
+                KeyCode::Insert | KeyCode::Char('a') | KeyCode::Char('A') => app_state.add_bookmark(),
+                KeyCode::Delete | KeyCode::Char('d') | KeyCode::Char('D') => app_state.remove_bookmark(),
+                // 1 to 9 go straight to that one.
+                KeyCode::Char(c @ '1'..='9') => {
+                    let wanted = c as usize - '1' as usize;
+                    if let Some(Dialog::Bookmarks { list, index }) = &mut app_state.dialog
+                        && wanted < list.len()
+                    {
+                        *index = wanted;
+                        app_state.go_to_bookmark();
+                    }
+                }
+                _ => {}
+            }
+        }
         Some(Dialog::DrivePicker { .. }) => match code {
             KeyCode::Esc => app_state.dialog = None,
             KeyCode::Enter => app_state.confirm_drive_picker(),
@@ -1393,6 +1422,67 @@ mod tests {
         press(&mut app_state, KeyCode::F(11));
         press(&mut app_state, KeyCode::Esc);
         assert!(app_state.dialog.is_none());
+    }
+
+    /// Ctrl+D's list: A keeps the panel's directory once, Shift+arrows move
+    /// one, D forgets it, and Enter or a number goes there.
+    #[test]
+    fn bookmarks_are_kept_moved_forgotten_and_gone_to() {
+        let dir = std::env::temp_dir().join(format!("fm84-bookmarks-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("one")).unwrap();
+        std::fs::create_dir_all(dir.join("two")).unwrap();
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.join("one"), None);
+        // Opened on an empty list rather than the bookmarks of whoever runs this.
+        app_state.dialog = Some(Dialog::Bookmarks { list: Vec::new(), index: 0 });
+        let list = |app_state: &AppState| match &app_state.dialog {
+            Some(Dialog::Bookmarks { list, index }) => (list.clone(), *index),
+            _ => panic!("not open"),
+        };
+
+        press(&mut app_state, KeyCode::Char('a'));
+        press(&mut app_state, KeyCode::Char('a'));
+        assert_eq!(list(&app_state), (vec![dir.join("one")], 0));
+        app_state.dialog = None;
+        app_state.open_dir(true, dir.join("two"), None);
+        app_state.dialog = Some(Dialog::Bookmarks { list: vec![dir.join("one")], index: 0 });
+        press(&mut app_state, KeyCode::Insert);
+        assert_eq!(list(&app_state), (vec![dir.join("one"), dir.join("two")], 1));
+        handle_key(&mut app_state, KeyEvent::new(KeyCode::Up, KeyModifiers::SHIFT));
+        assert_eq!(list(&app_state), (vec![dir.join("two"), dir.join("one")], 0));
+
+        // 2 goes to the second, and the dialog closes.
+        press(&mut app_state, KeyCode::Char('2'));
+        assert!(app_state.dialog.is_none());
+        assert_eq!(app_state.dir_left, dir.join("one"));
+
+        // Gone since: said so, and the panel stays put.
+        app_state.dialog = Some(Dialog::Bookmarks {
+            list: vec![dir.join("gone"), dir.join("two")],
+            index: 0,
+        });
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.error.is_some());
+        assert_eq!(app_state.dir_left, dir.join("one"));
+        press(&mut app_state, KeyCode::Esc);
+
+        app_state.dialog = Some(Dialog::Bookmarks {
+            list: vec![dir.join("gone"), dir.join("one")],
+            index: 1,
+        });
+        // Drawn numbered, the panel's own directory marked.
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+        assert!(screen.contains("1   ") && screen.contains("2 • "), "{screen}");
+        press(&mut app_state, KeyCode::Delete);
+        assert_eq!(list(&app_state), (vec![dir.join("gone")], 0));
+        handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL));
+        assert!(app_state.dialog.is_none());
+
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// Ctrl+F3 to Ctrl+F6 and a click on a heading sort both panels.

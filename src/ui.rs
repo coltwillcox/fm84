@@ -211,6 +211,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
                 }
                 FindFiles::Found(search) => find_files_page = Some(render_find_files_results(f, area, search)),
             },
+            Some(Dialog::Bookmarks { list, index }) => render_bookmarks_popup(f, area, list, *index, &app_state.panel_dir(app_state.is_left_active)),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {
@@ -1623,6 +1624,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "Ctrl+Left/Right - Dir to that panel",
         "Ctrl+L - Go to path (Tab completes)",
         "  Alt+Left/Right back/forward",
+        "Ctrl+D - Bookmarks",
         "Ctrl+T/Ctrl+W - New/close tab",
         "  Ctrl+PgUp/PgDn, Alt+1..9 switch",
         "Space - Select/deselect file",
@@ -2103,6 +2105,49 @@ fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, search: &cr
     lines.push(Line::from(Span::styled(hint, style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
     rows
+}
+
+/// Ctrl+D: the bookmarks, numbered for 1 to 9, the active panel's
+/// directory marked when it is one of them. Each is shortened from the front,
+/// keeping the end of it, which tells them apart.
+fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &[PathBuf], index: usize, here: &Path) {
+    let popup_area = centered_rect(70, 60, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(" Bookmarks ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    // One blank row and two of keys under the list.
+    let rows = (inner.height as usize).saturating_sub(3);
+    let home = std::env::var_os("HOME").map(PathBuf::from).filter(|home| !home.as_os_str().is_empty());
+
+    let mut lines = Vec::new();
+    if list.is_empty() {
+        lines.push(Line::from(Span::styled("No bookmarks yet - A keeps the panel's directory", style_file())));
+    }
+    let first = if rows > 0 && index >= rows { index + 1 - rows } else { 0 };
+    for (number, path) in list.iter().enumerate().skip(first).take(rows) {
+        // Home as ~, as Ctrl+L reads it back.
+        let shown = match home.as_ref().and_then(|home| path.strip_prefix(home).ok()) {
+            Some(rest) if rest.as_os_str().is_empty() => "~".to_string(),
+            Some(rest) => format!("~{}{}", std::path::MAIN_SEPARATOR, rest.to_string_lossy()),
+            None => path.to_string_lossy().into_owned(),
+        };
+        let label = if number < 9 { format!("{} ", number + 1) } else { "  ".to_string() };
+        let mark = if path == here { "• " } else { "  " };
+        let room = width.saturating_sub(label.len() + mark.len());
+        let text = format!("{label}{mark}{}", tail_of(&printable_name(&shown), room));
+        let pad = " ".repeat(width.saturating_sub(display_width(&text)));
+        let style = if number == index { style_title().bg(palette().selected_background) } else { style_dir() };
+        lines.push(Line::from(Span::styled(format!("{text}{pad}"), style)));
+    }
+    while lines.len() < rows + 1 {
+        lines.push(Line::from(""));
+    }
+    lines.push(Line::from(Span::styled("Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove", style_columns())).centered());
+    lines.push(Line::from(Span::styled("Shift+Up/Down - Move    Esc - Close", style_columns())).centered());
+    f.render_widget(Paragraph::new(lines), inner);
 }
 
 /// The copy or move dialog: what is going, and a field for where to, opened

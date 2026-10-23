@@ -792,6 +792,22 @@ pub fn save_session(left: &PanelSession, right: &PanelSession) -> io::Result<()>
     write_config_file("session", &text)
 }
 
+/// The directories kept with Ctrl+D, in the order they were added or put
+/// in. One `bookmark` line each, in a file of its own beside the session, so
+/// a hand-edited list survives a session being written.
+pub fn load_bookmarks() -> Vec<PathBuf> {
+    config_path("bookmarks").and_then(|path| fs::read_to_string(path).ok()).map(|text| parse_bookmarks(&text)).unwrap_or_default()
+}
+
+pub fn save_bookmarks(bookmarks: &[PathBuf]) -> io::Result<()> {
+    let text: String = bookmarks.iter().map(|path| format!("bookmark = {}\n", escape_path(path))).collect();
+    write_config_file("bookmarks", &text)
+}
+
+fn parse_bookmarks(text: &str) -> Vec<PathBuf> {
+    key_values(text).filter(|&(key, value)| key == "bookmark" && !value.is_empty()).map(|(_, value)| unescape_path(value)).collect()
+}
+
 /// A path as a session line holds it. `display()` would lose any name that is
 /// not valid UTF-8, and the reader trims each value, so spaces at either end
 /// would go too. Those bytes, control characters and `%` itself are written
@@ -1031,6 +1047,14 @@ mod tests {
         }
         // Written before paths were escaped: a % with no hex after it is itself.
         assert_eq!(unescape_path("/tmp/50%off"), PathBuf::from("/tmp/50%off"));
+    }
+
+    #[test]
+    fn bookmarks_come_back_in_order_and_skip_anything_else() {
+        let text = "# kept by hand\nbookmark = /home/colt\nbookmark =\nother = /x\nbookmark =  edged%20\nbookmark = /tmp/100%25\n";
+        assert_eq!(parse_bookmarks(text), [PathBuf::from("/home/colt"), PathBuf::from("edged "), PathBuf::from("/tmp/100%")]);
+        let line = format!("bookmark = {}\n", escape_path(std::path::Path::new(" both ")));
+        assert_eq!(parse_bookmarks(&line), [PathBuf::from(" both ")]);
     }
 
     #[cfg(unix)]
