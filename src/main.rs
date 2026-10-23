@@ -1,4 +1,5 @@
 mod app;
+mod attributes;
 mod background;
 mod cli;
 mod constants;

@@ -102,6 +102,14 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             let index = if digit == 9 { count - 1 } else { digit as usize - 1 };
             app_state.select_tab(is_left, index);
         }
+        // Alt+A changes the attributes of what is chosen, as in Total
+        // Commander.
+        if in_panel && c == 'a' {
+            let items = chosen_items(app_state);
+            if !items.is_empty() {
+                app_state.open_attributes(items);
+            }
+        }
         // Alt+C copies the names of what Ctrl+C would copy the paths of.
         if in_panel && c == 'c' {
             copy_names(app_state, false);
@@ -294,6 +302,13 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             }
             KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => app_state.dialog = None,
             _ => {}
+        },
+        Some(Dialog::Attributes(_)) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Enter => app_state.apply_attributes(),
+            KeyCode::Tab | KeyCode::Down => app_state.attributes_switch_field(true),
+            KeyCode::BackTab | KeyCode::Up => app_state.attributes_switch_field(false),
+            _ => edit_text(app_state, code),
         },
         Some(Dialog::Bookmarks { .. }) => {
             let shift = key.modifiers.contains(KeyModifiers::SHIFT);
@@ -1492,6 +1507,70 @@ mod tests {
         press(&mut app_state, KeyCode::F(11));
         press(&mut app_state, KeyCode::Esc);
         assert!(app_state.dialog.is_none());
+    }
+
+    /// Alt+A opens on what the entries have in common; what is typed over it
+    /// is applied to each, and what cannot be read leaves the form open.
+    #[cfg(unix)]
+    #[test]
+    fn attributes_change_from_the_keys() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("fm84-alt-a-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        for (name, mode) in [("a.txt", 0o644), ("b.txt", 0o600)] {
+            std::fs::write(dir.join(name), "").unwrap();
+            std::fs::set_permissions(dir.join(name), std::fs::Permissions::from_mode(mode)).unwrap();
+        }
+        let mode = |name: &str| std::fs::metadata(dir.join(name)).unwrap().permissions().mode() & 0o7777;
+        let mut app_state = AppState::new();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), Some("a.txt".as_ref()));
+        let alt_a = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('a'), KeyModifiers::ALT));
+        let fields = |app_state: &AppState| match &app_state.dialog {
+            Some(Dialog::Attributes(form)) => form.fields.iter().map(|field| field.input.text.clone()).collect::<Vec<_>>(),
+            _ => panic!("not open"),
+        };
+        let retype = |app_state: &mut AppState, text: &str| {
+            app_state.dialog_input().unwrap().set(text.to_string());
+        };
+
+        alt_a(&mut app_state);
+        let opened = fields(&app_state);
+        assert_eq!(opened[0], "644");
+        assert_eq!(opened[1], crate::fs_ops::user_name(unsafe { libc::getuid() }));
+        retype(&mut app_state, "u+x");
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.dialog.is_none() && app_state.error.is_none());
+        assert_eq!(mode("a.txt"), 0o744);
+
+        // Two that differ: the mode opens empty, and stays as it is.
+        app_state.selected_left.insert("a.txt".into());
+        app_state.selected_left.insert("b.txt".into());
+        alt_a(&mut app_state);
+        assert_eq!(fields(&app_state)[0], "");
+        press(&mut app_state, KeyCode::BackTab);
+        retype(&mut app_state, "2001-02-03 04:05:06");
+        press(&mut app_state, KeyCode::Enter);
+        let then = crate::attributes::parse_time("2001-02-03 04:05:06").unwrap();
+        for name in ["a.txt", "b.txt"] {
+            assert_eq!(std::fs::metadata(dir.join(name)).unwrap().modified().unwrap(), then);
+        }
+        assert_eq!((mode("a.txt"), mode("b.txt")), (0o744, 0o600));
+
+        // Not a mode: said so, and the form is still there to fix.
+        alt_a(&mut app_state);
+        retype(&mut app_state, "u+q");
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.error.is_some() && matches!(app_state.dialog, Some(Dialog::Attributes(_))));
+        press(&mut app_state, KeyCode::Esc);
+        // Drawn, then put away.
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        press(&mut app_state, KeyCode::Esc);
+        assert!(app_state.dialog.is_none());
+
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// Ctrl+D's list: A keeps the panel's directory once, Shift+arrows move

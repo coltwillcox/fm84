@@ -15,7 +15,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 fn format_attributes(metadata: &fs::Metadata, is_dir: bool, is_symlink: bool) -> String {
     use std::os::unix::fs::PermissionsExt;
 
-    let mode = metadata.permissions().mode();
     let kind = if is_symlink {
         'l'
     } else if is_dir {
@@ -23,9 +22,17 @@ fn format_attributes(metadata: &fs::Metadata, is_dir: bool, is_symlink: bool) ->
     } else {
         '-'
     };
+    let mut text = String::with_capacity(10);
+    text.push(kind);
+    text.push_str(&mode_string(metadata.permissions().mode()));
+    text
+}
 
-    // Each triplet's execute slot doubles as the setuid/setgid/sticky flag,
-    // which would otherwise be invisible.
+/// The nine permission bits as `ls -l` writes them, `rwxr-xr-x`. Each
+/// triplet's execute slot doubles as the setuid/setgid/sticky flag, which
+/// would otherwise be invisible.
+#[cfg(unix)]
+pub fn mode_string(mode: u32) -> String {
     let triplet = |shift: u32, special: u32, on: char| {
         let bits = mode >> shift;
         let execute = bits & 0o1 != 0;
@@ -41,8 +48,7 @@ fn format_attributes(metadata: &fs::Metadata, is_dir: bool, is_symlink: bool) ->
         ]
     };
 
-    let mut text = String::with_capacity(10);
-    text.push(kind);
+    let mut text = String::with_capacity(9);
     text.extend(triplet(6, 0o4000, 's'));
     text.extend(triplet(3, 0o2000, 's'));
     text.extend(triplet(0, 0o1000, 't'));
@@ -2712,19 +2718,58 @@ fn owner_of(metadata: &fs::Metadata) -> String {
     use std::os::unix::fs::MetadataExt;
     let (uid, gid) = (metadata.uid(), metadata.gid());
 
-    let user = lookup_name(|entry: &mut libc::passwd, buffer, length, found| unsafe { libc::getpwuid_r(uid, entry, buffer, length, found) }, |entry| entry.pw_name);
-    let group = lookup_name(|entry: &mut libc::group, buffer, length, found| unsafe { libc::getgrgid_r(gid, entry, buffer, length, found) }, |entry| entry.gr_name);
-
-    format!("{}:{}", user.unwrap_or_else(|| uid.to_string()), group.unwrap_or_else(|| gid.to_string()))
+    format!("{}:{}", user_name(uid), group_name(gid))
 }
 
-/// A user or group name, looked up with the _r calls, which write into a
-/// buffer of ours. The plain getpwuid and getgrgid hand back storage shared by
-/// the whole process, which is only safe while one thread ever asks - and the
-/// detail lines are gathered on a thread of their own now. The buffer grows
-/// for an entry too long for it, as a directory service's can be.
+/// A user's name, or its number where the system has no name for it.
 #[cfg(unix)]
-fn lookup_name<E>(call: impl Fn(&mut E, *mut libc::c_char, libc::size_t, *mut *mut E) -> libc::c_int, name: impl Fn(&E) -> *const libc::c_char) -> Option<String> {
+pub fn user_name(uid: u32) -> String {
+    lookup_entry(|entry: &mut libc::passwd, buffer, length, found| unsafe { libc::getpwuid_r(uid, entry, buffer, length, found) }, |entry| c_name(entry.pw_name)).unwrap_or_else(|| uid.to_string())
+}
+
+/// A group's name, or its number where the system has no name for it.
+#[cfg(unix)]
+pub fn group_name(gid: u32) -> String {
+    lookup_entry(|entry: &mut libc::group, buffer, length, found| unsafe { libc::getgrgid_r(gid, entry, buffer, length, found) }, |entry| c_name(entry.gr_name)).unwrap_or_else(|| gid.to_string())
+}
+
+/// The user a name stands for, or a number taken as it is.
+#[cfg(unix)]
+pub fn user_id(name: &str) -> Option<u32> {
+    if let Ok(uid) = name.parse() {
+        return Some(uid);
+    }
+    let name = std::ffi::CString::new(name).ok()?;
+    lookup_entry(|entry: &mut libc::passwd, buffer, length, found| unsafe { libc::getpwnam_r(name.as_ptr(), entry, buffer, length, found) }, |entry| Some(entry.pw_uid))
+}
+
+/// The group a name stands for, or a number taken as it is.
+#[cfg(unix)]
+pub fn group_id(name: &str) -> Option<u32> {
+    if let Ok(gid) = name.parse() {
+        return Some(gid);
+    }
+    let name = std::ffi::CString::new(name).ok()?;
+    lookup_entry(|entry: &mut libc::group, buffer, length, found| unsafe { libc::getgrnam_r(name.as_ptr(), entry, buffer, length, found) }, |entry| Some(entry.gr_gid))
+}
+
+/// A NUL-terminated name in an entry the system filled in.
+#[cfg(unix)]
+fn c_name(pointer: *const libc::c_char) -> Option<String> {
+    // SAFETY: the name points into the buffer lookup_entry passed, which is
+    // alive while `pick` runs and holds a NUL-terminated string the call
+    // wrote there.
+    (!pointer.is_null()).then(|| unsafe { std::ffi::CStr::from_ptr(pointer) }.to_string_lossy().into_owned())
+}
+
+/// A user or group entry, looked up with the _r calls, which write into a
+/// buffer of ours, and what `pick` takes from it. The plain getpwuid and
+/// getgrgid hand back storage shared by the whole process, which is only safe
+/// while one thread ever asks - and the detail lines are gathered on a thread
+/// of their own now. The buffer grows for an entry too long for it, as a
+/// directory service's can be.
+#[cfg(unix)]
+fn lookup_entry<E, T>(call: impl Fn(&mut E, *mut libc::c_char, libc::size_t, *mut *mut E) -> libc::c_int, pick: impl Fn(&E) -> Option<T>) -> Option<T> {
     let mut buffer: Vec<libc::c_char> = vec![0; 1024];
     loop {
         // SAFETY: an all-zero passwd or group is a valid value of the type -
@@ -2740,10 +2785,7 @@ fn lookup_name<E>(call: impl Fn(&mut E, *mut libc::c_char, libc::size_t, *mut *m
         if status != 0 || found.is_null() {
             return None;
         }
-        let pointer = name(&entry);
-        // SAFETY: the name points into `buffer`, which is alive and holds a
-        // NUL-terminated string the call wrote there.
-        return (!pointer.is_null()).then(|| unsafe { std::ffi::CStr::from_ptr(pointer) }.to_string_lossy().into_owned());
+        return pick(&entry);
     }
 }
 

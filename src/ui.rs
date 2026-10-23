@@ -1,4 +1,4 @@
-use crate::app::{AppState, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
+use crate::app::{AppState, AttributeKind, AttributesForm, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
 use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options, SortKey};
@@ -212,6 +212,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
                 }
                 FindFiles::Found(search) => find_files_page = Some(render_find_files_results(f, area, search)),
             },
+            Some(Dialog::Attributes(form)) => render_attributes_popup(f, area, form),
             Some(Dialog::Bookmarks { list, index }) => render_bookmarks_popup(f, area, list, *index, &app_state.panel_dir(app_state.is_left_active)),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
@@ -1641,6 +1642,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "Shift+F4 - Create file",
         "F8 - Move to trash",
         "  Shift+F8 delete permanently",
+        "Alt+A - Permissions, owner, time",
         "F9 - Open terminal",
         "F10 - Quit",
         "F11 - Options (Alt+F1/F2 drives)",
@@ -2132,6 +2134,64 @@ fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, search: &cr
     lines.push(Line::from(Span::styled(hint, style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
     rows
+}
+
+/// Alt+A: a field for each thing to change, the one being typed into barred
+/// as Find files' are. With one entry, the mode as it would come out is
+/// written beside its field.
+fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &AttributesForm) {
+    let popup_area = centered_rect(70, 50, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(" Attributes ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let width = popup_inner(popup_area).width as usize;
+    const LABEL: usize = 10;
+    // Room kept after the mode for what it comes to.
+    const BECOMES: usize = 12;
+    let what = match form.items.as_slice() {
+        [(path, is_dir)] => format!("{} \"{}\"", if *is_dir { "Directory" } else { "File" }, shown_name(path)),
+        items => format!("{} items - a field left as it is, or empty, changes nothing", items.len()),
+    };
+    let mut lines = vec![Line::from(Span::styled(tail_of(&what, width), style_file()))];
+    for (index, field) in form.fields.iter().enumerate() {
+        let focused = index == form.focus;
+        let becomes = match (field.kind, form.items.as_slice(), form.modes.first()) {
+            (AttributeKind::Mode, [(_, is_dir)], Some(&mode)) => crate::attributes::ModeChange::parse(&field.input.text).ok().map(|change| mode_preview(change.apply(mode, *is_dir))),
+            _ => None,
+        };
+        let room = width.saturating_sub(LABEL + if field.kind == AttributeKind::Mode { BECOMES } else { 0 });
+        let mut spans = vec![Span::styled(format!("{:<LABEL$}", field.kind.label()), style_columns())];
+        let typed = if focused {
+            field.input.cursor_spans_within(room, style_input(), style_input_cursor())
+        } else {
+            vec![Span::styled(tail_of(&field.input.text, room), style_file())]
+        };
+        let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+        spans.extend(typed);
+        let padding = " ".repeat(room.saturating_sub(typed_width));
+        spans.push(if focused { Span::styled(padding, style_input()) } else { Span::raw(padding) });
+        // Lines are centred, so the mode's row is kept as wide as the rest.
+        if field.kind == AttributeKind::Mode {
+            spans.push(Span::styled(format!("{:>BECOMES$}", becomes.unwrap_or_default()), style_file()));
+        }
+        lines.push(Line::from(spans));
+    }
+    if form.fields.len() > 1 {
+        lines.push(Line::from(Span::styled("Mode as 755 or u+x,go-w; owner and group by name or number", style_columns())));
+    }
+    lines.push(Line::from(Span::styled("Tab - Next field    Enter - Apply    Esc - Cancel", style_columns())));
+    popup_body(f, popup_area, lines);
+}
+
+#[cfg(unix)]
+fn mode_preview(mode: u32) -> String {
+    crate::fs_ops::mode_string(mode)
+}
+
+#[cfg(not(unix))]
+fn mode_preview(_mode: u32) -> String {
+    String::new()
 }
 
 /// Ctrl+D: the bookmarks, numbered for 1 to 9, the active panel's
