@@ -24,7 +24,7 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
         // Nothing behind a popup responds to the mouse - not clicks and not
         // the wheel, which would otherwise scroll a panel out of sight of the
         // dialog asking about it.
-        Event::Mouse(mouse_event) if !app_state.popup_is_open() => handle_mouse(app_state, mouse_event),
+        Event::Mouse(mouse_event) if !app_state.popup_is_open() => return Ok(handle_mouse(app_state, mouse_event)),
         _ => {}
     }
     Ok(true)
@@ -593,9 +593,18 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
     }
 }
 
-fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) {
+/// False to quit, which F10 clicked on the key bar does.
+fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) -> bool {
     let (column, row) = (mouse_event.column, mouse_event.row);
     let (viewing, editing) = (app_state.is_viewing(), app_state.is_editing());
+    // A label on the key bar is its key. Not under the rename field or a
+    // prompt, which would take the key as one of theirs.
+    if mouse_event.kind == MouseEventKind::Down(MouseButton::Left)
+        && app_state.dialog.is_none()
+        && let Some(&(_, key)) = app_state.fkey_hits.iter().find(|(cell, _)| cell.contains(Position::new(column, row)))
+    {
+        return handle_key(app_state, KeyEvent::new(KeyCode::F(key), KeyModifiers::NONE));
+    }
     match mouse_event.kind {
         // A middle click closes the tab under it, as in a browser.
         MouseEventKind::Down(MouseButton::Middle) if !viewing && !editing => {
@@ -673,6 +682,7 @@ fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) {
         }
         _ => {}
     }
+    true
 }
 
 /// Save the file in the editor, then go on to `then`. When something else
@@ -1534,6 +1544,52 @@ mod tests {
         assert!(app_state.dialog.is_none());
 
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// The key bar names what F8 does, and a click on a label is its key -
+    /// F10 quitting as the key does.
+    #[test]
+    fn a_click_on_the_key_bar_is_the_key() {
+        use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(160, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let label = |terminal: &ratatui::Terminal<ratatui::backend::TestBackend>, cell: ratatui::layout::Rect| -> String { (cell.x..cell.right()).map(|x| terminal.backend().buffer()[(x, cell.y)].symbol().to_string()).collect() };
+        let hit = |app_state: &AppState, key: u8| app_state.fkey_hits.iter().find(|(_, k)| *k == key).map(|(cell, _)| *cell);
+        let click = |app_state: &mut AppState, cell: ratatui::layout::Rect| {
+            super::handle_mouse(
+                app_state,
+                MouseEvent {
+                    kind: MouseEventKind::Down(MouseButton::Left),
+                    column: cell.x + 1,
+                    row: cell.y,
+                    modifiers: KeyModifiers::NONE,
+                },
+            )
+        };
+
+        assert_eq!(app_state.fkey_hits.len(), 12);
+        assert_eq!(label(&terminal, hit(&app_state, 8).unwrap()), " F8 Trash ");
+        app_state.options.delete_to_trash = false;
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        assert_eq!(label(&terminal, hit(&app_state, 8).unwrap()), " F8 Delete ");
+
+        let (f7, f10) = (hit(&app_state, 7).unwrap(), hit(&app_state, 10).unwrap());
+        assert!(click(&mut app_state, f7));
+        assert!(matches!(app_state.dialog, Some(Dialog::Create { is_dir: true, .. })));
+        // With a dialog up the bar is not a key; Esc puts it away.
+        assert!(click(&mut app_state, f10));
+        press(&mut app_state, KeyCode::Esc);
+        assert!(!click(&mut app_state, f10));
+
+        // Narrow, labels are dropped whole from the end.
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(60, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let shown = app_state.fkey_hits.len();
+        assert!((1..12).contains(&shown));
+        let (last, _) = app_state.fkey_hits[shown - 1];
+        assert!(label(&terminal, last).ends_with(' ') && last.right() < 60);
     }
 
     /// A click on a panel's path edits it as Ctrl+L does, in that panel.

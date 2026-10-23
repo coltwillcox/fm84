@@ -395,6 +395,8 @@ pub struct AppState {
     /// The row of the panels' paths, a click on either of which edits it as
     /// Ctrl+L does.
     pub path_bar_area: Rect,
+    /// The F-key labels along the bottom, as last drawn, and their keys.
+    pub fkey_hits: Vec<(Rect, u8)>,
     /// The column headings a click sorts by, both panels', as last drawn.
     pub sort_headers: Vec<(Rect, SortKey)>,
     pub viewport_start_left: usize,
@@ -1145,6 +1147,7 @@ impl AppState {
             table_area_left: Rect::default(),
             table_area_right: Rect::default(),
             path_bar_area: Rect::default(),
+            fkey_hits: Vec::new(),
             sort_headers: Vec::new(),
             viewport_start_left: 0,
             viewport_start_right: 0,
