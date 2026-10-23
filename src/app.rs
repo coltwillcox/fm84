@@ -1901,7 +1901,7 @@ impl AppState {
 
     /// Only text can be searched or numbered: not a picture, and not the notice
     /// F4 raises on a binary file.
-    fn can_find(&self) -> bool {
+    pub fn can_find(&self) -> bool {
         match &self.screen {
             Screen::Editor(_) => true,
             Screen::Viewer(state) => !state.from_edit && state.mode != ViewMode::Image,

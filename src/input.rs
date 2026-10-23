@@ -1592,6 +1592,27 @@ mod tests {
         press(&mut app_state, KeyCode::Esc);
         assert!(!click(&mut app_state, f10));
 
+        // The viewer offers F3 over text, where it finds the next match, and
+        // not over a picture, where there is nothing to find.
+        let dir = std::env::temp_dir().join(format!("fm84-key-bar-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("a.txt"), "text").unwrap();
+        app_state.open_dir(true, dir.clone(), Some("a.txt".as_ref()));
+        app_state.is_left_active = true;
+        press(&mut app_state, KeyCode::F(3));
+        assert!(app_state.is_viewing());
+        let keys = |terminal: &mut ratatui::Terminal<ratatui::backend::TestBackend>, app_state: &mut AppState| {
+            crate::ui::render_ui(terminal, app_state);
+            app_state.fkey_hits.iter().map(|(_, key)| *key).collect::<Vec<_>>()
+        };
+        assert_eq!(keys(&mut terminal, &mut app_state), [3, 10]);
+        app_state.viewer_mut().unwrap().mode = crate::viewer::ViewMode::Image;
+        assert_eq!(keys(&mut terminal, &mut app_state), [10]);
+        app_state.viewer_mut().unwrap().mode = crate::viewer::ViewMode::Text;
+        press(&mut app_state, KeyCode::Esc);
+        std::fs::remove_dir_all(&dir).unwrap();
+
         // Narrow, labels are dropped whole from the end.
         let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(60, 30)).unwrap();
         crate::ui::render_ui(&mut terminal, &mut app_state);

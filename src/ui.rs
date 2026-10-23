@@ -1355,10 +1355,12 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
 }
 
 /// The F-keys the screen showing answers, and what each does there. F8 is
-/// named for what F11 has it do.
+/// named for what F11 has it do, and F3 in the viewer is there only while
+/// there is text to search - not over a picture.
 fn fkey_labels(app_state: &AppState) -> Vec<(u8, &'static str)> {
     match app_state.screen {
-        Screen::Viewer(_) => vec![(3, "Next"), (10, "Quit")],
+        Screen::Viewer(_) if app_state.can_find() => vec![(3, "Next"), (10, "Quit")],
+        Screen::Viewer(_) => vec![(10, "Quit")],
         Screen::Editor(_) => vec![(2, "Save"), (3, "Next"), (4, "Replace"), (10, "Quit")],
         Screen::Panels => vec![
             (1, "Help"),
