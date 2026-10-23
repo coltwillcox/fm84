@@ -6,6 +6,18 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.30.0] - 2026-10-23
+
+### ✨ Added
+- 🔐 **Change attributes** - Alt+A, as in Total Commander, changes the permissions, owner, group and modified time of what is selected, or of the entry under the cursor. Each field opens on what the entries have in common, or empty where they differ, and one left as it opened, or emptied, changes nothing. The mode is octal (`755`, `4755`) or as `chmod` takes it (`u+x,go-w`, `a=rX`, `+t`), so entries whose modes differ can each gain or lose a bit; with one entry, the `rwxr-xr-x` it comes to is shown as it is typed. Owner and group go by name or number, and the time as `2026-10-23 14:02:11`. Something typed that cannot be read is said so before anything changes, and the form stays to fix it; an entry that refuses is passed over and named, and the rest still change. Tab, or a click on a field, moves between them, a click putting the cursor where it lands. Links are followed, as `chmod` and `chown` follow them. On Windows only the time
+- 🌿 **Git branch** - after a panel's path, the branch its directory is on when it is in a repository, or the commit when none is checked out. Read from the repository's own files - worktrees and submodules too - on the thread that reads the directory, so there is no git to run and nothing to wait for. It is the first to give way when the path needs the room
+- 👤 **user@host** - who fm84 runs as and where, by the logo with the border between, reversed when it is root. Left off on a terminal too narrow for it
+
+### 🐛 Fixed
+- 🎹 **F3 Next showed over a picture**, and over the notice F4 raises on a binary file, where there is nothing to find. It shows only while there is text to search
+
+---
+
 ## [0.29.0] - 2026-10-23
 
 ### ✨ Added

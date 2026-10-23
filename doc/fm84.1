@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-23" "fm84 0.29.0" "User Commands"
+.TH FM84 1 "2026-10-23" "fm84 0.30.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -16,6 +16,10 @@ moved from the active panel to the other one.
 It has a built\-in viewer with syntax highlighting, hex and image views, a
 built\-in editor, find files by name and content, and directory sizes counted
 in the background.
+.PP
+The top border names the user and host fm84 runs as, reversed for root.
+Over each panel is its directory, and the git branch it is on when it is in
+a repository, read from the repository's files rather than by running git.
 .PP
 Anything that touches the disk is done off the thread that draws the screen,
 so a network mount that has stopped answering never freezes the interface;
@@ -143,6 +147,21 @@ Invert the selection of files.
 .TP
 .B Alt+*
 Invert the selection of files and directories.
+.TP
+.B Alt+A
+Change the permissions, owner, group and modified time of what is selected,
+or of the entry under the cursor.
+A field left as it opened, or emptied, changes nothing.
+The mode is octal, such as
+.BR 755 ,
+or as
+.BR chmod (1)
+takes it, such as
+.BR u+x,go\-w ;
+owner and group by name or number; the time as
+.BR "2026\-10\-23 14:02:11" .
+Tab, or a click on a field, moves between them.
+Only the time on Windows.
 .TP
 .B Ctrl+C Alt+C
 Copy the full paths, or the names, of what is selected, or of the entry

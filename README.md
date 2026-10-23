@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.29.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.30.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -77,6 +77,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔖 **Bookmarks** - **Ctrl+D** lists the directories kept to go back to: **Enter**, or **1**…**9**, takes the panel there, **A** or **Insert** keeps the panel's directory, **D** or **Delete** forgets the one highlighted, **Shift+↑/↓** move it up or down the list. The panel's own directory is marked. One that has gone since is said to be, and the panel stays put. Kept in `bookmarks` beside the config, a `bookmark = path` line each, fine to edit by hand
 - 🔗 **Symlinked directories** - listed and entered like the real thing
 - 🔒 **Directories you cannot read** - refused with the reason, and the panel stays where it was
+- 🌿 **Git branch** - after a panel's path, the branch its directory is on when it is in a repository, or the commit when none is checked out. Read from the repository's own files, worktrees and submodules too, on the thread that reads the directory - no git needed, and no wait. It is the first to give way when the path needs the room
+- 👤 **user@host** - who fm84 runs as and where, beside the logo, reversed when it is root. Left off on a terminal too narrow for it
 - 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`. With more drives than fit, the strip shows a window onto them: `<` and `>` at its ends, or the wheel over it, move it a page along, and it follows the panel's drive and the one being chosen
 - 📑 **Tabs** - each panel keeps its own, in the row under its drives. **Ctrl+T** opens one beside the current tab in the same directory, **Ctrl+W** closes it (a panel keeps its last), **Ctrl+PgUp** / **Ctrl+PgDn** go round them and **Alt+1**…**Alt+8** to that tab, **Alt+9** to the last. Click a tab to show it, middle-click to close it. Each remembers its directory, cursor and selection, and with Remember directories on (F11) they are all there next time
 
@@ -106,6 +108,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
 - **F8** / **Delete** 🗑️ - Move files & folders to the system's trash (selected items or cursor item, with confirmation - which F11 can turn off - and progress). What the trash will not take - a read-only disk, one with nowhere to keep a trash - is asked about, with **D** to delete it for good. F11 can make F8 delete permanently instead
 - **Shift+F8** / **Shift+Delete** 💀 - Delete permanently, always asking first
+- **Alt+A** 🔐 - Change attributes, as in Total Commander: the permissions, owner, group and modified time of what is selected, or of the entry under the cursor. Each field opens on what the entries have in common, and one left as it is, or emptied, changes nothing. The mode is octal (`755`) or as `chmod` takes it (`u+x,go-w`, `a=rX`), so several entries whose modes differ can each gain or lose a bit; with one entry, what it comes to is shown beside it. Owner and group go by name or number, and the time as `2026-10-23 14:02:11`. **Tab** or a click moves between the fields, a click putting the cursor where it lands. Something typed that cannot be read is said so before anything changes; an entry that refuses is passed over and named. On Windows only the time
 - **F9** 💻 - Open external terminal in current directory (which one is set under F11)
 - **F10** 🚪 - Exit to the void - asking first about unsaved changes in the editor
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
@@ -264,6 +267,7 @@ Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ s
 | `Shift+F4` | Create empty file |
 | `F8` / `Delete` | Move to trash (selected items or cursor item) |
 | `Shift+F8` / `Shift+Delete` | Delete permanently |
+| `Alt+A` | Change permissions, owner, group and modified time |
 | `Esc` | Cancel a running copy, move or delete |
 | `R` / `S` / `A` | Retry / Skip / Skip all, when an entry in a copy, move or delete fails |
 | `Y` / `N` / `A` / `S` / `O` | Overwrite / Skip / Overwrite all / Skip all / Overwrite all older, when a file is already there |
@@ -334,7 +338,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.29.0
+fm84 --version       # fm84 0.30.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -421,5 +425,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.29.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.30.0 ▄▀▄▀▄▀</code>
 </p>
