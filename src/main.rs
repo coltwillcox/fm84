@@ -3,6 +3,7 @@ mod attributes;
 mod background;
 mod cli;
 mod constants;
+mod diff;
 mod display;
 mod find;
 mod fs_ops;
@@ -19,13 +20,14 @@ use app::AppState;
 use color_eyre::Result;
 use crossterm::{
     cursor::Show,
-    event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture},
+    event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture, KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags},
     execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, supports_keyboard_enhancement},
 };
 use input::handle_input;
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::{self, IsTerminal, Stdout, stdout};
+use std::sync::OnceLock;
 use ui::render_ui;
 
 type Tui = Terminal<CrosstermBackend<Stdout>>;
@@ -97,17 +99,37 @@ fn init_terminal() -> io::Result<Tui> {
     Terminal::new(CrosstermBackend::new(stdout()))
 }
 
+/// Whether the terminal speaks kitty's keyboard protocol - kitty, foot,
+/// WezTerm, Ghostty and Alacritty among others. Asked once: the answer does
+/// not change, and asking again after the external editor would cost a round
+/// trip each time.
+static ENHANCED_KEYS: OnceLock<bool> = OnceLock::new();
+
 /// Raw mode, the alternate screen and the mouse: everything fm84 needs from
 /// the terminal, and everything restore_terminal gives back.
+///
+/// Where the terminal can, keys are sent unambiguously too. The usual way
+/// sends F3 with a modifier - Shift+F3, Ctrl+F3 - as `ESC [ 1 ; n R`, which
+/// is also how a terminal answers where its cursor is, and crossterm takes it
+/// for that and drops it. Asked for here, after the alternate screen is
+/// entered: kitty keeps a separate setting for each screen.
 fn take_terminal() -> io::Result<()> {
     enable_raw_mode()?;
-    execute!(stdout(), EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)
+    execute!(stdout(), EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)?;
+    if *ENHANCED_KEYS.get_or_init(|| supports_keyboard_enhancement().unwrap_or(false)) {
+        execute!(stdout(), PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES))?;
+    }
+    Ok(())
 }
 
 /// Undo everything take_terminal did. Runs on normal exit, on error, and from the
 /// panic hook, so it can't rely on the Terminal still being alive - a build with
 /// panic = "abort" never drops it. Showing the cursor here covers that case.
 fn restore_terminal() -> io::Result<()> {
+    // Not allowed to stop the rest: this runs from the panic hook too.
+    if ENHANCED_KEYS.get() == Some(&true) {
+        let _ = execute!(stdout(), PopKeyboardEnhancementFlags);
+    }
     execute!(stdout(), LeaveAlternateScreen, DisableMouseCapture, DisableBracketedPaste, Show)?;
     disable_raw_mode()
 }
