@@ -359,6 +359,17 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                 _ => {}
             }
         }
+        Some(Dialog::Branches(_)) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Enter => app_state.switch_branch(),
+            KeyCode::Up => app_state.move_branch_cursor(-1),
+            KeyCode::Down => app_state.move_branch_cursor(1),
+            KeyCode::PageUp => app_state.move_branch_cursor(-10),
+            KeyCode::PageDown => app_state.move_branch_cursor(10),
+            KeyCode::Home => app_state.move_branch_cursor(isize::MIN),
+            KeyCode::End => app_state.move_branch_cursor(isize::MAX),
+            _ => {}
+        },
         Some(Dialog::DrivePicker { .. }) => match code {
             KeyCode::Esc => app_state.dialog = None,
             KeyCode::Enter => app_state.confirm_drive_picker(),

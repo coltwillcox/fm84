@@ -1,7 +1,7 @@
 //! Drawing: the screen laid out from top to bottom, the styles everything is
 //! drawn in, and the cursor placed once a frame is done.
 
-use crate::app::{AppState, AttributeKind, AttributesForm, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
+use crate::app::{AppState, AttributeKind, AttributesForm, BranchList, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
 use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options, SortKey};
@@ -191,7 +191,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input),
             _ => None,
         };
-        render_path_bar(f, chunks_main[1], app_state, going_to);
+        app_state.branch_hits = render_path_bar(f, chunks_main[1], app_state, going_to);
         app_state.path_bar_area = chunks_main[1];
         // Only the viewer and the editor have bars, and they put theirs back.
         app_state.scroll_bars.clear();
@@ -220,6 +220,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
         // is the replace question, under the match it is asking about.
         let mut find_files_page = None;
         let mut attribute_rows = Vec::new();
+        let mut branch_rows = Vec::new();
         match &app_state.dialog {
             Some(Dialog::Help) => {
                 app_state.help_room = render_help_popup(f, area, app_state.help_scroll);
@@ -243,6 +244,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
                 FindFiles::Found(search) => find_files_page = Some(render_find_files_results(f, area, search)),
             },
             Some(Dialog::Attributes(form)) => attribute_rows = render_attributes_popup(f, area, form),
+            Some(Dialog::Branches(list)) => branch_rows = render_branches_popup(f, area, list),
             Some(Dialog::Bookmarks { list, index }) => render_bookmarks_popup(f, area, list, *index, &app_state.panel_dir(app_state.is_left_active)),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
@@ -250,6 +252,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             app_state.find_files_page = page;
         }
         app_state.attribute_rows = attribute_rows;
+        app_state.branch_rows = branch_rows;
         // Over everything: a job, which holds the keys while it runs, or an
         // error, which holds them until it is put away.
         if app_state.job.is_some() {

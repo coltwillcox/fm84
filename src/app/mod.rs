@@ -22,6 +22,7 @@ use std::time::{Duration, Instant, SystemTime};
 
 mod attribute_form;
 mod bookmarks;
+mod branches;
 mod compare;
 mod editing;
 mod find;
@@ -37,7 +38,7 @@ mod tests;
 mod text_input;
 mod viewing;
 
-pub use self::{attribute_form::*, editing::*, find_files::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
+pub use self::{attribute_form::*, branches::*, editing::*, find_files::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -121,6 +122,9 @@ pub enum Dialog {
     FindFiles(Box<FindFiles>),
     /// Ctrl+D: the directories kept to go back to, and the one highlighted.
     Bookmarks { list: Vec<PathBuf>, index: usize },
+    /// A click on a panel's git branch: the repository's branches, to change
+    /// to another.
+    Branches(Box<BranchList>),
     /// Alt+A: the permissions, owner, group and modified time of what is
     /// chosen, to change.
     Attributes(Box<AttributesForm>),
@@ -225,6 +229,13 @@ pub struct AppState {
     pub attribute_rows: Vec<(Rect, u16)>,
     /// The F-key labels along the bottom, as last drawn, and their keys.
     pub fkey_hits: Vec<(Rect, u8)>,
+    /// Each panel's git branch on the path bar, left then right, as last
+    /// drawn - a click there lists the repository's branches.
+    pub branch_hits: [Option<Rect>; 2],
+    /// The rows of the branch list as last drawn, and the branch on each.
+    pub branch_rows: Vec<(Rect, usize)>,
+    /// A branch git is still switching to.
+    pub branch_switch: Option<PendingSwitch>,
     /// The column headings a click sorts by, both panels', as last drawn.
     pub sort_headers: Vec<(Rect, SortKey)>,
     pub viewport_start_left: usize,
@@ -384,6 +395,9 @@ impl AppState {
             path_bar_area: Rect::default(),
             attribute_rows: Vec::new(),
             fkey_hits: Vec::new(),
+            branch_hits: [None, None],
+            branch_rows: Vec::new(),
+            branch_switch: None,
             sort_headers: Vec::new(),
             viewport_start_left: 0,
             viewport_start_right: 0,

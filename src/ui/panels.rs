@@ -337,8 +337,9 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
 /// the active one's in place: `going_to` is what is being typed there.
 ///
 /// After each path, the git branch its directory is on, while the path keeps
-/// room enough to read; it is the branch that goes first.
-pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, going_to: Option<&TextInput>) {
+/// room enough to read; it is the branch that goes first. Gives back where
+/// each side's branch was drawn, left then right, for a click to find.
+pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, going_to: Option<&TextInput>) -> [Option<Rect>; 2] {
     let total_width = area.width;
     let is_left_active = app_state.is_left_active;
     let length_left = ((total_width as usize).saturating_sub(3)) / 2;
@@ -354,8 +355,9 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
         })
     };
     // One side's path, padded and followed by the border up to where the next
-    // part of the line starts.
-    let side = |dir: &std::path::Path, branch: Option<String>, length: usize, style: Style, editing: Option<&TextInput>, end: &'static str| -> Vec<Span<'static>> {
+    // part of the line starts. With which of the spans is the branch, if
+    // there is one.
+    let side = |dir: &std::path::Path, branch: Option<String>, length: usize, style: Style, editing: Option<&TextInput>, end: &'static str| -> (Vec<Span<'static>>, Option<usize>) {
         let mut spans = vec![Span::styled(" ", style)];
         // The branch, and the dash before it.
         let branch = branch.filter(|label| editing.is_none() && length.saturating_sub(8 + display_width(label) + 1) >= PATH_ROOM);
@@ -366,20 +368,36 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
             None => spans.push(Span::styled(limit_path_string(dir, length.saturating_sub(8 + branch_width)), style)),
         }
         spans.push(Span::styled(" ", style));
+        let mut label_at = None;
         if let Some(label) = branch {
             spans.push(Span::styled("─", style_border()));
+            label_at = Some(spans.len());
             spans.push(Span::styled(label, style_columns()));
         }
         let used: usize = spans.iter().map(|span| display_width(&span.content)).sum();
         spans.push(Span::styled(format!("{}{end}", "─".repeat(length.saturating_sub(used + 3))), style_border()));
-        spans
+        (spans, label_at)
     };
 
     let mut border_line = vec![Span::styled("├──", style_border())];
-    border_line.extend(side(&app_state.dir_left, branch_label(&app_state.branch_left), length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"));
-    border_line.extend(side(&app_state.dir_right, branch_label(&app_state.branch_right), length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"));
+    let mut branches = [None, None];
+    let sides = [
+        (&app_state.dir_left, &app_state.branch_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
+        (&app_state.dir_right, &app_state.branch_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),
+    ];
+    for (branch, (dir, label, length, style, editing, end)) in branches.iter_mut().zip(sides) {
+        let (spans, label_at) = side(dir, branch_label(label), length, style, editing, end);
+        if let Some(label_at) = label_at {
+            // Measured from what is drawn before it, as the strips are.
+            let before: usize = border_line.iter().chain(&spans[..label_at]).map(|span| display_width(&span.content)).sum();
+            let width = display_width(&spans[label_at].content);
+            *branch = Some(Rect::new(area.x + before as u16, area.y, width as u16, 1).intersection(area));
+        }
+        border_line.extend(spans);
+    }
 
     f.render_widget(Paragraph::new(Line::from(border_line)), area);
+    branches
 }
 
 pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut AppState) -> u16 {

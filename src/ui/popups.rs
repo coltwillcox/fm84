@@ -603,6 +603,43 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     f.render_widget(Paragraph::new(lines), inner);
 }
 
+/// The branches of the repository a panel is in, the one checked out marked,
+/// to change to another. Gives back each row drawn and the branch on it, for
+/// a click to find.
+pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &BranchList) -> Vec<(Rect, usize)> {
+    // As tall as the list, up to what the bookmarks have: the border, a row
+    // of margin above and below, and the blank row and the keys under it.
+    let most = popup_rect(60, area);
+    let popup_area = centered(most, most.width as usize, list.names.len() + 6);
+    let title = format!(" Branches: {} ", shown_name(&list.dir));
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    // One blank row and one of keys under the list.
+    let rows = (inner.height as usize).saturating_sub(2);
+    let first = if rows > 0 && list.index >= rows { list.index + 1 - rows } else { 0 };
+
+    let mut lines = Vec::new();
+    let mut hits = Vec::new();
+    for (number, name) in list.names.iter().enumerate().skip(first).take(rows) {
+        let mark = if Some(number) == list.current { "• " } else { "  " };
+        let text = format!("{mark}{}", tail_of(&printable_name(name), width.saturating_sub(mark.len())));
+        let pad = " ".repeat(width.saturating_sub(display_width(&text)));
+        let style = if number == list.index { style_title().bg(palette().selected_background) } else { style_dir() };
+        hits.push((Rect::new(inner.x, inner.y + lines.len() as u16, inner.width, 1), number));
+        lines.push(Line::from(Span::styled(format!("{text}{pad}"), style)));
+    }
+    while lines.len() < rows + 1 {
+        lines.push(Line::from(""));
+    }
+    lines.push(Line::from(Span::styled("Enter/Click - Switch    Esc - Close", style_columns())).centered());
+    f.render_widget(Paragraph::new(lines), inner);
+    hits
+}
+
 /// The copy or move dialog: what is going, and a field for where to, opened
 /// on the other panel - the file's path there for a single file, the
 /// directory for anything else. `is_copy` = true for F5 copy, false for F6

@@ -4,14 +4,18 @@ use super::*;
 
 /// The mouse, to what is on top. Nothing behind a popup responds to it - not
 /// clicks and not the wheel, which would otherwise scroll a panel out of
-/// sight of the dialog asking about it. Alt+A's fields are the one thing in a
-/// popup a click reaches. False to quit.
+/// sight of the dialog asking about it. Alt+A's fields and the rows of the
+/// branch list are the things in a popup a click reaches. False to quit.
 pub(super) fn mouse_to(app_state: &mut AppState, mouse_event: MouseEvent) -> bool {
     if !app_state.popup_is_open() {
         return handle_mouse(app_state, mouse_event);
     }
-    if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && app_state.error.is_none() && app_state.job.is_none() && matches!(app_state.dialog, Some(Dialog::Attributes(_))) {
-        app_state.attributes_click(mouse_event.column, mouse_event.row);
+    if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && app_state.error.is_none() && app_state.job.is_none() {
+        match app_state.dialog {
+            Some(Dialog::Attributes(_)) => app_state.attributes_click(mouse_event.column, mouse_event.row),
+            Some(Dialog::Branches(_)) => app_state.click_branch(mouse_event.column, mouse_event.row),
+            _ => {}
+        }
     }
     // The wheel goes up and down F11's list, as the arrows do - not while a
     // command is being typed into it - and F1's.
@@ -223,6 +227,17 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
             }
             StripHit::Back => app_state.scroll_tab_strip(is_left, false),
             StripHit::Forward => app_state.scroll_tab_strip(is_left, true),
+        }
+        return;
+    }
+
+    // A panel's git branch, after its path, lists the repository's branches
+    // to change to; the panel becomes the active one. Checked before the
+    // path, which the branch is drawn along with.
+    if let Some(is_left) = [true, false].into_iter().find(|&is_left| app_state.branch_hits[usize::from(!is_left)].is_some_and(|cell| cell.contains(Position::new(column, row)))) {
+        if app_state.job.is_none() && !app_state.panel_busy(is_left) {
+            app_state.is_left_active = is_left;
+            app_state.open_branches(is_left);
         }
         return;
     }

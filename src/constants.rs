@@ -7,6 +7,13 @@ pub const REFRESH_INTERVAL: Duration = Duration::from_secs(1);
 // answers lists even a large directory well inside this; only one that has
 // stopped answering runs past it.
 pub const LISTING_WAIT: Duration = Duration::from_millis(150);
+
+// How long a click on a panel's git branch waits for git: for the list of
+// branches before saying it did not answer, and for a switch before going on
+// without it, to take the result in when it comes. Git starts up and reads a
+// repository's refs in a few milliseconds; a switch writes the working tree,
+// which on a large one takes longer.
+pub const GIT_WAIT: Duration = Duration::from_secs(2);
 // The same for the detail lines and the preview, which follow the cursor and
 // so are asked for on every key: short enough that holding an arrow key over a
 // dead mount still moves, long enough that a live one shows them at once.

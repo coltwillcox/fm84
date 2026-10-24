@@ -251,3 +251,89 @@ fn scroll_bars_page_when_clicked_and_follow_a_drag() {
     }
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A click on a panel's git branch lists the repository's branches, the one
+/// checked out highlighted. A click picks another and a second one on it
+/// switches there, and the path bar follows. A switch git refuses - it
+/// would lose edits not yet committed - says why and leaves the branch as
+/// it was.
+#[test]
+fn a_click_on_the_branch_lists_branches_to_switch_to() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let dir = std::env::temp_dir().join(format!("fm84-branch-click-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let git = |arguments: &[&str]| {
+        std::process::Command::new("git")
+            .arg("-C")
+            .arg(&dir)
+            .args(["-c", "user.name=fm84", "-c", "user.email=fm84@localhost", "-c", "commit.gpgsign=false"])
+            .args(arguments)
+            .output()
+            .is_ok_and(|output| output.status.success())
+    };
+    // Nothing to test without git to run.
+    if !git(&["init", "--quiet", "--initial-branch=main"]) {
+        std::fs::remove_dir_all(&dir).unwrap();
+        return;
+    }
+    std::fs::write(dir.join("file.txt"), "main\n").unwrap();
+    assert!(git(&["add", "file.txt"]) && git(&["commit", "--quiet", "-m", "first"]));
+    assert!(git(&["switch", "--quiet", "-c", "feature"]));
+    std::fs::write(dir.join("file.txt"), "feature\n").unwrap();
+    assert!(git(&["commit", "--quiet", "-am", "second"]));
+    assert!(git(&["switch", "--quiet", "main"]));
+
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.open_dir(true, dir.clone(), None);
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(140, 30)).unwrap();
+    let mut draw = |app_state: &mut AppState| crate::ui::render_ui(&mut terminal, app_state);
+    let click = |app_state: &mut AppState, cell: ratatui::layout::Rect| {
+        crate::input::mouse_to(
+            app_state,
+            MouseEvent {
+                kind: MouseEventKind::Down(MouseButton::Left),
+                column: cell.x + 1,
+                row: cell.y,
+                modifiers: KeyModifiers::NONE,
+            },
+        );
+    };
+    let listed = |app_state: &AppState| match &app_state.dialog {
+        Some(Dialog::Branches(list)) => Some((list.names.clone(), list.current, list.index)),
+        _ => None,
+    };
+    draw(&mut app_state);
+    assert_eq!(app_state.branch_left.as_deref(), Some("main"));
+
+    // The branch on the path bar, clicked: the list, on the one checked out.
+    let branch = app_state.branch_hits[0].expect("the branch is drawn");
+    click(&mut app_state, branch);
+    assert_eq!(listed(&app_state), Some((vec!["feature".to_string(), "main".to_string()], Some(1), 1)));
+
+    // The other row: highlighted, then switched to.
+    draw(&mut app_state);
+    let feature = app_state.branch_rows.iter().find(|(_, index)| *index == 0).unwrap().0;
+    click(&mut app_state, feature);
+    assert_eq!(listed(&app_state).map(|(_, _, index)| index), Some(0));
+    draw(&mut app_state);
+    click(&mut app_state, feature);
+    assert!(app_state.dialog.is_none());
+    assert_eq!(app_state.error, None);
+    assert_eq!(app_state.branch_left.as_deref(), Some("feature"));
+    assert_eq!(std::fs::read_to_string(dir.join("file.txt")).unwrap(), "feature\n");
+
+    // An edit that the switch would lose: git refuses, and says so.
+    std::fs::write(dir.join("file.txt"), "not committed\n").unwrap();
+    draw(&mut app_state);
+    let branch = app_state.branch_hits[0].unwrap();
+    click(&mut app_state, branch);
+    press(&mut app_state, KeyCode::Down);
+    assert_eq!(listed(&app_state).map(|(_, _, index)| index), Some(1));
+    press(&mut app_state, KeyCode::Enter);
+    let refused = app_state.error.clone().expect("git said why");
+    assert!(refused.contains("file.txt"), "{refused}");
+    assert_eq!(app_state.branch_left.as_deref(), Some("feature"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

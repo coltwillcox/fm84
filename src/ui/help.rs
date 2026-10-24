@@ -38,6 +38,7 @@ const HELP: &[(&str, &[&str])] = &[
             "Ctrl+L - Go to path (or click it)",
             "  Tab completes a name",
             "  Alt+Left/Right back/forward",
+            "  Click the git branch to switch it",
             "Ctrl+D - Bookmarks",
             "Ctrl+T/Ctrl+W - New/close tab",
             "  Ctrl+PgUp/PgDn, Alt+1..9 switch",
