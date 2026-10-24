@@ -422,6 +422,10 @@ pub struct AppState {
     pub options: Options,
     /// The row the options popup has highlighted.
     pub options_cursor: usize,
+    /// How far down F1's list it is scrolled, and how many lines it had room
+    /// for when last drawn - what the keys scroll it by, and up to.
+    pub help_scroll: usize,
+    pub help_room: usize,
     /// A file F4 is handing to an external editor. The main loop runs it,
     /// since only that can give the terminal up and take it back.
     pub external_edit: Option<PathBuf>,
@@ -1217,6 +1221,8 @@ impl AppState {
             // of the machine running it says.
             options: if cfg!(test) { Options::default() } else { Options::load() },
             options_cursor: 0,
+            help_scroll: 0,
+            help_room: 0,
             external_edit: None,
             show_preview: false,
             preview: None,

@@ -208,8 +208,16 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
     match app_state.dialog.as_ref() {
         None => {}
         Some(Dialog::Help) => {
-            if matches!(code, KeyCode::Esc | KeyCode::F(1)) {
-                app_state.dialog = None;
+            let page = app_state.help_room.max(1) as isize;
+            match code {
+                KeyCode::Esc | KeyCode::F(1) => app_state.dialog = None,
+                KeyCode::Down => scroll_help(app_state, 1),
+                KeyCode::Up => scroll_help(app_state, -1),
+                KeyCode::PageDown => scroll_help(app_state, page),
+                KeyCode::PageUp => scroll_help(app_state, -page),
+                KeyCode::Home => scroll_help(app_state, isize::MIN),
+                KeyCode::End => scroll_help(app_state, isize::MAX),
+                _ => {}
             }
         }
         Some(Dialog::Options { editing: Some(_) }) => match code {
@@ -558,7 +566,10 @@ fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         // window managers commonly eat Alt+F1 and Alt+F2.
         KeyCode::F(1) if drive_chord => app_state.open_drive_picker(true),
         KeyCode::F(2) if drive_chord => app_state.open_drive_picker(false),
-        KeyCode::F(1) => app_state.dialog = Some(Dialog::Help),
+        KeyCode::F(1) => {
+            app_state.help_scroll = 0;
+            app_state.dialog = Some(Dialog::Help);
+        }
         // Shift+F2 compares the panels, as in Total Commander.
         KeyCode::F(2) if key.modifiers.contains(KeyModifiers::SHIFT) => app_state.compare_dirs(),
         KeyCode::F(2) => open_rename(app_state),
@@ -656,6 +667,13 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
     }
 }
 
+/// Scroll F1's list by `lines`, no further than its last line coming into
+/// view at the bottom.
+fn scroll_help(app_state: &mut AppState, lines: isize) {
+    let last = crate::ui::HELP_LINES.len().saturating_sub(app_state.help_room);
+    app_state.help_scroll = app_state.help_scroll.saturating_add_signed(lines).min(last);
+}
+
 /// The mouse, to what is on top. Nothing behind a popup responds to it - not
 /// clicks and not the wheel, which would otherwise scroll a panel out of
 /// sight of the dialog asking about it. Alt+A's fields are the one thing in a
@@ -666,6 +684,20 @@ fn mouse_to(app_state: &mut AppState, mouse_event: MouseEvent) -> bool {
     }
     if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && app_state.error.is_none() && app_state.job.is_none() && matches!(app_state.dialog, Some(Dialog::Attributes(_))) {
         app_state.attributes_click(mouse_event.column, mouse_event.row);
+    }
+    // The wheel goes up and down F11's list, as the arrows do - not while a
+    // command is being typed into it - and F1's.
+    if app_state.error.is_none() && app_state.job.is_none() {
+        let down = match mouse_event.kind {
+            MouseEventKind::ScrollDown => Some(true),
+            MouseEventKind::ScrollUp => Some(false),
+            _ => None,
+        };
+        match (&app_state.dialog, down) {
+            (Some(Dialog::Options { editing: None }), Some(down)) => app_state.options_move(down),
+            (Some(Dialog::Help), Some(down)) => scroll_help(app_state, if down { 3 } else { -3 }),
+            _ => {}
+        }
     }
     true
 }
@@ -1632,6 +1664,18 @@ mod tests {
         assert!(matches!(app_state.dialog, Some(Dialog::Help)));
         press(&mut app_state, KeyCode::Char('a'));
         assert!(app_state.search_input.is_empty());
+        // Too long for the panels of a short terminal: it scrolls, as far as
+        // its last line and no further.
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let last = crate::ui::HELP_LINES.len() - app_state.help_room;
+        press(&mut app_state, KeyCode::End);
+        assert_eq!(app_state.help_scroll, last);
+        press(&mut app_state, KeyCode::Down);
+        assert_eq!(app_state.help_scroll, last);
+        press(&mut app_state, KeyCode::Home);
+        press(&mut app_state, KeyCode::Up);
+        assert_eq!(app_state.help_scroll, 0);
         press(&mut app_state, KeyCode::F(1));
         assert!(app_state.dialog.is_none());
 
@@ -1929,7 +1973,10 @@ mod tests {
         let (modified_row, _) = app_state.attribute_rows[3];
         click(&mut app_state, modified_row.right() - 1, modified_row.y);
         assert_eq!(focus(&app_state), (3, "2001-02-03 04:05:06".len()));
-        click(&mut app_state, modified_row.x, modified_row.y - 1);
+        // Above the first field: the line naming what is changed, or a blank
+        // row, whichever the popup's width leaves there.
+        let (mode_row, _) = app_state.attribute_rows[0];
+        click(&mut app_state, mode_row.x, mode_row.y - 1);
         assert_eq!(focus(&app_state).0, 3);
         press(&mut app_state, KeyCode::Esc);
 

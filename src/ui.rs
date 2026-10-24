@@ -227,6 +227,16 @@ fn show_cursor(f: &mut ratatui::Frame<'_>, app_state: &AppState) {
     }
 }
 
+/// The screen, top to bottom: the top bar, the path bar, the panels (or the
+/// viewer, the editor, the diff), the status bar and the key bar. Popups are
+/// placed by it too, over the panels and no taller than them.
+fn screen_layout(area: Rect) -> std::rc::Rc<[Rect]> {
+    Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(3), Constraint::Length(1), Constraint::Percentage(100), Constraint::Length(1), Constraint::Length(3)])
+        .split(area)
+}
+
 fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
     {
         let area = f.area();
@@ -242,10 +252,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             return;
         }
 
-        let chunks_main = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Length(3), Constraint::Length(1), Constraint::Percentage(100), Constraint::Length(1), Constraint::Length(3)])
-            .split(area);
+        let chunks_main = screen_layout(area);
 
         render_top_panel(f, chunks_main[0], app_state);
         let going_to = match &app_state.dialog {
@@ -279,7 +286,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
         let mut find_files_page = None;
         let mut attribute_rows = Vec::new();
         match &app_state.dialog {
-            Some(Dialog::Help) => render_help_popup(f, area),
+            Some(Dialog::Help) => app_state.help_room = render_help_popup(f, area, app_state.help_scroll),
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
             Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),
@@ -1783,7 +1790,7 @@ fn fit_rows(mut blocks: Vec<Vec<Line<'static>>>, room: usize) -> Vec<Vec<Line<'s
 }
 
 fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message: &str) {
-    let popup_area = centered_rect(60, 20, area);
+    let popup_area = popup_rect(20, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Error ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
@@ -1792,71 +1799,80 @@ fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message: &str) {
     popup_body(f, popup_area, vec![Line::from(Span::styled(printable_name(message), style_title()))]);
 }
 
-fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
-    let help_lines = vec![
-        "F1 - This help",
-        "F2 - Rename folder/file",
-        "  Shift+F2 compare directories",
-        "F3 - View file (X text/hex/image)",
-        "  F fit/fill, +/- zoom, W wrap",
-        "  Shift+F3 (or =) compare two files",
-        "F4 - Edit file (Ctrl+S/F2 save)",
-        "  Ctrl+F find, F3/Shift+F3 next/prev",
-        "  Ctrl+G go to line, Ctrl+R/F4 replace",
-        "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
-        "  Shift+arrows select, Ctrl+A all",
-        "F5 - Copy (to the other panel, or where typed)",
-        "  Alt+F5 (or Ctrl+Shift+F5) symlink",
-        "F6 - Move (to the other panel, or where typed)",
-        "F7 - Create directory",
-        "  Alt+F7 (or Ctrl+F7) find files",
-        "Shift+F4 - Create file",
-        "F8 - Move to trash",
-        "  Shift+F8 delete permanently",
-        "Alt+A - Permissions, owner, time",
-        "F9 - Open terminal",
-        "F10 - Quit",
-        "F11 - Options (Alt+F1/F2 drives)",
-        "F12 - Preview in other panel",
-        "Ctrl+Left/Right - Dir to that panel",
-        "  Ctrl+U swap panels, Alt+I same dir there",
-        "Ctrl+L - Go to path (or click it)",
-        "  Tab completes a name",
-        "  Alt+Left/Right back/forward",
-        "Ctrl+D - Bookmarks",
-        "Ctrl+T/Ctrl+W - New/close tab",
-        "  Ctrl+PgUp/PgDn, Alt+1..9 switch",
-        "Space - Select/deselect file",
-        "+/- select/deselect by pattern, * invert",
-        "  Alt+* invert with directories",
-        "Ctrl+C/Alt+C - Copy paths/names",
-        "Ctrl+F3..F6 - Sort name/ext/date/size",
-        "Ctrl+R - Reload both panels",
-        "Type to search, Esc to clear",
-    ];
+/// What F1 lists, a line each.
+pub const HELP_LINES: &[&str] = &[
+    "F1 - This help",
+    "F2 - Rename folder/file",
+    "  Shift+F2 compare directories",
+    "F3 - View file (X text/hex/image)",
+    "  F fit/fill, +/- zoom, W wrap",
+    "  Shift+F3 (or =) compare two files",
+    "F4 - Edit file (Ctrl+S/F2 save)",
+    "  Ctrl+F find, F3/Shift+F3 next/prev",
+    "  Ctrl+G go to line, Ctrl+R/F4 replace",
+    "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
+    "  Shift+arrows select, Ctrl+A all",
+    "F5 - Copy (to the other panel, or where typed)",
+    "  Alt+F5 (or Ctrl+Shift+F5) symlink",
+    "F6 - Move (to the other panel, or where typed)",
+    "F7 - Create directory",
+    "  Alt+F7 (or Ctrl+F7) find files",
+    "Shift+F4 - Create file",
+    "F8 - Move to trash",
+    "  Shift+F8 delete permanently",
+    "Alt+A - Permissions, owner, time",
+    "F9 - Open terminal",
+    "F10 - Quit",
+    "F11 - Options (Alt+F1/F2 drives)",
+    "F12 - Preview in other panel",
+    "Ctrl+Left/Right - Dir to that panel",
+    "  Ctrl+U swap panels, Alt+I same dir there",
+    "Ctrl+L - Go to path (or click it)",
+    "  Tab completes a name",
+    "  Alt+Left/Right back/forward",
+    "Ctrl+D - Bookmarks",
+    "Ctrl+T/Ctrl+W - New/close tab",
+    "  Ctrl+PgUp/PgDn, Alt+1..9 switch",
+    "Space - Select/deselect file",
+    "+/- select/deselect by pattern, * invert",
+    "  Alt+* invert with directories",
+    "Ctrl+C/Alt+C - Copy paths/names",
+    "Ctrl+F3..F6 - Sort name/ext/date/size",
+    "Ctrl+R - Reload both panels",
+    "Type to search, Esc to clear",
+];
 
-    // 2 border rows + 1 top padding + 1 bottom padding + content lines
-    let content_height = (help_lines.len() as u16) + 4;
-    let popup_height = content_height.min(area.height);
-    let popup_width = (area.width * 60 / 100).max(1);
-    let y = area.y + (area.height.saturating_sub(popup_height)) / 2;
-    let x = area.x + (area.width.saturating_sub(popup_width)) / 2;
-    let popup_area = Rect::new(x, y, popup_width, popup_height);
+/// F1: the keys, over the panels and no taller than them. What does not fit
+/// scrolls, from `scroll` lines down, and the corner says which lines show.
+/// Gives back how many lines there is room for, for the keys to scroll by.
+fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: usize) -> usize {
+    // A border and a blank row above and below the lines.
+    let popup_width = area.width as usize * POPUP_WIDTH as usize / 100;
+    let popup_area = centered(screen_layout(area)[2], popup_width.max(1), HELP_LINES.len() + 4);
+    let inner = popup_area.inner(Margin { vertical: 2, horizontal: 2 });
+    let room = (inner.height as usize).max(1);
+    let first = scroll.min(HELP_LINES.len().saturating_sub(room));
 
-    let popup_block = Block::default().title(Line::from(Span::styled(" Help/About ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let mut popup_block = Block::default().title(Line::from(Span::styled(" Help/About ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    if room < HELP_LINES.len() {
+        let shown = format!(" {}-{}/{} ", first + 1, (first + room).min(HELP_LINES.len()), HELP_LINES.len());
+        popup_block = popup_block.title_bottom(Line::from(Span::styled(shown, style_columns())).right_aligned());
+    }
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let inner = popup_area.inner(Margin { vertical: 2, horizontal: 2 });
-    let max_len = help_lines.iter().map(|l| l.len()).max().unwrap_or(0);
-    let lines: Vec<Line> = help_lines.iter().map(|&text| Line::from(Span::styled(format!("{:<width$}", text, width = max_len), style_title()))).collect();
-    let help_para = Paragraph::new(lines).alignment(Alignment::Center);
-    f.render_widget(help_para, inner);
+    let max_len = HELP_LINES.iter().map(|l| l.len()).max().unwrap_or(0);
+    let lines: Vec<Line> = HELP_LINES.iter().skip(first).take(room).map(|&text| Line::from(Span::styled(format!("{:<width$}", text, width = max_len), style_title()))).collect();
+    f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), inner);
+    room
 }
 
+/// F11, as wide as every popup and no taller than the panels it sits over:
+/// it scrolls instead, keeping the top and bottom bars in view.
 fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, editing: Option<&TextInput>) {
-    let inner_width = 60.min(area.width as usize).saturating_sub(4);
+    let popup_width = (area.width * POPUP_WIDTH / 100).max(1) as usize;
+    let inner_width = popup_width.saturating_sub(4);
     let cursor_style = Style::new().fg(palette().selected_foreground).bg(palette().selected_background).add_modifier(Modifier::BOLD);
 
     // Every line of the list, headings among the rows, and which one the
@@ -1878,7 +1894,7 @@ fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppS
 
     // A border row each side, a blank row above and below the list, and two
     // for the key hint under it.
-    let popup_area = centered(area, inner_width + 4, list.len() + 6);
+    let popup_area = centered(screen_layout(area)[2], popup_width, list.len() + 6);
     let mut popup_block = Block::default().title(Line::from(Span::styled(" Options ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     // On a short terminal the list scrolls, keeping the cursor row in view.
@@ -1945,7 +1961,7 @@ fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: 
 }
 
 fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir: bool, input: &TextInput) {
-    let popup_area = centered_rect(60, 20, area);
+    let popup_area = popup_rect(20, area);
     let popup_block = Block::default()
         .title(Line::from(Span::styled(if is_dir { " Create Directory " } else { " Create File " }, style_title())).centered())
         .borders(Borders::ALL)
@@ -1970,7 +1986,7 @@ fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir: bool, inp
 
 fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, bool)], to_trash: bool) {
     let count = items.len();
-    let popup_area = centered_rect(60, 30, area);
+    let popup_area = popup_rect(30, area);
 
     // Which kind of delete it is, said plainly: one can be undone and the
     // other cannot.
@@ -2007,7 +2023,7 @@ fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf
 /// A file in the way of one being copied or moved: both of them, size and
 /// date, so which to keep can be weighed, and the answers.
 fn render_job_clash(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, clash: &crate::app::JobClash) {
-    let popup_area = centered_rect(64, 40, area);
+    let popup_area = popup_rect(40, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Already there ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
@@ -2082,7 +2098,7 @@ fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &App
             TransferKind::Trash => " Moving to trash ".to_string(),
         }
     };
-    let popup_area = centered_rect(60, 30, area);
+    let popup_area = popup_rect(30, area);
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
@@ -2143,7 +2159,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Delete => " Cannot delete ",
         TransferKind::Trash => " Cannot move to trash ",
     };
-    let popup_area = centered_rect(60, 30, area);
+    let popup_area = popup_rect(30, area);
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
@@ -2172,7 +2188,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
 /// editor read the file: the file as it was then and as it is now, and the
 /// answers. A file that has gone is said to have, and cannot be reloaded.
 fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, opened: Option<crate::app::DiskStamp>, now: Option<crate::app::DiskStamp>) {
-    let popup_area = centered_rect(64, 40, area);
+    let popup_area = popup_rect(40, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Changed on disk ", style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -2205,7 +2221,7 @@ fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: 
 
 /// Alt+F7: where the search starts, the two fields, and what goes in them.
 fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, start: &Path, name: &TextInput, containing: &TextInput, on_containing: bool) {
-    let popup_area = centered_rect(70, 45, area);
+    let popup_area = popup_rect(45, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Find files ", style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -2251,7 +2267,7 @@ fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, start: &Path, 
 /// found, shown from where it started, with the cursor on one. The number of
 /// results that fit, for PageUp and PageDown.
 fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, search: &crate::app::Search) -> usize {
-    let popup_area = centered_rect(80, 80, area);
+    let popup_area = popup_rect(80, area);
     let title = format!(" Find: {} ", printable_name(&search.label));
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
@@ -2311,7 +2327,7 @@ fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, search: &cr
 /// as Find files' are. With one entry, the mode as it would come out is
 /// written beside its field.
 fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &AttributesForm) -> Vec<(Rect, u16)> {
-    let popup_area = centered_rect(70, 50, area);
+    let popup_area = popup_rect(50, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Attributes ", style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -2373,7 +2389,7 @@ fn mode_preview(_mode: u32) -> String {
 /// directory marked when it is one of them. Each is shortened from the front,
 /// keeping the end of it, which tells them apart.
 fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &[PathBuf], index: usize, here: &Path) {
-    let popup_area = centered_rect(70, 60, area);
+    let popup_area = popup_rect(60, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Bookmarks ", style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -2419,7 +2435,7 @@ fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &[PathBu
 /// F5, F6 and Ctrl+Shift+F5: what is chosen, and where it is to go, typed.
 /// `verb` names the operation, and `preposition` leads into the destination.
 fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], verb: &str, preposition: &str, input: &TextInput) {
-    let popup_area = centered_rect(70, 35, area);
+    let popup_area = popup_rect(35, area);
     let count = sources.len();
 
     let title = if count == 1 {
@@ -2462,7 +2478,7 @@ fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, large: &crate
     let name = shown_name(&large.path);
     let verb = if large.is_edit { "Edit" } else { "View" };
 
-    let popup_area = centered_rect(60, 30, area);
+    let popup_area = popup_rect(30, area);
     let title = if large.dimensions.is_some() { " Large Picture " } else { " Large File " };
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
@@ -2492,7 +2508,7 @@ fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, large: &crate
 }
 
 fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
-    let popup_area = centered_rect(60, 25, area);
+    let popup_area = popup_rect(25, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Unsaved Changes ", style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
@@ -2508,16 +2524,18 @@ fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     );
 }
 
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage((100 - percent_y) / 2), Constraint::Percentage(percent_y), Constraint::Percentage((100 - percent_y) / 2)])
-        .split(r);
+/// How much of the screen's width every popup takes, as a percentage: one
+/// width for all of them, so going from one to the next does not jump about.
+const POPUP_WIDTH: u16 = 60;
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage((100 - percent_x) / 2), Constraint::Percentage(percent_x), Constraint::Percentage((100 - percent_x) / 2)])
-        .split(popup_layout[1])[1]
+/// A popup `percent_y` of the screen's height and POPUP_WIDTH of its width,
+/// centred over the panels and no taller than they are, so the bars above and
+/// below always show. What does not fit wraps, shortens or scrolls inside it.
+fn popup_rect(percent_y: u16, area: Rect) -> Rect {
+    let panels = screen_layout(area)[2];
+    let width = area.width as usize * POPUP_WIDTH as usize / 100;
+    let height = area.height as usize * percent_y as usize / 100;
+    centered(panels, width.max(1), height.max(1))
 }
 
 #[cfg(test)]
@@ -2758,6 +2776,81 @@ mod tests {
         render_ui(&mut terminal, &mut app_state);
         assert_eq!(reversed(&terminal), 1, "Alt+F7");
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Every popup is one width, and no taller than the panels it sits over,
+    /// leaving the bars above and below be. F11 and F1 scroll within that.
+    #[test]
+    fn popups_share_a_width_and_keep_to_the_panels() {
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        // The popup titled `title`: its left edge, width, top and bottom rows.
+        let frame = |terminal: &Terminal<ratatui::backend::TestBackend>, title: &str| {
+            let buffer = terminal.backend().buffer();
+            let rows: Vec<String> = (0..buffer.area.height).map(|y| (0..buffer.area.width).map(|x| buffer[(x, y)].symbol()).collect()).collect();
+            let top = rows.iter().position(|row| row.contains(title)).unwrap_or_else(|| panic!("{title} not drawn"));
+            // The corners either side of the title: on a popup as tall as
+            // the screen, the screen's own are on that row too.
+            let chars: Vec<char> = rows[top].chars().collect();
+            let at = rows[top].find(title).map(|byte| rows[top][..byte].chars().count()).unwrap();
+            let left = chars[..at].iter().rposition(|&c| c == '┌').unwrap();
+            let right = at + chars[at..].iter().position(|&c| c == '┐').unwrap();
+            let bottom = (top..rows.len()).find(|&y| rows[y].chars().nth(left) == Some('└')).unwrap();
+            (left, right - left + 1, top, bottom)
+        };
+        let mut input = TextInput::new();
+        input.set("/b".to_string());
+        let dialogs = vec![
+            (" Help/About ", Dialog::Help),
+            (" Create Directory ", Dialog::Create { is_dir: true, input: TextInput::new() }),
+            (
+                " Copy file ",
+                Dialog::Transfer {
+                    sources: vec![(PathBuf::from("/a"), false)],
+                    is_copy: true,
+                    input,
+                    opened_with: String::new(),
+                    default: PathBuf::from("/b"),
+                },
+            ),
+            (" Options ", Dialog::Options { editing: None }),
+            (
+                " Delete: ",
+                Dialog::Delete {
+                    items: vec![(PathBuf::from("/a"), false)],
+                    to_trash: false,
+                },
+            ),
+            (" Unsaved Changes ", Dialog::SaveChanges { then_quit: false }),
+            (" Bookmarks ", Dialog::Bookmarks { list: vec![PathBuf::from("/a")], index: 0 }),
+        ];
+        let mut widths = Vec::new();
+        for (title, dialog) in dialogs {
+            app_state.dialog = Some(dialog);
+            render_ui(&mut terminal, &mut app_state);
+            let (left, width, top, bottom) = frame(&terminal, title);
+            widths.push((title, left, width));
+            // Three rows of top bar and the path bar above the panels; the
+            // status bar and three of keys below.
+            assert!(top >= 4 && bottom <= 30 - 5, "{title} runs from row {top} to {bottom}");
+            let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+            if title == " Options " {
+                assert!(screen.contains(&format!(" 1/{} ", OPTION_ROWS.len())), "F11 does not say it scrolls");
+            }
+            if title == " Help/About " {
+                assert!(screen.contains(" 1-"), "F1 does not say it scrolls");
+            }
+        }
+        assert!(widths.iter().all(|&(_, left, width)| (left, width) == (widths[0].1, widths[0].2)), "{widths:?}");
+
+        // Scrolled past its end, F1 stops with its last line at the bottom.
+        app_state.dialog = Some(Dialog::Help);
+        app_state.help_scroll = usize::MAX;
+        render_ui(&mut terminal, &mut app_state);
+        let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+        assert!(screen.contains(HELP_LINES[HELP_LINES.len() - 1]), "F1's last line");
+        assert!(screen.contains(&format!("-{}/{} ", HELP_LINES.len(), HELP_LINES.len())), "F1's corner");
     }
 
     /// With the cursor at the end, a directory being renamed reads `[doc]`
