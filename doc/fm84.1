@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-23" "fm84 0.30.0" "User Commands"
+.TH FM84 1 "2026-10-24" "fm84 0.31.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -200,8 +200,39 @@ Help.
 .B F2
 Rename.
 .TP
+.B Shift+F2
+Compare the panels' directories, as in Total Commander, and select in each
+what differs from the other: an entry only it has, and of a file both have,
+the newer, or both when the times agree and the sizes do not.
+Times within two seconds count as the same, for FAT.
+Directories both have are not gone into.
+What was selected before is replaced, and the status bar says how many
+differ.
+.TP
 .B F3
 View the file.
+.TP
+.B = Shift+F3
+Compare two files side by side: two selected in the active panel, or else
+the file under the cursor against the one of the same name in the other
+panel, or failing that the one under the cursor there.
+Between the two,
+.B |
+marks a changed line,
+.B <
+one only on the left and
+.B >
+one only on the right.
+F3 or N goes to the next difference, Shift+F3 or P to the previous; Esc
+closes it.
+Files that are the same, differ only in line endings, or are not text are
+reported in the status bar instead.
+Shift+F3 needs a terminal with kitty's keyboard protocol, such as kitty, foot,
+WezTerm, Ghostty or Alacritty; elsewhere it cannot be told from a report of
+the cursor's position, and
+.B =
+is the key.
+The same holds for Ctrl+F3 and for Shift+F3 in the viewer.
 .TP
 .B F4
 Edit the file, in the built\-in editor or the one set under F11.
@@ -209,6 +240,15 @@ Edit the file, in the built\-in editor or the one set under F11.
 .B F5
 Copy to the other panel, or wherever the dialog is told.
 A single file can be given a new name on the way.
+.TP
+.B Alt+F5 Ctrl+Shift+F5
+Make a symbolic link to what is chosen, asking where as F5 does: for one
+entry, its name in the other panel; for several, the other panel's
+directory, with a link in it for each.
+Each points at the absolute path of what it links to, and nothing already
+there is written over.
+Ctrl+Shift+F5 is as in Total Commander; kitty keeps it for reloading its
+config, so Alt+F5 is there too.
 .TP
 .B F6
 Move, as F5 copies.
@@ -317,8 +357,15 @@ F11 opens the options, changed in place with Enter, Space, Left or Right and
 saved as they change.
 Among them: hidden files, sort order, columns, date format and size units;
 confirmations, delete to trash, what to do when a destination exists, the
-terminal and editor commands, remembering directories; the theme, icons and
-clock; tab width, line numbers, highlighting and image settings.
+terminal and editor commands, remembering directories; the theme, icons,
+clock, and the cursor's shape and whether it blinks; tab width, line numbers,
+highlighting and image settings.
+.PP
+The cursor, in fields and in the editor, is the terminal's own: a bar, a
+block or an underline.
+.B Classic
+draws a reversed cell instead, for a terminal that cannot change the shape of
+its cursor.
 .PP
 In the
 .B Terminal

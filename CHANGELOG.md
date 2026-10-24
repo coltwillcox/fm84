@@ -6,6 +6,23 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.31.0] - 2026-10-24
+
+### ✨ Added
+- 🔗 **Symbolic links** - Alt+F5, or Ctrl+Shift+F5 as in Total Commander where the terminal lets it through (kitty keeps it for reloading its config), makes a link to what is chosen. It asks where, as F5 does: for one entry, file or directory, its name in the other panel, ready for another; for several, the other panel's directory, with a link in it for each under its own name. Each points at the absolute path of what it links to. Nothing already there is written over: an entry that cannot be linked is named, and the rest are still made. On Windows it takes Developer Mode or the right to make links
+- ⚖️ **Compare directories** - Shift+F2, as in Total Commander, selects in each panel what differs from the other: an entry only it has, and of a file both have, the newer one, or both when the times agree and the sizes do not. Times within two seconds count as the same, as FAT keeps them no finer. Directories both have are not gone into. What was selected before is replaced, ready for F5 to copy across, and the status bar says how many differ
+- 🪞 **Compare files** - `=` or Shift+F3 shows two files side by side: two selected in the panel, or the file under the cursor against the one of the same name in the other panel, or failing that the one under the cursor there. Between them, the marks `diff -y` uses - `|` changed, `<` only on the left, `>` only on the right - and the lines that differ shaded. F3 or N goes to the next difference and Shift+F3 or P to the previous; the arrows, the page keys and the wheel scroll both sides together. The diff is Myers', the one `diff` and git use, on lines, written for fm84 rather than brought in. Files that are the same, that differ only in line endings, or that are not text are only spoken of, in the status bar - for binaries, the first byte that differs
+- ▏ **Cursor shape** - F11 sets the cursor in every field and in the editor to a Bar, a Block or an Underline, blinking or not, or to Classic, the reversed cell fm84 drew before, for a terminal that cannot be told a shape. Saved as `cursor` and `cursor_blink`; on exit the terminal gets its own shape back
+
+### 🛠️ Changed
+- ▏ **The terminal's own cursor** - fields and the editor show the terminal's cursor, a blinking bar unless F11 says otherwise, where they drew a reversed cell of their own. With the cursor at the end of what is typed, it sits straight after the last character: a directory being renamed reads `[doc]`, not `[doc ]`
+- ⌨️ **Kitty's keyboard protocol** - asked for where the terminal has it (kitty, foot, WezTerm, Ghostty, Alacritty), and given back on exit, around the external editor and after a crash
+
+### 🐛 Fixed
+- 🎹 **Ctrl+F3, and Shift+F3 in the Viewer and the Editor, never arrived** - most terminals send F3 with a modifier in the form they report where their cursor is, and it was taken for that and dropped. With kitty's keyboard protocol they come through; elsewhere they still cannot, which is why Compare files has `=` as well
+
+---
+
 ## [0.30.0] - 2026-10-23
 
 ### ✨ Added

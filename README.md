@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.30.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.31.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -105,6 +105,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels. Each file is written beside its destination and renamed into place only once it is whole, so a copy that is cancelled, fails or is cut short by quitting never leaves half a file under the real name. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🧯 **One bad entry doesn't sink the job** - a file that will not copy, move or delete (a socket, a pipe, a permission refused, a disk full) stops the job and asks: **R** retry, **S** skip, **A** skip all, **Esc** abort. A skipped entry is left where it was, and a directory holding one stays with it, so a move never leaves anything gone from both sides. The end says how many were skipped
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
+- **Alt+F5** 🔗 - Make a symbolic link to what is chosen. **Ctrl+Shift+F5** works too, as in Total Commander, where the terminal lets it through - kitty keeps it for reloading its config. It asks where, as F5 does, opening on the entry's name in the other panel - a directory too, since the link is the new entry - or, for several, on the other panel's directory, with a link in it for each. Each points at the absolute path of what it links to. Nothing already there is written over: an entry that cannot be linked is named, and the rest are still made. On Windows it takes Developer Mode or the right to make links
+- **Shift+F2** ⚖️ - Compare directories, as in Total Commander: each panel selects what differs from the other - an entry only it has, and of a file both have, the newer one, or both when the times agree and the sizes do not. Times within two seconds count as the same, as FAT keeps them no finer. Directories both have are not gone into. What was selected before is replaced, ready for F5 to copy across, and the status bar says how many differ
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
 - **F8** / **Delete** 🗑️ - Move files & folders to the system's trash (selected items or cursor item, with confirmation - which F11 can turn off - and progress). What the trash will not take - a read-only disk, one with nowhere to keep a trash - is asked about, with **D** to delete it for good. F11 can make F8 delete permanently instead
 - **Shift+F8** / **Shift+Delete** 💀 - Delete permanently, always asking first
@@ -183,6 +185,14 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 - 🖱️ **Mouse click and drag** - click to position the cursor, drag to select
 
+### ⚖️ Compare Files (= or Shift+F3)
+- 🎯 **Which two** - two files selected in the panel you are in; otherwise the file under the cursor against the one of the same name in the other panel, or failing that the one under the cursor there. The left panel's file is always on the left
+- 🪞 **Side by side** - each file under its path, numbered as F11 numbers lines, with the mark `diff -y` uses between them: `|` changed, `<` only on the left, `>` only on the right. Lines that differ are shaded. Lines removed and added in one place are paired off, and whichever side has more carries on alone
+- ⏭️ **From one difference to the next** - it opens on the first; **F3** or **N** goes to the next, **Shift+F3** or **P** to the previous, and the status bar says which it is on. Arrows, PageUp/PageDown, Home/End and the wheel scroll both sides together; **Esc** closes it
+- 🧮 **The diff `diff` and git use** - Myers', on lines, after the lines both files start and end with are set aside. Two files that differ in more than 2,048 lines between those are shown as one block replaced
+- 💬 **Nothing to show** - files that are the same, that differ only in line endings (CRLF against LF, or a missing newline at the end), or that are not text are only spoken of, in the status bar - for binaries, the first byte that differs. Either file over the size F11 asks before opening is refused
+- ⌨️ **Shift+F3 needs a terminal that can send it** - most send F3 with a modifier as they report where their cursor is, and fm84 cannot tell the two apart. fm84 asks for kitty's keyboard protocol, which settles it, where the terminal has it - kitty, foot, WezTerm, Ghostty, Alacritty. Elsewhere, `=` (Ctrl+F3 sort and the Viewer's Shift+F3 have the same trouble there)
+
 ### 👁️ Preview (F12)
 - 🪞 **Opposite panel** - shows the head of whatever the cursor is on, and follows it
 - 📁 **Directories** - item count instead of contents
@@ -219,6 +229,8 @@ Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ s
 - 🖌️ **Background** - the theme's own, or the terminal's for a transparent or custom one. A light theme needs its own: on a dark terminal its text would all but vanish
 - 🔣 **Icons** - Nerd Font, Nerd Font Mono (drops the padding a wide glyph needs, so icons stay centred), or Plain letters for a terminal without a Nerd Font
 - 🕐 **Clock** - 24-hour, 12-hour, or off
+- ▏ **Cursor** - in every field being typed into and in the editor: the terminal's own cursor as a **Bar**, a **Block** or an **Underline**, or **Classic**, the reversed cell fm84 drew before, for a terminal that cannot be told a shape (the Linux console). On exit the terminal gets its own shape back
+- ✨ **Cursor blinks** - on or off. How fast, and whether at all, is up to the terminal: kitty's `cursor_blink_interval 0` keeps it still whatever this says
 
 **Viewer and editor**
 - ⇥ **Tab width** - 2, 4 or 8 columns, in the Viewer, the Editor and the preview
@@ -259,9 +271,13 @@ Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ s
 | `Esc` | Clear search / Close dialogs, the Viewer and the Editor / Stop directory sizing / Stop waiting on a directory that has not answered |
 | `F1` | Help |
 | `F2` | Rename |
+| `Shift+F2` | Compare directories: select what differs in each panel |
 | `F3` | View file |
+| `=` / `Shift+F3` | Compare two files side by side |
+| `F3` / `Shift+F3` or `N` / `P` | Next / previous difference (in Compare) |
 | `F4` | Edit file (built-in, or the editor set under F11) |
 | `F5` | Copy (to the other panel, or wherever the dialog is told) |
+| `Alt+F5` / `Ctrl+Shift+F5` | Make a symbolic link (in the other panel, or wherever the dialog is told) |
 | `F6` | Move (to the other panel, or wherever the dialog is told) |
 | `F7` | Create directory |
 | `Shift+F4` | Create empty file |
@@ -338,7 +354,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.30.0
+fm84 --version       # fm84 0.31.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -425,5 +441,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.30.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.31.0 ▄▀▄▀▄▀</code>
 </p>
