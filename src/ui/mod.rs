@@ -26,12 +26,13 @@ mod options_popup;
 mod panels;
 mod popups;
 mod screens;
+mod scroll_bars;
 mod spans;
 #[cfg(test)]
 mod tests;
 
 pub use self::help::*;
-use self::{bars::*, options_popup::*, panels::*, popups::*, screens::*, spans::*};
+use self::{bars::*, options_popup::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*};
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style {
@@ -192,12 +193,15 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
         };
         render_path_bar(f, chunks_main[1], app_state, going_to);
         app_state.path_bar_area = chunks_main[1];
+        // Only the viewer and the editor have bars, and they put theirs back.
+        app_state.scroll_bars.clear();
         match app_state.screen {
             Screen::Viewer(_) => {
-                let (height, width, content_area) = render_viewer(f, chunks_main[2], app_state);
+                let (height, width, content_area, bars) = render_viewer(f, chunks_main[2], app_state);
                 app_state.viewer_viewport_height = height;
                 app_state.viewer_viewport_width = width;
                 app_state.viewer_content_area = content_area;
+                app_state.scroll_bars = bars;
             }
             Screen::Editor(_) => app_state.editor_viewport_height = render_editor(f, chunks_main[2], app_state),
             Screen::Diff(_) => {

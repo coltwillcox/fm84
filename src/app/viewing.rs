@@ -522,13 +522,21 @@ impl AppState {
             && !state.wrapping()
         {
             // Stop once the longest line's end reaches the right edge.
-            let longest = match state.mode {
-                ViewMode::Hex => crate::constants::HEX_LINE_WIDTH,
-                ViewMode::Image => state.image_columns,
-                ViewMode::Text => state.max_line_width,
-            };
-            let max = longest.saturating_sub(self.viewer_viewport_width);
+            let max = state.content_width().saturating_sub(self.viewer_viewport_width);
             state.horizontal_offset = (state.horizontal_offset + 1).min(max);
+        }
+    }
+
+    /// Start the view at `offset`, from a scroll bar: a line down, or a
+    /// column along. No further than the keys go.
+    pub fn viewer_scroll_to(&mut self, vertical: bool, offset: usize) {
+        let (height, width) = (self.viewer_viewport_height, self.viewer_viewport_width);
+        if let Screen::Viewer(state) = &mut self.screen {
+            if vertical {
+                state.scroll_offset = offset.min(state.total_lines.saturating_sub(height));
+            } else if !state.wrapping() {
+                state.horizontal_offset = offset.min(state.content_width().saturating_sub(width));
+            }
         }
     }
 

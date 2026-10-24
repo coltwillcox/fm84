@@ -2,7 +2,8 @@
 
 use super::*;
 
-pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect) {
+pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect, Vec<ScrollBar>) {
+    let mut bars = Vec::new();
     if let Some(viewer_state) = app_state.viewer() {
         let filename = shown_name(&viewer_state.file_path);
         let prefix = if viewer_state.from_edit { "Edit" } else { "View" };
@@ -114,13 +115,29 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
 
             let content_para = Paragraph::new(content_lines).style(style_file());
             f.render_widget(content_para, content_area);
+
+            let rows = Extent {
+                content: viewer_state.total_lines,
+                view: viewport_height,
+                offset: viewer_state.scroll_offset,
+            };
+            bars.extend(vertical_bar(f, area, rows));
+            // Wrapped, every row fits across, and there is nowhere to go.
+            if !viewer_state.wrapping() {
+                let columns = Extent {
+                    content: viewer_state.content_width(),
+                    view: chunks[1].width as usize,
+                    offset: viewer_state.horizontal_offset,
+                };
+                bars.extend(horizontal_bar(f, area, chunks[1], columns));
+            }
         }
 
         // The viewport is the whole pane even when an image is centred in part
         // of it: fit and fill are worked out from the space available.
-        (viewport_height, chunks[1].width as usize, content_area)
+        (viewport_height, chunks[1].width as usize, content_area, bars)
     } else {
-        (0, 0, Rect::default())
+        (0, 0, Rect::default(), bars)
     }
 }
 
@@ -186,6 +203,7 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mu
 
 pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> usize {
     let line_numbers = app_state.options.line_numbers;
+    let mut bars = Vec::new();
     let (viewport_height, content_area) = if let Screen::Editor(editor_state) = &mut app_state.screen {
         let filename = shown_name(&editor_state.file_path);
         let modified = if editor_state.modified { " [Modified]" } else { "" };
@@ -277,11 +295,29 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         let content_para = Paragraph::new(content_lines);
         f.render_widget(content_para, chunks[1]);
 
+        let rows = Extent {
+            content: editor_state.lines.len(),
+            view: viewport_height,
+            offset: editor_state.scroll_offset,
+        };
+        bars.extend(vertical_bar(f, area, rows));
+        // A column more than the widest line, for the cursor at its end; and
+        // never less than what shows, since the editor scrolls right as far
+        // as it is asked to.
+        let view = chunks[1].width as usize;
+        let columns = Extent {
+            content: (editor_state.widest_line() + 1).max(h_offset + view),
+            view,
+            offset: h_offset,
+        };
+        bars.extend(horizontal_bar(f, area, chunks[1], columns));
+
         (viewport_height, chunks[1])
     } else {
         (0, Rect::default())
     };
 
     app_state.editor_content_area = content_area;
+    app_state.scroll_bars = bars;
     viewport_height
 }

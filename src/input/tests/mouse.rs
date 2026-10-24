@@ -164,3 +164,90 @@ fn wide_characters_take_their_columns_in_the_editor() {
     assert_eq!(app_state.editor().unwrap().cursor_col, 2);
     std::fs::remove_file(path).unwrap();
 }
+
+/// The scroll bars are the mouse's too, in the viewer and the editor alike:
+/// a press on the track pages towards it, and a thumb taken hold of follows
+/// the pointer - off the track as well - until the button comes up. Nothing
+/// under a bar is clicked through it.
+#[test]
+fn scroll_bars_page_when_clicked_and_follow_a_drag() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let dir = std::env::temp_dir().join(format!("fm84-bar-mouse-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("big.txt");
+    std::fs::write(&path, (1..=200).map(|n| format!("{n} {}\n", "x".repeat(300))).collect::<String>()).unwrap();
+    let mouse = |app_state: &mut AppState, kind: MouseEventKind, (column, row): (u16, u16)| {
+        crate::input::handle_mouse(
+            app_state,
+            MouseEvent {
+                kind,
+                column,
+                row,
+                modifiers: KeyModifiers::NONE,
+            },
+        );
+    };
+    let (down, drag, up) = (MouseEventKind::Down(MouseButton::Left), MouseEventKind::Drag(MouseButton::Left), MouseEventKind::Up(MouseButton::Left));
+
+    for edit in [false, true] {
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+        if edit {
+            app_state.open_editor(path.clone()).unwrap();
+        } else {
+            app_state.open_viewer(path.clone()).unwrap();
+        }
+        let mut draw = |app_state: &mut AppState| crate::ui::render_ui(&mut terminal, app_state);
+        let offsets = |app_state: &AppState| match &app_state.screen {
+            Screen::Editor(state) => (state.scroll_offset, state.horizontal_offset),
+            Screen::Viewer(state) => (state.scroll_offset, state.horizontal_offset),
+            _ => unreachable!(),
+        };
+        let bar = |app_state: &AppState, vertical: bool| *app_state.scroll_bars.iter().find(|bar| bar.vertical == vertical).expect("a bar");
+        let thumb_cell = |bar: crate::scroll_bar::ScrollBar| {
+            let (start, _) = crate::scroll_bar::thumb(if bar.vertical { bar.track.height } else { bar.track.width } as usize, bar.extent).unwrap();
+            if bar.vertical { (bar.track.x, bar.track.y + start as u16) } else { (bar.track.x + start as u16, bar.track.y) }
+        };
+        draw(&mut app_state);
+        let vertical = bar(&app_state, true);
+        let view = vertical.extent.view;
+
+        // The track below the thumb: a page down, and the cursor left alone.
+        mouse(&mut app_state, down, (vertical.track.x, vertical.track.bottom() - 1));
+        mouse(&mut app_state, up, (vertical.track.x, vertical.track.bottom() - 1));
+        draw(&mut app_state);
+        assert_eq!(offsets(&app_state).0, view, "edit: {edit}");
+        if edit {
+            assert_eq!(app_state.editor().unwrap().cursor_line, 0, "the click went to the bar, not the text");
+        } else {
+            assert_eq!(app_state.viewer().unwrap().selection, None, "the click went to the bar, not the text");
+        }
+
+        // The thumb, taken hold of and dragged past the bottom, then let go.
+        let vertical = bar(&app_state, true);
+        let grabbed = thumb_cell(vertical);
+        mouse(&mut app_state, down, grabbed);
+        mouse(&mut app_state, drag, (grabbed.0 + 5, 200));
+        draw(&mut app_state);
+        let furthest = vertical.extent.content - view;
+        assert_eq!(offsets(&app_state).0, furthest, "edit: {edit}");
+        mouse(&mut app_state, drag, (grabbed.0, grabbed.1));
+        assert_eq!(offsets(&app_state).0, vertical.extent.offset, "followed back up");
+        mouse(&mut app_state, up, (grabbed.0, grabbed.1));
+        mouse(&mut app_state, drag, (grabbed.0, 200));
+        assert_eq!(offsets(&app_state).0, vertical.extent.offset, "let go, it stays");
+        draw(&mut app_state);
+
+        // Along the bottom: dragged to the far end, and kept there.
+        let horizontal = bar(&app_state, false);
+        let grabbed = thumb_cell(horizontal);
+        mouse(&mut app_state, down, grabbed);
+        mouse(&mut app_state, drag, (horizontal.track.right() + 10, grabbed.1));
+        mouse(&mut app_state, up, (horizontal.track.right() + 10, grabbed.1));
+        draw(&mut app_state);
+        assert_eq!(offsets(&app_state).1, horizontal.extent.content - horizontal.extent.view, "edit: {edit}");
+    }
+    std::fs::remove_dir_all(&dir).unwrap();
+}

@@ -63,6 +63,9 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
         }
         return true;
     }
+    if (viewing || editing) && scroll_bar_mouse(app_state, mouse_event.kind, column, row) {
+        return true;
+    }
     match mouse_event.kind {
         // A middle click closes the tab under it, as in a browser.
         MouseEventKind::Down(MouseButton::Middle) if !viewing && !editing => {
@@ -141,6 +144,47 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
         _ => {}
     }
     true
+}
+
+/// The left button on the viewer's or the editor's scroll bars: pressed on a
+/// thumb, it takes hold of it, and the thumb follows the pointer until the
+/// button comes up - wherever the pointer goes meanwhile, as in any window;
+/// pressed on the track either side, it is a page that way. True when the
+/// event was the bars', and goes no further.
+fn scroll_bar_mouse(app_state: &mut AppState, kind: MouseEventKind, column: u16, row: u16) -> bool {
+    use crate::scroll_bar::BarPress;
+    let scroll_to = |app_state: &mut AppState, vertical: bool, offset: usize| {
+        if app_state.is_editing() {
+            app_state.editor_scroll_to(vertical, offset);
+        } else {
+            app_state.viewer_scroll_to(vertical, offset);
+        }
+    };
+    match kind {
+        MouseEventKind::Down(MouseButton::Left) => {
+            app_state.bar_drag = None;
+            let Some((bar, press)) = app_state.scroll_bars.iter().find_map(|bar| bar.press(column, row).map(|press| (*bar, press))) else {
+                return false;
+            };
+            match press {
+                BarPress::Thumb(grab) => app_state.bar_drag = Some((bar, grab)),
+                BarPress::Page { forward } => {
+                    let crate::scroll_bar::Extent { offset, view, .. } = bar.extent;
+                    scroll_to(app_state, bar.vertical, if forward { offset + view } else { offset.saturating_sub(view) });
+                }
+            }
+            true
+        }
+        MouseEventKind::Drag(MouseButton::Left) => {
+            let Some((bar, grab)) = app_state.bar_drag else {
+                return false;
+            };
+            scroll_to(app_state, bar.vertical, bar.drag_to(column, row, grab));
+            true
+        }
+        MouseEventKind::Up(MouseButton::Left) => app_state.bar_drag.take().is_some(),
+        _ => false,
+    }
 }
 
 /// A click on the panels. Popups are turned away before the event gets this

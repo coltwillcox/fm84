@@ -73,6 +73,10 @@ pub struct EditorState {
     /// The file as it stood when it was last read or written here, so a save
     /// can tell when something else has written it since.
     pub disk_stamp: Option<DiskStamp>,
+    /// Columns each line takes as drawn, kept in step with every edit, so
+    /// the horizontal scroll bar can know the widest without measuring the
+    /// whole file every frame.
+    pub line_widths: Vec<usize>,
 }
 
 /// One undoable edit: the lines it replaced, and where the cursor was. The
@@ -134,6 +138,36 @@ impl EditorState {
             }
         }
         self.scroll_offset = self.scroll_offset.min(self.lines.len().saturating_sub(height));
+    }
+
+    /// The widest line, in columns as drawn.
+    pub fn widest_line(&self) -> usize {
+        self.line_widths.iter().copied().max().unwrap_or(0)
+    }
+
+    /// Bring line_widths up to date after an edit that changed every line
+    /// from `from` to `through`, and any it added below `from` - as the
+    /// highlighting is, splicing the lines added or removed in after `from`.
+    fn measure_lines(&mut self, from: usize, through: usize) {
+        let delta = self.lines.len() as isize - self.line_widths.len() as isize;
+        if from < self.line_widths.len() {
+            let at = from + 1;
+            if delta > 0 {
+                self.line_widths.splice(at..at, std::iter::repeat_n(0, delta as usize));
+            } else {
+                let end = (at + delta.unsigned_abs()).min(self.line_widths.len());
+                self.line_widths.drain(at.min(end)..end);
+            }
+        }
+        // Anything that does not line up again is measured afresh.
+        if self.line_widths.len() != self.lines.len() || from >= self.lines.len() {
+            self.line_widths = self.lines.iter().map(|line| crate::utils::line_display_width(line)).collect();
+            return;
+        }
+        let last = through.max(from + delta.max(0) as usize).min(self.lines.len() - 1);
+        for index in from..=last {
+            self.line_widths[index] = crate::utils::line_display_width(&self.lines[index]);
+        }
     }
 
     /// Clamp cursor_col to current line length.
@@ -240,6 +274,7 @@ impl AppState {
             // Rendering already falls back to plain text when these are empty.
             (Vec::new(), Vec::new())
         };
+        let line_widths = lines.iter().map(|line| crate::utils::line_display_width(line)).collect();
 
         self.screen = Screen::Editor(EditorState {
             file_path,
@@ -257,6 +292,7 @@ impl AppState {
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             disk_stamp,
+            line_widths,
         });
         Ok(())
     }
@@ -290,8 +326,10 @@ impl AppState {
     /// `through`. The parse may stop once it meets the cache, but not before
     /// `through`: a line below one the cache agrees with can still be new
     /// text, and its old spans would go on showing what it said before.
+    /// Every edit comes this way, so the lines' widths are kept here too.
     pub(super) fn editor_rehighlight_through(&mut self, from: usize, through: usize) {
         if let Screen::Editor(state) = &mut self.screen {
+            state.measure_lines(from, through);
             if state.line_states.is_empty() {
                 return; // highlighting disabled for this file
             }
@@ -329,6 +367,21 @@ impl AppState {
     pub fn editor_scroll_right(&mut self) {
         if let Screen::Editor(state) = &mut self.screen {
             state.horizontal_offset += 1;
+            state.auto_scroll = false;
+        }
+    }
+
+    /// Start the view at `offset`, from a scroll bar: a line down, or a
+    /// column along. Like the wheel it leaves the cursor where it is, and
+    /// the view stays put until a key brings it back to it.
+    pub fn editor_scroll_to(&mut self, vertical: bool, offset: usize) {
+        let height = self.editor_viewport_height;
+        if let Screen::Editor(state) = &mut self.screen {
+            if vertical {
+                state.scroll_offset = offset.min(state.lines.len().saturating_sub(height));
+            } else {
+                state.horizontal_offset = offset;
+            }
             state.auto_scroll = false;
         }
     }

@@ -614,3 +614,84 @@ fn the_diff_header_keeps_the_end_of_a_long_path() {
     let header = rows.iter().find(|row| row.contains("...") && row.contains("_name")).expect("the paths are cut short");
     assert!(header.contains("left_name.txt") && header.contains("right_name.txt"), "{header}");
 }
+
+/// The cells a scroll bar's thumb is drawn in, by column and row, and which
+/// of the two thumbs each is. Every one is in the title's colour.
+fn thumb_cells(terminal: &Terminal<ratatui::backend::TestBackend>) -> Vec<(u16, u16, &'static str)> {
+    let buffer = terminal.backend().buffer();
+    let area = buffer.area;
+    let cells: Vec<(u16, u16, &'static str)> = (area.y..area.bottom())
+        .flat_map(|y| (area.x..area.right()).map(move |x| (x, y)))
+        .filter_map(|(x, y)| [THUMB_VERTICAL, THUMB_HORIZONTAL].into_iter().find(|&thumb| buffer[(x, y)].symbol() == thumb).map(|thumb| (x, y, thumb)))
+        .collect();
+    for &(x, y, _) in &cells {
+        assert_eq!(buffer[(x, y)].fg, crate::display::palette().title, "the thumb at {x},{y}");
+    }
+    cells
+}
+
+/// F3 and F4 have scroll bars in their borders, down the right for the lines
+/// and along the bottom for the columns, only when there is more than fits -
+/// and none across a wrapped view, where nothing runs past the edge.
+#[test]
+fn the_viewer_and_the_editor_show_scroll_bars_when_there_is_more() {
+    let dir = std::env::temp_dir().join(format!("fm84-scroll-bars-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let short = dir.join("short.txt");
+    std::fs::write(&short, "one\ntwo\n").unwrap();
+    let tall = dir.join("tall.txt");
+    std::fs::write(&tall, (1..=200).map(|n| format!("{n}\n")).collect::<String>()).unwrap();
+    let wide = dir.join("wide.txt");
+    std::fs::write(&wide, "x".repeat(500)).unwrap();
+
+    let (width, height) = (80, 24);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    let mut shown = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        thumb_cells(&terminal)
+    };
+
+    for edit in [false, true] {
+        let open = |app_state: &mut AppState, path: &PathBuf| {
+            if edit {
+                app_state.open_editor(path.clone()).unwrap();
+            } else {
+                app_state.open_viewer(path.clone()).unwrap();
+            }
+        };
+        open(&mut app_state, &short);
+        assert_eq!(shown(&mut app_state), [], "everything fits (edit: {edit})");
+
+        // Tall: a thumb down one column, at the top of its track.
+        open(&mut app_state, &tall);
+        let cells = shown(&mut app_state);
+        assert!(!cells.is_empty(), "edit: {edit}");
+        let column = cells[0].0;
+        assert!(cells.iter().all(|&(x, _, thumb)| x == column && thumb == THUMB_VERTICAL), "one column: {cells:?}");
+        let top = cells.iter().map(|&(_, y, _)| y).min().unwrap();
+        // Scrolled to the end, the thumb is at the bottom of its track.
+        if edit {
+            app_state.editor_mut().unwrap().cursor_line = 199;
+        } else {
+            app_state.viewer_end();
+        }
+        let bottom = shown(&mut app_state).iter().map(|&(_, y, _)| y).max().unwrap();
+        assert!(bottom > top + 10, "moved down: {top} to {bottom}");
+
+        // Wide: a thumb along one row.
+        open(&mut app_state, &wide);
+        let cells = shown(&mut app_state);
+        assert!(!cells.is_empty(), "edit: {edit}");
+        let row = cells[0].1;
+        assert!(cells.iter().all(|&(_, y, thumb)| y == row && thumb == THUMB_HORIZONTAL), "one row: {cells:?}");
+    }
+
+    // Wrapped, the long line fits across, and the bar goes.
+    app_state.open_viewer(wide).unwrap();
+    app_state.viewer_mut().unwrap().wrap = true;
+    assert_eq!(shown(&mut app_state), []);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

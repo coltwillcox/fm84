@@ -312,6 +312,17 @@ impl ViewerState {
     }
 
     /// Whether lines are being broken onto rows: W is on, and it is text.
+    /// Columns the widest row takes, which is as far as scrolling sideways
+    /// goes: a hexdump's rows are all one width, and a picture is as wide as
+    /// it is drawn.
+    pub fn content_width(&self) -> usize {
+        match self.mode {
+            ViewMode::Hex => crate::constants::HEX_LINE_WIDTH,
+            ViewMode::Image => self.image_columns,
+            ViewMode::Text => self.max_line_width,
+        }
+    }
+
     pub fn wrapping(&self) -> bool {
         self.wrap && self.mode == ViewMode::Text && !self.from_edit
     }

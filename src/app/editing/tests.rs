@@ -414,3 +414,45 @@ fn every_line_an_edit_rewrites_is_highlighted_again() {
     assert_eq!(as_drawn(&app_state), lines(&app_state), "after undoing Replace all");
     std::fs::remove_file(path).unwrap();
 }
+
+/// The widths behind the horizontal scroll bar follow every kind of edit, so
+/// they are always what measuring the lines afresh would give.
+#[test]
+fn line_widths_keep_up_with_every_edit() {
+    let (mut app_state, path) = editor_with("line-widths", "short\na much longer line\n\tx\n");
+    let check = |app_state: &AppState, what: &str| {
+        let state = app_state.editor().unwrap();
+        let fresh: Vec<usize> = state.lines.iter().map(|line| crate::utils::line_display_width(line)).collect();
+        assert_eq!(state.line_widths, fresh, "after {what}");
+    };
+    check(&app_state, "opening");
+    app_state.editor_state_cursor(0, 5);
+    app_state.editor_insert_char('!');
+    check(&app_state, "typing");
+    app_state.editor_enter();
+    check(&app_state, "Enter");
+    app_state.editor_backspace();
+    check(&app_state, "Backspace joining lines");
+    app_state.editor_insert_text("one\ntwo\nthree");
+    check(&app_state, "a paste");
+    if let Some(state) = app_state.editor_mut() {
+        state.selection_anchor = Some((0, 0));
+        state.cursor_line = 3;
+        state.cursor_col = 2;
+    }
+    app_state.editor_cut();
+    check(&app_state, "a cut across lines");
+    app_state.editor_state_cursor(0, 1000);
+    app_state.editor_delete();
+    check(&app_state, "Delete joining lines");
+    app_state.editor_undo();
+    check(&app_state, "undo");
+    app_state.editor_undo();
+    check(&app_state, "undo of the cut");
+    app_state.editor_redo();
+    check(&app_state, "redo");
+    replace(&mut app_state, "e", "eee");
+    app_state.replace_all();
+    check(&app_state, "Replace all");
+    std::fs::remove_file(path).unwrap();
+}

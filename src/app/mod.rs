@@ -231,6 +231,12 @@ pub struct AppState {
     pub viewport_start_right: usize,
     pub editor_content_area: Rect,
     pub viewer_content_area: Rect,
+    /// The viewer's or the editor's scroll bars, as last drawn.
+    pub scroll_bars: Vec<crate::scroll_bar::ScrollBar>,
+    /// The bar whose thumb the left button took hold of, as it was then, and
+    /// how many cells from the thumb's start it was taken - followed until
+    /// the button comes up.
+    pub bar_drag: Option<(crate::scroll_bar::ScrollBar, usize)>,
     // The drive strips as drawn, and which of the drives each one shows.
     pub drive_strip_left: Strip,
     pub drive_strip_right: Strip,
@@ -383,6 +389,8 @@ impl AppState {
             viewport_start_right: 0,
             editor_content_area: Rect::default(),
             viewer_content_area: Rect::default(),
+            scroll_bars: Vec::new(),
+            bar_drag: None,
             listing_left: None,
             listing_right: None,
             listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
