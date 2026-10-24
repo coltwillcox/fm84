@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.31.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.32.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -94,7 +94,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↩️ **Enter goes there** - the panel moves to the directory of the result chosen, cursor on it. Esc closes the list, stopping a search still under way
 
 ### 📝 File Operations
-- **F1** 💡 - Help/About
+- **F1** 💡 - Help/About: the keys, then what fm84 is - its version, licence and where it lives. Like every popup it sits over the panels, no taller than they are; when the list is longer, the arrows, PageUp/PageDown, Home/End and the wheel scroll it, and the corner says which lines show
 - **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing, the field scrolling to keep the cursor in view on a long name); a change of case alone works on macOS and Windows too
 - **F3** 👁️ - View files (text, hexdump, or images as ASCII art); Esc closes the viewer, F3 inside it finds the next match
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, Esc to close with an unsaved changes prompt, mouse click to position cursor)
@@ -200,7 +200,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🪶 **Bounded** - reads at most 64 KiB of a text file and 4 KiB of a binary, never prompts, never loads a whole file, and never opens a pipe or a device
 
 ### ⚙️ Options (F11)
-Grouped under four headings; the list scrolls on a short terminal, and ↑/↓ stop at its first and last row.
+Grouped under four headings, in a popup no taller than the panels: the list scrolls within it, with ↑/↓ or the mouse wheel, which stop at its first and last row, and the corner says which row of how many the cursor is on.
 
 **Panels**
 - 🙈 **Show hidden files** - dotfiles, or on Windows anything with the hidden attribute
@@ -354,7 +354,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.31.0
+fm84 --version       # fm84 0.32.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -441,5 +441,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.31.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.32.0 ▄▀▄▀▄▀</code>
 </p>

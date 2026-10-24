@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-24" "fm84 0.31.0" "User Commands"
+.TH FM84 1 "2026-10-24" "fm84 0.32.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -195,7 +195,12 @@ The ones the screen answers are listed along the bottom border;
 a click on one presses it.
 .TP 18
 .B F1
-Help.
+Help: the keys, then
+.BR About ,
+with the version, licence and where fm84 lives.
+Like every popup it sits over the panels and is no taller than they are;
+when it is longer, the arrows, PageUp and PageDown, Home and End and the
+mouse wheel scroll it.
 .TP
 .B F2
 Rename.
@@ -360,6 +365,8 @@ confirmations, delete to trash, what to do when a destination exists, the
 terminal and editor commands, remembering directories; the theme, icons,
 clock, and the cursor's shape and whether it blinks; tab width, line numbers,
 highlighting and image settings.
+The list scrolls within the panels when it does not fit, with Up and Down or
+the mouse wheel.
 .PP
 The cursor, in fields and in the editor, is the terminal's own: a bar, a
 block or an underline.

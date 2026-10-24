@@ -6,6 +6,20 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.32.0] - 2026-10-24
+
+### ✨ Added
+- 📜 **F1 scrolls** - the arrows, PageUp/PageDown, Home/End and the mouse wheel move through it when it is longer than the panels, and the corner says which lines show. It opens at the top
+- 💡 **About in F1** - after the keys: the version, the description, what fm84 is built with, the copyright, the licence and the repository. The version, description, licence and address come from Cargo.toml, so they follow each release
+- 🖱️ **The wheel in F11** - scrolls the options list as ↑/↓ do, except while a command is being typed into it
+
+### 🛠️ Changed
+- 📐 **One width for every popup** - 60% of the screen, as F1 and F7 always were. Copy, Move and Symlink, Find files, Alt+A, Bookmarks and the questions asked during a copy were 64-80%
+- 📏 **Popups keep to the panels** - every popup is centred over the panels and no taller than they are, so the top bar, the path bar, the status bar and the key bar always show. F11 used to run over them on a short terminal; it scrolls within the panels instead
+- 🗂️ **F1 in two parts** - Keys and About, each under a heading, as F11 groups its options
+
+---
+
 ## [0.31.0] - 2026-10-24
 
 ### ✨ Added
