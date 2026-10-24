@@ -182,12 +182,44 @@ impl AppState {
         }
     }
 
-    /// Work out a directory's size on a thread of its own, unless that is
-    /// already under way.
+    /// Work out a directory's size - next, ahead of any waiting, since it was
+    /// asked for on its own - unless that is already under way.
     pub fn start_dir_size(&mut self, path: PathBuf) {
         if self.dir_sizing.iter().any(|sizing| sizing.path == path) {
             return;
         }
+        self.dir_size_queue.retain(|queued| *queued != path);
+        self.dir_size_queue.push_front(path);
+        self.start_queued_sizes();
+    }
+
+    /// Alt+Shift+Enter, as in Total Commander: the size of every directory in
+    /// the active panel, counted again if it was before. Links to directories
+    /// are left out: one to / or to a slow mount would walk all of it. They
+    /// go in turn, top to bottom, a few at once, and each shows in the Size
+    /// column as it is counted.
+    pub fn size_all_dirs(&mut self) {
+        let (children, dir) = if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
+        let paths: Vec<PathBuf> = children.iter().filter(|item| item.is_dir && !item.is_symlink && item.name != "..").map(|item| item.path_in(dir)).collect();
+        for path in paths {
+            if !self.dir_sizing.iter().any(|sizing| sizing.path == path) && !self.dir_size_queue.contains(&path) {
+                self.dir_size_queue.push_back(path);
+            }
+        }
+        self.start_queued_sizes();
+    }
+
+    /// Start what is waiting, as far as there are workers free.
+    fn start_queued_sizes(&mut self) {
+        while self.dir_sizing.len() < crate::constants::SIZE_WORKERS
+            && let Some(path) = self.dir_size_queue.pop_front()
+        {
+            self.spawn_dir_size(path);
+        }
+    }
+
+    /// Work out a directory's size on a thread of its own.
+    fn spawn_dir_size(&mut self, path: PathBuf) {
         let cancel = Arc::new(AtomicBool::new(false));
         let (sender, updates) = mpsc::channel();
         let (worker_path, worker_cancel) = (path.clone(), Arc::clone(&cancel));
@@ -233,20 +265,25 @@ impl AppState {
                 Err(e) => self.display_error(format!("Cannot calculate size: {}", e)),
             }
         }
+        // Workers freed, for what is waiting.
+        self.start_queued_sizes();
     }
 
     /// Stop every size still being worked out. Each thread notices between
     /// entries; one stuck in a read on a dead mount is simply forgotten, and
     /// whatever it finds is never asked for.
     pub fn cancel_dir_sizes(&mut self) {
+        self.dir_size_queue.clear();
         for sizing in self.dir_sizing.drain(..) {
             sizing.cancel.store(true, Ordering::Relaxed);
         }
     }
 
-    /// The running total for a directory still being sized.
+    /// The running total for a directory still being sized - nothing yet,
+    /// for one waiting its turn.
     pub fn dir_size_so_far(&self, path: &Path) -> Option<u64> {
-        self.dir_sizing.iter().find(|sizing| sizing.path == path).map(|sizing| sizing.found)
+        let waiting = || self.dir_size_queue.iter().any(|queued| queued == path).then_some(0);
+        self.dir_sizing.iter().find(|sizing| sizing.path == path).map(|sizing| sizing.found).or_else(waiting)
     }
 
     pub fn clear_active_selections(&mut self) {

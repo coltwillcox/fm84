@@ -8,6 +8,11 @@ pub const REFRESH_INTERVAL: Duration = Duration::from_secs(1);
 // stopped answering runs past it.
 pub const LISTING_WAIT: Duration = Duration::from_millis(150);
 
+// Directories sized at once. Alt+Shift+Enter asks for every one in a panel,
+// and a walk each, all together, would have hundreds of threads contending
+// for one disk; the rest wait their turn.
+pub const SIZE_WORKERS: usize = 4;
+
 // How long a click on a panel's git branch waits for git: for the list of
 // branches before saying it did not answer, and for a switch before going on
 // without it, to take the result in when it comes. Git starts up and reads a

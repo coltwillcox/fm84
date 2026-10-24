@@ -15,6 +15,7 @@ fn row(name: &str) -> Item {
         name: name.to_string(),
         extension: String::new(),
         is_dir: false,
+        is_symlink: false,
         size: String::new(),
         size_bytes: 0,
         modified_at: None,

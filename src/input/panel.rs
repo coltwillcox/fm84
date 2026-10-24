@@ -106,6 +106,9 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         }
         KeyCode::Home => move_cursor(app_state, |state, _len| state.select(Some(0))),
         KeyCode::End => move_cursor(app_state, |state, len| state.select(Some(len.saturating_sub(1)))),
+        // Alt+Shift+Enter sizes every directory, as in Total Commander. Alt
+        // alone too, for a terminal that cannot report Shift with Enter.
+        KeyCode::Enter if key.modifiers.contains(KeyModifiers::ALT) => app_state.size_all_dirs(),
         KeyCode::Enter => enter_directory_panel(app_state),
         _ => {}
     }

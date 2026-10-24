@@ -575,12 +575,13 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
         // Get size - for directories, show calculated size if available
         let size = if child.is_dir && child.name != ".." {
             let path = child.path_in(current_dir);
-            if let Some(&calculated_size) = app_state.dir_sizes.get(&path) {
-                format_size(calculated_size)
-            } else if let Some(so_far) = app_state.dir_size_so_far(&path) {
-                // Still counting: what it has found so far, marked as not the
-                // whole of it.
+            // Still counting, or waiting to be: what it has found so far,
+            // marked as not the whole of it - ahead of a size from before,
+            // which a count under way is there to bring up to date.
+            if let Some(so_far) = app_state.dir_size_so_far(&path) {
                 if so_far == 0 { "…".to_string() } else { format!("{}…", format_size(so_far)) }
+            } else if let Some(&calculated_size) = app_state.dir_sizes.get(&path) {
+                format_size(calculated_size)
             } else {
                 child.size.clone()
             }

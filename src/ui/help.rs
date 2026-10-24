@@ -43,6 +43,7 @@ const HELP: &[(&str, &[&str])] = &[
             "Ctrl+T/Ctrl+W - New/close tab",
             "  Ctrl+PgUp/PgDn, Alt+1..9 switch",
             "Space - Select/deselect file",
+            "  Alt+Shift+Enter size every directory",
             "+/- select/deselect by pattern, * invert",
             "  Alt+* invert with directories",
             "Ctrl+C/Alt+C - Copy paths/names",

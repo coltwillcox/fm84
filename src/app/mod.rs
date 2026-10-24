@@ -296,6 +296,8 @@ pub struct AppState {
     pub job: Option<TransferJob>,
     /// Directories Space is working out the size of, each on its own thread.
     pub dir_sizing: Vec<DirSizing>,
+    /// Directories waiting for a sizing worker to come free, next first.
+    pub dir_size_queue: std::collections::VecDeque<PathBuf>,
     /// Pictures read around the one on screen, while F11 leaves it on.
     pub image_cache: ImageCache,
     /// The entry under the cursor, spelled out under the panels.
@@ -319,6 +321,9 @@ pub struct Item {
     pub name: String,
     pub extension: String,
     pub is_dir: bool,
+    /// A symbolic link, listed as what it points to - a link to a directory
+    /// is a directory here, and is_dir says so.
+    pub is_symlink: bool,
     pub size: String,
     pub size_bytes: u64,
     pub modified_at: Option<SystemTime>,
@@ -426,6 +431,7 @@ impl AppState {
             user_at_host: crate::fs_ops::user_at_host(),
             job: None,
             dir_sizing: Vec::new(),
+            dir_size_queue: std::collections::VecDeque::new(),
             image_cache: ImageCache::default(),
             cursor_detail: None,
             quit_armed: false,

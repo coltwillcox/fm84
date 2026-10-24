@@ -211,3 +211,75 @@ fn go_to_a_path_and_back_and_forward() {
     assert_eq!(app_state.dir_left, dir.join("sub"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+Shift+Enter sizes every directory in the panel - Alt+Enter too -
+/// a few at a time with the rest waiting their turn, and not through a link
+/// to a directory, which could lead anywhere. Waiting shows as "…" in the
+/// Size column until each is counted.
+#[cfg(unix)]
+#[test]
+fn alt_shift_enter_sizes_every_directory() {
+    let dir = std::env::temp_dir().join(format!("fm84-size-all-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let count = crate::constants::SIZE_WORKERS * 2 + 1;
+    for n in 0..count {
+        let sub = dir.join(format!("dir{n:02}"));
+        std::fs::create_dir_all(sub.join("inner")).unwrap();
+        std::fs::write(sub.join("a.bin"), vec![0u8; n]).unwrap();
+        std::fs::write(sub.join("inner").join("b.bin"), vec![0u8; 100]).unwrap();
+    }
+    std::fs::write(dir.join("file.txt"), "not a directory").unwrap();
+    std::os::unix::fs::symlink(&dir, dir.join("loop")).unwrap();
+
+    for modifiers in [KeyModifiers::ALT | KeyModifiers::SHIFT, KeyModifiers::ALT] {
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), None);
+        handle_key(&mut app_state, KeyEvent::new(KeyCode::Enter, modifiers));
+        assert_eq!(app_state.dir_left, dir, "it sizes, and does not go in");
+
+        // A few at once, the rest waiting, and shown as waiting.
+        assert_eq!(app_state.dir_sizing.len(), crate::constants::SIZE_WORKERS);
+        assert_eq!(app_state.dir_size_queue.len(), count - crate::constants::SIZE_WORKERS);
+        assert_eq!(app_state.dir_size_so_far(app_state.dir_size_queue.back().unwrap()), Some(0));
+
+        let started = std::time::Instant::now();
+        while !app_state.dir_sizing.is_empty() || !app_state.dir_size_queue.is_empty() {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "sizing never finished");
+            assert!(app_state.dir_sizing.len() <= crate::constants::SIZE_WORKERS);
+            std::thread::sleep(std::time::Duration::from_millis(2));
+            app_state.poll_dir_sizes();
+        }
+        for n in 0..count {
+            assert_eq!(app_state.dir_sizes.get(&dir.join(format!("dir{n:02}"))), Some(&(n as u64 + 100)), "dir{n:02}");
+        }
+        assert_eq!(app_state.dir_sizes.len(), count, "neither the link nor the file");
+    }
+
+    // Esc stops what is running and what is waiting.
+    let mut app_state = AppState::new();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), None);
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT | KeyModifiers::SHIFT));
+    press(&mut app_state, KeyCode::Esc);
+    assert!(app_state.dir_sizing.is_empty() && app_state.dir_size_queue.is_empty());
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Space on a directory while a panel's worth are waiting is sized next,
+/// ahead of them, since it was asked for on its own.
+#[test]
+fn a_directory_sized_on_its_own_goes_ahead_of_those_waiting() {
+    let mut app_state = AppState::new();
+    // Every worker busy, so nothing more starts, and the order shows.
+    for n in 0..crate::constants::SIZE_WORKERS {
+        app_state.start_dir_size(std::path::PathBuf::from(format!("/nonexistent/fm84/busy{n}")));
+    }
+    let waiting: Vec<std::path::PathBuf> = (0..3).map(|n| std::path::PathBuf::from(format!("/nonexistent/fm84/{n}"))).collect();
+    app_state.dir_size_queue.extend(waiting.iter().cloned());
+    app_state.start_dir_size(waiting[2].clone());
+    assert_eq!(app_state.dir_size_queue.front(), Some(&waiting[2]));
+    assert_eq!(app_state.dir_size_queue.len(), 3, "moved, not added again");
+    app_state.cancel_dir_sizes();
+}
