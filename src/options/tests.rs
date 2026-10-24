@@ -30,6 +30,7 @@ fn a_saved_file_reads_back_the_same() {
         cursor_blink: false,
         tab_width: 8,
         line_numbers: false,
+        scroll_bar: ScrollBarStyle::Ascii,
         highlight_limit_kib: 0,
         large_file_mib: 256,
         image_fill: true,

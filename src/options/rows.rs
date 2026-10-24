@@ -32,6 +32,7 @@ pub enum OptionRow {
     CursorBlink,
     TabWidth,
     LineNumbers,
+    ScrollBars,
     HighlightLimit,
     LargeFile,
     ImageDefault,
@@ -39,7 +40,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 32] = [
+pub const OPTION_ROWS: [OptionRow; 33] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -67,6 +68,7 @@ pub const OPTION_ROWS: [OptionRow; 32] = [
     OptionRow::CursorBlink,
     OptionRow::TabWidth,
     OptionRow::LineNumbers,
+    OptionRow::ScrollBars,
     OptionRow::HighlightLimit,
     OptionRow::LargeFile,
     OptionRow::ImageDefault,
@@ -104,6 +106,7 @@ impl OptionRow {
             OptionRow::CursorBlink => "Cursor blinks",
             OptionRow::TabWidth => "Tab width",
             OptionRow::LineNumbers => "Line numbers",
+            OptionRow::ScrollBars => "Scroll bars",
             OptionRow::HighlightLimit => "Highlight files up to",
             OptionRow::LargeFile => "Ask before opening over",
             OptionRow::ImageDefault => "Images open as",
@@ -204,6 +207,11 @@ impl Options {
             OptionRow::CursorBlink => on_off(self.cursor_blink),
             OptionRow::TabWidth => self.tab_width.to_string(),
             OptionRow::LineNumbers => on_off(self.line_numbers),
+            // Shown as it is drawn, both ways.
+            OptionRow::ScrollBars => {
+                let (down, along) = self.scroll_bar.thumbs();
+                format!("{} {down}{along}", self.scroll_bar.label())
+            }
             OptionRow::HighlightLimit => match self.highlight_limit_kib {
                 0 => "Off".to_string(),
                 kib if kib % 1024 == 0 => format!("{} MiB", kib / 1024),
@@ -291,6 +299,7 @@ impl Options {
             OptionRow::CursorBlink => self.cursor_blink = !self.cursor_blink,
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,
+            OptionRow::ScrollBars => self.scroll_bar = step(&ScrollBarStyle::ALL, self.scroll_bar, forward),
             OptionRow::HighlightLimit => self.highlight_limit_kib = step(&HIGHLIGHT_LIMITS_KIB, self.highlight_limit_kib, forward),
             OptionRow::LargeFile => self.large_file_mib = step(&LARGE_FILE_LIMITS_MIB, self.large_file_mib, forward),
             OptionRow::ImageDefault => self.image_fill = !self.image_fill,

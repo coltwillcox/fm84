@@ -4,7 +4,7 @@
 use crate::app::{AppState, AttributeKind, AttributesForm, BranchList, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
-use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options, SortKey};
+use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options, ScrollBarStyle, SortKey};
 use crate::strip::{ARROW, Strip, StripHit};
 use crate::utils::*;
 use crate::viewer::ViewMode;

@@ -151,6 +151,7 @@ impl Options {
                 "cursor_blink" => options.cursor_blink = flag(options.cursor_blink),
                 "tab_width" => options.tab_width = number(1..=16).map_or(options.tab_width, |n| n as usize),
                 "line_numbers" => options.line_numbers = flag(options.line_numbers),
+                "scroll_bar" => options.scroll_bar = ScrollBarStyle::ALL.into_iter().find(|style| style.key() == value).unwrap_or(options.scroll_bar),
                 // Past 64 MiB the first parse alone would take about a minute.
                 "highlight_limit_kib" => options.highlight_limit_kib = number(0..=65536).unwrap_or(options.highlight_limit_kib),
                 "large_file_mib" => options.large_file_mib = number(1..=1_048_576).unwrap_or(options.large_file_mib),
@@ -247,6 +248,8 @@ impl Options {
              # Viewer and editor\n\
              tab_width = {}\n\
              line_numbers = {}\n\
+             # heavy, double, dashed, block, shade or ascii.\n\
+             scroll_bar = {}\n\
              # Zero turns syntax highlighting off.\n\
              highlight_limit_kib = {}\n\
              large_file_mib = {}\n\
@@ -284,6 +287,7 @@ impl Options {
             self.cursor_blink,
             self.tab_width,
             self.line_numbers,
+            self.scroll_bar.key(),
             self.highlight_limit_kib,
             self.large_file_mib,
             if self.image_fill { "fill" } else { "fit" },

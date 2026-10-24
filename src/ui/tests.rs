@@ -622,7 +622,10 @@ fn thumb_cells(terminal: &Terminal<ratatui::backend::TestBackend>) -> Vec<(u16, 
     let area = buffer.area;
     let cells: Vec<(u16, u16, &'static str)> = (area.y..area.bottom())
         .flat_map(|y| (area.x..area.right()).map(move |x| (x, y)))
-        .filter_map(|(x, y)| [THUMB_VERTICAL, THUMB_HORIZONTAL].into_iter().find(|&thumb| buffer[(x, y)].symbol() == thumb).map(|thumb| (x, y, thumb)))
+        .filter_map(|(x, y)| {
+            let (down, along) = ScrollBarStyle::Heavy.thumbs();
+            [down, along].into_iter().find(|&thumb| buffer[(x, y)].symbol() == thumb).map(|thumb| (x, y, thumb))
+        })
         .collect();
     for &(x, y, _) in &cells {
         assert_eq!(buffer[(x, y)].fg, crate::display::palette().title, "the thumb at {x},{y}");
@@ -670,7 +673,7 @@ fn the_viewer_and_the_editor_show_scroll_bars_when_there_is_more() {
         let cells = shown(&mut app_state);
         assert!(!cells.is_empty(), "edit: {edit}");
         let column = cells[0].0;
-        assert!(cells.iter().all(|&(x, _, thumb)| x == column && thumb == THUMB_VERTICAL), "one column: {cells:?}");
+        assert!(cells.iter().all(|&(x, _, thumb)| x == column && thumb == ScrollBarStyle::Heavy.thumbs().0), "one column: {cells:?}");
         let top = cells.iter().map(|&(_, y, _)| y).min().unwrap();
         // Scrolled to the end, the thumb is at the bottom of its track.
         if edit {
@@ -686,7 +689,7 @@ fn the_viewer_and_the_editor_show_scroll_bars_when_there_is_more() {
         let cells = shown(&mut app_state);
         assert!(!cells.is_empty(), "edit: {edit}");
         let row = cells[0].1;
-        assert!(cells.iter().all(|&(_, y, thumb)| y == row && thumb == THUMB_HORIZONTAL), "one row: {cells:?}");
+        assert!(cells.iter().all(|&(_, y, thumb)| y == row && thumb == ScrollBarStyle::Heavy.thumbs().1), "one row: {cells:?}");
     }
 
     // Wrapped, the long line fits across, and the bar goes.
@@ -694,4 +697,40 @@ fn the_viewer_and_the_editor_show_scroll_bars_when_there_is_more() {
     app_state.viewer_mut().unwrap().wrap = true;
     assert_eq!(shown(&mut app_state), []);
     std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// F11's scroll bar style is what both thumbs are drawn with, stepped through
+/// in turn, Heavy first.
+#[test]
+fn the_scroll_bar_style_from_f11_draws_both_thumbs() {
+    let path = std::env::temp_dir().join(format!("fm84-bar-style-{}.txt", std::process::id()));
+    std::fs::write(&path, (1..=200).map(|_| format!("{}\n", "x".repeat(300))).collect::<String>()).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    assert_eq!(app_state.options.scroll_bar, ScrollBarStyle::Heavy);
+    app_state.open_viewer(path.clone()).unwrap();
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+
+    let mut seen = Vec::new();
+    for _ in ScrollBarStyle::ALL {
+        let style = app_state.options.scroll_bar;
+        seen.push(style);
+        render_ui(&mut terminal, &mut app_state);
+        let buffer = terminal.backend().buffer();
+        let drawn = |bar: &crate::scroll_bar::ScrollBar| -> Vec<String> {
+            let track = bar.track;
+            (track.y..track.bottom()).flat_map(|y| (track.x..track.right()).map(move |x| (x, y))).map(|(x, y)| buffer[(x, y)].symbol().to_string()).collect()
+        };
+        let (down, along) = style.thumbs();
+        for bar in &app_state.scroll_bars {
+            let thumb = if bar.vertical { down } else { along };
+            assert!(drawn(bar).iter().any(|symbol| symbol == thumb), "{style:?}: {:?}", drawn(bar));
+        }
+        assert_eq!(app_state.scroll_bars.len(), 2, "{style:?}");
+        app_state.options.cycle(crate::options::OptionRow::ScrollBars, true);
+    }
+    assert_eq!(seen, ScrollBarStyle::ALL);
+    assert_eq!(app_state.options.scroll_bar, ScrollBarStyle::Heavy, "round to the first again");
+    assert_eq!(app_state.options.value(crate::options::OptionRow::ScrollBars), "Heavy ┃━");
+    std::fs::remove_file(path).unwrap();
 }

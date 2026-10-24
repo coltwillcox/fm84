@@ -4,6 +4,7 @@ use super::*;
 
 pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect, Vec<ScrollBar>) {
     let mut bars = Vec::new();
+    let bar_style = app_state.options.scroll_bar;
     if let Some(viewer_state) = app_state.viewer() {
         let filename = shown_name(&viewer_state.file_path);
         let prefix = if viewer_state.from_edit { "Edit" } else { "View" };
@@ -121,7 +122,7 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
                 view: viewport_height,
                 offset: viewer_state.scroll_offset,
             };
-            bars.extend(vertical_bar(f, area, rows));
+            bars.extend(vertical_bar(f, area, rows, bar_style));
             // Wrapped, every row fits across, and there is nowhere to go.
             if !viewer_state.wrapping() {
                 let columns = Extent {
@@ -129,7 +130,7 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
                     view: chunks[1].width as usize,
                     offset: viewer_state.horizontal_offset,
                 };
-                bars.extend(horizontal_bar(f, area, chunks[1], columns));
+                bars.extend(horizontal_bar(f, area, chunks[1], columns, bar_style));
             }
         }
 
@@ -204,6 +205,7 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mu
 pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> usize {
     let line_numbers = app_state.options.line_numbers;
     let mut bars = Vec::new();
+    let bar_style = app_state.options.scroll_bar;
     let (viewport_height, content_area) = if let Screen::Editor(editor_state) = &mut app_state.screen {
         let filename = shown_name(&editor_state.file_path);
         let modified = if editor_state.modified { " [Modified]" } else { "" };
@@ -300,7 +302,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
             view: viewport_height,
             offset: editor_state.scroll_offset,
         };
-        bars.extend(vertical_bar(f, area, rows));
+        bars.extend(vertical_bar(f, area, rows, bar_style));
         // A column more than the widest line, for the cursor at its end; and
         // never less than what shows, since the editor scrolls right as far
         // as it is asked to.
@@ -310,7 +312,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
             view,
             offset: h_offset,
         };
-        bars.extend(horizontal_bar(f, area, chunks[1], columns));
+        bars.extend(horizontal_bar(f, area, chunks[1], columns, bar_style));
 
         (viewport_height, chunks[1])
     } else {

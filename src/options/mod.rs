@@ -168,6 +168,59 @@ pub enum CursorShape {
     Classic,
 }
 
+/// What the thumbs of the viewer's and the editor's scroll bars are drawn
+/// with. Heavy is the border's own line drawn thicker; ASCII is for a font
+/// without box drawing.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ScrollBarStyle {
+    Heavy,
+    Double,
+    Dashed,
+    Block,
+    Shade,
+    Ascii,
+}
+
+impl ScrollBarStyle {
+    pub const ALL: [ScrollBarStyle; 6] = [ScrollBarStyle::Heavy, ScrollBarStyle::Double, ScrollBarStyle::Dashed, ScrollBarStyle::Block, ScrollBarStyle::Shade, ScrollBarStyle::Ascii];
+
+    /// The thumb of a bar down the side, and of one along the bottom. All one
+    /// column wide in every terminal: none of East Asian ambiguous width.
+    pub fn thumbs(self) -> (&'static str, &'static str) {
+        match self {
+            ScrollBarStyle::Heavy => ("┃", "━"),
+            ScrollBarStyle::Double => ("║", "═"),
+            ScrollBarStyle::Dashed => ("╏", "╍"),
+            ScrollBarStyle::Block => ("█", "█"),
+            ScrollBarStyle::Shade => ("▓", "▓"),
+            ScrollBarStyle::Ascii => ("#", "#"),
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            ScrollBarStyle::Heavy => "Heavy",
+            ScrollBarStyle::Double => "Double",
+            ScrollBarStyle::Dashed => "Dashed",
+            ScrollBarStyle::Block => "Block",
+            ScrollBarStyle::Shade => "Shade",
+            ScrollBarStyle::Ascii => "ASCII",
+        }
+    }
+
+    /// How the config file names it.
+    pub(super) fn key(self) -> &'static str {
+        match self {
+            ScrollBarStyle::Heavy => "heavy",
+            ScrollBarStyle::Double => "double",
+            ScrollBarStyle::Dashed => "dashed",
+            ScrollBarStyle::Block => "block",
+            ScrollBarStyle::Shade => "shade",
+            ScrollBarStyle::Ascii => "ascii",
+        }
+    }
+}
+
 // The values the stepped numeric options offer. A hand-edited config may hold
 // something else; it is kept, and the first step from it lands on the list.
 const TAB_WIDTHS: [usize; 3] = [2, 4, 8];
@@ -216,6 +269,8 @@ pub struct Options {
     pub tab_width: usize,
     /// The gutter in the viewer and the editor.
     pub line_numbers: bool,
+    /// What the scroll bars' thumbs are drawn with.
+    pub scroll_bar: ScrollBarStyle,
     /// The editor highlights files up to this size, in KiB; zero never does.
     pub highlight_limit_kib: u64,
     /// The viewer and editor ask before loading a file past this, in MiB.
@@ -264,6 +319,7 @@ impl Default for Options {
             cursor_blink: true,
             tab_width: 4,
             line_numbers: true,
+            scroll_bar: ScrollBarStyle::Heavy,
             highlight_limit_kib: 512,
             large_file_mib: 64,
             image_fill: false,
