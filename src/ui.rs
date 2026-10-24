@@ -202,7 +202,8 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
             Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),
-            Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_copy_move_popup(f, area, sources, *is_copy, input),
+            Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_destination_popup(f, area, sources, if *is_copy { "Copy" } else { "Move" }, "to", input),
+            Some(Dialog::Symlink { sources, input, .. }) => render_destination_popup(f, area, sources, "Symlink", "at", input),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
             Some(Dialog::DiskChanged { opened, now, .. }) => render_disk_changed_popup(f, area, app_state, *opened, *now),
@@ -1675,6 +1676,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
         "  Shift+arrows select, Ctrl+A all",
         "F5 - Copy (to the other panel, or where typed)",
+        "  Alt+F5 (or Ctrl+Shift+F5) symlink",
         "F6 - Move (to the other panel, or where typed)",
         "F7 - Create directory",
         "  Alt+F7 (or Ctrl+F7) find files",
@@ -2284,9 +2286,10 @@ fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &[PathBu
 /// on the other panel - the file's path there for a single file, the
 /// directory for anything else. `is_copy` = true for F5 copy, false for F6
 /// move.
-fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], is_copy: bool, input: &TextInput) {
+/// F5, F6 and Ctrl+Shift+F5: what is chosen, and where it is to go, typed.
+/// `verb` names the operation, and `preposition` leads into the destination.
+fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], verb: &str, preposition: &str, input: &TextInput) {
     let popup_area = centered_rect(70, 35, area);
-    let verb = if is_copy { "Copy" } else { "Move" };
     let count = sources.len();
 
     let title = if count == 1 {
@@ -2302,10 +2305,10 @@ fn render_copy_move_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(Pa
     f.render_widget(popup_block, popup_area);
 
     let source_msg = if count == 1 {
-        format!("{} \"{}\" to:", verb, shown_name(&sources[0].0))
+        format!("{} \"{}\" {}:", verb, shown_name(&sources[0].0), preposition)
     } else {
         let names: Vec<String> = sources.iter().map(|(source, _)| shown_name(source)).collect();
-        format!("{} {} items to: {}", verb, count, names.join(", "))
+        format!("{} {} items {}: {}", verb, count, preposition, names.join(", "))
     };
 
     // The destination, the width of the popup, scrolling to keep the cursor
@@ -2557,6 +2560,15 @@ mod tests {
                 Dialog::Transfer {
                     sources: vec![(std::path::PathBuf::from("/a"), false)],
                     is_copy: true,
+                    input: typed(),
+                    opened_with: String::new(),
+                    default: std::path::PathBuf::from("/b"),
+                },
+            ),
+            (
+                "Ctrl+Shift+F5",
+                Dialog::Symlink {
+                    sources: vec![(std::path::PathBuf::from("/a"), false)],
                     input: typed(),
                     opened_with: String::new(),
                     default: std::path::PathBuf::from("/b"),

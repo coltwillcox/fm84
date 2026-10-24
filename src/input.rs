@@ -1,6 +1,6 @@
 use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, TextInput, TransferKind};
 use crate::display::tab_width;
-use crate::fs_ops::{check_destinations, create_directory, create_file, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets, typed_path};
+use crate::fs_ops::{check_destinations, create_directory, create_file, create_symlink, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets, typed_path};
 use crate::options::{OnExisting, SortKey};
 use crate::strip::StripHit;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
@@ -240,6 +240,11 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         // Y and N type into the destination; only Enter and Esc answer it.
         Some(Dialog::Transfer { .. }) => match code {
             KeyCode::Enter => handle_transfer_confirm(app_state),
+            KeyCode::Esc => app_state.dialog = None,
+            _ => edit_text(app_state, code),
+        },
+        Some(Dialog::Symlink { .. }) => match code {
+            KeyCode::Enter => handle_symlink_confirm(app_state),
             KeyCode::Esc => app_state.dialog = None,
             _ => edit_text(app_state, code),
         },
@@ -521,6 +526,10 @@ fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(2) => open_rename(app_state),
         // Ctrl+F3 to Ctrl+F6 sort by name, extension, date and size, as in
         // Total Commander; the same one again turns the order round.
+        // Ctrl+Shift+F5 makes a symbolic link, as in Total Commander - ahead
+        // of Ctrl+F5, which would take it for a sort. Alt+F5 is an alias,
+        // since kitty takes Ctrl+Shift+F5 for reloading its config.
+        KeyCode::F(5) if key.modifiers.contains(KeyModifiers::ALT) || (control && key.modifiers.contains(KeyModifiers::SHIFT)) => open_symlink(app_state),
         KeyCode::F(3) if control => app_state.sort_panels_by(SortKey::Name),
         KeyCode::F(4) if control => app_state.sort_panels_by(SortKey::Extension),
         KeyCode::F(5) if control => app_state.sort_panels_by(SortKey::Modified),
@@ -1229,6 +1238,79 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
     }
 }
 
+/// Ctrl+Shift+F5: a symbolic link to what is chosen. For a single entry,
+/// file or directory, it opens on that name in the other panel, ready to be
+/// given another; for several, on the other panel's directory, a link in it
+/// for each under its own name. Always asked, whatever F11 says about
+/// confirming copies: there is no destination to take for granted.
+fn open_symlink(app_state: &mut AppState) {
+    let sources = chosen_items(app_state);
+    if sources.is_empty() {
+        return;
+    }
+    let other = app_state.panel_dir(!app_state.is_left_active);
+    let (default, into_dir) = match &sources[..] {
+        [(source, _)] => (other.join(source.file_name().unwrap_or_default()), false),
+        _ => (other, true),
+    };
+    let mut opened_with = default.to_string_lossy().into_owned();
+    if into_dir && !opened_with.ends_with(std::path::is_separator) {
+        opened_with.push(std::path::MAIN_SEPARATOR);
+    }
+    let mut input = TextInput::new();
+    input.set(opened_with.clone());
+    app_state.dialog = Some(Dialog::Symlink { sources, input, opened_with, default });
+}
+
+/// Enter on the symlink dialog. Read as F5 reads where to copy to, each link
+/// pointing at its source by the absolute path. An entry that cannot be
+/// linked is passed over and named, and the rest are still made.
+fn handle_symlink_confirm(app_state: &mut AppState) {
+    let Some(Dialog::Symlink { sources, input, opened_with, default }) = app_state.dialog.take() else {
+        return;
+    };
+    let links = if input.text == opened_with {
+        match &sources[..] {
+            [(source, is_dir)] => Ok(vec![(source.clone(), default, *is_dir)]),
+            _ => transfer_targets(&sources, &default, true),
+        }
+    } else if input.text.trim().is_empty() {
+        return;
+    } else {
+        let base = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
+        transfer_targets(&sources, &typed_path(&input.text, base), input.text.ends_with(std::path::is_separator))
+    };
+    let links = match links {
+        Ok(links) => links,
+        Err(message) => {
+            app_state.display_error(message);
+            return;
+        }
+    };
+
+    let mut failed = Vec::new();
+    for (target, link, is_dir) in &links {
+        if let Err(e) = create_symlink(target, link, *is_dir) {
+            failed.push(format!("{}: {}", link.display(), e));
+        }
+    }
+
+    // A single link is landed on, in whichever panel shows where it went.
+    let landed = match &links[..] {
+        [(_, link, _)] if failed.is_empty() => link.parent().zip(link.file_name()),
+        _ => None,
+    };
+    for is_left in [true, false] {
+        let name = landed.filter(|(parent, _)| app_state.panel_dir(is_left) == *parent).map(|(_, name)| name);
+        app_state.reload_panel(is_left, name);
+    }
+    match failed.len() {
+        0 => {}
+        1 if links.len() == 1 => app_state.display_error(format!("Cannot link {}", failed[0])),
+        count => app_state.display_error(format!("Could not link {count} of {}. {}", links.len(), failed[0])),
+    }
+}
+
 /// A click on the panels. Popups are turned away before the event gets this
 /// far, and the viewer and editor are picked off by the caller; a second list
 /// of them here is what let a transfer's popup be clicked straight through.
@@ -1518,6 +1600,83 @@ mod tests {
         press(&mut app_state, KeyCode::F(11));
         press(&mut app_state, KeyCode::Esc);
         assert!(app_state.dialog.is_none());
+    }
+
+    /// Ctrl+Shift+F5 links the entry under the cursor into the other panel,
+    /// under its own name or one typed; several selected get one each, and one
+    /// already there is named while the rest are still made.
+    #[cfg(unix)]
+    #[test]
+    fn symlinks_from_the_keys() {
+        let dir = std::env::temp_dir().join(format!("fm84-symlink-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let (src, dst) = (dir.join("src"), dir.join("dst"));
+        std::fs::create_dir_all(src.join("sub")).unwrap();
+        std::fs::create_dir_all(&dst).unwrap();
+        for name in ["a.txt", "b.txt"] {
+            std::fs::write(src.join(name), name).unwrap();
+        }
+        let mut app_state = AppState::new();
+        app_state.open_dir(false, dst.clone(), None);
+        app_state.is_left_active = true;
+        app_state.open_dir(true, src.clone(), Some("a.txt".as_ref()));
+        let link = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::F(5), KeyModifiers::CONTROL | KeyModifiers::SHIFT));
+        let typed = |app_state: &mut AppState| app_state.dialog_input().unwrap().text.clone();
+
+        link(&mut app_state);
+        assert_eq!(typed(&mut app_state), dst.join("a.txt").to_string_lossy());
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.dialog.is_none() && app_state.error.is_none());
+        assert_eq!(std::fs::read_link(dst.join("a.txt")).unwrap(), src.join("a.txt"));
+        let cursor = app_state.state_right.selected().map(|index| app_state.children_right[index].name_os.clone());
+        assert_eq!(cursor.as_deref(), Some("a.txt".as_ref()), "the other panel lands on the new link");
+
+        // Again: refused, nothing written over.
+        link(&mut app_state);
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Cannot link") && error.contains("already exists")));
+        app_state.error = None;
+
+        // A bare name is made beside the original.
+        link(&mut app_state);
+        app_state.dialog_input().unwrap().set("alias".to_string());
+        press(&mut app_state, KeyCode::Enter);
+        assert_eq!(std::fs::read_link(src.join("alias")).unwrap(), src.join("a.txt"));
+
+        // A lone directory is named, not gone into.
+        app_state.open_dir(true, src.clone(), Some("sub".as_ref()));
+        link(&mut app_state);
+        assert_eq!(typed(&mut app_state), dst.join("sub").to_string_lossy());
+        press(&mut app_state, KeyCode::Enter);
+        assert_eq!(std::fs::read_link(dst.join("sub")).unwrap(), src.join("sub"));
+
+        // Several: into the directory, one already there passed over.
+        app_state.selected_left.insert("a.txt".into());
+        app_state.selected_left.insert("b.txt".into());
+        link(&mut app_state);
+        assert!(typed(&mut app_state).ends_with(std::path::MAIN_SEPARATOR));
+        press(&mut app_state, KeyCode::Enter);
+        assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Could not link 1 of 2")));
+        assert_eq!(std::fs::read_link(dst.join("b.txt")).unwrap(), src.join("b.txt"));
+
+        // Esc leaves it be.
+        app_state.error = None;
+        app_state.selected_left.clear();
+        app_state.open_dir(true, src.clone(), Some("b.txt".as_ref()));
+        link(&mut app_state);
+        app_state.dialog_input().unwrap().set("never".to_string());
+        press(&mut app_state, KeyCode::Esc);
+        assert!(app_state.dialog.is_none() && !crate::fs_ops::path_exists(&src.join("never")));
+
+        // Alt+F5 does the same.
+        handle_key(&mut app_state, KeyEvent::new(KeyCode::F(5), KeyModifiers::ALT));
+        assert!(matches!(app_state.dialog, Some(Dialog::Symlink { .. })));
+        press(&mut app_state, KeyCode::Esc);
+
+        // Ctrl+F5 alone still sorts.
+        handle_key(&mut app_state, KeyEvent::new(KeyCode::F(5), KeyModifiers::CONTROL));
+        assert!(app_state.dialog.is_none());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// Alt+A opens on what the entries have in common; what is typed over it

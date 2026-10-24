@@ -948,6 +948,30 @@ pub fn create_directory(path: PathBuf) -> Result<(), Error> {
     Ok(())
 }
 
+/// A symbolic link at `link` pointing to `target`, as `ln -s` makes one.
+/// Never in place of anything already there - a dangling link included.
+/// Windows makes a different kind of link for a directory, and refuses both
+/// without Developer Mode or the right to make them.
+pub fn create_symlink(target: &Path, link: &Path, is_dir: bool) -> Result<(), Error> {
+    if path_exists(link) {
+        return Err(Error::new(ErrorKind::AlreadyExists, format!("{} already exists", link.display())));
+    }
+    #[cfg(unix)]
+    {
+        let _ = is_dir;
+        std::os::unix::fs::symlink(target, link)
+    }
+    #[cfg(windows)]
+    {
+        if is_dir { std::os::windows::fs::symlink_dir(target, link) } else { std::os::windows::fs::symlink_file(target, link) }
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        let _ = (target, is_dir);
+        Err(Error::new(ErrorKind::Unsupported, "Symbolic links are not supported here"))
+    }
+}
+
 /// What a running transfer reports as it goes.
 pub enum Step<'a> {
     /// Starting this file. Bytes reported after it belong to it.
