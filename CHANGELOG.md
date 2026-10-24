@@ -6,6 +6,19 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.32.1] - 2026-10-24
+
+### 🐛 Fixed
+- ⌨️ **Alt+\* in kitty** - with kitty's keyboard protocol on, a chord with Shift in it came as the key unshifted: Alt+\* arrived as Alt+8, inverted nothing, and with eight tabs open went to the eighth. The shifted character is asked for as well, so it inverts the selection again
+- 📜 **Jumping to a difference near the end of a diff** scrolled past the last row, leaving the bottom of the view empty, and the next ↑ jumped back. The last row now stays at the bottom
+- 📜 **F1 after the window grew** - scrolled to its end and then given more room, it took several presses of ↑ before it moved. It keeps to what the room allows
+- ▏ **The cursor behind a question** - over the editor, Save changes?, the file changed on disk and the large-file question left the terminal's cursor blinking in the text beside them. It shows in the editor only with nothing over it
+
+### 🛠️ Changed
+- 🗂️ **The source split into modules** - the six largest files, the biggest of them nearly 6,000 lines, are folders of files a concern each: `app`, `ui`, `input`, `fs_ops`, `viewer` and `options`, with their tests beside them by topic. Nothing changes in how fm84 behaves
+
+---
+
 ## [0.32.0] - 2026-10-24
 
 ### ✨ Added

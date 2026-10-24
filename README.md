@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.32.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.32.1** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -354,7 +354,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.32.0
+fm84 --version       # fm84 0.32.1
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -441,5 +441,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.32.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.32.1 ▄▀▄▀▄▀</code>
 </p>
