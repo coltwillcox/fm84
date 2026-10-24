@@ -1668,6 +1668,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     let help_lines = vec![
         "F1 - This help",
         "F2 - Rename folder/file",
+        "  Shift+F2 compare directories",
         "F3 - View file (X text/hex/image)",
         "  F fit/fill, +/- zoom, W wrap",
         "F4 - Edit file (Ctrl+S/F2 save)",

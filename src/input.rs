@@ -523,6 +523,8 @@ fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(1) if drive_chord => app_state.open_drive_picker(true),
         KeyCode::F(2) if drive_chord => app_state.open_drive_picker(false),
         KeyCode::F(1) => app_state.dialog = Some(Dialog::Help),
+        // Shift+F2 compares the panels, as in Total Commander.
+        KeyCode::F(2) if key.modifiers.contains(KeyModifiers::SHIFT) => app_state.compare_dirs(),
         KeyCode::F(2) => open_rename(app_state),
         // Ctrl+F3 to Ctrl+F6 sort by name, extension, date and size, as in
         // Total Commander; the same one again turns the order round.

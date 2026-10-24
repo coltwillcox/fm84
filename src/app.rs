@@ -2356,6 +2356,29 @@ impl AppState {
         }
     }
 
+    /// Shift+F2, as in Total Commander: select in each panel what differs from
+    /// the other - what only it has, and of a file both have, the newer, or
+    /// both when only the size tells them apart. Whatever was selected before
+    /// is replaced, ready for F5 to copy across. Directories both have are
+    /// not gone into. What the status bar says is how many differ.
+    pub fn compare_dirs(&mut self) {
+        if self.panel_busy(true) || self.panel_busy(false) {
+            return;
+        }
+        if self.dir_left == self.dir_right {
+            self.find_note = Some("Both panels show the same directory".to_string());
+            return;
+        }
+        let (left, right) = differences(&self.children_left, &self.children_right);
+        self.find_note = Some(if left.is_empty() && right.is_empty() {
+            "The directories hold the same files".to_string()
+        } else {
+            format!("Differ: {} on the left, {} on the right", left.len(), right.len())
+        });
+        self.selected_left = left;
+        self.selected_right = right;
+    }
+
     /// Move to the next match of find_term, or the previous one, selecting it.
     /// `fresh` is a new search from the prompt, which may find the match the
     /// cursor is already on; F3 and Shift+F3 go on past it.
@@ -4329,6 +4352,49 @@ fn prune_selection(selected: &mut HashSet<OsString>, items: &[Item]) {
     selected.retain(|name| names.contains(name));
 }
 
+/// Modified times this close count as the same. FAT and exFAT keep them only
+/// to two seconds, so a file copied there and back would otherwise always
+/// read as newer on one side.
+const SAME_TIME: Duration = Duration::from_secs(2);
+
+/// What Shift+F2 selects on each side, by name: an entry only that side has;
+/// a file and a directory under one name, on both; and of a file both have,
+/// the one modified later, or both when the times agree and the sizes do not.
+/// A file without a modified time is judged by its size alone.
+fn differences(left: &[Item], right: &[Item]) -> (HashSet<OsString>, HashSet<OsString>) {
+    fn entries(items: &[Item]) -> HashMap<OsString, &Item> {
+        items.iter().filter(|item| item.name_os != "..").map(|item| (item.name_os.clone(), item)).collect()
+    }
+    let (left, right) = (entries(left), entries(right));
+    let (mut on_left, mut on_right) = (HashSet::new(), HashSet::new());
+    for (name, &item) in &left {
+        let Some(&other) = right.get(name) else {
+            on_left.insert(name.clone());
+            continue;
+        };
+        let (newer, older) = match (item.is_dir, other.is_dir) {
+            (true, true) => continue,
+            (false, false) => match (item.modified_at, other.modified_at) {
+                (Some(mine), Some(theirs)) if mine > theirs + SAME_TIME => (true, false),
+                (Some(mine), Some(theirs)) if theirs > mine + SAME_TIME => (false, true),
+                _ => {
+                    let differ = item.size_bytes != other.size_bytes;
+                    (differ, differ)
+                }
+            },
+            _ => (true, true),
+        };
+        if newer {
+            on_left.insert(name.clone());
+        }
+        if older {
+            on_right.insert(name.clone());
+        }
+    }
+    on_right.extend(right.into_keys().filter(|name| !left.contains_key(name)));
+    (on_left, on_right)
+}
+
 /// What a click at `column` lands on, along a strip.
 fn strip_hit(strip: &Strip, column: u16) -> Option<StripHit> {
     let index = slot_at(&strip.slots, column.checked_sub(strip.area.x)?)?;
@@ -5195,6 +5261,73 @@ mod tests {
             modified_at: None,
             attributes: String::new(),
         }
+    }
+
+    /// Shift+F2: each side selects what only it has and the newer of what
+    /// both have; the size settles it only when the times agree.
+    #[test]
+    fn compare_selects_what_differs() {
+        let at = |seconds: u64| Some(std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(seconds));
+        let file = |name: &str, seconds: u64, size: u64| Item {
+            modified_at: at(seconds),
+            size_bytes: size,
+            ..row(name)
+        };
+        let dir = |name: &str| Item { is_dir: true, ..row(name) };
+        let left = vec![
+            row(".."),
+            file("same.txt", 1000, 5),
+            file("newer-left.txt", 2000, 5),
+            file("newer-right.txt", 1000, 5),
+            file("resized.txt", 1000, 5),
+            file("fat-rounded.txt", 1001, 5),
+            file("only-left.txt", 1000, 5),
+            dir("both-dirs"),
+            dir("only-left-dir"),
+            file("file-or-dir", 1000, 5),
+            row("no-time"),
+        ];
+        let right = vec![
+            row(".."),
+            file("same.txt", 1000, 5),
+            file("newer-left.txt", 1000, 5),
+            file("newer-right.txt", 2000, 5),
+            file("resized.txt", 1000, 6),
+            file("fat-rounded.txt", 1000, 5),
+            file("only-right.txt", 1000, 5),
+            dir("both-dirs"),
+            dir("file-or-dir"),
+            Item { size_bytes: 1, ..row("no-time") },
+        ];
+        let sorted = |names: HashSet<std::ffi::OsString>| {
+            let mut names: Vec<String> = names.into_iter().map(|name| name.to_string_lossy().into_owned()).collect();
+            names.sort();
+            names
+        };
+        let (on_left, on_right) = super::differences(&left, &right);
+        assert_eq!(sorted(on_left), ["file-or-dir", "newer-left.txt", "no-time", "only-left-dir", "only-left.txt", "resized.txt"]);
+        assert_eq!(sorted(on_right), ["file-or-dir", "newer-right.txt", "no-time", "only-right.txt", "resized.txt"]);
+
+        // Through the panels: what was selected goes, and the count is said.
+        let mut app_state = AppState::new();
+        app_state.dir_left = "/left".into();
+        app_state.dir_right = "/right".into();
+        app_state.children_left = left;
+        app_state.children_right = right;
+        app_state.selected_left.insert("same.txt".into());
+        app_state.compare_dirs();
+        assert!(!app_state.selected_left.contains(std::ffi::OsStr::new("same.txt")));
+        assert_eq!((app_state.selected_left.len(), app_state.selected_right.len()), (6, 5));
+        assert_eq!(app_state.find_note.as_deref(), Some("Differ: 6 on the left, 5 on the right"));
+
+        app_state.children_right = app_state.children_left.clone();
+        app_state.compare_dirs();
+        assert!(app_state.selected_left.is_empty() && app_state.selected_right.is_empty());
+        assert_eq!(app_state.find_note.as_deref(), Some("The directories hold the same files"));
+
+        app_state.dir_right = "/left".into();
+        app_state.compare_dirs();
+        assert_eq!(app_state.find_note.as_deref(), Some("Both panels show the same directory"));
     }
 
     #[test]
