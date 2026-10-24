@@ -670,7 +670,7 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
 /// Scroll F1's list by `lines`, no further than its last line coming into
 /// view at the bottom.
 fn scroll_help(app_state: &mut AppState, lines: isize) {
-    let last = crate::ui::HELP_LINES.len().saturating_sub(app_state.help_room);
+    let last = crate::ui::help_lines().len().saturating_sub(app_state.help_room);
     app_state.help_scroll = app_state.help_scroll.saturating_add_signed(lines).min(last);
 }
 
@@ -1668,7 +1668,7 @@ mod tests {
         // its last line and no further.
         let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
         crate::ui::render_ui(&mut terminal, &mut app_state);
-        let last = crate::ui::HELP_LINES.len() - app_state.help_room;
+        let last = crate::ui::help_lines().len() - app_state.help_room;
         press(&mut app_state, KeyCode::End);
         assert_eq!(app_state.help_scroll, last);
         press(&mut app_state, KeyCode::Down);
