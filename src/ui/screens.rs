@@ -128,12 +128,19 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
 /// mark `diff -y` uses between them - `|` changed, `<` only on the left, `>`
 /// only on the right. Lines that differ are shaded as a selection is. Gives
 /// back the rows shown and the width of each side's text, for scrolling.
-pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize) {
+pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> (usize, usize) {
+    let block = Block::default().title(Line::from(Span::styled(" Compare ", style_title())).centered()).borders(Borders::ALL).border_style(style_border());
+    let inner = block.inner(area);
+    // A difference near the end is jumped to with the rows after it, not past
+    // them: the last row stays at the bottom, as scrolling keeps it.
+    if let Screen::Diff(state) = &mut app_state.screen {
+        let rows = (inner.height as usize).saturating_sub(1);
+        state.scroll_offset = state.scroll_offset.min(state.rows.len().saturating_sub(rows));
+    }
+    let app_state = &*app_state;
     let Screen::Diff(state) = &app_state.screen else {
         return (0, 0);
     };
-    let block = Block::default().title(Line::from(Span::styled(" Compare ", style_title())).centered()).borders(Borders::ALL).border_style(style_border());
-    let inner = block.inner(area);
     f.render_widget(block, area);
 
     let [left_area, marker_area, right_area] = Layout::horizontal([Constraint::Fill(1), Constraint::Length(3), Constraint::Fill(1)]).areas(inner);

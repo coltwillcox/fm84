@@ -98,7 +98,9 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
 }
 
 /// Show the cursor where the frame marked it. A field's wins over the
-/// editor's, as a prompt over the editor is where the typing goes. As Classic
+/// editor's, as a prompt over the editor is where the typing goes; and the
+/// editor's shows only with nothing over it, as a question such as Save
+/// changes? takes the keys while the editor stays in sight. As Classic
 /// has it, each marked cell is drawn reversed instead and the terminal's own
 /// cursor stays hidden - as it does under a running job or an error, which
 /// take the keys from whatever is behind them.
@@ -150,7 +152,7 @@ fn show_cursor(f: &mut ratatui::Frame<'_>, app_state: &AppState) {
     if !classic
         && app_state.job.is_none()
         && app_state.error.is_none()
-        && let Some(position) = field.or(editor)
+        && let Some(position) = field.or(editor.filter(|_| app_state.dialog.is_none()))
     {
         f.set_cursor_position(position);
     }
@@ -215,7 +217,12 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
         let mut find_files_page = None;
         let mut attribute_rows = Vec::new();
         match &app_state.dialog {
-            Some(Dialog::Help) => app_state.help_room = render_help_popup(f, area, app_state.help_scroll),
+            Some(Dialog::Help) => {
+                app_state.help_room = render_help_popup(f, area, app_state.help_scroll);
+                // Kept to what the room allows, so a screen that has grown
+                // does not leave the keys scrolling through lines past the end.
+                app_state.help_scroll = app_state.help_scroll.min(help_lines().len().saturating_sub(app_state.help_room));
+            }
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
             Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),

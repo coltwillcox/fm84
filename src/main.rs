@@ -113,11 +113,16 @@ static ENHANCED_KEYS: OnceLock<bool> = OnceLock::new();
 /// is also how a terminal answers where its cursor is, and crossterm takes it
 /// for that and drops it. Asked for here, after the alternate screen is
 /// entered: kitty keeps a separate setting for each screen.
+///
+/// The shifted character is asked for as well. Without it a chord with Shift
+/// in it is sent as the key unshifted: Alt+* came as Alt+Shift+8, which is
+/// Alt+8, and went to the eighth tab instead of inverting the selection.
 fn take_terminal() -> io::Result<()> {
     enable_raw_mode()?;
     execute!(stdout(), EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)?;
     if *ENHANCED_KEYS.get_or_init(|| supports_keyboard_enhancement().unwrap_or(false)) {
-        execute!(stdout(), PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES))?;
+        let flags = KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES | KeyboardEnhancementFlags::REPORT_ALTERNATE_KEYS;
+        execute!(stdout(), PushKeyboardEnhancementFlags(flags))?;
     }
     Ok(())
 }

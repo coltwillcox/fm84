@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 /// Past this many lines added and removed between the shared ends, the rest
 /// is shown as one block replaced rather than worked out line by line. Myers
 /// keeps a step of history per edit, which grows with the square of them -
-/// about 17 MB at this many - and two files this different have little left
+/// about 34 MB at this many - and two files this different have little left
 /// to line up anyway.
 const MAX_EDITS: usize = 2048;
 

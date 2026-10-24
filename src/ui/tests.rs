@@ -567,3 +567,31 @@ fn a_long_paste_leaves_the_cursor_on_screen() {
     assert!(state.cursor_line >= state.scroll_offset && state.cursor_line < state.scroll_offset + height);
     std::fs::remove_file(path).unwrap();
 }
+
+/// Scrolled as far as it goes and then given more room, F1 and the diff
+/// keep to what the room allows: the first key back up moves them.
+#[test]
+fn scrolling_keeps_to_the_room_there_is() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+
+    // F1, scrolled to the end of a short screen, then the screen grows.
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    app_state.dialog = Some(Dialog::Help);
+    app_state.help_scroll = usize::MAX;
+    render_ui(&mut terminal, &mut app_state);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 50)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    assert_eq!(app_state.help_scroll, help_lines().len() - app_state.help_room, "F1 past its end");
+
+    // A diff whose last difference is near the end: jumping to it stops
+    // with the last row at the bottom, not past it.
+    app_state.dialog = None;
+    let left: Vec<String> = (0..100).map(|n| n.to_string()).collect();
+    let mut right = left.clone();
+    right[98] = "changed".to_string();
+    app_state.screen = Screen::Diff(crate::diff::DiffState::new(PathBuf::from("/a"), PathBuf::from("/b"), left, right));
+    render_ui(&mut terminal, &mut app_state);
+    let Screen::Diff(state) = &app_state.screen else { unreachable!() };
+    assert_eq!(state.scroll_offset, state.rows.len() - app_state.diff_viewport_height, "the diff past its end");
+}
