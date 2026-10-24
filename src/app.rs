@@ -189,6 +189,8 @@ pub enum Screen {
     Panels,
     Viewer(ViewerState),
     Editor(EditorState),
+    /// Shift+F3: two files side by side.
+    Diff(crate::diff::DiffState),
 }
 
 /// The one dialog open over the screen, if any, carrying what it is asking
@@ -423,6 +425,9 @@ pub struct AppState {
     pub viewer_viewport_height: usize,
     pub viewer_viewport_width: usize,
     pub editor_viewport_height: usize,
+    /// Rows the diff shows, and the width of each side's text.
+    pub diff_viewport_height: usize,
+    pub diff_viewport_width: usize,
     /// What + or - last selected by, offered again the next time.
     pub select_pattern: String,
     /// What Find files last looked for - the name pattern and the text -
@@ -1210,6 +1215,8 @@ impl AppState {
             viewer_viewport_height: 0,
             viewer_viewport_width: 0,
             editor_viewport_height: 0,
+            diff_viewport_height: 0,
+            diff_viewport_width: 0,
             select_pattern: "*".to_string(),
             find_files_last: ("*".to_string(), String::new()),
             find_files_page: 10,
@@ -1657,6 +1664,46 @@ impl AppState {
         }
     }
 
+    /// Shift+F3 on two files: side by side when they are text that differs,
+    /// and otherwise a word in the status bar about how they compare.
+    pub fn compare_files(&mut self, left: PathBuf, right: PathBuf) {
+        use crate::diff::Compared;
+        match crate::diff::compare(&left, &right, self.options.large_file_bytes()) {
+            Ok(Compared::Text(state)) => self.screen = Screen::Diff(*state),
+            Ok(Compared::Identical) => self.find_note = Some("The files are identical".to_string()),
+            Ok(Compared::LineEndings) => self.find_note = Some("The files differ only in line endings".to_string()),
+            Ok(Compared::Binary { at, sizes_differ }) => {
+                let sizes = if sizes_differ { ", and in size" } else { "" };
+                self.find_note = Some(format!("The files differ from byte {}{}", crate::utils::grouped(at), sizes));
+            }
+            Err(message) => self.display_error(message),
+        }
+    }
+
+    pub fn diff_mut(&mut self) -> Option<&mut crate::diff::DiffState> {
+        match &mut self.screen {
+            Screen::Diff(state) => Some(state),
+            _ => None,
+        }
+    }
+
+    pub fn close_diff(&mut self) {
+        self.screen = Screen::Panels;
+    }
+
+    /// Scroll the two columns by `rows`, down or up, or sideways by
+    /// `columns`, within what there is to see.
+    pub fn diff_scroll(&mut self, rows: isize, columns: isize) {
+        let height = self.diff_viewport_height;
+        let width = self.diff_viewport_width;
+        if let Some(state) = self.diff_mut() {
+            let bottom = state.rows.len().saturating_sub(height);
+            state.scroll_offset = state.scroll_offset.saturating_add_signed(rows).min(bottom);
+            let right_edge = state.max_line_width.saturating_sub(width);
+            state.horizontal_offset = state.horizontal_offset.saturating_add_signed(columns).min(right_edge);
+        }
+    }
+
     pub fn close_viewer(&mut self) {
         self.screen = Screen::Panels;
         self.close_find();
@@ -1989,7 +2036,7 @@ impl AppState {
         match &self.screen {
             Screen::Editor(_) => true,
             Screen::Viewer(state) => !state.from_edit && state.mode != ViewMode::Image,
-            Screen::Panels => false,
+            Screen::Panels | Screen::Diff(_) => false,
         }
     }
 

@@ -186,6 +186,11 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
                 app_state.viewer_content_area = content_area;
             }
             Screen::Editor(_) => app_state.editor_viewport_height = render_editor(f, chunks_main[2], app_state),
+            Screen::Diff(_) => {
+                let (height, width) = render_diff(f, chunks_main[2], app_state);
+                app_state.diff_viewport_height = height;
+                app_state.diff_viewport_width = width;
+            }
             Screen::Panels => app_state.page_size = render_file_tables(f, chunks_main[2], app_state),
         }
         render_bottom_panel(f, chunks_main[3], app_state);
@@ -941,6 +946,53 @@ fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -
     }
 }
 
+/// Shift+F3: the two files side by side, each headed by its path, with the
+/// mark `diff -y` uses between them - `|` changed, `<` only on the left, `>`
+/// only on the right. Lines that differ are shaded as a selection is. Gives
+/// back the rows shown and the width of each side's text, for scrolling.
+fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize) {
+    let Screen::Diff(state) = &app_state.screen else {
+        return (0, 0);
+    };
+    let block = Block::default().title(Line::from(Span::styled(" Compare ", style_title())).centered()).borders(Borders::ALL).border_style(style_border());
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let [left_area, marker_area, right_area] = Layout::horizontal([Constraint::Fill(1), Constraint::Length(3), Constraint::Fill(1)]).areas(inner);
+    let [_, marker_area] = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).areas(marker_area);
+    let height = inner.height.saturating_sub(1) as usize;
+    let shown = &state.rows[state.scroll_offset.min(state.rows.len())..(state.scroll_offset + height).min(state.rows.len())];
+
+    let markers: Vec<Line> = shown.iter().map(|row| Line::from(Span::styled(format!(" {} ", row.marker()), style_columns().add_modifier(Modifier::BOLD)))).collect();
+    f.render_widget(Paragraph::new(markers), marker_area);
+
+    let gutter_width = if app_state.options.line_numbers { (state.left.len().max(state.right.len()).to_string().len() as u16).max(3) + 1 } else { 0 };
+    let mut text_width = 0;
+    for (area, path, lines, is_left) in [(left_area, &state.left_path, &state.left, true), (right_area, &state.right_path, &state.right, false)] {
+        let [header_area, body_area] = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).areas(area);
+        let header = crate::utils::limit_path_string(path, header_area.width as usize);
+        f.render_widget(Paragraph::new(Line::from(Span::styled(header, style_title()))), header_area);
+
+        let [gutter_area, text_area] = Layout::horizontal([Constraint::Length(gutter_width), Constraint::Min(0)]).areas(body_area);
+        text_width = text_area.width as usize;
+        let mut numbers = Vec::with_capacity(shown.len());
+        let mut texts = Vec::with_capacity(shown.len());
+        for row in shown {
+            let line = if is_left { row.left } else { row.right };
+            let style = if row.same || line.is_none() { style_file() } else { style_file().patch(style_selection()) };
+            let number = line.map(|index| (index + 1).to_string()).unwrap_or_default();
+            numbers.push(Line::from(Span::styled(format!("{number:>width$} ", width = (gutter_width as usize).saturating_sub(1)), style_columns())));
+            let text = line.and_then(|index| lines.get(index)).map(|line| crate::utils::printable_line(line)).unwrap_or_default();
+            texts.push(Line::from(skip_columns(vec![Span::raw(text)], state.horizontal_offset)).style(style));
+        }
+        if gutter_width > 0 {
+            f.render_widget(Paragraph::new(numbers).style(Style::default().bg(crate::display::gutter())), gutter_area);
+        }
+        f.render_widget(Paragraph::new(texts), text_area);
+    }
+    (height, text_width)
+}
+
 /// A `width` x `height` area in the middle of `area`, shrunk to fit inside it.
 fn centered(area: Rect, width: usize, height: usize) -> Rect {
     let width = width.min(area.width as usize) as u16;
@@ -1286,6 +1338,13 @@ fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppSt
             let lines_seg = format!("{} lines", editor_state.lines.len());
             render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, "F2/Ctrl+S Save", "Ctrl+F Find", "Ctrl+Z/Y Undo", "Esc Exit"]);
         }
+    } else if let Screen::Diff(state) = &app_state.screen {
+        let at = match (state.current, state.hunks.len()) {
+            (Some(current), count) => format!("Difference {}/{}", current + 1, count),
+            (None, count) => format!("{count} differences"),
+        };
+        let rows = format!("Row {}/{}", state.scroll_offset + 1, state.rows.len());
+        render_segmented_status_bar(f, area, &[&at, &rows, "F3/N Next", "Shift+F3/P Previous", "Esc Exit"]);
     } else if let Some(viewer_state) = app_state.viewer() {
         {
             let filename = shown_name(&viewer_state.file_path);
@@ -1398,6 +1457,7 @@ fn fkey_labels(app_state: &AppState) -> Vec<(u8, &'static str)> {
         Screen::Viewer(_) if app_state.can_find() => vec![(3, "Next"), (10, "Quit")],
         Screen::Viewer(_) => vec![(10, "Quit")],
         Screen::Editor(_) => vec![(2, "Save"), (3, "Next"), (4, "Replace"), (10, "Quit")],
+        Screen::Diff(_) => vec![(3, "Next"), (10, "Quit")],
         Screen::Panels => vec![
             (1, "Help"),
             (2, "Rename"),
@@ -1671,6 +1731,7 @@ fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         "  Shift+F2 compare directories",
         "F3 - View file (X text/hex/image)",
         "  F fit/fill, +/- zoom, W wrap",
+        "  Shift+F3 (or =) compare two files",
         "F4 - Edit file (Ctrl+S/F2 save)",
         "  Ctrl+F find, F3/Shift+F3 next/prev",
         "  Ctrl+G go to line, Ctrl+R/F4 replace",

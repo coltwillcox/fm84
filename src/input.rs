@@ -72,6 +72,7 @@ fn handle_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         Screen::Panels => panel_key(app_state, key),
         Screen::Viewer(_) => viewer_key(app_state, key),
         Screen::Editor(_) => editor_key(app_state, key),
+        Screen::Diff(_) => diff_key(app_state, key),
     }
     true
 }
@@ -432,6 +433,41 @@ fn viewer_key(app_state: &mut AppState, key: KeyEvent) {
     }
 }
 
+/// Two files side by side. F3 and Shift+F3 go to the next and the previous
+/// difference, as they go to the next and previous match in the viewer; N and
+/// P do too.
+fn diff_key(app_state: &mut AppState, key: KeyEvent) {
+    let page = app_state.diff_viewport_height.max(1) as isize;
+    match key.code {
+        KeyCode::Esc => app_state.close_diff(),
+        KeyCode::F(3) => {
+            let forward = !key.modifiers.contains(KeyModifiers::SHIFT);
+            if let Some(state) = app_state.diff_mut() {
+                state.step(forward);
+            }
+        }
+        KeyCode::Char('n') | KeyCode::Char('N') => {
+            if let Some(state) = app_state.diff_mut() {
+                state.step(true);
+            }
+        }
+        KeyCode::Char('p') | KeyCode::Char('P') => {
+            if let Some(state) = app_state.diff_mut() {
+                state.step(false);
+            }
+        }
+        KeyCode::Down => app_state.diff_scroll(1, 0),
+        KeyCode::Up => app_state.diff_scroll(-1, 0),
+        KeyCode::PageDown => app_state.diff_scroll(page, 0),
+        KeyCode::PageUp => app_state.diff_scroll(-page, 0),
+        KeyCode::Home => app_state.diff_scroll(isize::MIN, isize::MIN),
+        KeyCode::End => app_state.diff_scroll(isize::MAX, 0),
+        KeyCode::Left => app_state.diff_scroll(0, -4),
+        KeyCode::Right => app_state.diff_scroll(0, 4),
+        _ => {}
+    }
+}
+
 fn editor_key(app_state: &mut AppState, key: KeyEvent) {
     if let Some(state) = app_state.editor_mut() {
         state.auto_scroll = true;
@@ -536,6 +572,10 @@ fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(4) if control => app_state.sort_panels_by(SortKey::Extension),
         KeyCode::F(5) if control => app_state.sort_panels_by(SortKey::Modified),
         KeyCode::F(6) if control => app_state.sort_panels_by(SortKey::Size),
+        // Shift+F3 compares two files, as F3 views one. = does too, for a
+        // terminal that cannot tell Shift+F3 from a report of its cursor.
+        KeyCode::F(3) if key.modifiers.contains(KeyModifiers::SHIFT) => open_compare(app_state),
+        KeyCode::Char('=') => open_compare(app_state),
         KeyCode::F(3) => handle_f3_view(app_state),
         // Shift+F4 creates an empty file, as MC does.
         KeyCode::F(4) if key.modifiers.contains(KeyModifiers::SHIFT) => toggle_create(app_state, false),
@@ -650,6 +690,18 @@ fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) -> bool {
         && let Some(&(_, key)) = app_state.fkey_hits.iter().find(|(cell, _)| cell.contains(Position::new(column, row)))
     {
         return handle_key(app_state, KeyEvent::new(KeyCode::F(key), KeyModifiers::NONE));
+    }
+    // Over the diff, the wheel scrolls it and nothing else answers: the
+    // panels it covers would otherwise take the clicks.
+    if matches!(app_state.screen, Screen::Diff(_)) {
+        match mouse_event.kind {
+            MouseEventKind::ScrollDown => app_state.diff_scroll(3, 0),
+            MouseEventKind::ScrollUp => app_state.diff_scroll(-3, 0),
+            MouseEventKind::ScrollRight => app_state.diff_scroll(0, 4),
+            MouseEventKind::ScrollLeft => app_state.diff_scroll(0, -4),
+            _ => {}
+        }
+        return true;
     }
     match mouse_event.kind {
         // A middle click closes the tab under it, as in a browser.
@@ -1240,6 +1292,50 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
     }
 }
 
+/// Shift+F3: which two files to compare. Two files selected in the panel you
+/// are in, in the order it lists them; otherwise the file under the cursor,
+/// against the one of the same name in the other panel, or failing that the
+/// one under the cursor there. Each side of the comparison is the panel its
+/// file came from.
+fn open_compare(app_state: &mut AppState) {
+    let is_left = app_state.is_left_active;
+    let file_at_cursor = |app_state: &AppState, is_left: bool| {
+        let (children, state, dir) = if is_left {
+            (&app_state.children_left, &app_state.state_left, &app_state.dir_left)
+        } else {
+            (&app_state.children_right, &app_state.state_right, &app_state.dir_right)
+        };
+        state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_dir).map(|item| (item.name_os.clone(), item.path_in(dir)))
+    };
+
+    let (children, selected, dir) = if is_left {
+        (&app_state.children_left, &app_state.selected_left, &app_state.dir_left)
+    } else {
+        (&app_state.children_right, &app_state.selected_right, &app_state.dir_right)
+    };
+    let selected_files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir && selected.contains(&item.name_os)).map(|item| item.path_in(dir)).collect();
+    if let [first, second] = &selected_files[..] {
+        app_state.compare_files(first.clone(), second.clone());
+        return;
+    }
+
+    let Some((name, here)) = file_at_cursor(app_state, is_left) else {
+        app_state.display_error("Put the cursor on a file to compare, or select two".to_string());
+        return;
+    };
+    let (other_children, other_dir) = if is_left { (&app_state.children_right, &app_state.dir_right) } else { (&app_state.children_left, &app_state.dir_left) };
+    let namesake = other_children.iter().find(|item| !item.is_dir && item.name_os == name).map(|item| item.path_in(other_dir));
+    let Some(there) = namesake.or_else(|| file_at_cursor(app_state, !is_left).map(|(_, path)| path)) else {
+        app_state.display_error("Nothing to compare with: the other panel has no file of that name, nor one under its cursor".to_string());
+        return;
+    };
+    if is_left {
+        app_state.compare_files(here, there);
+    } else {
+        app_state.compare_files(there, here);
+    }
+}
+
 /// Ctrl+Shift+F5: a symbolic link to what is chosen. For a single entry,
 /// file or directory, it opens on that name in the other panel, ready to be
 /// given another; for several, on the other panel's directory, a link in it
@@ -1602,6 +1698,83 @@ mod tests {
         press(&mut app_state, KeyCode::F(11));
         press(&mut app_state, KeyCode::Esc);
         assert!(app_state.dialog.is_none());
+    }
+
+    /// Shift+F3 compares the file under the cursor with its namesake in the
+    /// other panel, or two selected in one; each side is the panel its file is
+    /// in. Files that are the same, or not text, are only spoken of.
+    #[test]
+    fn compare_files_from_the_keys() {
+        let dir = std::env::temp_dir().join(format!("fm84-compare-files-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let (one, two) = (dir.join("one"), dir.join("two"));
+        std::fs::create_dir_all(one.join("sub")).unwrap();
+        std::fs::create_dir_all(&two).unwrap();
+        std::fs::write(one.join("a.txt"), "same\nleft\nsame\n").unwrap();
+        std::fs::write(one.join("b.txt"), "same\nb\nsame\n").unwrap();
+        std::fs::write(two.join("a.txt"), "same\nright\nsame\nextra\n").unwrap();
+        std::fs::write(two.join("copy.txt"), "same\nleft\nsame\n").unwrap();
+        let mut app_state = AppState::new();
+        app_state.open_dir(false, two.clone(), Some("copy.txt".as_ref()));
+        app_state.is_left_active = true;
+        app_state.open_dir(true, one.clone(), Some("a.txt".as_ref()));
+        let compare = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::F(3), KeyModifiers::SHIFT));
+        let sides = |app_state: &AppState| match &app_state.screen {
+            Screen::Diff(state) => (state.left_path.clone(), state.right_path.clone()),
+            _ => panic!("not comparing"),
+        };
+
+        // The namesake, not the other panel's cursor.
+        compare(&mut app_state);
+        assert_eq!(sides(&app_state), (one.join("a.txt"), two.join("a.txt")));
+        let Screen::Diff(state) = &app_state.screen else { unreachable!() };
+        assert_eq!(state.hunks.len(), 2);
+
+        // Drawn side by side, with the marks between, and its own keys.
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, &mut app_state);
+        let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+        for shown in [" | ", " > ", "left", "right", "extra", "Difference 1/2", "F3 Next"] {
+            assert!(screen.contains(shown), "{shown} not drawn");
+        }
+        press(&mut app_state, KeyCode::F(3));
+        let Screen::Diff(state) = &app_state.screen else { unreachable!() };
+        assert_eq!(state.current, Some(1));
+        press(&mut app_state, KeyCode::Esc);
+        assert!(matches!(app_state.screen, Screen::Panels));
+
+        // = does the same, for a terminal that cannot send Shift+F3.
+        press(&mut app_state, KeyCode::Char('='));
+        assert_eq!(sides(&app_state), (one.join("a.txt"), two.join("a.txt")));
+        press(&mut app_state, KeyCode::Esc);
+
+        // From the right panel, the left file is still on the left.
+        app_state.is_left_active = false;
+        app_state.open_dir(false, two.clone(), Some("a.txt".as_ref()));
+        compare(&mut app_state);
+        assert_eq!(sides(&app_state), (one.join("a.txt"), two.join("a.txt")));
+        press(&mut app_state, KeyCode::Esc);
+
+        // No namesake: the other panel's cursor, here a file the same.
+        app_state.open_dir(false, two.clone(), Some("copy.txt".as_ref()));
+        compare(&mut app_state);
+        assert!(matches!(app_state.screen, Screen::Panels));
+        assert_eq!(app_state.find_note.as_deref(), Some("The files are identical"));
+
+        // Two selected in one panel.
+        app_state.is_left_active = true;
+        app_state.selected_left.insert("a.txt".into());
+        app_state.selected_left.insert("b.txt".into());
+        compare(&mut app_state);
+        assert_eq!(sides(&app_state), (one.join("a.txt"), one.join("b.txt")));
+        press(&mut app_state, KeyCode::Esc);
+        app_state.selected_left.clear();
+
+        // A directory is not a file to compare.
+        app_state.open_dir(true, one.clone(), Some("sub".as_ref()));
+        compare(&mut app_state);
+        assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Put the cursor on a file")));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// Ctrl+Shift+F5 links the entry under the cursor into the other panel,
