@@ -297,8 +297,14 @@ impl AppState {
             let max = state.total_lines.saturating_sub(height);
             state.scroll_offset = row.saturating_sub(height / 3).min(max);
         }
-        if !state.wrapping() && (found.start < state.horizontal_offset || found.end > state.horizontal_offset + width) {
-            state.horizontal_offset = found.start.saturating_sub(width / 4);
+        // Sideways in columns, which is how it scrolls: a match after wide
+        // characters is further along than its place in the line.
+        if !state.wrapping() {
+            let text = state.line_text(found.line);
+            let (start, end) = (crate::utils::display_column(&text, found.start), crate::utils::display_column(&text, found.end));
+            if start < state.horizontal_offset || end > state.horizontal_offset + width {
+                state.horizontal_offset = start.saturating_sub(width / 4);
+            }
         }
         Some(found.wrapped)
     }

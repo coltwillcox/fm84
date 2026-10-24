@@ -279,6 +279,26 @@ impl AppState {
         }
     }
 
+    /// A panel has left `dir`: stop sizing what is in it, running or waiting,
+    /// which nothing shows any more - unless the other panel does. Left to
+    /// run, Alt+Shift+Enter in / and a step elsewhere walked the whole disk
+    /// out of sight, with Esc in a panel the only way to stop it.
+    pub(super) fn forget_sizes_in(&mut self, dir: &Path) {
+        if self.dir_left == dir || self.dir_right == dir {
+            return;
+        }
+        let inside = |path: &Path| path.parent() == Some(dir);
+        self.dir_size_queue.retain(|path| !inside(path));
+        self.dir_sizing.retain(|sizing| {
+            let stop = inside(&sizing.path);
+            if stop {
+                sizing.cancel.store(true, Ordering::Relaxed);
+            }
+            !stop
+        });
+        self.start_queued_sizes();
+    }
+
     /// The running total for a directory still being sized - nothing yet,
     /// for one waiting its turn.
     pub fn dir_size_so_far(&self, path: &Path) -> Option<u64> {

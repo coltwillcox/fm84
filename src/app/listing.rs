@@ -292,6 +292,9 @@ impl AppState {
                 self.state_right.select(Some(0));
             }
             self.search_clear();
+            if leaving.dir != found {
+                self.forget_sizes_in(&leaving.dir);
+            }
         }
 
         let (children, state) = if is_left { (&self.children_left, &self.state_left) } else { (&self.children_right, &self.state_right) };

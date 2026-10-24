@@ -283,3 +283,41 @@ fn a_directory_sized_on_its_own_goes_ahead_of_those_waiting() {
     assert_eq!(app_state.dir_size_queue.len(), 3, "moved, not added again");
     app_state.cancel_dir_sizes();
 }
+
+/// Leaving a directory stops sizing what is in it, running and waiting -
+/// nothing shows those sizes any more - unless the other panel is in it too.
+/// Sizes already counted are kept, for coming back.
+#[test]
+fn leaving_a_directory_stops_sizing_what_is_in_it() {
+    let dir = std::env::temp_dir().join(format!("fm84-size-leave-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    for n in 0..crate::constants::SIZE_WORKERS * 2 {
+        std::fs::create_dir_all(dir.join(format!("d{n}"))).unwrap();
+    }
+    let elsewhere = std::env::temp_dir();
+    let size_all = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT | KeyModifiers::SHIFT));
+
+    let mut app_state = AppState::new();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(false, elsewhere.clone(), None);
+    app_state.dir_sizes.insert(dir.join("d0"), 42);
+    size_all(&mut app_state);
+    assert!(!app_state.dir_sizing.is_empty() && !app_state.dir_size_queue.is_empty());
+    app_state.open_dir(true, elsewhere.clone(), None);
+    assert!(app_state.dir_sizing.is_empty(), "running ones stopped");
+    assert!(app_state.dir_size_queue.is_empty(), "waiting ones dropped");
+    assert_eq!(app_state.dir_sizes.get(&dir.join("d0")), Some(&42), "a size counted before is kept");
+
+    // The other panel still in it: they go on, for that panel to show.
+    let mut app_state = AppState::new();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(false, dir.clone(), None);
+    size_all(&mut app_state);
+    let asked = app_state.dir_sizing.len() + app_state.dir_size_queue.len();
+    app_state.open_dir(true, elsewhere.clone(), None);
+    assert_eq!(app_state.dir_sizing.len() + app_state.dir_size_queue.len(), asked);
+    app_state.cancel_dir_sizes();
+    std::fs::remove_dir_all(&dir).unwrap();
+}

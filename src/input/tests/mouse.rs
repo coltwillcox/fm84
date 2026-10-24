@@ -337,3 +337,65 @@ fn a_click_on_the_branch_lists_branches_to_switch_to() {
     assert_eq!(app_state.branch_left.as_deref(), Some("feature"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// In the viewer, a click on a line of wide characters selects the one drawn
+/// there, and Ctrl+F scrolls far enough to show a match after them. Both
+/// counted a character as one column, where a CJK one is drawn in two: the
+/// click picked one twice as far along, and the match stayed off the edge.
+#[test]
+fn the_viewer_counts_wide_characters_as_the_columns_they_take() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let path = std::env::temp_dir().join(format!("fm84-viewer-wide-{}.txt", std::process::id()));
+    std::fs::write(&path, format!("{}x{}\n", "日".repeat(100), "本".repeat(20))).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.open_viewer(path.clone()).unwrap();
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 20)).unwrap();
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    let area = app_state.viewer_content_area;
+    let click = |app_state: &mut AppState, column: u16| {
+        crate::input::handle_mouse(
+            app_state,
+            MouseEvent {
+                kind: MouseEventKind::Down(MouseButton::Left),
+                column: area.x + column,
+                row: area.y,
+                modifiers: KeyModifiers::NONE,
+            },
+        );
+        app_state.viewer().unwrap().selection.map(|(anchor, _)| anchor)
+    };
+    // Columns 10 and 11 are the sixth character.
+    assert_eq!(click(&mut app_state, 10), Some((0, 5)));
+    assert_eq!(click(&mut app_state, 11), Some((0, 5)));
+
+    app_state.find_term = "x".to_string();
+    app_state.find(true, true);
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer();
+    let row: String = (area.x..area.right()).map(|x| buffer[(x, area.y)].symbol().to_string()).collect();
+    assert!(row.contains('x'), "the match is on screen: {row}");
+    // And a click on it, scrolled, lands on it.
+    let at = (area.x..area.right()).position(|x| buffer[(x, area.y)].symbol() == "x").unwrap();
+    assert_eq!(click(&mut app_state, at as u16), Some((0, 100)));
+
+    // Wrapped, a click on the second row lands in it by columns too.
+    app_state.viewer_mut().unwrap().wrap = true;
+    // As the main loop does: the rows are broken at the width just drawn.
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    app_state.fit_viewer_wrap();
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    let state = app_state.viewer().unwrap();
+    let (_, second_from, _) = state.row(1);
+    crate::input::handle_mouse(
+        &mut app_state,
+        MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: area.x + 4,
+            row: area.y + 1,
+            modifiers: KeyModifiers::NONE,
+        },
+    );
+    assert_eq!(app_state.viewer().unwrap().selection.map(|(anchor, _)| anchor), Some((0, second_from + 2)));
+    std::fs::remove_file(path).unwrap();
+}

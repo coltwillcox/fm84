@@ -345,11 +345,23 @@ impl ViewerState {
     }
 
     /// The place in the text under `column` of row `row` on screen, as a line
-    /// and a character in it - which is where a click lands.
+    /// and a character in it - which is where a click lands. Columns, not
+    /// characters, from the start of the row and past the scroll: a wide
+    /// character takes two, and either is that character.
     pub fn position_at(&self, row: usize, column: usize) -> (usize, usize) {
         let (line, from, to) = self.row(row.min(self.total_lines.saturating_sub(1)));
-        let length = self.line_text(line).chars().count();
-        (line, (from + column + self.horizontal_offset).min(to).min(length))
+        let text: Vec<char> = self.line_text(line).chars().collect();
+        let (wanted, end) = (column + self.horizontal_offset, to.min(text.len()));
+        let (mut index, mut used) = (from.min(end), 0);
+        while index < end {
+            let width = crate::utils::char_display_width(text[index]);
+            if used + width > wanted {
+                break;
+            }
+            used += width;
+            index += 1;
+        }
+        (line, index)
     }
 
     /// Break every line onto rows `width` wide, keeping the text that was at
