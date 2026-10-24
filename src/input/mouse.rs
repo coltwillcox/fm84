@@ -308,7 +308,7 @@ fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: 
         let target_line = (state.scroll_offset + visual_row).min(state.lines.len().saturating_sub(1));
 
         // Map the visual column back to a character index, past the horizontal
-        // scroll and any expanded tabs.
+        // scroll, any expanded tabs and the second column of a wide character.
         let visual_col = (column - area.x) as usize + state.horizontal_offset;
         let line = &state.lines[target_line];
         let mut char_col = 0;
@@ -317,7 +317,7 @@ fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: 
             if current_visual >= visual_col {
                 break;
             }
-            current_visual += if character == '\t' { tab_width() } else { 1 };
+            current_visual += crate::utils::char_display_width(character);
             char_col += 1;
         }
 

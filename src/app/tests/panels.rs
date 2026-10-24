@@ -476,3 +476,42 @@ fn a_click_lands_on_the_icon_it_looks_like() {
 
     assert_eq!(slot_at(&[], 1), None);
 }
+
+/// A reread still on its way when a newer one comes straight back is
+/// dropped. Left waiting, it landed afterwards with the directory as it
+/// was - a file a copy had just put there vanished from the panel, and the
+/// watcher, which had already said the directory changed, never said so
+/// again.
+#[test]
+fn a_slower_older_listing_does_not_land_over_a_newer_one() {
+    use crate::app::listing::{PendingListing, Travel, read_listing};
+
+    let dir = std::env::temp_dir().join(format!("fm84-older-listing-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("old"), "").unwrap();
+    let mut app_state = AppState::new();
+    app_state.open_dir(true, dir.clone(), None);
+
+    // A reread held up on a slow disk, which saw only "old".
+    let older = read_listing(&dir, &app_state.options);
+    let (sender, answer) = std::sync::mpsc::channel();
+    app_state.listing_left = Some(PendingListing {
+        dir: dir.clone(),
+        navigate: false,
+        select: None,
+        tab: None,
+        travel: Travel::Stay,
+        answer,
+    });
+
+    std::fs::write(dir.join("new"), "").unwrap();
+    app_state.reload_panel(true, None);
+    assert!(app_state.listing_left.is_none(), "the older one is no longer waited for");
+
+    let _ = sender.send(older);
+    app_state.poll_listings();
+    let names: Vec<&str> = app_state.children_left.iter().map(|item| item.name.as_str()).collect();
+    assert_eq!(names, ["..", "new", "old"]);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

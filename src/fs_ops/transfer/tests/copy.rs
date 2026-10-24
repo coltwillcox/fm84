@@ -386,3 +386,18 @@ fn overwriting_a_read_only_file_replaces_it() {
     assert_eq!(fs::read_to_string(dir.join("locked")).unwrap(), "new");
     fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A name of emoji near the filesystem's limit of 255 bytes still copies.
+/// The temporary beside it was cut to 64 characters, which in four-byte
+/// emoji is 256 bytes, and with its prefix and suffix it was too long a name
+/// to make.
+#[test]
+fn a_long_name_of_wide_characters_still_copies() {
+    let dir = scratch("emoji-name");
+    let name = "🦀".repeat(63);
+    fs::write(dir.join("src.txt"), "crab").unwrap();
+    let dest = dir.join(&name);
+    assert_eq!(copy_path(dir.join("src.txt"), dest.clone(), false, &mut |_: Step<'_>| true).unwrap(), Transfer::Done);
+    assert_eq!(fs::read_to_string(&dest).unwrap(), "crab");
+    fs::remove_dir_all(&dir).unwrap();
+}

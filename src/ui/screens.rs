@@ -155,7 +155,13 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mu
     let mut text_width = 0;
     for (area, path, lines, is_left) in [(left_area, &state.left_path, &state.left, true), (right_area, &state.right_path, &state.right, false)] {
         let [header_area, body_area] = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).areas(area);
-        let header = crate::utils::limit_path_string(path, header_area.width as usize);
+        // A path cut short gains "..." on top of what it keeps, so it keeps
+        // three columns fewer - or the end of the file's name was clipped.
+        let width = header_area.width as usize;
+        let header = match crate::utils::limit_path_string(path, width) {
+            whole if display_width(&whole) <= width => whole,
+            _ => crate::utils::limit_path_string(path, width.saturating_sub(3)),
+        };
         f.render_widget(Paragraph::new(Line::from(Span::styled(header, style_title()))), header_area);
 
         let [gutter_area, text_area] = Layout::horizontal([Constraint::Length(gutter_width), Constraint::Min(0)]).areas(body_area);
@@ -219,7 +225,8 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
 
         // Auto-scroll to keep cursor visible (disabled during mouse scrolling)
         if editor_state.auto_scroll {
-            let visual_cursor_col: usize = editor_state.lines[editor_state.cursor_line].chars().take(editor_state.cursor_col).map(|c| if c == '\t' { tab_width() } else { 1 }).sum();
+            // In columns, as skip_columns scrolls: a wide character takes two.
+            let visual_cursor_col = crate::utils::display_column(&editor_state.lines[editor_state.cursor_line], editor_state.cursor_col);
             let viewport_width = chunks[1].width as usize;
             if visual_cursor_col < editor_state.horizontal_offset {
                 editor_state.horizontal_offset = visual_cursor_col;

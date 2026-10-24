@@ -283,12 +283,20 @@ impl AppState {
     /// Re-highlight the file from `from` downward. Cheap: the cached state lets
     /// it resume mid-file and stop again as soon as the parse converges.
     pub fn editor_rehighlight_from(&mut self, from: usize) {
+        self.editor_rehighlight_through(from, from);
+    }
+
+    /// Re-highlight after an edit that changed every line from `from` to
+    /// `through`. The parse may stop once it meets the cache, but not before
+    /// `through`: a line below one the cache agrees with can still be new
+    /// text, and its old spans would go on showing what it said before.
+    pub(super) fn editor_rehighlight_through(&mut self, from: usize, through: usize) {
         if let Screen::Editor(state) = &mut self.screen {
             if state.line_states.is_empty() {
                 return; // highlighting disabled for this file
             }
             let extension = state.file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
-            crate::viewer::highlight_from(&state.lines, extension, from, &mut state.highlighted_lines, &mut state.line_states);
+            crate::viewer::highlight_through(&state.lines, extension, from, through, &mut state.highlighted_lines, &mut state.line_states);
         }
     }
 
@@ -384,7 +392,7 @@ impl AppState {
     /// operation in opposite directions: apply a step, and push the step that
     /// would put things back onto the other stack.
     fn step_history(&mut self, undoing: bool) {
-        let mut from = None;
+        let mut changed = None;
 
         if let Screen::Editor(state) = &mut self.screen {
             let stack = if undoing { &mut state.undo_stack } else { &mut state.redo_stack };
@@ -402,6 +410,8 @@ impl AppState {
                     cursor: (state.cursor_line, state.cursor_col),
                 };
 
+                // Every line put back is changed, not only the first of them.
+                let through = step.first_line + step.before.len().saturating_sub(1);
                 state.lines.splice(step.first_line..end, step.before);
                 state.cursor_line = step.cursor.0.min(state.lines.len().saturating_sub(1));
                 state.cursor_col = step.cursor.1.min(state.lines[state.cursor_line].chars().count());
@@ -418,12 +428,12 @@ impl AppState {
                     other.remove(0);
                 }
 
-                from = Some(step.first_line);
+                changed = Some((step.first_line, through));
             }
         }
 
-        if let Some(from) = from {
-            self.editor_rehighlight_from(from);
+        if let Some((from, through)) = changed {
+            self.editor_rehighlight_through(from, through);
         }
     }
 
@@ -494,7 +504,7 @@ impl AppState {
         let text = text.replace("\r\n", "\n");
 
         // A selection is replaced by what is pasted over it.
-        let mut rehighlight = self.delete_selection();
+        let mut rehighlight = self.delete_selection().map(|from| (from, from));
 
         if let Screen::Editor(state) = &mut self.screen {
             let line = state.lines[state.cursor_line].clone();
@@ -520,11 +530,13 @@ impl AppState {
 
             state.modified = true;
             state.selection_anchor = None;
-            rehighlight = Some(rehighlight.unwrap_or(start_line).min(start_line));
+            // Every line the paste wrote, down to the one the cursor ends on.
+            let from = rehighlight.map_or(start_line, |(from, _)| from.min(start_line));
+            rehighlight = Some((from, state.cursor_line));
         }
 
-        if let Some(from) = rehighlight {
-            self.editor_rehighlight_from(from);
+        if let Some((from, through)) = rehighlight {
+            self.editor_rehighlight_through(from, through);
         }
         self.finish_edit();
     }

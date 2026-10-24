@@ -130,9 +130,17 @@ fn keep_owner(_file: &File, _metadata: &fs::Metadata) -> Result<(), Error> {
 ///
 /// Named after the file, shortened: the prefix and suffix would otherwise
 /// carry a name already near the filesystem's limit past it, and every copy
-/// goes through one of these now.
+/// goes through one of these now. Shortened in bytes, which is what the limit
+/// counts - 64 characters of emoji are 256 of them.
 pub(super) fn temp_beside(dest: &Path) -> Result<(PathBuf, File), Error> {
-    let name: String = dest.file_name().unwrap_or_default().to_string_lossy().chars().take(64).collect();
+    const NAME_BYTES: usize = 64;
+    let mut name = String::new();
+    for character in dest.file_name().unwrap_or_default().to_string_lossy().chars() {
+        if name.len() + character.len_utf8() > NAME_BYTES {
+            break;
+        }
+        name.push(character);
+    }
     for attempt in 0..1000u32 {
         let candidate = dest.with_file_name(format!(".{name}.fm84-{}-{attempt}", std::process::id()));
         match File::options().write(true).create_new(true).open(&candidate) {

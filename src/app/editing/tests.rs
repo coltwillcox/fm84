@@ -375,3 +375,42 @@ fn an_edit_that_changes_nothing_keeps_the_redo_history() {
     assert_eq!(stacks(&app_state), (1, 0));
     std::fs::remove_file(path).unwrap();
 }
+
+/// An edit that rewrites several lines without changing how many there are,
+/// such as a paste over a selection as long as itself, or undoing Replace
+/// all, shows every one of them as it now is. The parse could stop at the line
+/// after the first, where the state matched the cache, and the editor went on
+/// drawing the old text of the rest.
+#[test]
+fn every_line_an_edit_rewrites_is_highlighted_again() {
+    let text = "let a = 1;\nlet b = 2;\nlet c = 3;\nfn tail() {}\n";
+    let path = std::env::temp_dir().join(format!("fm84-rehighlight-{}.rs", std::process::id()));
+    std::fs::write(&path, text).unwrap();
+    let mut app_state = AppState::new();
+    app_state.open_editor(path.clone()).unwrap();
+    let as_drawn = |app_state: &AppState| -> Vec<String> {
+        let state = app_state.editor().unwrap();
+        assert!(!state.highlighted_lines.is_empty(), "highlighting is on");
+        state.highlighted_lines.iter().map(|line| line.iter().map(|span| span.content.as_ref()).collect()).collect()
+    };
+    let lines = |app_state: &AppState| app_state.editor().unwrap().lines.clone();
+
+    if let Some(state) = app_state.editor_mut() {
+        state.selection_anchor = Some((0, 0));
+        state.cursor_line = 2;
+        state.cursor_col = 10;
+    }
+    app_state.editor_insert_text("let x = 7;\nlet y = 8;\nlet z = 9;");
+    assert_eq!(as_drawn(&app_state), lines(&app_state), "after the paste");
+    app_state.editor_undo();
+    assert_eq!(as_drawn(&app_state), lines(&app_state), "after undoing it");
+    app_state.editor_redo();
+    assert_eq!(as_drawn(&app_state), lines(&app_state), "after redoing it");
+
+    replace(&mut app_state, "let", "const");
+    app_state.replace_all();
+    app_state.editor_undo();
+    assert_eq!(lines(&app_state)[..3], ["let x = 7;", "let y = 8;", "let z = 9;"]);
+    assert_eq!(as_drawn(&app_state), lines(&app_state), "after undoing Replace all");
+    std::fs::remove_file(path).unwrap();
+}

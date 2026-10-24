@@ -18,7 +18,9 @@ pub fn format_size(bytes: u64) -> String {
     let mut size = bytes as f64;
     let mut unit_index = 0;
 
-    while size >= step && unit_index < units.len() - 1 {
+    // Rounded before it is compared: 1023.6 KiB is written as a whole number,
+    // and as one it is the next unit up - not "1024 KiB".
+    while size.round() >= step && unit_index < units.len() - 1 {
         size /= step;
         unit_index += 1;
     }
@@ -155,9 +157,28 @@ pub fn printable_line(line: &str) -> String {
     text
 }
 
+/// Columns one character takes as printable_line draws it: a tab expanded, a
+/// control character as the one '.' put in its place, and a wide one as two.
+pub fn char_display_width(character: char) -> usize {
+    if character == '\t' {
+        crate::display::tab_width()
+    } else if character.is_control() {
+        1
+    } else {
+        UnicodeWidthChar::width(character).unwrap_or(0)
+    }
+}
+
 /// Width of a line as the viewer draws it: tabs expanded, columns not bytes.
 pub fn line_display_width(line: &str) -> usize {
-    line.chars().map(|character| if character == '\t' { crate::display::tab_width() } else { UnicodeWidthChar::width(character).unwrap_or(0) }).sum()
+    line.chars().map(char_display_width).sum()
+}
+
+/// The column the character at `char_col` is drawn in, from the start of the
+/// line - what horizontal scrolling counts in. Not the character index: a
+/// line of CJK text is drawn twice as wide as it is long.
+pub fn display_column(line: &str, char_col: usize) -> usize {
+    line.chars().take(char_col).map(char_display_width).sum()
 }
 
 pub fn color_for_extension(ext: &str) -> Color {
@@ -241,6 +262,10 @@ mod text_tests {
         assert_eq!(format_size(3 << 30), "3 GiB");
         // Past the last unit the figure just grows.
         assert_eq!(format_size(1u64 << 50), "1024 TiB");
+        // What rounds up to a whole unit is written in it.
+        assert_eq!(format_size(1024 * 1024 - 1), "1 MiB");
+        assert_eq!(format_size(1023 * 1024 + 600), "1 MiB");
+        assert_eq!(format_size(1023 * 1024 + 400), "1023 KiB");
     }
 
     #[test]
@@ -352,5 +377,22 @@ mod substitute_tests {
         assert_eq!(substitute("--file={}", path).as_bytes(), b"--file=/tmp/caf\xe9.txt");
         assert_eq!(substitute("{}:{}", path).as_bytes(), b"/tmp/caf\xe9.txt:/tmp/caf\xe9.txt");
         assert_eq!(substitute("nvim", path), "nvim");
+    }
+}
+
+#[cfg(test)]
+mod column_tests {
+    use super::*;
+
+    #[test]
+    fn a_column_counts_what_each_character_is_drawn_as() {
+        assert_eq!(display_column("abc", 2), 2);
+        assert_eq!(display_column("日本語", 2), 4);
+        // A tab is four columns until F11 says otherwise, and a control
+        // character the one '.' drawn in its place.
+        assert_eq!(display_column("\tx", 1), 4);
+        assert_eq!(display_column("\x1bx", 1), 1);
+        assert_eq!(display_column("ab", 10), 2);
+        assert_eq!(line_display_width("a\x07日"), 4);
     }
 }

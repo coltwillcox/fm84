@@ -199,7 +199,13 @@ impl AppState {
         });
         let pending = PendingListing { dir, navigate, select, tab, travel, answer };
         match pending.answer.recv_timeout(self.listing_wait) {
-            Ok(listed) => Some(self.apply_listing(is_left, pending, listed)),
+            Ok(listed) => {
+                // One asked for earlier and still on its way read the
+                // directory as it was before this one did. Left waiting, it
+                // would land on top of this and take back what it shows.
+                *self.listing_mut(is_left) = None;
+                Some(self.apply_listing(is_left, pending, listed))
+            }
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 *self.listing_mut(is_left) = Some(pending);
                 None

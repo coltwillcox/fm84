@@ -119,3 +119,48 @@ fn a_click_on_a_path_edits_it() {
     click_at(&mut app_state, bar.x + 1, 0);
     assert!(going_to(&app_state).is_none());
 }
+
+/// On a line of wide characters, End scrolls far enough to show the cursor,
+/// and a click lands on the character drawn there. Both counted a character
+/// as one column, where a CJK one is drawn in two: the cursor went off the
+/// right edge, and a click picked a character twice as far along.
+#[test]
+fn wide_characters_take_their_columns_in_the_editor() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let path = std::env::temp_dir().join(format!("fm84-wide-editor-{}.txt", std::process::id()));
+    std::fs::write(&path, "日".repeat(60)).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.open_editor(path.clone()).unwrap();
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 20)).unwrap();
+
+    press(&mut app_state, KeyCode::End);
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    let area = app_state.editor_content_area;
+    let state = app_state.editor().unwrap();
+    assert_eq!(state.cursor_col, 60);
+    let cursor = crate::utils::display_column(&state.lines[0], state.cursor_col);
+    assert!(
+        cursor >= state.horizontal_offset && cursor < state.horizontal_offset + area.width as usize,
+        "cursor at column {cursor}, showing from {} across {}",
+        state.horizontal_offset,
+        area.width
+    );
+
+    press(&mut app_state, KeyCode::Home);
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    assert_eq!(app_state.editor().unwrap().horizontal_offset, 0);
+    let area = app_state.editor_content_area;
+    crate::input::handle_mouse(
+        &mut app_state,
+        MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: area.x + 4,
+            row: area.y,
+            modifiers: KeyModifiers::NONE,
+        },
+    );
+    // Columns 0-1 are the first character, 2-3 the second.
+    assert_eq!(app_state.editor().unwrap().cursor_col, 2);
+    std::fs::remove_file(path).unwrap();
+}

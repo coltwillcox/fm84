@@ -595,3 +595,22 @@ fn scrolling_keeps_to_the_room_there_is() {
     let Screen::Diff(state) = &app_state.screen else { unreachable!() };
     assert_eq!(state.scroll_offset, state.rows.len() - app_state.diff_viewport_height, "the diff past its end");
 }
+
+/// A diff of two long paths in a narrow window shows the end of each - the
+/// file's own name - with "..." where the rest was cut. The "..." was laid on
+/// top of a path already as wide as its column, and pushed the last three
+/// characters of the name off the edge.
+#[test]
+fn the_diff_header_keeps_the_end_of_a_long_path() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    let deep = "/home/user/projects/somewhere/rather/deep/inside";
+    let (left, right) = (PathBuf::from(format!("{deep}/left_name.txt")), PathBuf::from(format!("{deep}/right_name.txt")));
+    app_state.screen = Screen::Diff(crate::diff::DiffState::new(left, right, vec!["a".to_string()], vec!["b".to_string()]));
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(60, 20)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer();
+    let rows: Vec<String> = (0..buffer.area.height).map(|y| (0..buffer.area.width).map(|x| buffer[(x, y)].symbol().to_string()).collect()).collect();
+    let header = rows.iter().find(|row| row.contains("...") && row.contains("_name")).expect("the paths are cut short");
+    assert!(header.contains("left_name.txt") && header.contains("right_name.txt"), "{header}");
+}
