@@ -361,6 +361,24 @@ static THEME_BACKGROUND: AtomicBool = AtomicBool::new(true);
 static TAB_WIDTH: AtomicUsize = AtomicUsize::new(4);
 static DECIMAL_SIZES: AtomicBool = AtomicBool::new(false);
 
+thread_local! {
+    /// Whether the cursor is Classic, a cell drawn reversed, for the frame
+    /// being drawn - set from its options as each one starts. Per thread
+    /// rather than shared, as the tests draw frames with different options
+    /// side by side.
+    static CLASSIC_CURSOR: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+pub fn set_classic_cursor(classic: bool) {
+    CLASSIC_CURSOR.with(|cell| cell.set(classic));
+}
+
+/// A cursor past the end of what is typed needs a cell of its own only when
+/// it is a cell drawn reversed. The terminal's own sits after the text.
+pub fn classic_cursor() -> bool {
+    CLASSIC_CURSOR.with(std::cell::Cell::get)
+}
+
 /// Take up the options that drawing reads. Called at startup and after every
 /// change in the options dialog.
 pub fn apply(options: &Options) {

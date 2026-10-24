@@ -19,7 +19,7 @@ mod viewer;
 use app::AppState;
 use color_eyre::Result;
 use crossterm::{
-    cursor::Show,
+    cursor::{SetCursorStyle, Show},
     event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture, KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, supports_keyboard_enhancement},
@@ -27,7 +27,7 @@ use crossterm::{
 use input::handle_input;
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::{self, IsTerminal, Stdout, stdout};
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 use ui::render_ui;
 
 type Tui = Terminal<CrosstermBackend<Stdout>>;
@@ -122,6 +122,33 @@ fn take_terminal() -> io::Result<()> {
     Ok(())
 }
 
+/// The cursor shape last sent to the terminal, None while it has its own. Sent
+/// again only when F11 changes it, or once fm84 has the terminal back from the
+/// external editor, which sets a shape of its own.
+static CURSOR_SENT: Mutex<Option<SetCursorStyle>> = Mutex::new(None);
+
+/// Give the terminal's cursor the shape F11 asks for, if it is not that
+/// already. Classic draws its own and leaves the terminal's alone.
+fn send_cursor_shape(options: &options::Options) {
+    use options::CursorShape;
+    let wanted = match (options.cursor, options.cursor_blink) {
+        (CursorShape::Classic, _) => None,
+        (CursorShape::Bar, true) => Some(SetCursorStyle::BlinkingBar),
+        (CursorShape::Bar, false) => Some(SetCursorStyle::SteadyBar),
+        (CursorShape::Block, true) => Some(SetCursorStyle::BlinkingBlock),
+        (CursorShape::Block, false) => Some(SetCursorStyle::SteadyBlock),
+        (CursorShape::Underline, true) => Some(SetCursorStyle::BlinkingUnderScore),
+        (CursorShape::Underline, false) => Some(SetCursorStyle::SteadyUnderScore),
+    };
+    let Ok(mut sent) = CURSOR_SENT.lock() else {
+        return;
+    };
+    if *sent != wanted {
+        let _ = execute!(stdout(), wanted.unwrap_or(SetCursorStyle::DefaultUserShape));
+        *sent = wanted;
+    }
+}
+
 /// Undo everything take_terminal did. Runs on normal exit, on error, and from the
 /// panic hook, so it can't rely on the Terminal still being alive - a build with
 /// panic = "abort" never drops it. Showing the cursor here covers that case.
@@ -129,6 +156,12 @@ fn restore_terminal() -> io::Result<()> {
     // Not allowed to stop the rest: this runs from the panic hook too.
     if ENHANCED_KEYS.get() == Some(&true) {
         let _ = execute!(stdout(), PopKeyboardEnhancementFlags);
+    }
+    // try_lock, as a panic while it is held would otherwise wait for ever.
+    if let Ok(mut sent) = CURSOR_SENT.try_lock()
+        && sent.take().is_some()
+    {
+        let _ = execute!(stdout(), SetCursorStyle::DefaultUserShape);
     }
     execute!(stdout(), LeaveAlternateScreen, DisableMouseCapture, DisableBracketedPaste, Show)?;
     disable_raw_mode()
@@ -187,6 +220,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.poll_find_files();
         app_state.poll_dir_sizes();
         app_state.image_cache.collect();
+        send_cursor_shape(&app_state.options);
         render_ui(terminal, &mut app_state);
         // An image fits the width the viewer was just drawn at, so a new width
         // means drawing again now rather than on the next event.

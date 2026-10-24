@@ -6,7 +6,7 @@ use crate::viewer::Preview;
 use crate::viewer::{ViewMode, ViewerState};
 use image::DynamicImage;
 use ratatui::layout::{Position, Rect};
-use ratatui::style::Style;
+use ratatui::style::{Modifier, Style};
 use ratatui::text::Span;
 use ratatui::widgets::TableState;
 use std::collections::{HashMap, HashSet};
@@ -95,6 +95,24 @@ impl TextInput {
         }
     }
 
+    /// The spans of a field with the cursor in it: what is before it, the
+    /// character it is on, and what is after. Past the end, the terminal's
+    /// cursor sits after the last character, which is marked to say so - a
+    /// cell of its own would show as a space the text does not have. Classic
+    /// draws its cursor as a cell, and needs one there; so does a field with
+    /// nothing in it, for the cursor to be found at all.
+    fn spans_around(before: &str, under: Option<char>, after: &str, text_style: Style, cursor_style: Style) -> Vec<Span<'static>> {
+        let printable = |text: &str| crate::utils::printable_name(text);
+        match under {
+            Some(character) => vec![Span::styled(printable(before), text_style), Span::styled(printable(&character.to_string()), cursor_style), Span::styled(printable(after), text_style)],
+            None if crate::display::classic_cursor() => vec![Span::styled(printable(before), text_style), Span::styled(" ", cursor_style)],
+            None => match before.char_indices().last() {
+                Some((last, _)) => vec![Span::styled(printable(&before[..last]), text_style), Span::styled(printable(&before[last..]), text_style.add_modifier(CURSOR_AFTER))],
+                None => vec![Span::styled(" ", cursor_style.add_modifier(PAST_END))],
+            },
+        }
+    }
+
     /// Styled spans with a block cursor, windowed to `width` columns so the
     /// cursor stays in view. A name longer than the field it is typed into
     /// would otherwise run past the edge and be clipped there, taking the
@@ -107,7 +125,8 @@ impl TextInput {
         let cell = |character: char| crate::utils::display_width(&character.to_string()).max(1);
         let characters: Vec<char> = self.text.chars().collect();
         let cursor = self.cursor.min(characters.len());
-        let at_cursor = characters.get(cursor).copied().unwrap_or(' ');
+        let under = characters.get(cursor).copied();
+        let at_cursor = under.unwrap_or(' ');
 
         // A cursor past the end still needs a cell of its own to sit in.
         let whole: usize = characters.iter().map(|&c| cell(c)).sum::<usize>() + 1;
@@ -139,11 +158,7 @@ impl TextInput {
         // A rename field is opened on the name that is there, and a name can
         // hold anything; the width is unchanged, a control character standing
         // in one column as the '.' that replaces it does.
-        vec![
-            Span::styled(crate::utils::printable_name(&before), text_style),
-            Span::styled(crate::utils::printable_name(&at_cursor.to_string()), cursor_style),
-            Span::styled(crate::utils::printable_name(&after), text_style),
-        ]
+        Self::spans_around(&before, under, &after, text_style, cursor_style)
     }
 
     /// Styled spans with a block cursor at the cursor position, for a field
@@ -153,16 +168,23 @@ impl TextInput {
         let before = self.text[..byte_idx].to_string();
         let rest = &self.text[byte_idx..];
         let mut chars = rest.chars();
-        let cursor_char = chars.next().unwrap_or(' ');
+        let under = chars.next();
         let after: String = chars.collect();
 
-        vec![
-            Span::styled(crate::utils::printable_name(&before), text_style),
-            Span::styled(crate::utils::printable_name(&cursor_char.to_string()), cursor_style),
-            Span::styled(crate::utils::printable_name(&after), text_style),
-        ]
+        Self::spans_around(&before, under, &after, text_style, cursor_style)
     }
 }
+
+/// Marks the cell a cursor sits in past the end of what is typed - in an
+/// empty field, the only place it can go - for the UI to give it the colour
+/// of whatever follows the field. A modifier nothing else draws with; the UI
+/// takes it off again.
+pub const PAST_END: Modifier = Modifier::HIDDEN;
+
+/// Marks the last character typed, with the cursor past the end: the
+/// terminal's cursor goes straight after it. Another modifier nothing else
+/// draws with, taken off again by the UI.
+pub const CURSOR_AFTER: Modifier = Modifier::CROSSED_OUT;
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to

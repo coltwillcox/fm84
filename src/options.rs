@@ -147,6 +147,17 @@ pub enum Clock {
     Off,
 }
 
+/// The cursor in a field being typed into and in the editor. All but Classic
+/// are the terminal's own cursor, in that shape; Classic is a cell drawn in
+/// reverse, for a terminal that cannot be told a shape.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum CursorShape {
+    Bar,
+    Block,
+    Underline,
+    Classic,
+}
+
 // The values the stepped numeric options offer. A hand-edited config may hold
 // something else; it is kept, and the first step from it lands on the list.
 const TAB_WIDTHS: [usize; 3] = [2, 4, 8];
@@ -189,6 +200,9 @@ pub struct Options {
     pub theme_background: bool,
     pub icon_style: IconStyle,
     pub clock: Clock,
+    pub cursor: CursorShape,
+    /// Whether the terminal's cursor blinks; nothing to Classic.
+    pub cursor_blink: bool,
     pub tab_width: usize,
     /// The gutter in the viewer and the editor.
     pub line_numbers: bool,
@@ -236,6 +250,8 @@ impl Default for Options {
             theme_background: true,
             icon_style: IconStyle::NerdFont,
             clock: Clock::Hours24,
+            cursor: CursorShape::Bar,
+            cursor_blink: true,
             tab_width: 4,
             line_numbers: true,
             highlight_limit_kib: 512,
@@ -273,6 +289,8 @@ pub enum OptionRow {
     ThemeBackground,
     IconStyle,
     Clock,
+    Cursor,
+    CursorBlink,
     TabWidth,
     LineNumbers,
     HighlightLimit,
@@ -282,7 +300,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 30] = [
+pub const OPTION_ROWS: [OptionRow; 32] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -306,6 +324,8 @@ pub const OPTION_ROWS: [OptionRow; 30] = [
     OptionRow::ThemeBackground,
     OptionRow::IconStyle,
     OptionRow::Clock,
+    OptionRow::Cursor,
+    OptionRow::CursorBlink,
     OptionRow::TabWidth,
     OptionRow::LineNumbers,
     OptionRow::HighlightLimit,
@@ -341,6 +361,8 @@ impl OptionRow {
             OptionRow::ThemeBackground => "Background",
             OptionRow::IconStyle => "Icons",
             OptionRow::Clock => "Clock",
+            OptionRow::Cursor => "Cursor",
+            OptionRow::CursorBlink => "Cursor blinks",
             OptionRow::TabWidth => "Tab width",
             OptionRow::LineNumbers => "Line numbers",
             OptionRow::HighlightLimit => "Highlight files up to",
@@ -433,6 +455,14 @@ impl Options {
                 Clock::Off => "Off",
             }
             .to_string(),
+            OptionRow::Cursor => match self.cursor {
+                CursorShape::Bar => "Bar",
+                CursorShape::Block => "Block",
+                CursorShape::Underline => "Underline",
+                CursorShape::Classic => "Classic",
+            }
+            .to_string(),
+            OptionRow::CursorBlink => on_off(self.cursor_blink),
             OptionRow::TabWidth => self.tab_width.to_string(),
             OptionRow::LineNumbers => on_off(self.line_numbers),
             OptionRow::HighlightLimit => match self.highlight_limit_kib {
@@ -515,6 +545,11 @@ impl Options {
                 let clocks = [Clock::Hours24, Clock::Hours12, Clock::Off];
                 self.clock = step(&clocks, self.clock, forward);
             }
+            OptionRow::Cursor => {
+                let shapes = [CursorShape::Bar, CursorShape::Block, CursorShape::Underline, CursorShape::Classic];
+                self.cursor = step(&shapes, self.cursor, forward);
+            }
+            OptionRow::CursorBlink => self.cursor_blink = !self.cursor_blink,
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,
             OptionRow::HighlightLimit => self.highlight_limit_kib = step(&HIGHLIGHT_LIMITS_KIB, self.highlight_limit_kib, forward),
@@ -622,6 +657,16 @@ impl Options {
                         _ => options.clock,
                     }
                 }
+                "cursor" => {
+                    options.cursor = match value {
+                        "bar" => CursorShape::Bar,
+                        "block" => CursorShape::Block,
+                        "underline" => CursorShape::Underline,
+                        "classic" => CursorShape::Classic,
+                        _ => options.cursor,
+                    }
+                }
+                "cursor_blink" => options.cursor_blink = flag(options.cursor_blink),
                 "tab_width" => options.tab_width = number(1..=16).map_or(options.tab_width, |n| n as usize),
                 "line_numbers" => options.line_numbers = flag(options.line_numbers),
                 // Past 64 MiB the first parse alone would take about a minute.
@@ -668,6 +713,12 @@ impl Options {
             Clock::Hours12 => "12",
             Clock::Off => "off",
         };
+        let cursor = match self.cursor {
+            CursorShape::Bar => "bar",
+            CursorShape::Block => "block",
+            CursorShape::Underline => "underline",
+            CursorShape::Classic => "classic",
+        };
         format!(
             "# fm84 options, written by the F11 dialog.\n\
              \n\
@@ -707,6 +758,9 @@ impl Options {
              icons = {}\n\
              # 24, 12 or off.\n\
              clock = {}\n\
+             # bar, block or underline is the terminal's cursor; classic a reversed cell.\n\
+             cursor = {}\n\
+             cursor_blink = {}\n\
              \n\
              # Viewer and editor\n\
              tab_width = {}\n\
@@ -744,6 +798,8 @@ impl Options {
             if self.theme_background { "theme" } else { "terminal" },
             icons,
             clock,
+            cursor,
+            self.cursor_blink,
             self.tab_width,
             self.line_numbers,
             self.highlight_limit_kib,
@@ -973,6 +1029,8 @@ mod tests {
             theme_background: false,
             icon_style: IconStyle::Plain,
             clock: Clock::Off,
+            cursor: CursorShape::Underline,
+            cursor_blink: false,
             tab_width: 8,
             line_numbers: false,
             highlight_limit_kib: 0,
@@ -999,7 +1057,7 @@ mod tests {
         let options = Options::parse(
             "show_hidden = maybe\nsort = colour\nno equals sign\nunknown = 1\n\
              tab_width = 0\ntab_width = lots\nlarge_file_mib = 0\nhighlight_limit_kib = -5\ntheme = beige\n\
-             clock = 25\ndate_format = roman\nsize_units = furlongs\non_existing = sometimes\n",
+             clock = 25\ncursor = triangle\ncursor_blink = sometimes\ndate_format = roman\nsize_units = furlongs\non_existing = sometimes\n",
         );
         assert_eq!(options, Options::default());
         assert_eq!(Options::parse(""), Options::default());

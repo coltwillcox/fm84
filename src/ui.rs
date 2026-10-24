@@ -38,13 +38,22 @@ fn style_dir_dark() -> Style {
 }
 // A field being typed into, wherever it is: the colours of a name being
 // renamed in a panel, so every one reads the same and stands out from what is
-// around it. The cursor is the same, reversed.
+// around it. The cell the cursor is on carries a mark, for show_cursor to
+// put the terminal's cursor there - or, for Classic, to reverse it.
 fn style_input() -> Style {
     Style::new().fg(palette().selected_foreground).bg(palette().rename_background).add_modifier(Modifier::BOLD)
 }
 fn style_input_cursor() -> Style {
-    style_input().add_modifier(Modifier::REVERSED)
+    style_input().add_modifier(FIELD_CURSOR)
 }
+
+// Where the cursor is, marked on its cell as it is drawn: a field's, and the
+// editor's. Each field draws its own text in its own place - centred in a
+// popup, after a label, scrolled - and the mark finds the cell wherever that
+// put it. Two modifiers nothing else draws with, both taken off again before
+// the frame reaches the terminal, where they would make text blink.
+const FIELD_CURSOR: Modifier = Modifier::SLOW_BLINK;
+const EDITOR_CURSOR: Modifier = Modifier::RAPID_BLINK;
 fn style_selection() -> Style {
     Style::new().bg(palette().selected_background_inactive)
 }
@@ -152,7 +161,74 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         app_state.cached_clock = current_time;
     }
 
+    crate::display::set_classic_cursor(app_state.options.cursor == crate::options::CursorShape::Classic);
     let _ = terminal.draw(|f| {
+        draw_frame(f, app_state);
+        show_cursor(f, app_state);
+    });
+}
+
+/// Show the cursor where the frame marked it. A field's wins over the
+/// editor's, as a prompt over the editor is where the typing goes. As Classic
+/// has it, each marked cell is drawn reversed instead and the terminal's own
+/// cursor stays hidden - as it does under a running job or an error, which
+/// take the keys from whatever is behind them.
+fn show_cursor(f: &mut ratatui::Frame<'_>, app_state: &AppState) {
+    let classic = app_state.options.cursor == crate::options::CursorShape::Classic;
+    let buffer = f.buffer_mut();
+    let (mut field, mut editor) = (None, None);
+    for y in buffer.area.top()..buffer.area.bottom() {
+        for x in buffer.area.left()..buffer.area.right() {
+            let cell = &mut buffer[(x, y)];
+            // Past the end of what is typed, the cell takes the colour of the
+            // one after it - the rest of a field padded out to its width, or
+            // whatever the field ends against - so the text does not look a
+            // character longer than it is. Classic's block is the cursor
+            // itself, and keeps the field's colour.
+            if cell.modifier.contains(crate::app::PAST_END) {
+                cell.modifier.remove(crate::app::PAST_END);
+                if !classic && x + 1 < buffer.area.right() {
+                    let after = buffer[(x + 1, y)].bg;
+                    buffer[(x, y)].set_bg(after);
+                }
+            }
+            // The last character typed, with the cursor past it: the
+            // terminal's cursor goes in the cell after - however wide this
+            // one is - on whatever the field ends against.
+            let cell = &mut buffer[(x, y)];
+            if cell.modifier.contains(crate::app::CURSOR_AFTER) {
+                cell.modifier.remove(crate::app::CURSOR_AFTER);
+                let width = display_width(cell.symbol()).max(1) as u16;
+                field.get_or_insert(ratatui::layout::Position::new((x + width).min(buffer.area.right() - 1), y));
+            }
+            let cell = &mut buffer[(x, y)];
+            if cell.modifier.contains(FIELD_CURSOR) {
+                cell.modifier.remove(FIELD_CURSOR);
+                field.get_or_insert(ratatui::layout::Position::new(x, y));
+                if classic {
+                    cell.modifier.insert(Modifier::REVERSED);
+                }
+            }
+            if cell.modifier.contains(EDITOR_CURSOR) {
+                cell.modifier.remove(EDITOR_CURSOR);
+                editor.get_or_insert(ratatui::layout::Position::new(x, y));
+                if classic {
+                    cell.set_fg(palette().selected_foreground).set_bg(palette().selected_background);
+                }
+            }
+        }
+    }
+    if !classic
+        && app_state.job.is_none()
+        && app_state.error.is_none()
+        && let Some(position) = field.or(editor)
+    {
+        f.set_cursor_position(position);
+    }
+}
+
+fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
+    {
         let area = f.area();
         paint_background(f, area);
 
@@ -234,7 +310,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         } else if let Some(message) = &app_state.error {
             render_error_popup(f, area, message);
         }
-    });
+    }
 }
 
 /// A path's last component, lossy where it has to be and with anything that
@@ -699,8 +775,9 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
         let bracket_style = if is_selected { Style::default().fg(palette().selected_marker) } else { Style::default().fg(palette().directory_bracket) };
 
         let (name_cell, extension) = if is_renaming_current_item {
-            // REVERSED survives Table row_highlight_style override
-            let cursor_style = text_style.add_modifier(Modifier::REVERSED);
+            // The mark survives Table's row_highlight_style, which adds to a
+            // cell's modifiers rather than replacing them.
+            let cursor_style = text_style.add_modifier(FIELD_CURSOR);
             // The brackets around a directory sit inside the same column.
             let field = name_width as usize - (dir_prefix.len() + dir_suffix.len()).min(name_width as usize);
             let mut spans = vec![Span::styled(dir_prefix, bracket_style)];
@@ -1175,7 +1252,9 @@ fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppStat
 
         // Syntax colours first, then the selection over them, then the cursor.
         let has_highlighting = !editor_state.highlighted_lines.is_empty();
-        let cursor_style = Style::default().fg(palette().selected_foreground).bg(palette().selected_background);
+        // Only marked: the syntax colours under it stay, for the terminal's
+        // cursor to sit on, unless show_cursor paints the cell for Classic.
+        let cursor_style = Style::new().add_modifier(EDITOR_CURSOR);
         let selection = editor_state.selection();
         let needle = app_state.find_shown.then(|| crate::find::Needle::new(&app_state.find_term)).flatten();
         let mut content_lines: Vec<Line> = Vec::with_capacity(end - start);
@@ -1250,24 +1329,13 @@ fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments:
 /// label, what has been typed with the cursor in it, and the border run on to
 /// the corner.
 fn render_prompt_bar(f: &mut ratatui::Frame<'_>, area: Rect, label: &str, input: &crate::app::TextInput, style: Style) {
-    let text = printable_name(&input.text);
-    let characters: Vec<char> = text.chars().collect();
-    let cursor = input.cursor.min(characters.len());
-    let before: String = characters[..cursor].iter().collect();
-    let under: String = characters.get(cursor).map_or(" ".to_string(), char::to_string);
-    let after: String = characters.get(cursor + 1..).map_or(String::new(), |rest| rest.iter().collect());
-    let used = 2 + display_width(label) + display_width(&before) + display_width(&under) + display_width(&after) + 1 + 1;
+    let typed = input.cursor_spans(style_input(), style_input_cursor());
+    let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+    let used = 2 + display_width(label) + typed_width + 1 + 1;
 
-    let line = vec![
-        Span::styled("├─", style_border()),
-        Span::styled(label.to_string(), style),
-        Span::styled(before, style_input()),
-        Span::styled(under, style_input_cursor()),
-        Span::styled(after, style_input()),
-        Span::styled(" ", style),
-        Span::styled("─".repeat((area.width as usize).saturating_sub(used)), style_border()),
-        Span::styled("┤", style_border()),
-    ];
+    let mut line = vec![Span::styled("├─", style_border()), Span::styled(label.to_string(), style)];
+    line.extend(typed);
+    line.extend([Span::styled(" ", style), Span::styled("─".repeat((area.width as usize).saturating_sub(used)), style_border()), Span::styled("┤", style_border())]);
     f.render_widget(Paragraph::new(Line::from(line)), area);
 }
 
@@ -2602,13 +2670,24 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
-    /// Every field being typed into is drawn as a name being renamed is: the
-    /// same colours, and the cursor in them reversed.
+    /// Every field being typed into is drawn as a name being renamed is, in
+    /// the same colours, with the terminal's cursor in it - or, for Classic,
+    /// the cell it is on reversed. The marks that found it never reach the
+    /// terminal.
     #[test]
     fn every_input_field_wears_the_rename_colours() {
         use crate::app::PromptKind;
+        use crate::options::CursorShape;
+        use ratatui::backend::Backend;
+        // A file for F2 to be renaming.
+        let dir = std::env::temp_dir().join(format!("fm84-input-fields-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("file.txt"), "").unwrap();
         let mut app_state = AppState::new();
         app_state.options = Options::default();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), Some("file.txt".as_ref()));
         let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
         let typed = || {
             let mut input = TextInput::new();
@@ -2616,6 +2695,7 @@ mod tests {
             input
         };
         let dialogs: Vec<(&str, Dialog)> = vec![
+            ("F2", Dialog::Rename(typed())),
             ("F7", Dialog::Create { is_dir: true, input: typed() }),
             (
                 "F5",
@@ -2640,21 +2720,113 @@ mod tests {
             ("Ctrl+L", Dialog::Prompt(PromptKind::GoTo, typed())),
             ("Options", Dialog::Options { editing: Some(typed()) }),
         ];
+        let reversed = |terminal: &Terminal<ratatui::backend::TestBackend>| terminal.backend().buffer().content().iter().filter(|cell| cell.modifier.contains(Modifier::REVERSED) && cell.bg == palette().rename_background).count();
+        let marked = |terminal: &Terminal<ratatui::backend::TestBackend>| {
+            terminal
+                .backend()
+                .buffer()
+                .content()
+                .iter()
+                .any(|cell| cell.modifier.intersects(FIELD_CURSOR | EDITOR_CURSOR | crate::app::CURSOR_AFTER | crate::app::PAST_END))
+        };
         for (what, dialog) in dialogs {
             app_state.dialog = Some(dialog);
-            render_ui(&mut terminal, &mut app_state);
-            let cells = terminal.backend().buffer().content();
-            let cursor = cells.iter().find(|cell| cell.modifier.contains(Modifier::REVERSED) && cell.bg == palette().rename_background);
-            assert!(cursor.is_some(), "{what}: no cursor in the rename colours");
-            let text = cells
-                .iter()
-                .filter(|cell| cell.bg == palette().rename_background && cell.fg == palette().selected_foreground && !cell.modifier.contains(Modifier::REVERSED))
-                .count();
-            assert!(text >= "typed".len() - 1, "{what}: typed text not in the rename colours");
+            for shape in [CursorShape::Bar, CursorShape::Classic] {
+                app_state.options.cursor = shape;
+                render_ui(&mut terminal, &mut app_state);
+                assert!(!marked(&terminal), "{what}, {shape:?}: a mark reached the terminal");
+                if shape == CursorShape::Classic {
+                    assert_eq!(reversed(&terminal), 1, "{what}: no cursor in the rename colours");
+                } else {
+                    // Straight after what is typed.
+                    let at = terminal.backend_mut().get_cursor_position().unwrap();
+                    let last = &terminal.backend().buffer()[(at.x - 1, at.y)];
+                    assert_eq!((last.symbol(), last.bg), ("d", palette().rename_background), "{what}: the cursor is not after the text");
+                    assert_eq!(reversed(&terminal), 0, "{what}: a cell reversed as well");
+                }
+                let text = terminal
+                    .backend()
+                    .buffer()
+                    .content()
+                    .iter()
+                    .filter(|cell| cell.bg == palette().rename_background && cell.fg == palette().selected_foreground && !cell.modifier.contains(Modifier::REVERSED))
+                    .count();
+                assert!(text >= "typed".len() - 1, "{what}: typed text not in the rename colours");
+            }
         }
         app_state.open_find_files();
         render_ui(&mut terminal, &mut app_state);
-        assert!(terminal.backend().buffer().content().iter().any(|cell| cell.modifier.contains(Modifier::REVERSED) && cell.bg == palette().rename_background), "Alt+F7");
+        assert_eq!(reversed(&terminal), 1, "Alt+F7");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// With the cursor at the end, a directory being renamed reads `[doc]`
+    /// and a path being typed ends where it ends: the terminal's cursor sits
+    /// on what follows, with no space put in for it. Classic's cursor is a
+    /// cell, and has one.
+    #[test]
+    fn nothing_is_added_past_the_end_for_the_cursor() {
+        use crate::options::CursorShape;
+        let dir = std::env::temp_dir().join(format!("fm84-past-end-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("doc")).unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.is_left_active = true;
+        app_state.open_dir(true, dir.clone(), Some("doc".as_ref()));
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        let screen = |terminal: &Terminal<ratatui::backend::TestBackend>| terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect::<String>();
+        let typed = |text: &str| {
+            let mut input = TextInput::new();
+            input.set(text.to_string());
+            input
+        };
+
+        app_state.dialog = Some(Dialog::Rename(typed("doc")));
+        render_ui(&mut terminal, &mut app_state);
+        assert!(screen(&terminal).contains("[doc]"), "F2 on a directory");
+        app_state.options.cursor = CursorShape::Classic;
+        render_ui(&mut terminal, &mut app_state);
+        assert!(screen(&terminal).contains("[doc ]"), "Classic's cursor has a cell");
+
+        app_state.options.cursor = CursorShape::Bar;
+        app_state.dialog = Some(Dialog::Prompt(PromptKind::GoTo, typed("/somewhere")));
+        render_ui(&mut terminal, &mut app_state);
+        assert!(screen(&terminal).contains("/somewhere ─"), "Ctrl+L");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// The editor's cursor is the terminal's, on the character it is before;
+    /// a prompt over the editor takes it, as that is where the typing goes.
+    /// Classic paints the cell instead, in the colours it always had.
+    #[test]
+    fn the_editor_cursor_gives_way_to_a_prompt() {
+        use crate::options::CursorShape;
+        use ratatui::backend::Backend;
+        let file = std::env::temp_dir().join(format!("fm84-editor-cursor-{}.txt", std::process::id()));
+        std::fs::write(&file, "hello\n").unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        app_state.open_editor(file.clone()).unwrap();
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+
+        render_ui(&mut terminal, &mut app_state);
+        let in_editor = terminal.backend_mut().get_cursor_position().unwrap();
+        assert_eq!(terminal.backend().buffer()[in_editor].symbol(), "h");
+
+        app_state.open_prompt(crate::app::PromptKind::Find);
+        app_state.dialog_input().unwrap().set("he".to_string());
+        render_ui(&mut terminal, &mut app_state);
+        let at = terminal.backend_mut().get_cursor_position().unwrap();
+        let last = &terminal.backend().buffer()[(at.x - 1, at.y)];
+        assert_eq!((last.symbol(), last.bg), ("e", palette().rename_background), "the prompt has the cursor");
+
+        app_state.dialog = None;
+        app_state.options.cursor = CursorShape::Classic;
+        render_ui(&mut terminal, &mut app_state);
+        let cell = &terminal.backend().buffer()[in_editor];
+        assert_eq!((cell.symbol(), cell.bg), ("h", palette().selected_background));
+        std::fs::remove_file(&file).unwrap();
     }
 
     /// Ctrl+L types over the active panel's path, in the line above it, and
