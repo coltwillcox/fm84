@@ -6,6 +6,27 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.33.0] - 2026-10-25
+
+### ✨ Added
+- ┃ **Scroll bars in the Viewer and the Editor** - drawn into the frame's border, down the right for the lines and along the bottom for the columns, each only when there is more than fits, so the text keeps every column and row it had. A click on the track scrolls a page that way; the thumb can be dragged, and follows the pointer, off the bar too, until the button comes up. In the editor they move the view as the wheel does, leaving the cursor where it is
+- 🎨 **Scroll bar style in F11** - Heavy `┃━` (the default, the border's own line drawn thicker), Double `║═`, Dashed `╏╍`, Block `█`, Shade `▓` or ASCII `#`, in the title's colour. Saved as `scroll_bar` in the config
+- 🔀 **Switch git branches** - a click on a panel's branch lists the repository's local branches, the one checked out marked. Enter, or a click on one and a second on it, switches there with `git switch`, and both panels are read again. When git refuses - edits the switch would lose - its reason is shown and nothing changes. Git runs on a thread of its own: the list is waited for two seconds at most, and a switch that takes longer is taken in when it is done
+- 🗂️ **Size every directory at once** - Alt+Shift+Enter, as in Total Commander, or Alt+Enter where the terminal cannot report Shift with Enter. Four are counted at a time, top to bottom, and the rest show `…` while they wait. A directory counted before is counted again, and shows its running count until it is done. Links to directories are left out, since one to / or a slow mount would walk all of it. Esc stops it, and so does leaving the directory, unless the other panel is in it
+
+### 🐛 Fixed
+- 🌈 **Stale lines in the editor** - pasting over a selection as many lines long, or undoing Replace all, left the lines after the first showing the text they had before, though the file held the new. Every line an edit rewrites is drawn again
+- 📂 **A file vanishing from a panel** - a slow reread still on its way could land after a newer one and take back what it showed: a file a copy had just made disappeared, and stayed gone until something else changed in the directory
+- 🈳 **Wide characters** - CJK text and emoji take two columns, and were counted as one: in the editor the cursor could go off the right edge and a click picked a character twice as far along; in the Viewer a click did the same, and Ctrl+F left a match after them off screen
+- ⚖️ **The diff's headings** cut the last three characters off a file's name when its path had to be shortened
+- 🔢 **Sizes just under a unit** - 1 048 575 bytes read `1024 KiB`; a size is rounded before its unit is chosen, so it reads `1 MiB`
+- 🦀 **A long name of emoji** - copying or saving a file whose name was 63 four-byte characters failed with "File name too long": the temporary written beside it took 64 characters of the name, not 64 bytes
+
+### 🛠️ Changed
+- ⏩ **Space on a directory goes first** - sized ahead of any waiting from Alt+Shift+Enter, since it was asked for on its own
+
+---
+
 ## [0.32.1] - 2026-10-24
 
 ### 🐛 Fixed

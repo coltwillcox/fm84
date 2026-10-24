@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-24" "fm84 0.32.1" "User Commands"
+.TH FM84 1 "2026-10-25" "fm84 0.33.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -20,6 +20,10 @@ in the background.
 The top border names the user and host fm84 runs as, reversed for root.
 Over each panel is its directory, and the git branch it is on when it is in
 a repository, read from the repository's files rather than by running git.
+A click on the branch lists the repository's local branches, to switch to
+another with Enter or a second click on it; that runs
+.BR git (1),
+2.23 or newer.
 .PP
 Anything that touches the disk is done off the thread that draws the screen,
 so a network mount that has stopped answering never freezes the interface;
@@ -125,6 +129,11 @@ directory sizes; stop waiting on a directory that has not answered.
 .B Space Insert
 Select or deselect the entry.
 Space on a directory also counts its size.
+.TP
+.B Alt+Shift+Enter Alt+Enter
+Count the size of every directory in the panel, a few at a time, the rest
+shown waiting.
+Links to directories are left out.
 .TP
 .B + \-
 Select or deselect by pattern:
@@ -357,6 +366,11 @@ Next or previous match.
 .TP
 .B Ctrl+G
 Go to line.
+.PP
+Scroll bars are drawn in the frame's border, down the right and along the
+bottom, when there is more than fits.
+A click on the track scrolls a page that way; the thumb can be dragged.
+In the editor they move the view and leave the cursor where it is.
 .SH OPTIONS DIALOG
 F11 opens the options, changed in place with Enter, Space, Left or Right and
 saved as they change.
@@ -364,7 +378,7 @@ Among them: hidden files, sort order, columns, date format and size units;
 confirmations, delete to trash, what to do when a destination exists, the
 terminal and editor commands, remembering directories; the theme, icons,
 clock, and the cursor's shape and whether it blinks; tab width, line numbers,
-highlighting and image settings.
+what the scroll bars are drawn with, highlighting and image settings.
 The list scrolls within the panels when it does not fit, with Up and Down or
 the mouse wheel.
 .PP

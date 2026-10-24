@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.32.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.33.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -78,6 +78,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔗 **Symlinked directories** - listed and entered like the real thing
 - 🔒 **Directories you cannot read** - refused with the reason, and the panel stays where it was
 - 🌿 **Git branch** - after a panel's path, the branch its directory is on when it is in a repository, or the commit when none is checked out. Read from the repository's own files, worktrees and submodules too, on the thread that reads the directory - no git needed, and no wait. It is the first to give way when the path needs the room
+- 🔀 **Switch branches** - click the branch and a popup lists the repository's local branches, the one checked out marked `•`. Pick one with the arrows and Enter, or click it and click it again; both panels are read again, so the label and the files follow. When git refuses - edits that the switch would lose - its own reason is shown and the branch stays as it was. This part runs git itself, so it needs git 2.23 or newer
 - 👤 **user@host** - who fm84 runs as and where, beside the logo, reversed when it is root. Left off on a terminal too narrow for it
 - 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`. With more drives than fit, the strip shows a window onto them: `<` and `>` at its ends, or the wheel over it, move it a page along, and it follows the panel's drive and the one being chosen
 - 📑 **Tabs** - each panel keeps its own, in the row under its drives. **Ctrl+T** opens one beside the current tab in the same directory, **Ctrl+W** closes it (a panel keeps its last), **Ctrl+PgUp** / **Ctrl+PgDn** go round them and **Alt+1**…**Alt+8** to that tab, **Alt+9** to the last. Click a tab to show it, middle-click to close it. Each remembers its directory, cursor and selection, and with Remember directories on (F11) they are all there next time
@@ -161,6 +162,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔤 **Stray bytes** - a text file with a byte that is not UTF-8 in it still opens, with a placeholder where the byte was; `X` shows it as it is
 - ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory (16 or 256 under F11), and before decoding a picture that needs over 256 MiB of it - a few hundred KB of PNG can unpack to hundreds of MB
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
+- ┃ **Scroll bars** - drawn into the frame's border, down the right for the lines and along the bottom for the columns, each only when there is more than fits; the text keeps every column it had. Click the track for a page that way, or drag the thumb, which follows the pointer until the button comes up. F11 sets what the thumbs are drawn with
 - 📜 **Wrap** - `W` breaks long lines onto as many rows as they need, after a space where there is one; scrolling goes by rows, so a line longer than the screen can be read to its end. Finding, selecting and copying go on by whole lines, so a copy never gains a break that was only on screen, and line numbers and Go to line count lines, not rows. The next file opened wraps or not as the last was left
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 
@@ -182,6 +184,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close, and on F10; a save that fails keeps the editor open, edits and all
 - 🔤 **UTF-8 only** - a file that is not UTF-8 text is refused rather than opened with its odd bytes replaced, which saving would make permanent; F3 shows it
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
+- ┃ **Scroll bars** - as in the Viewer: click the track for a page, drag the thumb; like the wheel they move the view and leave the cursor where it is
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 - 🖱️ **Mouse click and drag** - click to position the cursor, drag to select
 
@@ -235,6 +238,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 **Viewer and editor**
 - ⇥ **Tab width** - 2, 4 or 8 columns, in the Viewer, the Editor and the preview
 - 📊 **Line numbers** - on or off, in the Viewer and the Editor
+- ┃ **Scroll bars** - what their thumbs are drawn with: **Heavy** `┃━`, the border's own line drawn thicker, **Double** `║═`, **Dashed** `╏╍`, **Block** `█`, **Shade** `▓`, or **ASCII** `#` for a font without box drawing
 - 🌈 **Highlight files up to** 256 KiB, 512 KiB or 2 MiB, or never
 - ❓ **Ask before opening over** 16, 64 or 256 MiB
 - 🖼️ **Images open as** Fit or Fill
@@ -246,7 +250,8 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 
 ### 📂 Directory Sizes
 - 📏 **Calculated on select** - press Space on a directory to calculate its size
-- 🧵 **Counted in the background** - the Size column shows the running total with a `…` while it counts, the panels keep answering, and Esc stops it; a slow disk or a huge tree no longer holds up the interface
+- 🗂️ **Every directory at once** - `Alt+Shift+Enter`, as in Total Commander (`Alt+Enter` too, for a terminal that cannot report Shift with Enter), sizes every directory in the panel, top to bottom, four at a time; the rest show `…` while they wait their turn. Links to directories are left out, since one to `/` or to a slow mount would walk all of it
+- 🧵 **Counted in the background** - the Size column shows the running total with a `…` while it counts, the panels keep answering, and Esc stops it, as does leaving the directory (unless the other panel is in it too); a slow disk or a huge tree no longer holds up the interface
 - 📌 **Persistent display** - sizes stay visible after deselecting, until a copy, move or delete may have changed them
 
 ---
@@ -313,6 +318,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Y` / `N` / `A` | Replace / Skip / Replace all, when replacing (in Editor) |
 | `O` / `R` | Overwrite / Reload, when the file changed on disk since it was opened (in Editor) |
 | `Space` / `Insert` | Select/deselect file |
+| `Alt+Shift+Enter` / `Alt+Enter` | Size every directory in the panel |
 | `+` / `-` | Select / deselect by pattern |
 | `*` | Invert the selection of files |
 | `Alt+*` | Invert the selection of files and directories |
@@ -323,6 +329,8 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Ctrl+PgUp` / `Ctrl+PgDn` | Previous / next tab |
 | `Alt+1`…`Alt+9` | Go to tab 1…8, or the last |
 | `Scroll` | Scroll content (panels, Viewer, Editor) |
+| Click / drag a scroll bar | A page that way / follow the pointer (Viewer, Editor) |
+| Click the git branch | List the repository's branches, to switch to another |
 
 ---
 
@@ -354,7 +362,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.32.1
+fm84 --version       # fm84 0.33.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -441,5 +449,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.32.1 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.33.0 ▄▀▄▀▄▀</code>
 </p>
