@@ -24,8 +24,7 @@ fn format_attributes(metadata: &fs::Metadata, is_dir: bool, is_symlink: bool) ->
 
 /// The nine permission bits as `ls -l` writes them, `rwxr-xr-x`. Each
 /// triplet's execute slot doubles as the setuid/setgid/sticky flag, which
-/// would otherwise be invisible.
-#[cfg(unix)]
+/// would otherwise be invisible. On any system: an archive keeps them too.
 pub fn mode_string(mode: u32) -> String {
     let triplet = |shift: u32, special: u32, on: char| {
         let bits = mode >> shift;
@@ -85,6 +84,72 @@ pub fn is_hidden(name: &str, _metadata: Option<&fs::Metadata>) -> bool {
     name.starts_with('.')
 }
 
+/// The `..` row a listing starts with, anywhere but the root.
+fn parent_row() -> Item {
+    Item {
+        name_os: OsString::from(".."),
+        name_full: "..".to_string(),
+        name: "..".to_string(),
+        extension: String::new(),
+        is_dir: true,
+        is_symlink: false,
+        size: String::new(),
+        size_bytes: 0,
+        modified_at: None,
+        attributes: String::new(),
+    }
+}
+
+/// A row for an entry, from what is known of it.
+fn row(name_os: OsString, is_dir: bool, is_symlink: bool, size_bytes: u64, modified_at: Option<std::time::SystemTime>, attributes: String) -> Item {
+    let name_full = name_os.to_string_lossy().into_owned();
+    // Lossy like the name above, and for the same reason: a name that is
+    // not valid UTF-8 still has to be shown as something. to_str() gave
+    // None for those, which left the column blank.
+    let as_path = Path::new(&name_os);
+    let name = if is_dir { name_full.clone() } else { as_path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default() };
+    let extension = if is_dir { String::new() } else { as_path.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default() };
+    let size_bytes = if is_dir { 0 } else { size_bytes };
+    let size = if is_dir { "<DIR>".to_string() } else { format_size(size_bytes) };
+    Item {
+        name_os,
+        name_full,
+        name,
+        extension,
+        is_dir,
+        is_symlink,
+        size,
+        size_bytes,
+        modified_at,
+        attributes,
+    }
+}
+
+/// The rows for the directory at `inner` in an archive, as a directory on the
+/// disk lists: `..` first, which from the archive's root leads out of it, and
+/// the rest sorted as F11 says. Its own files are hidden as a dot hides them.
+pub fn archive_rows(index: &crate::archive::Index, inner: &Path, options: &Options) -> Vec<Item> {
+    use crate::archive::EntryKind;
+    let mut children = vec![parent_row()];
+    for entry in index.children(inner) {
+        let name_os = entry.name().to_os_string();
+        if !options.show_hidden && name_os.as_encoded_bytes().starts_with(b".") {
+            continue;
+        }
+        let is_dir = entry.kind == EntryKind::Dir;
+        let is_symlink = entry.kind == EntryKind::Link;
+        let kind = match entry.kind {
+            EntryKind::Dir => 'd',
+            EntryKind::Link => 'l',
+            _ => '-',
+        };
+        let attributes = entry.mode.map(|mode| format!("{kind}{}", mode_string(mode))).unwrap_or_default();
+        children.push(row(name_os, is_dir, is_symlink, entry.size, entry.modified, attributes));
+    }
+    children[1..].sort_by(|a, b| compare_rows(a, b, options));
+    children
+}
+
 pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, Error> {
     let entries: Vec<_> = read_dir(path)?.filter_map(|entry| entry.ok()).collect();
 
@@ -93,18 +158,7 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
 
     // Don't add ".." on root folder.
     if has_parent {
-        children.push(Item {
-            name_os: OsString::from(".."),
-            name_full: "..".to_string(),
-            name: "..".to_string(),
-            extension: String::new(),
-            is_dir: true,
-            is_symlink: false,
-            size: String::new(),
-            size_bytes: 0,
-            modified_at: None,
-            attributes: String::new(),
-        });
+        children.push(parent_row());
     }
 
     // One metadata() call per entry (one stat syscall), two for a symlink
@@ -119,35 +173,15 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
         let metadata = if is_symlink { fs::metadata(&entry_path).or_else(|_| entry.metadata()).ok() } else { entry.metadata().ok() };
         let is_dir = metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false);
         let name_os = entry.file_name();
-        let name_full = name_os.to_string_lossy().into_owned();
-        if !options.show_hidden && is_hidden(&name_full, metadata.as_ref()) {
+        if !options.show_hidden && is_hidden(&name_os.to_string_lossy(), metadata.as_ref()) {
             continue;
         }
-        // Lossy like the name above, and for the same reason: a name that is
-        // not valid UTF-8 still has to be shown as something. to_str() gave
-        // None for those, which left the column blank.
-        let name = if is_dir { name_full.clone() } else { entry_path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default() };
-        let extension = if is_dir { String::new() } else { entry_path.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default() };
-        let size_bytes = if is_dir { 0 } else { metadata.as_ref().map(|m| m.len()).unwrap_or(0) };
-        let size = if is_dir { "<DIR>".to_string() } else { format_size(size_bytes) };
+        let size_bytes = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
         // Written out when drawn, in whichever format F11 names - and a
         // relative date has to be, or it would go stale between reloads.
         let modified_at = metadata.as_ref().and_then(|m| m.modified().ok());
-
         let attributes = metadata.as_ref().map(|metadata| format_attributes(metadata, is_dir, is_symlink)).unwrap_or_default();
-
-        children.push(Item {
-            name_os,
-            name_full,
-            name,
-            extension,
-            is_dir,
-            is_symlink,
-            size,
-            size_bytes,
-            modified_at,
-            attributes,
-        });
+        children.push(row(name_os, is_dir, is_symlink, size_bytes, modified_at, attributes));
     }
 
     // Sort items on already-computed fields (no stat syscalls during sort)
@@ -248,6 +282,31 @@ pub fn calculate_dir_size(path: &Path) -> Result<u64, Error> {
     .map(Option::unwrap_or_default)
 }
 
+/// An entry of an archive, as the archive keeps it. A directory's size is
+/// what is in it, which the index knows without a walk.
+fn describe_in_archive(path: &Path) -> Option<Description> {
+    use crate::archive::EntryKind;
+    let (index, at) = crate::archive::entry_at(path)?;
+    let entry = index.entry(at);
+    let kind = match entry.kind {
+        EntryKind::Dir => 'd',
+        EntryKind::Link => 'l',
+        _ => '-',
+    };
+    Some(Description {
+        size_bytes: Some(if entry.kind == EntryKind::Dir { index.size_of(&entry.path) } else { entry.size }),
+        modified: entry.modified,
+        owner: entry.owner.clone().unwrap_or_default(),
+        // The one thing that stops it coming out, said where it is looked at.
+        attributes: [entry.mode.map(|mode| format!("{kind}{}", mode_string(mode))), entry.encrypted.then(|| "encrypted".to_string())]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .join(" "),
+        link: entry.link.as_ref().map(|target| target.display().to_string()),
+    })
+}
+
 /// Bytes in the files under `path`, links not followed. `found` is told each
 /// file's size as it is reached, so a long walk can show how far it has got,
 /// and `cancel` stops it between entries, which gives None.
@@ -261,6 +320,14 @@ pub fn calculate_dir_size(path: &Path) -> Result<u64, Error> {
 /// /proc alone claims a file the size of all memory, and /sys thousands of
 /// pages - so sizing / gives the disk's own size.
 pub fn walk_dir_size(path: &Path, cancel: &AtomicBool, found: &mut dyn FnMut(u64)) -> Result<Option<u64>, Error> {
+    // A directory inside an archive, whose index has the size already.
+    if path.symlink_metadata().is_err()
+        && let Some((index, at)) = crate::archive::entry_at(path)
+    {
+        let size = index.size_of(&index.entry(at).path);
+        found(size);
+        return Ok(Some(size));
+    }
     SizeWalk {
         cancel,
         found,
@@ -398,7 +465,9 @@ pub struct Description {
 /// to drawing a frame, and on a thread of its own, where a dead mount holds
 /// up nothing.
 pub fn describe(path: &Path, is_dir: bool) -> Option<Description> {
-    let metadata = fs::symlink_metadata(path).ok()?;
+    let Ok(metadata) = fs::symlink_metadata(path) else {
+        return describe_in_archive(path);
+    };
     let is_symlink = metadata.file_type().is_symlink();
     // A link's own size is the length of the path it holds, which tells nobody
     // anything; follow it for the figure. A broken one has no figure at all,

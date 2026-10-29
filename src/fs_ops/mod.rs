@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 mod delete;
+mod extract;
 mod listing;
 mod mounts;
 mod owners;
@@ -20,4 +21,4 @@ mod paths;
 mod transfer;
 mod writing;
 
-pub use self::{delete::*, listing::*, mounts::*, owners::*, paths::*, transfer::*, writing::*};
+pub use self::{delete::*, extract::*, listing::*, mounts::*, owners::*, paths::*, transfer::*, writing::*};

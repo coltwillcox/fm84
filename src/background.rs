@@ -115,8 +115,9 @@ impl Drop for Watch {
 /// entry is added, removed or renamed, and the space left on its filesystem,
 /// which moves with any write anywhere on it. `stamp` and `usage` are what
 /// the listing it is watching saw, so a change made while it was being read
-/// is still reported.
-pub fn watch_dir(is_left: bool, dir: PathBuf, mut stamp: Option<SystemTime>, mut usage: Option<(u64, u64)>, interval: Duration, events: Sender<WatchEvent>) -> Watch {
+/// is still reported. `probe` is what is asked: the directory itself, or the
+/// archive file for a directory inside one, which has no time of its own.
+pub fn watch_dir(is_left: bool, dir: PathBuf, probe: PathBuf, mut stamp: Option<SystemTime>, mut usage: Option<(u64, u64)>, interval: Duration, events: Sender<WatchEvent>) -> Watch {
     let stop = Arc::new(AtomicBool::new(false));
     let (watched, worker_stop) = (dir.clone(), Arc::clone(&stop));
     std::thread::spawn(move || {
@@ -125,14 +126,14 @@ pub fn watch_dir(is_left: bool, dir: PathBuf, mut stamp: Option<SystemTime>, mut
             if worker_stop.load(Ordering::Relaxed) {
                 return;
             }
-            let now = std::fs::metadata(&watched).and_then(|metadata| metadata.modified()).ok();
+            let now = std::fs::metadata(&probe).and_then(|metadata| metadata.modified()).ok();
             if now != stamp {
                 stamp = now;
                 if events.send(WatchEvent::Changed { is_left, dir: watched.clone() }).is_err() {
                     return;
                 }
             }
-            let now = crate::fs_ops::disk_usage(&watched);
+            let now = crate::fs_ops::disk_usage(&probe);
             if now != usage {
                 usage = now;
                 if events.send(WatchEvent::Disk { is_left, dir: watched.clone(), usage }).is_err() {

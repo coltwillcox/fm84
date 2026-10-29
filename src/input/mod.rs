@@ -1,7 +1,7 @@
 //! Keys, pastes and the mouse, each to whatever is on top: a running job, an
 //! error, the dialog that is open, then the screen.
 
-use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, TextInput, TransferKind};
+use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, READ_ONLY, Saved, Screen, TextInput, TransferKind};
 use crate::fs_ops::{check_destinations, create_directory, create_file, create_symlink, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets, typed_path};
 use crate::options::{OnExisting, SortKey};
 use crate::strip::StripHit;
@@ -21,6 +21,7 @@ mod screens;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use self::launch::open_with_default;
 use self::{file_ops::*, launch::*, mouse::*, panel::*, screens::*};
 
 pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
@@ -116,7 +117,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         // Commander.
         if in_panel && c == 'a' {
             let items = chosen_items(app_state);
-            if !items.is_empty() {
+            if !items.is_empty() && !app_state.refuse_in_archive(app_state.is_left_active) {
                 app_state.open_attributes(items);
             }
         }
@@ -154,6 +155,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             }
             // Ctrl+L, as a browser's address bar.
             'l' if in_panel => app_state.open_go_to(),
+            // Ctrl+O opens what is under the cursor as the system would, as
+            // Shift+Enter does where the terminal can send it.
+            'o' if in_panel => open_cursor_externally(app_state),
             // Ctrl+D, Total Commander's directory hotlist; again closes it.
             'd' if in_panel => app_state.open_bookmarks(),
             'd' if app_state.error.is_none() && matches!(app_state.dialog, Some(Dialog::Bookmarks { .. })) => app_state.dialog = None,

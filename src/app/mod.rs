@@ -20,6 +20,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::time::{Duration, Instant, SystemTime};
 
+mod archives;
 mod attribute_form;
 mod bookmarks;
 mod branches;
@@ -38,7 +39,7 @@ mod tests;
 mod text_input;
 mod viewing;
 
-pub use self::{attribute_form::*, branches::*, editing::*, find_files::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
+pub use self::{archives::*, attribute_form::*, branches::*, editing::*, find_files::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -290,6 +291,11 @@ pub struct AppState {
     /// The git branch each panel's directory is on, shown after its path.
     pub branch_left: Option<String>,
     pub branch_right: Option<String>,
+    /// The archive each panel's directory runs through, when it is inside
+    /// one, as its listing found it. Read-only there: everything that would
+    /// write asks this first, and never the disk.
+    pub archive_left: Option<PathBuf>,
+    pub archive_right: Option<PathBuf>,
     /// `user@host`, for the top border, and whether that is root.
     pub user_at_host: (String, bool),
     /// Set while a copy, move or delete is running on its own thread.
@@ -435,6 +441,8 @@ impl AppState {
             disk_right: None,
             branch_left: None,
             branch_right: None,
+            archive_left: None,
+            archive_right: None,
             user_at_host: crate::fs_ops::user_at_host(),
             job: None,
             dir_sizing: Vec::new(),

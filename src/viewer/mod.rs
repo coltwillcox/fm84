@@ -86,17 +86,21 @@ pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
     let mut file = File::open(path)?;
     let mut buffer = [0; 512];
     let bytes_read = file.read(&mut buffer)?;
+    Ok(looks_binary(&buffer[..bytes_read]))
+}
 
+/// Whether the head of a file - its first 512 bytes, at most - is not text.
+fn looks_binary(head: &[u8]) -> bool {
+    let head = &head[..head.len().min(512)];
     // Check for null bytes
-    if buffer[..bytes_read].contains(&0) {
-        return Ok(true);
+    if head.contains(&0) {
+        return true;
     }
-
     // Check UTF-8 validity (allow incomplete sequence at buffer boundary)
-    match std::str::from_utf8(&buffer[..bytes_read]) {
-        Ok(_) => Ok(false),
+    match std::str::from_utf8(head) {
+        Ok(_) => false,
         // error_len() is None for truncated multi-byte sequence at end of buffer
-        Err(e) => Ok(e.error_len().is_some()),
+        Err(e) => e.error_len().is_some(),
     }
 }
 
@@ -243,22 +247,31 @@ pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Preview {
     }
     let binary = is_binary_file(path).unwrap_or(false);
 
-    let unreadable = || Preview::Lines(vec!["Cannot read file".to_string()]);
     let Ok(file) = File::open(path) else {
-        return unreadable();
+        return unreadable_preview();
     };
 
     // A binary is read as far as the hexdump can show and no further; a text
     // file keeps its own cap, which the lines are then counted against.
     let mut buffer = Vec::new();
     if file.take(if binary { PREVIEW_HEX_BYTES } else { max_bytes }).read_to_end(&mut buffer).is_err() {
-        return unreadable();
+        return unreadable_preview();
     }
-    if binary {
-        return Preview::Bytes(buffer);
-    }
+    preview_of(buffer, max_lines)
+}
 
-    Preview::Lines(String::from_utf8_lossy(&buffer).lines().take(max_lines).map(|line| line.to_string()).collect())
+pub fn unreadable_preview() -> Preview {
+    Preview::Lines(vec!["Cannot read file".to_string()])
+}
+
+/// The preview of the head of a file read from anywhere - an archive, say:
+/// the hexdump of a binary, cut to what it shows, or the lines of text.
+pub fn preview_of(mut head: Vec<u8>, max_lines: usize) -> Preview {
+    if looks_binary(&head) {
+        head.truncate(PREVIEW_HEX_BYTES as usize);
+        return Preview::Bytes(head);
+    }
+    Preview::Lines(String::from_utf8_lossy(&head).lines().take(max_lines).map(|line| line.to_string()).collect())
 }
 
 impl ViewerState {

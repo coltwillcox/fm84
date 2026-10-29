@@ -69,10 +69,17 @@ pub(super) struct Listed {
     /// made during the read is still seen as one.
     pub(super) stamp: Option<SystemTime>,
     pub(super) disk: Option<(u64, u64)>,
+    /// The archive the directory runs through, when it is inside one.
+    pub(super) archive: Option<PathBuf>,
 }
 
 /// Everything a panel needs from the disk, read on the listing thread.
 pub(super) fn read_listing(dir: &Path, options: &Options) -> Listed {
+    // Ahead of climbing to a directory that is there, which would climb
+    // straight out of an archive.
+    if let Some(located) = crate::archive::locate(dir) {
+        return read_archive_listing(dir, located, options);
+    }
     let Some(found) = nearest_existing_dir(dir) else {
         return Listed {
             dir: None,
@@ -80,13 +87,55 @@ pub(super) fn read_listing(dir: &Path, options: &Options) -> Listed {
             branch: None,
             stamp: None,
             disk: None,
+            archive: None,
         };
     };
     let stamp = std::fs::metadata(&found).and_then(|metadata| metadata.modified()).ok();
     let items = load_directory_rows(&found, options);
     let disk = disk_usage(&found);
     let branch = crate::fs_ops::git_branch(&found);
-    Listed { dir: Some(found), items, branch, stamp, disk }
+    Listed {
+        dir: Some(found),
+        items,
+        branch,
+        stamp,
+        disk,
+        archive: None,
+    }
+}
+
+/// A directory inside an archive. One the archive no longer has is climbed
+/// out of as one gone from the disk is, as far as the archive's root; a file
+/// in it stops the climb at the directory it is in, for Ctrl+L to land on.
+/// What the disk says - its space, the branch, the time to watch - is of the
+/// archive file and the directory it is in.
+fn read_archive_listing(dir: &Path, located: crate::archive::Located, options: &Options) -> Listed {
+    let archive = located.archive;
+    let outside = archive.parent().unwrap_or(&archive).to_path_buf();
+    let (found, items) = match crate::archive::index(&archive) {
+        Ok(index) => {
+            let mut inner = located.inner.as_path();
+            while !index.is_dir(inner) {
+                inner = inner.parent().unwrap_or(Path::new(""));
+            }
+            // Not joined when empty: that would end the path in a separator,
+            // and a file's path with one on the end does not stat.
+            let found = if inner.as_os_str().is_empty() { archive.clone() } else { archive.join(inner) };
+            (found, Ok(crate::fs_ops::archive_rows(&index, inner, options)))
+        }
+        // Said as what it is: an archive fm84 cannot read, not a missing
+        // directory.
+        Err(e) => (dir.to_path_buf(), Err(std::io::Error::new(e.kind(), format!("not readable as an archive ({e})")))),
+    };
+    let stamp = std::fs::metadata(&archive).and_then(|metadata| metadata.modified()).ok();
+    Listed {
+        dir: Some(found),
+        items,
+        branch: crate::fs_ops::git_branch(&outside),
+        stamp,
+        disk: disk_usage(&outside),
+        archive: Some(archive),
+    }
 }
 
 /// Drop selections whose file is no longer there.
@@ -329,16 +378,21 @@ impl AppState {
             Err(e) => self.display_error(e.to_string()),
         }
 
+        // What is watched for a change: the archive file, for a directory
+        // inside one, which has no time of its own.
+        let probe = listed.archive.clone().unwrap_or_else(|| found.clone());
         if is_left {
             self.disk_left = listed.disk;
             self.branch_left = listed.branch;
+            self.archive_left = listed.archive;
         } else {
             self.disk_right = listed.disk;
             self.branch_right = listed.branch;
+            self.archive_right = listed.archive;
         }
         let watch = if is_left { &self.watch_left } else { &self.watch_right };
         if watch.as_ref().is_none_or(|watch| watch.dir != found) {
-            let watch = crate::background::watch_dir(is_left, found.clone(), listed.stamp, listed.disk, self.watch_interval, self.watch_sender.clone());
+            let watch = crate::background::watch_dir(is_left, found.clone(), probe, listed.stamp, listed.disk, self.watch_interval, self.watch_sender.clone());
             if is_left {
                 self.watch_left = Some(watch);
             } else {

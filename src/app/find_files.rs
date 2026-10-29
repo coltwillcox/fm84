@@ -42,6 +42,10 @@ impl Drop for Search {
 impl AppState {
     /// Alt+F7: ask what to look for, offering the last search again.
     pub fn open_find_files(&mut self) {
+        if self.panel_archive(self.is_left_active).is_some() {
+            self.display_error("Find files cannot search inside an archive yet".to_string());
+            return;
+        }
         let (mut name, mut containing) = (TextInput::new(), TextInput::new());
         name.set(self.find_files_last.0.clone());
         containing.set(self.find_files_last.1.clone());

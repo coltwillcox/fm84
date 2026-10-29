@@ -5,6 +5,11 @@ use super::*;
 /// What the preview shows of an entry, read on the preview thread: the head
 /// of a file, or how many entries a directory holds.
 pub(super) fn read_preview(path: &Path, is_dir: bool) -> Preview {
+    if path.symlink_metadata().is_err()
+        && let Some(preview) = read_archive_preview(path)
+    {
+        return preview;
+    }
     if !is_dir {
         return crate::viewer::load_preview(path, crate::constants::PREVIEW_MAX_BYTES, crate::constants::PREVIEW_MAX_LINES);
     }
@@ -12,6 +17,35 @@ pub(super) fn read_preview(path: &Path, is_dir: bool) -> Preview {
         Ok(entries) => format!("{} items", entries.count()),
         Err(e) => e.to_string(),
     }])
+}
+
+/// The preview of an entry inside an archive: the head of a file, read out
+/// of it, or what a directory holds. None for a path not in one.
+fn read_archive_preview(path: &Path) -> Option<Preview> {
+    use crate::archive::{EntryKind, Next};
+    let (index, at) = crate::archive::entry_at(path)?;
+    let entry = index.entry(at);
+    if entry.kind == EntryKind::Dir {
+        return Some(Preview::Lines(vec![format!("{} items", index.children(&entry.path).count())]));
+    }
+    let (EntryKind::File, Some(position)) = (entry.kind, entry.position) else {
+        return Some(Preview::Lines(vec!["Not a regular file".to_string()]));
+    };
+    let located = crate::archive::locate(path)?;
+    let mut head = None;
+    let _ = crate::archive::read_entries(&located.archive, index.kind, &[position], &mut |_, contents| {
+        let mut buffer = Vec::new();
+        if let Ok(reader) = contents
+            && std::io::Read::read_to_end(&mut std::io::Read::take(reader, crate::constants::PREVIEW_MAX_BYTES), &mut buffer).is_ok()
+        {
+            head = Some(buffer);
+        }
+        Next::Go
+    });
+    Some(match head {
+        Some(head) => crate::viewer::preview_of(head, crate::constants::PREVIEW_MAX_LINES),
+        None => crate::viewer::unreadable_preview(),
+    })
 }
 
 /// What the two lines under the panels say about the entry the cursor is on.

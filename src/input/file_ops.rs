@@ -5,6 +5,9 @@ use super::*;
 
 /// F2 on the entry under the cursor, typed into in place of its name.
 pub(super) fn open_rename(app_state: &mut AppState) {
+    if app_state.refuse_in_archive(app_state.is_left_active) {
+        return;
+    }
     let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };
     let state = if app_state.is_left_active { &app_state.state_left } else { &app_state.state_right };
     let Some(item) = state.selected().and_then(|index| children.get(index)) else {
@@ -26,6 +29,9 @@ pub(super) fn toggle_create(app_state: &mut AppState, is_dir: bool) {
     // The same key closes it again; the other one switches what is being made.
     if matches!(app_state.dialog, Some(Dialog::Create { is_dir: making, .. }) if making == is_dir) {
         app_state.dialog = None;
+        return;
+    }
+    if app_state.refuse_in_archive(app_state.is_left_active) {
         return;
     }
     app_state.dialog = Some(Dialog::Create { is_dir, input: TextInput::new() });
@@ -91,7 +97,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
 /// is set to: there is no getting it back.
 pub(super) fn open_delete(app_state: &mut AppState, permanently: bool) {
     let items = chosen_items(app_state);
-    if items.is_empty() {
+    if items.is_empty() || app_state.refuse_in_archive(app_state.is_left_active) {
         return;
     }
     let to_trash = app_state.options.delete_to_trash && !permanently;
@@ -147,6 +153,10 @@ pub(super) fn open_transfer(app_state: &mut AppState, is_copy: bool) {
     if sources.is_empty() {
         return;
     }
+    // Out of an archive is a copy; a move would take entries out of it.
+    if !is_copy && app_state.refuse_in_archive(app_state.is_left_active) {
+        return;
+    }
     // Where the other panel is going, should it be on its way somewhere.
     let other = app_state.panel_dir(!app_state.is_left_active);
     if !app_state.options.confirm_copy_move {
@@ -194,6 +204,12 @@ pub(super) fn handle_transfer_confirm(app_state: &mut AppState) {
 
 /// Copy or move `sources` to `destination`, read as transfer_targets reads it.
 fn go_transfer(app_state: &mut AppState, sources: &[(PathBuf, bool)], destination: &Path, names_dir: bool, is_copy: bool) {
+    // Into an archive: the other panel inside one, or a path typed through
+    // one. Asked of the disk, as transfer_targets asks it.
+    if crate::archive::locate(destination).is_some() {
+        app_state.display_error(READ_ONLY.to_string());
+        return;
+    }
     match transfer_targets(sources, destination, names_dir) {
         Ok(items) => submit_transfer(app_state, items, is_copy),
         Err(message) => app_state.display_error(message),
@@ -208,6 +224,13 @@ fn go_transfer(app_state: &mut AppState, sources: &[(PathBuf, bool)], destinatio
 /// about one at a time as the job reaches them, written over, or - for Refuse
 /// - the whole job refused before it starts.
 fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
+    // Into an archive, whichever way the destination was arrived at.
+    if items.iter().any(|(_, dest, _)| dest.parent().is_some_and(|dir| crate::archive::locate(dir).is_some())) {
+        return app_state.display_error(READ_ONLY.to_string());
+    }
+    if let Some(archive) = app_state.panel_archive(app_state.is_left_active).cloned() {
+        return submit_extract(app_state, archive, items);
+    }
     let taken = match check_destinations(&items) {
         Ok(taken) => taken,
         Err(message) => {
@@ -224,6 +247,33 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
     }
 }
 
+/// F5 from a panel inside an archive: copy the entries out. What no answer
+/// could make safe is refused before anything is written, as for a copy - a
+/// file and a directory in each other's place - going by what the archive
+/// says each entry is, since none of them is on the disk to be asked.
+fn submit_extract(app_state: &mut AppState, archive: PathBuf, items: Vec<(PathBuf, PathBuf, bool)>) {
+    let mut taken = Vec::new();
+    let mut extracting = Vec::new();
+    for (source, dest, is_dir) in items {
+        if let Ok(metadata) = dest.symlink_metadata() {
+            match (is_dir, metadata.is_dir()) {
+                (false, true) => return app_state.display_error(format!("Cannot replace directory {} with a file", dest.display())),
+                (true, false) => return app_state.display_error(format!("Cannot replace file {} with a directory", dest.display())),
+                _ => taken.push(dest.clone()),
+            }
+        }
+        let Ok(inner) = source.strip_prefix(&archive) else {
+            continue;
+        };
+        extracting.push((inner.to_path_buf(), dest));
+    }
+    match app_state.options.on_existing {
+        OnExisting::Refuse if !taken.is_empty() => app_state.display_error(format!("Destination already exists: {}", taken[0].display())),
+        OnExisting::Overwrite => app_state.start_extract(archive, extracting, Clashes::ReplaceAll, None),
+        OnExisting::Ask | OnExisting::Refuse => app_state.start_extract(archive, extracting, Clashes::Ask, None),
+    }
+}
+
 /// Shift+F3: which two files to compare. Two files selected in the panel you
 /// are in, in the order it lists them; otherwise the file under the cursor,
 /// against the one of the same name in the other panel, or failing that the
@@ -231,6 +281,10 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
 /// file came from.
 pub(super) fn open_compare(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
+    if app_state.panel_archive(true).is_some() || app_state.panel_archive(false).is_some() {
+        app_state.display_error("Files inside an archive cannot be compared yet".to_string());
+        return;
+    }
     let file_at_cursor = |app_state: &AppState, is_left: bool| {
         let (children, state, dir) = if is_left {
             (&app_state.children_left, &app_state.state_left, &app_state.dir_left)
@@ -275,7 +329,8 @@ pub(super) fn open_compare(app_state: &mut AppState) {
 /// confirming copies: there is no destination to take for granted.
 pub(super) fn open_symlink(app_state: &mut AppState) {
     let sources = chosen_items(app_state);
-    if sources.is_empty() {
+    // A link to an entry of an archive would point at nothing on the disk.
+    if sources.is_empty() || app_state.refuse_in_archive(app_state.is_left_active) {
         return;
     }
     let other = app_state.panel_dir(!app_state.is_left_active);
@@ -310,6 +365,14 @@ pub(super) fn handle_symlink_confirm(app_state: &mut AppState) {
         let base = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
         transfer_targets(&sources, &typed_path(&input.text, base), input.text.ends_with(std::path::is_separator))
     };
+    // Made inside an archive: the other panel in one, or a path typed
+    // through one.
+    if let Ok(links) = &links
+        && links.iter().any(|(_, link, _)| link.parent().is_some_and(|dir| crate::archive::locate(dir).is_some()))
+    {
+        app_state.display_error(READ_ONLY.to_string());
+        return;
+    }
     let links = match links {
         Ok(links) => links,
         Err(message) => {

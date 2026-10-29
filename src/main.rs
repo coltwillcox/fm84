@@ -1,4 +1,5 @@
 mod app;
+mod archive;
 mod attributes;
 mod background;
 mod cli;
@@ -258,8 +259,18 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         let _ = options::save_session(&panel(app_state.tab_dirs(true)), &panel(app_state.tab_dirs(false)));
     }
 
+    crate::archive::clean_scratch();
     if let Some(file) = choosedir {
-        write_chosen_dir(&file, if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right })?;
+        // Inside an archive, which a shell cannot cd into: the directory the
+        // archive is in.
+        let dir = if app_state.panel_archive(app_state.is_left_active).is_some() {
+            app_state.panel_real_dir(app_state.is_left_active)
+        } else if app_state.is_left_active {
+            app_state.dir_left.clone()
+        } else {
+            app_state.dir_right.clone()
+        };
+        write_chosen_dir(&file, &dir)?;
     }
     Ok(())
 }

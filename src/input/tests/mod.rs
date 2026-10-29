@@ -2,6 +2,7 @@ use super::{handle_key, request_quit};
 use crate::app::{AppState, Dialog, FindFiles, PromptKind, Screen};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+mod archives;
 mod dialogs;
 mod editor;
 mod file_ops;

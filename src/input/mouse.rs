@@ -319,9 +319,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
                 } else {
                     let dir = if clicked_left { &app_state.dir_left } else { &app_state.dir_right };
                     let file_path = children[actual_index].path_in(dir);
-                    if let Err(e) = open_with_default(&file_path) {
-                        app_state.display_error(format!("Cannot open file: {}", e));
-                    }
+                    open_file(app_state, file_path);
                 }
             }
         }

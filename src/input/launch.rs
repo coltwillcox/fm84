@@ -4,7 +4,7 @@
 use super::*;
 
 #[cfg(target_os = "macos")]
-pub(super) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
+pub(crate) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
     Command::new("open").arg(path).stdout(Stdio::null()).stderr(Stdio::null()).spawn()?;
     Ok(())
 }
@@ -13,7 +13,7 @@ pub(super) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
 /// cmd, which quotes nothing without a space in it, so a file named `x&calc`
 /// ran calc - and `%VAR%` in a name was expanded.
 #[cfg(target_os = "windows")]
-pub(super) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
+pub(crate) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
     use std::ffi::{OsStr, c_void};
     use std::os::windows::ffi::OsStrExt;
 
@@ -35,14 +35,15 @@ pub(super) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub(super) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
+pub(crate) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
     use std::os::unix::process::CommandExt;
     Command::new("xdg-open").arg(path).stdout(Stdio::null()).stderr(Stdio::null()).process_group(0).spawn()?;
     Ok(())
 }
 
 pub(super) fn open_terminal(app_state: &mut AppState) {
-    let dir = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
+    // Inside an archive, in the directory the archive is in.
+    let dir = &app_state.panel_real_dir(app_state.is_left_active);
     let command = app_state.options.terminal.trim();
     let result = if command.is_empty() { spawn_detached_terminal(dir) } else { spawn_configured_terminal(command, dir) };
     if let Err(e) = result {

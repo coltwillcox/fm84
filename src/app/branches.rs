@@ -28,7 +28,8 @@ impl AppState {
         if self.branch_switch.is_some() {
             return;
         }
-        let dir = self.panel_dir(is_left);
+        // Inside an archive, the repository the archive is in.
+        let dir = self.panel_real_dir(is_left);
         let (sender, answer) = mpsc::channel();
         let worker_dir = dir.clone();
         std::thread::spawn(move || {

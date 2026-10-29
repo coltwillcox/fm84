@@ -413,6 +413,7 @@ fn a_late_refusal_or_esc_puts_the_tab_back() {
                     branch: None,
                     stamp: None,
                     disk: None,
+                    archive: None,
                 })
                 .unwrap();
             app_state.poll_listings();

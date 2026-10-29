@@ -109,6 +109,10 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         // Alt+Shift+Enter sizes every directory, as in Total Commander. Alt
         // alone too, for a terminal that cannot report Shift with Enter.
         KeyCode::Enter if key.modifiers.contains(KeyModifiers::ALT) => app_state.size_all_dirs(),
+        // Shift+Enter opens what is under the cursor as the system would,
+        // archive or not. Ctrl+O too, for a terminal that sends Shift+Enter
+        // as Enter.
+        KeyCode::Enter if key.modifiers.contains(KeyModifiers::SHIFT) => open_cursor_externally(app_state),
         KeyCode::Enter => enter_directory_panel(app_state),
         _ => {}
     }
@@ -165,7 +169,49 @@ pub(super) fn enter_directory_panel(app_state: &mut AppState) {
     }
 
     let file_path = item.path_in(dir);
-    if let Err(e) = open_with_default(&file_path) {
+    open_file(app_state, file_path);
+}
+
+/// Enter on a file, or a double-click: an archive is gone into, as a
+/// directory is, and anything else is opened as the system opens it. One
+/// inside an archive is opened from there, archive or not: archives within
+/// archives are not gone into.
+pub(super) fn open_file(app_state: &mut AppState, path: PathBuf) {
+    let is_left = app_state.is_left_active;
+    if app_state.panel_archive(is_left).is_none() && crate::archive::kind_of(&path).is_some() {
+        app_state.open_dir(is_left, path, None);
+        return;
+    }
+    open_externally(app_state, path, false);
+}
+
+/// Shift+Enter or Ctrl+O: the entry under the cursor, opened as the system
+/// opens it - what Enter did before it went into archives.
+pub(super) fn open_cursor_externally(app_state: &mut AppState) {
+    let is_left = app_state.is_left_active;
+    let (state, children, dir) = if is_left {
+        (&app_state.state_left, &app_state.children_left, &app_state.dir_left)
+    } else {
+        (&app_state.state_right, &app_state.children_right, &app_state.dir_right)
+    };
+    let Some(item) = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()) else {
+        return;
+    };
+    let (path, is_dir) = (item.path_in(dir), item.is_dir);
+    open_externally(app_state, path, is_dir);
+}
+
+/// Hand `path` to the program the system opens it with. From inside an
+/// archive it is copied out first, and a directory there has nowhere on the
+/// disk to be opened from.
+fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
+    if app_state.panel_archive(app_state.is_left_active).is_some() {
+        if !is_dir {
+            app_state.open_archive_entry(&path, false);
+        }
+        return;
+    }
+    if let Err(e) = open_with_default(&path) {
         app_state.display_error(format!("Cannot open file: {}", e));
     }
 }
@@ -230,7 +276,11 @@ fn handle_f3_view(app_state: &mut AppState) {
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_os);
 
-        // Open viewer
+        // Out of an archive first, into a scratch directory.
+        if app_state.panel_archive(app_state.is_left_active).is_some() {
+            app_state.open_archive_entry(&file_path, true);
+            return;
+        }
         app_state.request_open(file_path, false);
     }
 }
@@ -252,6 +302,10 @@ fn handle_f4_edit(app_state: &mut AppState) {
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_os);
 
+        // Nothing saved could go back into the archive. F3 shows it.
+        if app_state.refuse_in_archive(app_state.is_left_active) {
+            return;
+        }
         // An external editor, when F11 names one; otherwise the built-in.
         if app_state.options.editor.trim().is_empty() {
             app_state.request_open(file_path, true);

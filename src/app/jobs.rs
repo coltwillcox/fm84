@@ -30,6 +30,16 @@ pub struct TransferJob {
     answers: Sender<Answer>,
     /// Entries left where they were, by Skip or Skip all, to say so at the end.
     pub skipped: u64,
+    /// What to do with what was copied out, once it all is.
+    after: Option<AfterJob>,
+}
+
+/// An entry of an archive copied out to be looked at, and what then: shown in
+/// the viewer, or handed to the program the system opens it with.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AfterJob {
+    View(PathBuf),
+    Open(PathBuf),
 }
 
 /// Which of the long jobs is running. They share a popup, a worker and a
@@ -40,6 +50,8 @@ pub enum TransferKind {
     Move,
     Delete,
     Trash,
+    /// Copying out of an archive.
+    Extract,
 }
 
 impl TransferKind {
@@ -50,6 +62,7 @@ impl TransferKind {
             TransferKind::Move => "Move",
             TransferKind::Delete => "Delete",
             TransferKind::Trash => "Move to trash",
+            TransferKind::Extract => "Extract",
         }
     }
 }
@@ -224,10 +237,20 @@ impl Progress for JobProgress<'_> {
         if self.cancel.load(Ordering::Relaxed) {
             return Clash::Abort;
         }
-        let modified = |path: &Path| std::fs::metadata(path).or_else(|_| path.symlink_metadata()).ok().and_then(|metadata| metadata.modified().ok());
+        // An entry of an archive is not on the disk to be asked; its archive
+        // says the same of it.
+        let described = |path: &Path| {
+            std::fs::metadata(path).or_else(|_| path.symlink_metadata()).ok().map(|metadata| (metadata.len(), metadata.modified().ok())).or_else(|| {
+                crate::archive::entry_at(path).map(|(index, at)| {
+                    let entry = index.entry(at);
+                    (entry.size, entry.modified)
+                })
+            })
+        };
+        let modified = |path: &Path| described(path).and_then(|(_, modified)| modified);
         let clash = match self.clashes {
             Clashes::Ask => {
-                let size = |path: &Path| std::fs::metadata(path).or_else(|_| path.symlink_metadata()).ok().map(|metadata| metadata.len());
+                let size = |path: &Path| described(path).map(|(size, _)| size);
                 let question = JobClash {
                     source: source.to_path_buf(),
                     dest: dest.to_path_buf(),
@@ -306,6 +329,15 @@ fn run_trash(items: Vec<(PathBuf, bool)>, mut progress: JobProgress<'_>) {
     progress.finish(Ok(Transfer::Done));
 }
 
+/// The worker thread behind copying out of an archive: each item an entry's
+/// path inside it, and where it goes.
+fn run_extract(archive: PathBuf, items: Vec<(PathBuf, PathBuf)>, mut progress: JobProgress<'_>) {
+    let inners: Vec<PathBuf> = items.iter().map(|(inner, _)| inner.clone()).collect();
+    let _ = progress.updates.send(JobUpdate::Total(crate::fs_ops::measure_extract(&archive, &inners)));
+    let outcome = crate::fs_ops::extract(&archive, &items, &mut progress);
+    progress.finish(outcome);
+}
+
 /// The worker thread behind a copy or move.
 ///
 /// Renames come first and on their own. A move within one filesystem is a
@@ -360,7 +392,17 @@ impl AppState {
             clash: None,
             answers,
             skipped: 0,
+            after: None,
         });
+    }
+
+    /// Copy entries out of `archive`, each its path inside and where it
+    /// goes, then do `after` with what came out.
+    pub fn start_extract(&mut self, archive: PathBuf, items: Vec<(PathBuf, PathBuf)>, clashes: Clashes, after: Option<AfterJob>) {
+        self.start_job(TransferKind::Extract, clashes, move |progress| run_extract(archive, items, progress));
+        if let Some(job) = &mut self.job {
+            job.after = after;
+        }
     }
 
     /// `clashes` says what happens to a file already where one is going:
@@ -428,21 +470,35 @@ impl AppState {
         };
         let job = self.job.take().expect("checked at the top");
 
-        // Both panels: a move empties one and fills the other, and a copy into
-        // the same directory shows up on the side it came from.
-        self.reload_panel(true, None);
-        self.reload_panel(false, None);
-        self.clear_active_selections();
-        // Any directory size worked out before may now be wrong - the ones
-        // copied into, moved out of or deleted from, and every directory above
-        // them. Space works them out again. One still being counted may
-        // have walked through them halfway, so it goes too.
-        self.dir_sizes.clear();
-        self.cancel_dir_sizes();
+        // An entry copied out to be looked at changed nothing anyone can
+        // see: the panels, their selections and sizes stay as they are.
+        if job.after.is_none() {
+            // Both panels: a move empties one and fills the other, and a copy
+            // into the same directory shows up on the side it came from.
+            self.reload_panel(true, None);
+            self.reload_panel(false, None);
+            self.clear_active_selections();
+            // Any directory size worked out before may now be wrong - the ones
+            // copied into, moved out of or deleted from, and every directory
+            // above them. Space works them out again. One still being counted
+            // may have walked through them halfway, so it goes too.
+            self.dir_sizes.clear();
+            self.cancel_dir_sizes();
+        }
 
         // The offer to quit covered this job, and this job is over.
         self.quit_armed = false;
 
+        match (&result, job.after) {
+            (Ok(Transfer::Done), Some(AfterJob::View(path))) if job.skipped == 0 => return self.request_open(path, false),
+            (Ok(Transfer::Done), Some(AfterJob::Open(path))) if job.skipped == 0 => {
+                if let Err(e) = crate::input::open_with_default(&path) {
+                    self.display_error(format!("Cannot open file: {e}"));
+                }
+                return;
+            }
+            _ => {}
+        }
         match result {
             Ok(Transfer::Done) if job.skipped > 0 => {
                 let entries = if job.skipped == 1 { "entry" } else { "entries" };

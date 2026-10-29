@@ -207,7 +207,7 @@ pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
 /// how the entry came out without it: left where it was, or the job stopped.
 /// A directory in the way is not asked about here: a directory is merged
 /// into it, and a file onto it fails, which is asked about as a failure.
-fn settle_clash(source: &Path, dest: &Path, report: Report<'_>) -> Option<Outcome> {
+pub(super) fn settle_clash(source: &Path, dest: &Path, report: Report<'_>) -> Option<Outcome> {
     let existing = dest.symlink_metadata().ok()?;
     if existing.is_dir() {
         return None;
@@ -281,14 +281,26 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
     }
 
     let mut src_file = File::open(source)?;
-    // The bytes go to a temporary beside the destination, and a rename puts
-    // them in place once they are all there. Only an overwrite, or a directory
-    // merged into another, finds something already at the destination; that
-    // file is somebody's, and writing straight over it would destroy it the
-    // moment the copy began. Where nothing is there, a file written under its
-    // own name would still be half a file whenever the copy stopped short of
-    // the end - fm84 quit partway, or killed - and would pass for a whole one.
-    // A temporary that is left behind is plainly not one.
+    write_beside(dest, &mut src_file, report, &|dst_file, temp| {
+        keep_times(dst_file, &metadata);
+        let _ = fs::set_permissions(temp, metadata.permissions());
+    })
+}
+
+/// Write what `reader` holds to `dest`, reporting each chunk as it goes, and
+/// `finish` the file - its times, its mode - before it takes its place.
+/// Generic, not a `dyn Read`, so a file copied from a file keeps the
+/// platform's fast path.
+///
+/// The bytes go to a temporary beside the destination, and a rename puts
+/// them in place once they are all there. Only an overwrite, or a directory
+/// merged into another, finds something already at the destination; that
+/// file is somebody's, and writing straight over it would destroy it the
+/// moment the copy began. Where nothing is there, a file written under its
+/// own name would still be half a file whenever the copy stopped short of
+/// the end - fm84 quit partway, or killed - and would pass for a whole one.
+/// A temporary that is left behind is plainly not one.
+pub(super) fn write_beside<R: Read + ?Sized>(dest: &Path, reader: &mut R, report: Report<'_>, finish: &dyn Fn(&File, &Path)) -> Result<Transfer, Error> {
     let replacing = dest.symlink_metadata().is_ok();
     let (temp, mut dst_file) = temp_beside(dest)?;
     // What a failure or a cancel partway leaves: nothing, of ours.
@@ -297,7 +309,7 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
         let _ = remove_file(&temp);
     };
     loop {
-        let copied = match io::copy(&mut (&mut src_file).take(COPY_CHUNK), &mut dst_file) {
+        let copied = match io::copy(&mut (&mut *reader).take(COPY_CHUNK), &mut dst_file) {
             Ok(copied) => copied,
             Err(e) => {
                 // A read or write that failed partway - a full disk, a device
@@ -307,9 +319,8 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
             }
         };
         if copied == 0 {
-            keep_times(&dst_file, &metadata);
+            finish(&dst_file, &temp);
             drop(dst_file);
-            let _ = fs::set_permissions(&temp, metadata.permissions());
             // The one moment the destination changes, and it changes all at
             // once: anything reading it sees the old bytes or the new ones.
             let placed = if replacing {
@@ -342,7 +353,7 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
 /// Give a copy the access and modification times of what it was copied
 /// from, as cp -p and file managers do. Allowed to fail, like the permissions:
 /// some filesystems keep no such times, or will not take them from us.
-fn keep_times(dest: &File, metadata: &fs::Metadata) {
+pub(super) fn keep_times(dest: &File, metadata: &fs::Metadata) {
     let mut times = fs::FileTimes::new();
     if let Ok(modified) = metadata.modified() {
         times = times.set_modified(modified);
@@ -356,7 +367,7 @@ fn keep_times(dest: &File, metadata: &fs::Metadata) {
 /// keep_times for a directory, once everything is inside it - each file
 /// copied in moves its modification time on. Opening a directory to set them
 /// fails on Windows, which only costs the times.
-fn keep_dir_times(dest: &Path, metadata: &fs::Metadata) {
+pub(super) fn keep_dir_times(dest: &Path, metadata: &fs::Metadata) {
     if let Ok(dir) = File::open(dest) {
         keep_times(&dir, metadata);
     }
