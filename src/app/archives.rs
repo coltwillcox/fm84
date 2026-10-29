@@ -52,4 +52,54 @@ impl AppState {
         let after = if view { AfterJob::View(dest.clone()) } else { AfterJob::Open(dest.clone()) };
         self.start_extract(archive, vec![(inner.to_path_buf(), dest)], Clashes::ReplaceAll, Some(after));
     }
+
+    /// Shift+F3 on two files, either of them inside an archive - one a panel
+    /// is in. What is inside one is copied out to a scratch directory first,
+    /// a job for each archive, and the two compared from there under the
+    /// paths they have in the panels. Two on the disk are compared at once.
+    pub fn compare_anywhere(&mut self, left: PathBuf, right: PathBuf) {
+        let archives: Vec<PathBuf> = [self.archive_left.clone(), self.archive_right.clone()].into_iter().flatten().collect();
+        // Each archive with what is to come out of it.
+        let mut out_of: Vec<(PathBuf, Vec<(PathBuf, PathBuf)>)> = Vec::new();
+        let mut files = Vec::new();
+        for path in [&left, &right] {
+            let Some(archive) = archives.iter().find(|archive| path.starts_with(archive)) else {
+                files.push(path.clone());
+                continue;
+            };
+            let (Ok(inner), Some(name)) = (path.strip_prefix(archive), path.file_name()) else {
+                return;
+            };
+            let dest = match crate::archive::scratch_dir() {
+                Ok(dir) => dir.join(name),
+                Err(e) => return self.display_error(format!("Cannot make room to compare: {e}")),
+            };
+            match out_of.iter_mut().find(|(known, _)| known == archive) {
+                Some((_, items)) => items.push((inner.to_path_buf(), dest.clone())),
+                None => out_of.push((archive.clone(), vec![(inner.to_path_buf(), dest.clone())])),
+            }
+            files.push(dest);
+        }
+        let (Some(right_file), Some(left_file)) = (files.pop(), files.pop()) else {
+            return;
+        };
+        if out_of.is_empty() {
+            return self.compare_files(left, right);
+        }
+        let (archive, items) = out_of.remove(0);
+        let after = AfterJob::Compare {
+            files: (left_file, right_file),
+            shown: (left, right),
+            then: out_of.pop(),
+        };
+        self.start_extract(archive, items, Clashes::ReplaceAll, Some(after));
+    }
+
+    /// Compare two files, the diff headed with the paths they are known by.
+    pub(super) fn compare_shown(&mut self, files: (PathBuf, PathBuf), shown: (PathBuf, PathBuf)) {
+        self.compare_files(files.0, files.1);
+        if let Some(state) = self.diff_mut() {
+            (state.left_path, state.right_path) = shown;
+        }
+    }
 }

@@ -344,10 +344,6 @@ fn go_extract_all(app_state: &mut AppState, archive: PathBuf, destination: &Path
 /// file came from.
 pub(super) fn open_compare(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
-    if app_state.panel_archive(true).is_some() || app_state.panel_archive(false).is_some() {
-        app_state.display_error("Files inside an archive cannot be compared yet".to_string());
-        return;
-    }
     let file_at_cursor = |app_state: &AppState, is_left: bool| {
         let (children, state, dir) = if is_left {
             (&app_state.children_left, &app_state.state_left, &app_state.dir_left)
@@ -364,7 +360,7 @@ pub(super) fn open_compare(app_state: &mut AppState) {
     };
     let selected_files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir && selected.contains(&item.name_os)).map(|item| item.path_in(dir)).collect();
     if let [first, second] = &selected_files[..] {
-        app_state.compare_files(first.clone(), second.clone());
+        app_state.compare_anywhere(first.clone(), second.clone());
         return;
     }
 
@@ -379,9 +375,9 @@ pub(super) fn open_compare(app_state: &mut AppState) {
         return;
     };
     if is_left {
-        app_state.compare_files(here, there);
+        app_state.compare_anywhere(here, there);
     } else {
-        app_state.compare_files(there, here);
+        app_state.compare_anywhere(there, here);
     }
 }
 

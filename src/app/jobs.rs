@@ -35,11 +35,19 @@ pub struct TransferJob {
 }
 
 /// An entry of an archive copied out to be looked at, and what then: shown in
-/// the viewer, or handed to the program the system opens it with.
+/// the viewer, handed to the program the system opens it with, or compared.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AfterJob {
     View(PathBuf),
     Open(PathBuf),
+    /// Compare the two files, once out, shown under the paths they have in
+    /// the panels. `then` is a second archive to copy out of first, when the
+    /// two are in different ones.
+    Compare {
+        files: (PathBuf, PathBuf),
+        shown: (PathBuf, PathBuf),
+        then: Option<(PathBuf, Vec<(PathBuf, PathBuf)>)>,
+    },
 }
 
 /// Which of the long jobs is running. They share a popup, a worker and a
@@ -494,6 +502,13 @@ impl AppState {
             (Ok(Transfer::Done), Some(AfterJob::Open(path))) if job.skipped == 0 => {
                 if let Err(e) = crate::input::open_with_default(&path) {
                     self.display_error(format!("Cannot open file: {e}"));
+                }
+                return;
+            }
+            (Ok(Transfer::Done), Some(AfterJob::Compare { files, shown, then })) if job.skipped == 0 => {
+                match then {
+                    Some((archive, items)) => self.start_extract(archive, items, Clashes::ReplaceAll, Some(AfterJob::Compare { files, shown, then: None })),
+                    None => self.compare_shown(files, shown),
                 }
                 return;
             }

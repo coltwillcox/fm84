@@ -274,3 +274,46 @@ fn alt_f9_extracts_a_whole_archive() {
     assert!(app_state.job.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Shift+F3 compares a file inside an archive with its namesake on the disk,
+/// and with one inside another archive, copying each out first; the diff is
+/// headed with the paths the panels know them by.
+#[test]
+fn shift_f3_compares_files_inside_archives() {
+    let (dir, archive, mut app_state) = setup("compare");
+    let sides = |app_state: &AppState| match &app_state.screen {
+        Screen::Diff(state) => (state.left_path.clone(), state.right_path.clone(), state.hunks.len()),
+        _ => panic!("not comparing: {:?}", app_state.error),
+    };
+    let compare = |app_state: &mut AppState| {
+        handle_key(app_state, KeyEvent::new(KeyCode::F(3), KeyModifiers::SHIFT));
+        finish(app_state);
+    };
+
+    // Inside on the left, on the disk on the right.
+    std::fs::write(dir.join("out/readme.txt"), "read me\nand more\n").unwrap();
+    app_state.open_dir(false, dir.join("out"), Some("readme.txt".as_ref()));
+    app_state.open_dir(true, archive.clone(), Some("readme.txt".as_ref()));
+    compare(&mut app_state);
+    assert_eq!(sides(&app_state), (archive.join("readme.txt"), dir.join("out/readme.txt"), 1));
+
+    // Inside two archives, one a panel each: two jobs, one after the other.
+    app_state.screen = Screen::Panels;
+    let other = dir.join("other.tar.gz");
+    tar(&other, &[(b"readme.txt", Put::File(b"read me too"))]);
+    app_state.open_dir(false, other.clone(), Some("readme.txt".as_ref()));
+    compare(&mut app_state);
+    assert_eq!(sides(&app_state), (archive.join("readme.txt"), other.join("readme.txt"), 1));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Ctrl+C copies an entry's path as it runs through its archive, as the
+/// panel shows it.
+#[test]
+fn ctrl_c_copies_a_path_through_an_archive() {
+    let (dir, archive, mut app_state) = setup("paths");
+    app_state.open_dir(true, archive.join("2024"), Some("notes.txt".as_ref()));
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL));
+    assert_eq!(PathBuf::from(&app_state.clipboard), archive.join("2024/notes.txt"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
