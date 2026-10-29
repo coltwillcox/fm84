@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.37.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.38.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -112,7 +112,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
 - **F8** / **Delete** 🗑️ - Move files & folders to the system's trash (selected items or cursor item, with confirmation - which F11 can turn off - and progress). What the trash will not take - a read-only disk, one with nowhere to keep a trash - is asked about, with **D** to delete it for good. F11 can make F8 delete permanently instead
 - **Shift+F8** / **Shift+Delete** 💀 - Delete permanently, always asking first
-- **Alt+H** #️⃣ - Checksums of what is selected, or of the file under the cursor, a directory's files all the way down. SHA-256, SHA-512 and MD5 are all worked out in one reading of each file, as a job with the progress bar and Esc, and shown in one popup - wrapped, never cut, however long - with the algorithms in a row above them: **Tab** or **→** shows the next one's, **Shift+Tab** or **←** the one before, at once. **C** copies them - one file's checksum alone, for pasting where it is to be compared - and **W** writes them as `sha256sum` does, to `name.sha256` for one file or `SHA256SUMS` for several, and lands on it; a name already taken goes by F11's When destination exists. On a checksum file - `*.sha256`, `*.md5`, `SHA256SUMS` and the like, written by `sha256sum`, `md5sum` or in BSD's `SHA256 (name) = …` - it checks the files it names instead, and says what failed, what is missing and what is OK, the failures first. What cannot be read is listed as such, not asked about. Inside an archive, copy out first
+- **Alt+H** #️⃣ - Checksums of what is selected, or of the file under the cursor, a directory's files all the way down. SHA-256, SHA-512 and MD5 are all worked out in one reading of each file, as a job with the progress bar and Esc, and shown in one popup - wrapped, never cut, however long - with the algorithms in a row above them: **Tab** or **→** shows the next one's, **Shift+Tab** or **←** the one before, at once. **C** copies them - one file's checksum alone, for pasting where it is to be compared - and **Enter** writes them as `sha256sum` does, to `name.sha256` for one file or `SHA256SUMS` for several, and lands on it; a name already taken goes by F11's When destination exists. On a checksum file - `*.sha256`, `*.md5`, `SHA256SUMS` and the like, written by `sha256sum`, `md5sum` or in BSD's `SHA256 (name) = …` - it checks the files it names instead, and says what failed, what is missing and what is OK, the failures first. What cannot be read is listed as such, not asked about. Inside an archive, copy out first
 - **Alt+A** 🔐 - Change attributes, as in Total Commander: the permissions, owner, group and modified time of what is selected, or of the entry under the cursor. Each field opens on what the entries have in common, and one left as it is, or emptied, changes nothing. The mode is octal (`755`) or as `chmod` takes it (`u+x,go-w`, `a=rX`), so several entries whose modes differ can each gain or lose a bit; with one entry, what it comes to is shown beside it. Owner and group go by name or number, and the time as `2026-10-23 14:02:11`. **Tab** or a click moves between the fields, a click putting the cursor where it lands. Something typed that cannot be read is said so before anything changes; an entry that refuses is passed over and named. On Windows only the time
 - **F9** 💻 - Open external terminal in current directory (which one is set under F11)
 - **F10** 🚪 - Exit to the void - asking first about unsaved changes in the editor
@@ -319,7 +319,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Alt+F7` / `Ctrl+F7` | Find files by name and content |
 | `Alt+F9` / `Ctrl+F9` | Extract the whole of an archive |
 | `Alt+P` | Pack what is chosen into an archive (`Tab` changes the format) |
-| `Alt+H` | Checksums of what is chosen (`Tab` / `Shift+Tab` the algorithm, `C` copies, `W` writes), or check a checksum file |
+| `Alt+H` | Checksums of what is chosen (`Tab` / `Shift+Tab` the algorithm, `C` copies, `Enter` writes), or check a checksum file |
 | `X` | Toggle hex view; cycle Image, Text, Hex for images (in Viewer) |
 | `F` | Fit or fill an image (in Viewer) |
 | `W` | Wrap long lines, or scroll them sideways (in Viewer) |
@@ -385,7 +385,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.37.0
+fm84 --version          # fm84 0.38.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -485,5 +485,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.37.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.38.0 ▄▀▄▀▄▀</code>
 </p>

@@ -6,6 +6,14 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.38.0] - 2026-10-29
+
+### ✨ Added
+- #️⃣ **Checksums with Alt+H** - of what is selected, or of the file under the cursor, a directory's files all the way down. SHA-256, SHA-512 and MD5 are worked out together in one reading of each file, as a job with the progress bar and Esc, and shown in one popup the size of the others, wrapped and never cut: **Tab** or **→** shows the next algorithm's, **Shift+Tab** or **←** the one before, at once. **C** copies them - one file's checksum alone, for pasting where it is to be compared - and **Enter** writes them as `sha256sum` does, to `name.sha256` for one file or `SHA256SUMS` for several, and lands on it. On a checksum file - `*.sha256`, `*.md5`, `SHA256SUMS` and the like, from `sha256sum`, `md5sum` or in BSD's `SHA256 (name) = …` - it checks the files it names instead, the failures first. What cannot be read is listed as such, not asked about
+- 🗂️ **Keep both on a name clash** - **K** in the question about a file in the way keeps it and writes the new one beside it as `name (2).ext` - `src (2).tar.gz` for an archive, `.bashrc (2)` for a dotfile - numbering on past any already taken; **B** does so for every file after it too. F11's When destination exists has it as well, and Pack and writing a checksum file go by it
+
+---
+
 ## [0.37.0] - 2026-10-29
 
 ### ✨ Added
