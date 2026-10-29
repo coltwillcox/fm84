@@ -48,6 +48,35 @@ fn a_job_asks_about_a_failure_and_goes_on_when_told_to_skip() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// Esc pressed after the worker asked, but before the question reached the
+/// screen, found nothing to answer. The question then came up anyway, and
+/// the job waited on a second answer.
+#[test]
+fn esc_answers_a_question_still_on_its_way() {
+    let dir = std::env::temp_dir().join(format!("fm84-esc-race-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("onto")).unwrap();
+    std::fs::write(dir.join("a.txt"), "new").unwrap();
+    std::fs::write(dir.join("onto").join("a.txt"), "old").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.start_transfer(vec![(dir.join("a.txt"), dir.join("onto").join("a.txt"), false)], true, crate::app::Clashes::Ask);
+    // Time for the worker to ask, with nothing polled to take the question in.
+    std::thread::sleep(std::time::Duration::from_millis(200));
+    app_state.cancel_transfer();
+
+    let started = std::time::Instant::now();
+    while app_state.job.is_some() {
+        assert!(app_state.job.as_ref().is_some_and(|job| job.clash.is_none()), "the question came up after Esc");
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never ended");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert_eq!(std::fs::read_to_string(dir.join("onto").join("a.txt")).unwrap(), "old");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// Each file already there is asked about as the job reaches it, and the
 /// answers do what they say: one file, every file, or every older file.
 #[test]

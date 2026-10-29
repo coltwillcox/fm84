@@ -402,6 +402,11 @@ impl AppState {
                 Ok(JobUpdate::Total(amount)) => job.total = Some(amount),
                 Ok(JobUpdate::Starting(path)) => job.current = path,
                 Ok(JobUpdate::Advanced(amount)) => job.done += amount,
+                // Asked after Esc, which answered nothing then: there was no
+                // question on screen yet. Esc is the answer, so it is not shown.
+                Ok(JobUpdate::Problem(_) | JobUpdate::Clash(_)) if job.is_cancelling() => {
+                    let _ = job.answers.send(Answer::Abort);
+                }
                 Ok(JobUpdate::Problem(problem)) => job.problem = Some(problem),
                 Ok(JobUpdate::Clash(clash)) => job.clash = Some(clash),
                 Ok(JobUpdate::Skipped) => job.skipped += 1,
