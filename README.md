@@ -250,12 +250,15 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it, and bookmarks in `bookmarks`
 
 ### 📦 Archives
-- 📂 **Gone into like directories** - Enter on a `.zip`, `.tar`, `.tar.gz` or `.tgz` opens it in the panel, and its directories open as any do. The path runs through it - `~/photos.zip/2024/june` - so tabs, history, bookmarks, Ctrl+L and remembered directories all work inside one, and Backspace at its top comes back out onto the archive
+- 📂 **Gone into like directories** - Enter on a `.zip`, `.7z`, `.tar`, `.tar.gz`, `.tar.zst`, `.tar.xz` or `.tar.bz2` (and `.tgz`, `.tzst`, `.txz`, `.tbz2`) opens it in the panel, and its directories open as any do. The path runs through it - `~/photos.zip/2024/june` - so tabs, history, bookmarks, Ctrl+L and remembered directories all work inside one, and Backspace at its top comes back out onto the archive
 - 📋 **Copied out with F5** - to the other panel, or wherever the dialog is told, a directory whole, asked about files in the way as any copy is, with the same progress bar and Esc. Times and permissions come out as the archive kept them; links come out as links
+- 📤 **All of it with Alt+F9** - as in Total Commander, the whole of the archive under the cursor, or of the one the panel is in, into the other panel or wherever the dialog is told. **Ctrl+F9** too, for desktops that take Alt+F9 for hiding a window
+- ⚖️ **Compared with Shift+F3** - a file inside an archive against one on the disk, or inside another archive: each is copied out first, and the diff is headed with the paths the panels show
+- 🗜️ **Every way a tar is packed** - gzip, zstd, xz and bzip2, each read on past its first stream, so files joined end to end - as pigz, pzstd and pbzip2 write them - are one archive. A 7z is listed from its header without unpacking anything; one packed solid, as 7-Zip does by default, unpacks what comes before a file to reach it, which the progress bar covers
 - 👁️ **F3, F12 and the detail lines** - a file is copied out to a scratch directory and shown, the preview reads the head of it, and the lines under the panels give its exact size, time, mode and, from a tar, its owner. Enter or Ctrl+O open it with the system's program the same way. The scratch directory goes when fm84 quits
 - 📏 **Sizes at once** - Space and Alt+Shift+Enter size directories inside an archive from what it says, with nothing to walk
-- 🔒 **Read-only** - renaming, making, deleting, moving out, moving or copying in, links and attributes all say "Archives are read-only" and leave it as it was. F4 too: F3 shows a file instead. Find files and comparing files do not reach inside one yet
-- 🛡️ **Safe to open** - a name that would land outside where it is copied to - `../`, an absolute path, a drive - never gets into the listing, nor anything that would be written through a link in the archive. An encrypted zip entry says so in the detail lines, and copying it out says it needs the password
+- 🔒 **Read-only** - renaming, making, deleting, moving out, moving or copying in, links and attributes all say "Archives are read-only" and leave it as it was. F4 too: F3 shows a file instead. Find files does not reach inside one yet
+- 🛡️ **Safe to open** - a name that would land outside where it is copied to - `../`, an absolute path, a drive - never gets into the listing, nor anything that would be written through a link in the archive. An encrypted zip entry says so in the detail lines, and copying it out says it needs the password; an encrypted 7z says it needs the password as a file is copied out of it - or as it is gone into, when its names are encrypted too
 - ♻️ **Kept up to date** - an archive written while a panel is in it is read again, climbing out of a directory it no longer has, and one deleted is left. A large `.tar.gz` is read once and kept, so going in and out of its directories does not unpack it again
 - 💬 **Not an archive after all** - a file named like one that will not read says why, and the panel stays where it was
 
@@ -312,6 +315,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `F12` | Preview cursor file in other panel |
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
 | `Alt+F7` / `Ctrl+F7` | Find files by name and content |
+| `Alt+F9` / `Ctrl+F9` | Extract the whole of an archive |
 | `X` | Toggle hex view; cycle Image, Text, Hex for images (in Viewer) |
 | `F` | Fit or fill an image (in Viewer) |
 | `W` | Wrap long lines, or scroll them sideways (in Viewer) |
@@ -426,7 +430,7 @@ tar -xzf fm84-v*.tar.gz
 
 ## 📦 Dependencies
 
-- 🦀 **Rust** 1.88 or newer (2024 edition)
+- 🦀 **Rust** 1.93 or newer (2024 edition)
 - 🖥️ **ratatui** - TUI framework
 - ⌨️ **crossterm** - Terminal magic
 - 🎨 **syntect** - Syntax highlighting

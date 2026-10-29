@@ -77,10 +77,18 @@ End the options, for a directory whose name starts with a dash.
 .SH ARCHIVES
 Enter on a
 .IR .zip ,
+.IR .7z ,
 .IR .tar ,
-.I .tar.gz
+.IR .tar.gz ,
+.IR .tar.zst ,
+.I .tar.xz
 or
-.I .tgz
+.I .tar.bz2
+(and
+.IR .tgz ,
+.IR .tzst ,
+.IR .txz ,
+.IR .tbz2 )
 opens it in the panel like a directory, and its directories open as any do.
 The panel's path runs through it, as
 .IR ~/photos.zip/2024 ,
@@ -91,13 +99,22 @@ An archive is read-only.
 F5 copies out of it, a directory whole, asking about files in the way as any
 copy does; times and permissions come out as the archive kept them, and links
 as links.
+Alt+F9, or Ctrl+F9, extracts the whole of the archive under the cursor, or of
+the one the panel is in, into the other panel or wherever its dialog is told.
+Shift+F3 compares a file inside an archive with one on the disk or in another
+archive, copying each out first.
 F3 copies a file out to a scratch directory and shows it there; Enter and
 Ctrl+O open it from there with the system's program.
 F12 and the lines under the panels read entries in place, and Space and
 Alt+Shift+Enter size directories from what the archive says.
 Everything that would write into an archive says so and changes nothing:
 renaming, making, deleting, moving, copying or linking into it, Alt+A and F4.
-Find files and comparing files do not reach inside one.
+Find files does not reach inside one.
+.PP
+A compressed tar is read on past the end of its first stream, so files joined
+end to end are one archive.
+A 7z is listed from its header without unpacking anything; one packed solid
+unpacks what comes before a file to reach it.
 .PP
 A name that would land outside where it is copied to, with
 .BR .. ,
@@ -105,6 +122,8 @@ an absolute path or a drive, is left out of the listing, as is anything
 that would be written through a link in the archive.
 An encrypted zip entry is marked in the detail lines, and cannot be copied
 out without the password, which fm84 does not ask for.
+Nothing in an encrypted 7z can be copied out either, and one whose names
+are encrypted too cannot be gone into.
 .PP
 An archive written while a panel is in it is read again; one deleted is
 left.
@@ -375,6 +394,10 @@ Delete for good.
 .TP
 .B F9
 Open a terminal in the panel's directory.
+.TP
+.B Alt+F9 Ctrl+F9
+Extract the whole of the archive under the cursor, or of the one the panel is
+in, to the other panel or wherever the dialog is told.
 .TP
 .B F10
 Quit.
