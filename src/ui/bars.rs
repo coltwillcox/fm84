@@ -161,13 +161,13 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
         // Returns (count_part, size_part) e.g. ("0/5", "1.2 KiB") or ("2/5", "800 B/1.2 KiB")
         let panel_stat = |children: &[crate::app::Item], selected_set: &std::collections::HashSet<std::ffi::OsString>, current_dir: &PathBuf, dir_sizes: &std::collections::HashMap<PathBuf, u64>| -> (String, String) {
             let item_size = |c: &crate::app::Item| -> u64 { if c.is_dir { dir_sizes.get(&c.path_in(current_dir)).copied().unwrap_or(0) } else { c.size_bytes } };
-            let total_count = children.iter().filter(|c| c.name != "..").count();
-            let total_size: u64 = children.iter().filter(|c| c.name != "..").map(&item_size).sum();
+            let total_count = children.iter().filter(|c| !c.is_parent()).count();
+            let total_size: u64 = children.iter().filter(|c| !c.is_parent()).map(&item_size).sum();
 
             if selected_set.is_empty() {
                 (format!("0/{}", total_count), format_size(total_size))
             } else {
-                let is_selected = |c: &crate::app::Item| c.name != ".." && selected_set.contains(&c.name_os);
+                let is_selected = |c: &crate::app::Item| !c.is_parent() && selected_set.contains(&c.name_os);
                 let sel_count = children.iter().filter(|c| is_selected(c)).count();
                 let sel_size: u64 = children.iter().filter(|c| is_selected(c)).map(item_size).sum();
                 (format!("{}/{}", sel_count, total_count), format!("{}/{}", format_size(sel_size), format_size(total_size)))

@@ -159,7 +159,7 @@ impl AppState {
         };
         let item = state.selected().and_then(|index| children.get(index));
         let (target, select) = match item {
-            Some(item) if item.name == ".." => match dir.parent() {
+            Some(item) if item.is_parent() => match dir.parent() {
                 Some(parent) => (parent.to_path_buf(), dir.file_name().map(std::ffi::OsStr::to_os_string)),
                 None => return,
             },

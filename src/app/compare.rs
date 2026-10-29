@@ -13,7 +13,7 @@ const SAME_TIME: Duration = Duration::from_secs(2);
 /// A file without a modified time is judged by its size alone.
 pub(super) fn differences(left: &[Item], right: &[Item]) -> (HashSet<OsString>, HashSet<OsString>) {
     fn entries(items: &[Item]) -> HashMap<OsString, &Item> {
-        items.iter().filter(|item| item.name_os != "..").map(|item| (item.name_os.clone(), item)).collect()
+        items.iter().filter(|item| !item.is_parent()).map(|item| (item.name_os.clone(), item)).collect()
     }
     let (left, right) = (entries(left), entries(right));
     let (mut on_left, mut on_right) = (HashSet::new(), HashSet::new());

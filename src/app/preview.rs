@@ -53,7 +53,7 @@ impl AppState {
             (&self.children_right, &self.state_right, &self.dir_right)
         };
         let item = children.get(state.selected()?)?;
-        if item.name == ".." {
+        if item.is_parent() {
             return None;
         }
         Some((item.path_in(dir), item.name_full.clone(), item.is_dir))

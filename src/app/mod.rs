@@ -335,6 +335,13 @@ impl Item {
     pub fn path_in(&self, dir: &Path) -> PathBuf {
         dir.join(&self.name_os)
     }
+
+    /// The `..` row the listing puts first. Told by the name the filesystem
+    /// holds, never by `name`: that is a file's stem, and the stem of a file
+    /// called `...` is `..`.
+    pub fn is_parent(&self) -> bool {
+        self.name_os == ".."
+    }
 }
 
 impl AppState {

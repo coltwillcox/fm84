@@ -153,7 +153,7 @@ pub(super) fn enter_directory_panel(app_state: &mut AppState) {
         return;
     };
 
-    if item.name == ".." {
+    if item.is_parent() {
         navigate_up_panel(app_state);
         return;
     }
@@ -183,7 +183,7 @@ pub(super) fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
     } else {
         children.iter().filter(|item| selected.contains(&item.name_os)).collect()
     };
-    chosen.into_iter().filter(|item| item.name != "..").map(|item| (item.path_in(dir), item.is_dir)).collect()
+    chosen.into_iter().filter(|item| !item.is_parent()).map(|item| (item.path_in(dir), item.is_dir)).collect()
 }
 
 /// Ctrl+C copies the full paths of what is selected, or of the entry under

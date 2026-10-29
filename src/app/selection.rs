@@ -112,7 +112,7 @@ impl AppState {
         } else {
             (&self.children_right, &mut self.selected_right)
         };
-        for item in children.iter().filter(|item| item.name != ".." && glob.matches(&item.name_full, item.is_dir)) {
+        for item in children.iter().filter(|item| !item.is_parent() && glob.matches(&item.name_full, item.is_dir)) {
             if select {
                 selected.insert(item.name_os.clone());
             } else {
@@ -131,7 +131,7 @@ impl AppState {
         } else {
             (&self.children_right, &mut self.selected_right)
         };
-        for item in children.iter().filter(|item| (with_dirs || !item.is_dir) && item.name != "..") {
+        for item in children.iter().filter(|item| (with_dirs || !item.is_dir) && !item.is_parent()) {
             if !selected.remove(&item.name_os) {
                 selected.insert(item.name_os.clone());
             }
@@ -157,7 +157,7 @@ impl AppState {
             };
 
             if let Some(index) = state.selected() {
-                if index < children.len() && children[index].name != ".." {
+                if index < children.len() && !children[index].is_parent() {
                     let item = &children[index];
 
                     if !selected_set.remove(&item.name_os) {
@@ -200,7 +200,7 @@ impl AppState {
     /// column as it is counted.
     pub fn size_all_dirs(&mut self) {
         let (children, dir) = if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
-        let paths: Vec<PathBuf> = children.iter().filter(|item| item.is_dir && !item.is_symlink && item.name != "..").map(|item| item.path_in(dir)).collect();
+        let paths: Vec<PathBuf> = children.iter().filter(|item| item.is_dir && !item.is_symlink && !item.is_parent()).map(|item| item.path_in(dir)).collect();
         for path in paths {
             if !self.dir_sizing.iter().any(|sizing| sizing.path == path) && !self.dir_size_queue.contains(&path) {
                 self.dir_size_queue.push_back(path);

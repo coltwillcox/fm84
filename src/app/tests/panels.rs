@@ -37,6 +37,31 @@ fn a_name_that_is_not_utf8_still_names_its_file() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// A file called `...` has `..` for its stem. Told apart from the parent
+/// row by that, it was entered as the way up, and could not be selected,
+/// renamed, copied or deleted.
+#[test]
+fn a_file_called_three_dots_is_not_the_parent_entry() {
+    let dir = std::env::temp_dir().join(format!("fm84-three-dots-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("..."), "dots").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.open_dir(true, dir.clone(), Some("...".as_ref()));
+    let item = &app_state.children_left[app_state.state_left.selected().unwrap()];
+    assert_eq!(item.name, "..");
+    assert!(!item.is_parent());
+    assert!(app_state.children_left[0].is_parent());
+
+    let (path, _, _) = app_state.cursor_target().unwrap();
+    assert_eq!(path, dir.join("..."));
+    app_state.toggle_selection_no_size();
+    assert!(app_state.selected_left.contains(std::ffi::OsStr::new("...")));
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// The preview and the detail lines hold what they gathered until the
 /// cursor moves, so a file that changes under a still cursor has to be
 /// picked up by the reread instead.

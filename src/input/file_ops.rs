@@ -12,7 +12,7 @@ pub(super) fn open_rename(app_state: &mut AppState) {
     };
 
     // Don't rename the parent entry - ".." resolves to the parent directory itself.
-    if item.name == ".." {
+    if item.is_parent() {
         return;
     }
 
@@ -43,7 +43,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
     };
 
     // ".." resolves to the parent directory - never rename through it.
-    if item.name == ".." {
+    if item.is_parent() {
         return;
     }
 
