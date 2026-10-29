@@ -517,8 +517,34 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
-    for part in [&sha512[..64], &sha512[64..90], " SHA-256 ", " SHA-512 ", " MD5 ", "W - Write notes.txt.sha512", "Tab - Algorithm"] {
+    // Wrapped at the popup's width - 60% of 100 columns, less its border
+    // and margin - and drawn whole, a piece to a row.
+    for piece in sha512.as_bytes().chunks(56) {
+        assert!(screen.contains(std::str::from_utf8(piece).unwrap()), "{} not drawn", std::str::from_utf8(piece).unwrap());
+    }
+    for part in [" SHA-256 ", " SHA-512 ", " MD5 ", "W - Write", "Tab - Algorithm", "Esc - Close"] {
         assert!(screen.contains(part), "{part} not drawn");
+    }
+    // One size whatever is shown: as wide as every popup, as tall as the
+    // larger ones - the same with SHA-512's long rows as with MD5's short
+    // ones, and with one file as with several.
+    fn popup_box(app_state: &mut AppState) -> (u16, u16, u16, u16) {
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        crate::ui::render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer();
+        let row = |y: u16| (0..100).map(|x| buffer[(x, y)].symbol().to_string()).collect::<String>();
+        let top = (0..30).find(|&y| row(y).contains(" Checksums ")).expect("no popup");
+        let left = (1..100).find(|&x| buffer[(x, top)].symbol() == "┌").unwrap();
+        let right = (left..100).find(|&x| buffer[(x, top)].symbol() == "┐").unwrap();
+        let bottom = (top..30).find(|&y| buffer[(left, y)].symbol() == "└").unwrap();
+        (left, top, right - left + 1, bottom - top + 1)
+    }
+    let sized = popup_box(&mut app_state);
+    assert_eq!(sized.2, 60, "not the width every popup has");
+    assert_eq!(sized.3, 30 * 60 / 100);
+    for _ in 0..3 {
+        press(&mut app_state, KeyCode::Tab);
+        assert_eq!(popup_box(&mut app_state), sized);
     }
     press(&mut app_state, KeyCode::Char('w'));
     assert!(app_state.dialog.is_none());
@@ -530,6 +556,7 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     alt_h(&mut app_state);
     finish(&mut app_state);
     assert_eq!(report(&app_state).report.summary(), "2 files");
+    assert_eq!(popup_box(&mut app_state), sized);
     press(&mut app_state, KeyCode::Char('w'));
     app_state.selected_left.clear();
     alt_h(&mut app_state);

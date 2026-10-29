@@ -760,7 +760,7 @@ pub(super) const POPUP_WIDTH: u16 = 60;
 /// A popup `percent_y` of the screen's height and POPUP_WIDTH of its width,
 /// centred over the panels and no taller than they are, so the bars above and
 /// below always show. What does not fit wraps, shortens or scrolls inside it.
-fn popup_rect(percent_y: u16, area: Rect) -> Rect {
+pub(super) fn popup_rect(percent_y: u16, area: Rect) -> Rect {
     let panels = screen_layout(area)[2];
     let width = area.width as usize * POPUP_WIDTH as usize / 100;
     let height = area.height as usize * percent_y as usize / 100;

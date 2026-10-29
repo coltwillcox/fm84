@@ -23,23 +23,19 @@ fn rows_of(line: &str, width: usize) -> Vec<String> {
 }
 
 pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, view: &mut ChecksumView) {
-    let lines: Vec<String> = view.report.lines().iter().map(|line| printable_name(line)).collect();
-    // As wide as the longest line wants, between the width every popup has
-    // and the screen's: a SHA-256 and a name fit whole where they can.
-    let longest = lines.iter().map(|line| display_width(line)).max().unwrap_or(0);
-    let least = area.width as usize * POPUP_WIDTH as usize / 100;
-    let width = (longest + 6).clamp(least, (area.width as usize).saturating_sub(2).max(least));
-    let inner_width = width.saturating_sub(4).max(1);
-    let rows: Vec<String> = lines.iter().flat_map(|line| rows_of(line, inner_width)).collect();
+    // One size whatever it holds, and whichever algorithm is shown: as wide
+    // as every popup, and as tall as the larger ones. What does not fit
+    // wraps, and scrolls.
+    let popup_area = popup_rect(60, area);
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let rows: Vec<String> = view.report.lines().iter().flat_map(|line| rows_of(&printable_name(line), (inner.width as usize).max(1))).collect();
 
-    let (title, keys) = match &view.report {
-        Report::Computed { .. } => {
-            let file = view.report.sums_file().and_then(|(path, _)| path.file_name().map(|name| name.to_string_lossy().into_owned()));
-            let write = file.map(|name| format!("W - Write {name}    ")).unwrap_or_default();
-            (" Checksums ".to_string(), format!("Tab - Algorithm    C - Copy    {write}Esc - Close"))
-        }
-        Report::Checked { file, .. } => (format!(" Checked against {} ", shown_name(file)), "C - Copy    Esc - Close".to_string()),
+    let (title, keys): (String, &[&str]) = match &view.report {
+        Report::Computed { .. } => (" Checksums ".to_string(), &["Tab - Algorithm", "C - Copy", "W - Write", "Esc - Close"]),
+        Report::Checked { file, .. } => (format!(" Checked against {} ", shown_name(file)), &["C - Copy", "Esc - Close"]),
     };
+    // As many rows as the keys take at this width, each key whole.
+    let keys = keys_in_rows(keys, inner.width as usize);
 
     // Above the list, what it sums up to, and for checksums worked out, the
     // algorithms there are to choose between - all worked out already, the
@@ -57,10 +53,8 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
         head.extend([Line::from(options), Line::from("")]);
     }
 
-    // A border, the head above, a blank row and the keys below.
-    let popup_area = centered(screen_layout(area)[2], width, rows.len() + head.len() + 4);
-    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
-    let room = (inner.height as usize).saturating_sub(head.len() + 2).max(1);
+    // The head above, a blank row and the keys below.
+    let room = (inner.height as usize).saturating_sub(head.len() + 1 + keys.len()).max(1);
     view.room = room;
     view.scroll = view.scroll.min(rows.len().saturating_sub(room));
 
@@ -74,7 +68,25 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
 
     let mut shown = head;
     shown.extend(rows.into_iter().skip(view.scroll).take(room).map(|row| Line::from(Span::styled(row, style_file()))));
-    shown.push(Line::from(""));
-    shown.push(Line::from(Span::styled(keys, style_columns())));
     f.render_widget(Paragraph::new(shown), inner);
+    // The keys on the bottom rows, wherever the list ends.
+    let height = (keys.len() as u16).min(inner.height);
+    let bottom = Rect { y: inner.bottom() - height, height, ..inner };
+    f.render_widget(Paragraph::new(keys.into_iter().map(|row| Line::from(Span::styled(row, style_columns()))).collect::<Vec<_>>()), bottom);
+}
+
+/// Keys laid out as rows of `width` columns, apart as every popup sets them
+/// apart, breaking between keys and never inside one.
+fn keys_in_rows(keys: &[&str], width: usize) -> Vec<String> {
+    let mut rows: Vec<String> = Vec::new();
+    for key in keys {
+        match rows.last_mut() {
+            Some(row) if display_width(row) + 4 + display_width(key) <= width => {
+                row.push_str("    ");
+                row.push_str(key);
+            }
+            _ => rows.push((*key).to_string()),
+        }
+    }
+    rows
 }
