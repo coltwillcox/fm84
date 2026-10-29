@@ -6,6 +6,22 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.36.0] - 2026-10-29
+
+### ✨ Added
+- 🗜️ **More archives** - `.7z`, and tars packed with zstd, xz or bzip2 (`.tar.zst`, `.tar.xz`, `.tar.bz2`, and `.tzst`, `.txz`, `.tbz2`) go in as directories, as `.zip` and `.tar.gz` do. Each compressed tar is read on past its first stream, so files joined end to end - as pigz, pzstd and pbzip2 write them - are one archive. A 7z is listed from its header without unpacking anything; one packed solid, as 7-Zip does by default, unpacks what comes before a file to reach it
+- 📤 **Alt+F9 extracts a whole archive** - as in Total Commander: the one under the cursor, or the one the panel is in, into the other panel or wherever the dialog is told. **Ctrl+F9** too, for desktops that take Alt+F9 for hiding a window
+- ⚖️ **Shift+F3 inside archives** - a file inside an archive compared with one on the disk or inside another archive, each copied out first; the diff is headed with the paths the panels show
+
+### 🐛 Fixed
+- 🔐 **An encrypted 7z** says it needs the password, as it is gone into when its names are encrypted and as a file is copied out of it otherwise, rather than that it is packed by a method fm84 does not know
+- 📋 **Running the tests** no longer puts what they copy on the clipboard of the terminal they run in
+
+### 🛠️ Changed
+- 🦀 **Rust 1.93 or newer** to build, for the crate that reads 7z
+
+---
+
 ## [0.35.0] - 2026-10-29
 
 ### ✨ Added
