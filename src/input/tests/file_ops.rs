@@ -455,3 +455,81 @@ fn the_pack_format_goes_round_by_its_ending() {
     assert_eq!(next_pack_format("\u{212A}.zip"), "\u{212A}.7z");
     assert_eq!(next_pack_format("x\u{212A}"), "x\u{212A}.zip");
 }
+
+/// Alt+H works out a file's SHA-256 and shows it; C copies the checksum
+/// alone, Tab goes on to SHA-512 - drawn whole, however long - and W writes
+/// it beside the file and lands there. On a selection it writes SHA256SUMS,
+/// and on that, checks it - saying what fails.
+#[test]
+fn alt_h_works_out_writes_and_checks_checksums() {
+    use crate::app::ChecksumView;
+    use crate::checksum::Report;
+    let dir = std::env::temp_dir().join(format!("fm84-alt-h-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("photos")).unwrap();
+    std::fs::write(dir.join("notes.txt"), "abc").unwrap();
+    std::fs::write(dir.join("photos/a.jpg"), "a").unwrap();
+    let mut app_state = AppState::new();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), Some("notes.txt".as_ref()));
+    let alt_h = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('h'), KeyModifiers::ALT));
+    let finish = |app_state: &mut AppState| {
+        let started = std::time::Instant::now();
+        while app_state.job.is_some() {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
+    };
+    fn report(app_state: &AppState) -> &ChecksumView {
+        match &app_state.dialog {
+            Some(Dialog::Checksums(view)) => view,
+            _ => panic!("no report: {:?}", app_state.error),
+        }
+    }
+
+    alt_h(&mut app_state);
+    finish(&mut app_state);
+    assert_eq!(report(&app_state).report.lines(), ["ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad  notes.txt"]);
+    press(&mut app_state, KeyCode::Char('c'));
+    assert_eq!(app_state.clipboard, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+
+    press(&mut app_state, KeyCode::Tab);
+    finish(&mut app_state);
+    let sha512 = "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f";
+    assert!(matches!(
+        &report(&app_state).report,
+        Report::Computed {
+            algorithm: crate::checksum::Algorithm::Sha512,
+            ..
+        }
+    ));
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+    for part in [&sha512[..64], &sha512[64..90], "W - Write notes.txt.sha512", "Tab - MD5"] {
+        assert!(screen.contains(part), "{part} not drawn");
+    }
+    press(&mut app_state, KeyCode::Char('w'));
+    assert!(app_state.dialog.is_none());
+    assert_eq!(std::fs::read_to_string(dir.join("notes.txt.sha512")).unwrap(), format!("{sha512}  notes.txt\n"));
+    assert_eq!(app_state.children_left[app_state.state_left.selected().unwrap()].name_full, "notes.txt.sha512");
+
+    // Several, a directory's files among them: SHA256SUMS, checked after.
+    app_state.selected_left.extend(["notes.txt", "photos"].map(std::ffi::OsString::from));
+    alt_h(&mut app_state);
+    finish(&mut app_state);
+    assert_eq!(report(&app_state).report.summary(), "2 files");
+    press(&mut app_state, KeyCode::Char('w'));
+    app_state.selected_left.clear();
+    alt_h(&mut app_state);
+    finish(&mut app_state);
+    assert_eq!(report(&app_state).report.summary(), "2 OK");
+    press(&mut app_state, KeyCode::Esc);
+    std::fs::write(dir.join("photos/a.jpg"), "changed").unwrap();
+    alt_h(&mut app_state);
+    finish(&mut app_state);
+    assert_eq!(report(&app_state).report.summary(), "1 OK, 1 FAILED");
+    assert_eq!(report(&app_state).report.lines()[0], "FAILED   photos/a.jpg");
+    std::fs::remove_dir_all(&dir).unwrap();
+}

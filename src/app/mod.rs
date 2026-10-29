@@ -109,6 +109,8 @@ pub enum Dialog {
     /// Alt+P: the archive to pack what is chosen into, its format by the
     /// ending of its name.
     Pack { sources: Vec<(PathBuf, bool)>, input: TextInput },
+    /// Alt+H: checksums worked out, or a checksum file checked.
+    Checksums(Box<ChecksumView>),
     /// A file big enough to be worth asking about before it is opened.
     LargeFile(LargeFile),
     /// Unsaved edits, on the way out of the editor. `then_quit` when it was

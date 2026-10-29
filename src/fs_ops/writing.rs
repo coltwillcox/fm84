@@ -123,6 +123,19 @@ fn keep_owner(_file: &File, _metadata: &fs::Metadata) -> Result<(), Error> {
     Ok(())
 }
 
+/// A small file written whole - a checksum file - beside where it goes and
+/// then put there, written over only when `replacing`.
+pub fn write_whole(dest: &Path, content: &[u8], replacing: bool) -> Result<(), Error> {
+    let (temp, mut file) = temp_beside(dest)?;
+    if let Err(e) = file.write_all(content).and_then(|()| file.sync_all()) {
+        drop(file);
+        let _ = remove_file(&temp);
+        return Err(e);
+    }
+    drop(file);
+    super::transfer::place(&temp, dest, replacing)
+}
+
 /// A file to write into beside `dest`, renamed over it once it is whole.
 /// Same directory, so the rename that finishes the copy is atomic and cannot
 /// half-replace anything; a temporary elsewhere would have to be copied back

@@ -2,6 +2,7 @@ mod app;
 mod archive;
 mod attributes;
 mod background;
+mod checksum;
 mod cli;
 mod constants;
 mod diff;

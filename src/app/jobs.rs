@@ -32,6 +32,17 @@ pub struct TransferJob {
     pub skipped: u64,
     /// What to do with what was copied out, once it all is.
     after: Option<AfterJob>,
+    /// What a checksum job found, shown once it is done.
+    checksums: Option<Box<crate::checksum::Report>>,
+}
+
+/// A checksum report on screen, and how far down it is scrolled.
+#[derive(Debug)]
+pub struct ChecksumView {
+    pub report: crate::checksum::Report,
+    pub scroll: usize,
+    /// Rows the popup showed last, for a page up or down.
+    pub room: usize,
 }
 
 /// An entry of an archive copied out to be looked at, and what then: shown in
@@ -72,6 +83,8 @@ pub enum TransferKind {
     Extract,
     /// Making one.
     Pack,
+    /// Working out checksums, or checking them.
+    Checksum,
 }
 
 impl TransferKind {
@@ -84,6 +97,7 @@ impl TransferKind {
             TransferKind::Trash => "Move to trash",
             TransferKind::Extract => "Extract",
             TransferKind::Pack => "Pack",
+            TransferKind::Checksum => "Checksum",
         }
     }
 }
@@ -181,6 +195,8 @@ enum JobUpdate {
     Clash(JobClash),
     /// One more entry left where it was.
     Skipped,
+    /// What a checksum job found.
+    Checksums(Box<crate::checksum::Report>),
     Finished(Result<Transfer, String>),
 }
 
@@ -373,6 +389,36 @@ fn run_extract(archive: PathBuf, items: Vec<(PathBuf, PathBuf)>, mut progress: J
     progress.finish(outcome);
 }
 
+/// The worker thread behind working out checksums. What cannot be read is
+/// listed as such rather than asked about: a report is what is wanted.
+fn run_compute(sources: Vec<(PathBuf, bool)>, base: PathBuf, algorithm: crate::checksum::Algorithm, mut progress: JobProgress<'_>) {
+    let (targets, unreadable) = crate::checksum::targets(&sources, &base);
+    let _ = progress.updates.send(JobUpdate::Total(targets.iter().map(|target| target.size).sum()));
+    let Some(mut sums) = crate::checksum::compute(&targets, algorithm, &mut progress) else {
+        return progress.finish(Ok(Transfer::Cancelled));
+    };
+    sums.extend(unreadable.into_iter().map(|(name, error)| (name, Err(error))));
+    let _ = progress.updates.send(JobUpdate::Checksums(Box::new(crate::checksum::Report::Computed { algorithm, base, sources, sums })));
+    progress.finish(Ok(Transfer::Done));
+}
+
+/// The worker thread behind checking a checksum file.
+fn run_check(file: PathBuf, mut progress: JobProgress<'_>) {
+    let text = match std::fs::read(&file) {
+        Ok(text) => text,
+        Err(error) => return progress.finish(Err(error)),
+    };
+    let (expected, not_understood) = crate::checksum::parse_sums(&text);
+    let base = file.parent().map(Path::to_path_buf).unwrap_or_default();
+    let total = expected.iter().filter_map(|line| std::fs::metadata(base.join(&line.name)).ok()).map(|metadata| metadata.len()).sum();
+    let _ = progress.updates.send(JobUpdate::Total(total));
+    let Some(results) = crate::checksum::check(&expected, &base, &mut progress) else {
+        return progress.finish(Ok(Transfer::Cancelled));
+    };
+    let _ = progress.updates.send(JobUpdate::Checksums(Box::new(crate::checksum::Report::Checked { file, results, not_understood })));
+    progress.finish(Ok(Transfer::Done));
+}
+
 /// The worker thread behind packing: what goes in is found first, which
 /// gives the bar its total, and then written.
 fn run_pack(sources: Vec<(PathBuf, bool)>, dest: PathBuf, format: crate::fs_ops::PackFormat, replacing: bool, mut progress: JobProgress<'_>) {
@@ -442,7 +488,19 @@ impl AppState {
             answers,
             skipped: 0,
             after: None,
+            checksums: None,
         });
+    }
+
+    /// Work out the checksums of `sources`, each named from `base`, and show
+    /// them once they are all in.
+    pub fn start_checksums(&mut self, sources: Vec<(PathBuf, bool)>, base: PathBuf, algorithm: crate::checksum::Algorithm) {
+        self.start_job(TransferKind::Checksum, Clashes::Ask, move |progress| run_compute(sources, base, algorithm, progress));
+    }
+
+    /// Check the files a checksum file names against it.
+    pub fn start_check(&mut self, file: PathBuf) {
+        self.start_job(TransferKind::Checksum, Clashes::Ask, move |progress| run_check(file, progress));
     }
 
     /// Pack `sources` into a new archive at `dest`, written over only when
@@ -511,6 +569,7 @@ impl AppState {
                 Ok(JobUpdate::Problem(problem)) => job.problem = Some(problem),
                 Ok(JobUpdate::Clash(clash)) => job.clash = Some(clash),
                 Ok(JobUpdate::Skipped) => job.skipped += 1,
+                Ok(JobUpdate::Checksums(report)) => job.checksums = Some(report),
                 Ok(JobUpdate::Finished(result)) => {
                     finished = Some(result);
                     break;
@@ -531,7 +590,7 @@ impl AppState {
 
         // An entry copied out to be looked at changed nothing anyone can
         // see: the panels, their selections and sizes stay as they are.
-        if job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
+        if job.kind != TransferKind::Checksum && job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
             // Both panels: a move empties one and fills the other, and a copy
             // into the same directory shows up on the side it came from.
             self.reload_panel(true, None);
@@ -548,6 +607,10 @@ impl AppState {
         // The offer to quit covered this job, and this job is over.
         self.quit_armed = false;
 
+        if let (Ok(Transfer::Done), Some(report)) = (&result, job.checksums) {
+            self.dialog = Some(Dialog::Checksums(Box::new(ChecksumView { report: *report, scroll: 0, room: 1 })));
+            return;
+        }
         match (&result, job.after) {
             (Ok(Transfer::Done), Some(AfterJob::View(path))) if job.skipped == 0 => return self.request_open(path, false),
             (Ok(Transfer::Done), Some(AfterJob::Open(path))) if job.skipped == 0 => {

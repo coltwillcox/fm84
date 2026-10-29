@@ -469,9 +469,11 @@ dependencies = [
  "image",
  "libc",
  "lzma-rust2",
+ "md-5",
  "ratatui",
  "ruzstd",
  "sevenz-rust2",
+ "sha2",
  "syntect",
  "tar",
  "trash",
@@ -744,6 +746,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1c46f3fcd2e888afdb01a07efc071cb21300e07c68d32c3e8b01b5c8cb1fcaa"
 dependencies = [
  "sha2",
+]
+
+[[package]]
+name = "md-5"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69b6441f590336821bb897fb28fc622898ccceb1d6cea3fde5ea86b090c4de98"
+dependencies = [
+ "cfg-if",
+ "digest",
 ]
 
 [[package]]

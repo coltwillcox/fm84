@@ -274,6 +274,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
             TransferKind::Trash => " Moving to trash ".to_string(),
             TransferKind::Extract => " Extracting ".to_string(),
             TransferKind::Pack => " Packing ".to_string(),
+            TransferKind::Checksum => " Checksumming ".to_string(),
         }
     };
     let popup_area = popup_rect(30, area);
@@ -338,6 +339,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Trash => " Cannot move to trash ",
         TransferKind::Extract => " Cannot extract ",
         TransferKind::Pack => " Cannot pack ",
+        TransferKind::Checksum => " Cannot read ",
     };
     let popup_area = popup_rect(30, area);
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());

@@ -386,3 +386,15 @@ fn alt_p_packs_into_the_other_panel() {
     assert!(app_state.dialog.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Checksums are worked out of files on the disk: inside an archive, Alt+H
+/// says so.
+#[test]
+fn alt_h_inside_an_archive_says_to_copy_out_first() {
+    let (dir, archive, mut app_state) = setup("checksum-inside");
+    app_state.open_dir(true, archive.clone(), Some("readme.txt".as_ref()));
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('h'), KeyModifiers::ALT));
+    assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy it out of the archive first"), "{:?}", app_state.error);
+    assert!(app_state.job.is_none());
+    std::fs::remove_dir_all(&dir).unwrap();
+}

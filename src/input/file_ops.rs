@@ -427,6 +427,87 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
     app_state.start_pack(sources, dest, format, replacing);
 }
 
+/// Alt+H: the checksums of what is chosen - SHA-256 to start with - or, on
+/// a checksum file alone, the files it names checked against it.
+pub(super) fn open_checksums(app_state: &mut AppState) {
+    let is_left = app_state.is_left_active;
+    if app_state.panel_archive(is_left).is_some() {
+        return app_state.display_error("Copy it out of the archive first: checksums are worked out of files on the disk".to_string());
+    }
+    let sources = chosen_items(app_state);
+    if let [(path, false)] = &sources[..]
+        && crate::checksum::is_sums_file(path)
+    {
+        return app_state.start_check(path.clone());
+    }
+    if !sources.is_empty() {
+        let base = app_state.panel_dir(is_left);
+        app_state.start_checksums(sources, base, crate::checksum::Algorithm::Sha256);
+    }
+}
+
+/// Keys on the checksum report: scrolling, C to copy, W to write a checksum
+/// file, Tab for the next algorithm, Esc or Enter to close.
+pub(super) fn checksums_key(app_state: &mut AppState, code: KeyCode) {
+    let Some(Dialog::Checksums(view)) = &mut app_state.dialog else {
+        return;
+    };
+    match code {
+        KeyCode::Up => view.scroll = view.scroll.saturating_sub(1),
+        KeyCode::Down => view.scroll += 1,
+        KeyCode::PageUp => view.scroll = view.scroll.saturating_sub(view.room),
+        KeyCode::PageDown => view.scroll += view.room,
+        KeyCode::Home => view.scroll = 0,
+        // Held to what there is when it is drawn.
+        KeyCode::End => view.scroll = usize::MAX,
+        KeyCode::Char('c' | 'C') => {
+            let text = view.report.to_copy();
+            crate::utils::set_system_clipboard(&text);
+            app_state.find_note = Some(if text.contains('\n') { "Copied the report".to_string() } else { format!("Copied: {text}") });
+            app_state.clipboard = text;
+        }
+        KeyCode::Char('w' | 'W') => write_checksums(app_state),
+        KeyCode::Tab => {
+            if let Some(Dialog::Checksums(view)) = app_state.dialog.take() {
+                match view.report {
+                    crate::checksum::Report::Computed { algorithm, base, sources, .. } => app_state.start_checksums(sources, base, algorithm.next()),
+                    report => app_state.dialog = Some(Dialog::Checksums(Box::new(crate::app::ChecksumView { report, ..*view }))),
+                }
+            }
+        }
+        KeyCode::Esc | KeyCode::Enter => app_state.dialog = None,
+        _ => {}
+    }
+}
+
+/// W on the checksum report: the checksum file written beside what it is
+/// of, as sha256sum would write it, and landed on. What is already at its
+/// name goes by F11's When destination exists, as Pack goes by it.
+fn write_checksums(app_state: &mut AppState) {
+    let Some(Dialog::Checksums(view)) = &app_state.dialog else {
+        return;
+    };
+    let Some((dest, text)) = view.report.sums_file() else {
+        return app_state.display_error("Nothing to write: no checksum could be worked out".to_string());
+    };
+    let (dest, replacing) = match dest.symlink_metadata() {
+        Err(_) => (dest, false),
+        Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => (dest, true),
+        Ok(_) if app_state.options.on_existing == OnExisting::KeepBoth => (crate::fs_ops::free_name(&dest), false),
+        Ok(_) => return app_state.display_error(format!("Already exists: {} - Overwrite or Keep both under F11", dest.display())),
+    };
+    if let Err(e) = crate::fs_ops::write_whole(&dest, &text, replacing) {
+        return app_state.display_error(format!("Cannot write {}: {e}", dest.display()));
+    }
+    app_state.dialog = None;
+    for is_left in [true, false] {
+        if dest.parent() == Some(app_state.panel_dir(is_left).as_path()) {
+            app_state.reload_panel(is_left, dest.file_name());
+        }
+    }
+    app_state.find_note = Some(format!("Written: {}", dest.file_name().unwrap_or_default().to_string_lossy()));
+}
+
 /// Shift+F3: which two files to compare. Two files selected in the panel you
 /// are in, in the order it lists them; otherwise the file under the cursor,
 /// against the one of the same name in the other panel, or failing that the

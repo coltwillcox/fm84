@@ -23,9 +23,11 @@ crossterm = "0.29.0"
 flate2 = "1.1.10"
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
 lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "optimization", "xz", "encoder"] }
+md-5 = "0.11.0"
 ratatui = "0.29.0"
 ruzstd = "0.9.1"
 sevenz-rust2 = { version = "0.24.1", default-features = false, features = ["bzip2", "ppmd", "deflate", "compress"] }
+sha2 = "0.11.1"
 syntect = "5.2"
 tar = { version = "0.4.46", default-features = false }
 trash = "5.2.9"

@@ -21,6 +21,7 @@ use std::path::{Path, PathBuf};
 use unicode_width::UnicodeWidthChar;
 
 mod bars;
+mod checksums;
 mod help;
 mod options_popup;
 mod panels;
@@ -32,7 +33,7 @@ mod spans;
 mod tests;
 
 pub use self::help::*;
-use self::{bars::*, options_popup::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*};
+use self::{bars::*, checksums::*, options_popup::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*};
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style {
@@ -234,6 +235,11 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_destination_popup(f, area, sources, None, if *is_copy { "Copy" } else { "Move" }, "to", input, None),
             Some(Dialog::Symlink { sources, input, .. }) => render_destination_popup(f, area, sources, None, "Symlink", "at", input, None),
             Some(Dialog::Extract { archive, input }) => render_destination_popup(f, area, &[(archive.clone(), false)], Some("archive"), "Extract", "to", input, None),
+            Some(Dialog::Checksums(_)) => {
+                if let Some(Dialog::Checksums(view)) = &mut app_state.dialog {
+                    render_checksums_popup(f, area, view);
+                }
+            }
             Some(Dialog::Pack { sources, input }) => render_destination_popup(f, area, sources, None, "Pack", "into", input, Some("Tab - Format")),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),

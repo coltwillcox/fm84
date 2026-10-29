@@ -125,6 +125,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'c' {
             copy_names(app_state, false);
         }
+        // Alt+H works out checksums, or checks a checksum file.
+        if in_panel && c == 'h' {
+            open_checksums(app_state);
+        }
         // Alt+P packs what is chosen into an archive.
         if in_panel && c == 'p' {
             open_pack(app_state);
@@ -279,6 +283,7 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc => app_state.dialog = None,
             _ => edit_text(app_state, code),
         },
+        Some(Dialog::Checksums(_)) => checksums_key(app_state, code),
         Some(Dialog::Pack { .. }) => match code {
             KeyCode::Enter => handle_pack_confirm(app_state),
             KeyCode::Tab => cycle_pack_format(app_state),
