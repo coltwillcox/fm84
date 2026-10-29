@@ -44,6 +44,28 @@ is on (F11), and in the current directory otherwise.
 A directory that does not exist is reported before anything starts.
 .SH OPTIONS
 .TP
+.BI \-\-choosedir " FILE"
+On quitting, write the active panel's directory to
+.IR FILE ,
+for a shell function to
+.B cd
+to.
+The name is written as it is, with nothing after it.
+.TP
+.BI \-\-shell\-init " SHELL"
+Print
+.BR cd84 ,
+a shell function that starts fm84 with
+.B \-\-choosedir
+and then goes to that directory, and exit.
+.I SHELL
+is
+.BR bash ", " zsh ", " fish
+or
+.BR powershell .
+See
+.BR "LEAVING THE SHELL WHERE FM84 WAS LEFT" .
+.TP
 .BR \-h ", " \-\-help
 Print a short help, with where the config file is, and exit.
 .TP
@@ -52,6 +74,28 @@ Print the version and exit.
 .TP
 .B \-\-
 End the options, for a directory whose name starts with a dash.
+.SH LEAVING THE SHELL WHERE FM84 WAS LEFT
+A program cannot change the directory of the shell that started it, so
+quitting fm84 leaves the shell where it was.
+.B cd84
+does the rest: it runs fm84, and on quitting goes to the directory of the
+active panel, passing on its arguments and its exit status.
+It stays put when fm84 did not quit normally.
+To have it, add one line to the shell's startup file:
+.TP
+bash, in ~/.bashrc
+.B eval \(dq$(fm84 \-\-shell\-init bash)\(dq
+.TP
+zsh, in ~/.zshrc
+.B eval \(dq$(fm84 \-\-shell\-init zsh)\(dq
+.TP
+fish, in ~/.config/fish/config.fish
+.B fm84 \-\-shell\-init fish | source
+.TP
+PowerShell, in $PROFILE
+.B fm84 \-\-shell\-init powershell | Out\-String | Invoke\-Expression
+.PP
+The function is printed by the fm84 it comes with, so it keeps up with it.
 .SH KEYS
 F1 inside fm84 lists these too.
 .SS Panels
@@ -459,11 +503,17 @@ Where the trash is, as the freedesktop.org trash specification has it.
 Quit normally.
 .TP
 .B 1
-Not run from a terminal, or an error that stopped it.
+Not run from a terminal, or an error that stopped it \(em writing the
+.B \-\-choosedir
+file among them.
 .TP
 .B 2
-A mistake on the command line, such as an unknown option or a directory
-that does not exist.
+A mistake on the command line, such as an unknown option, a directory that
+does not exist or a shell
+.B \-\-shell\-init
+has no
+.B cd84
+for.
 .SH NOTES
 Icons need a Nerd Font; F11 can switch them to plain letters.
 Images are drawn as ASCII art in colour, and look best in a terminal with

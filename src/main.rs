@@ -39,7 +39,7 @@ fn main() -> Result<()> {
 
     // Before the terminal check, so `fm84 --version` works in a pipe or a
     // script, where there is no terminal to take.
-    let (left, right) = match cli::parse(std::env::args_os().skip(1)) {
+    let (left, right, choosedir) = match cli::parse(std::env::args_os().skip(1)) {
         Ok(cli::Command::Help) => {
             println!("{}", cli::help());
             return Ok(());
@@ -48,7 +48,11 @@ fn main() -> Result<()> {
             println!("{}", cli::version());
             return Ok(());
         }
-        Ok(cli::Command::Run { left, right }) => (start_dir(left), start_dir(right)),
+        Ok(cli::Command::ShellInit(shell)) => {
+            println!("{}", cli::shell_init(shell));
+            return Ok(());
+        }
+        Ok(cli::Command::Run { left, right, choosedir }) => (start_dir(left), start_dir(right), choosedir),
         Err(message) => usage_error(&message),
     };
 
@@ -67,7 +71,7 @@ fn main() -> Result<()> {
     install_panic_hook();
 
     let mut terminal = init_terminal()?;
-    let run_result = run(&mut terminal, left, right);
+    let run_result = run(&mut terminal, left, right, choosedir);
     let restore_result = restore_terminal();
 
     // Report what went wrong in the app before any trouble tearing the terminal down.
@@ -187,8 +191,9 @@ fn install_panic_hook() {
 }
 
 /// `left` and `right` are the directories the command line named, which win
-/// over the remembered ones.
-fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::path::PathBuf>) -> io::Result<()> {
+/// over the remembered ones. `choosedir` is where to say which directory
+/// fm84 was left in, for `cd84` to go to.
+fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::path::PathBuf>, choosedir: Option<std::path::PathBuf>) -> io::Result<()> {
     let mut app_state = AppState::new();
     display::apply(&app_state.options);
 
@@ -253,7 +258,19 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         let _ = options::save_session(&panel(app_state.tab_dirs(true)), &panel(app_state.tab_dirs(false)));
     }
 
+    if let Some(file) = choosedir {
+        write_chosen_dir(&file, if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right })?;
+    }
     Ok(())
+}
+
+/// The directory for `cd84` to go to, as the bytes of its name and nothing
+/// after them: a name can end in a newline, and one written after it would
+/// be taken for part of the name. Not UTF-8 on Unix, if the name is not.
+/// The directory on show, not one a panel is still on its way to: the shell
+/// would wait on a dead mount the way the panel did.
+fn write_chosen_dir(file: &std::path::Path, dir: &std::path::Path) -> io::Result<()> {
+    std::fs::write(file, dir.as_os_str().as_encoded_bytes()).map_err(|e| io::Error::new(e.kind(), format!("cannot write the directory to {}: {e}", file.display())))
 }
 
 /// Give the terminal to the editor F11 names until it exits, then take it
