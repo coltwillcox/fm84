@@ -9,10 +9,29 @@ pub(super) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
     Ok(())
 }
 
+/// Asked of the shell directly. Through `cmd /C start` the path was read by
+/// cmd, which quotes nothing without a space in it, so a file named `x&calc`
+/// ran calc - and `%VAR%` in a name was expanded.
 #[cfg(target_os = "windows")]
 pub(super) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
-    Command::new("cmd").args(["/C", "start", ""]).arg(path).stdout(Stdio::null()).stderr(Stdio::null()).spawn()?;
-    Ok(())
+    use std::ffi::{OsStr, c_void};
+    use std::os::windows::ffi::OsStrExt;
+
+    // Declared here rather than pulling in windows-sys, as for the drives.
+    #[link(name = "shell32")]
+    unsafe extern "system" {
+        fn ShellExecuteW(hwnd: *mut c_void, operation: *const u16, file: *const u16, parameters: *const u16, directory: *const u16, show: i32) -> *mut c_void;
+    }
+    const SW_SHOWNORMAL: i32 = 1;
+
+    let wide = |text: &OsStr| text.encode_wide().chain(std::iter::once(0)).collect::<Vec<u16>>();
+    let operation = wide(OsStr::new("open"));
+    let file = wide(path.as_os_str());
+    // SAFETY: both strings are NUL-terminated and outlive the call; the
+    // other pointers may be null.
+    let result = unsafe { ShellExecuteW(std::ptr::null_mut(), operation.as_ptr(), file.as_ptr(), std::ptr::null(), std::ptr::null(), SW_SHOWNORMAL) };
+    // Above 32 is success; anything else is an error, also left in GetLastError.
+    if result as usize > 32 { Ok(()) } else { Err(std::io::Error::last_os_error()) }
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
