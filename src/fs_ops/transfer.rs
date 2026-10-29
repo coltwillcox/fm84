@@ -313,7 +313,11 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
             // The one moment the destination changes, and it changes all at
             // once: anything reading it sees the old bytes or the new ones.
             let placed = if replacing {
-                clear_link(dest).and_then(|()| rename(&temp, dest))
+                // A rename takes a link's place without following it, and
+                // in one step. Cleared first, the link was lost whenever the
+                // rename then failed; that is kept for where it refuses -
+                // Windows, over a link to a directory.
+                rename(&temp, dest).or_else(|_| clear_link(dest).and_then(|()| rename(&temp, dest)))
             } else if path_exists(dest) {
                 // Taken while the copy ran, and nobody said it could be
                 // replaced. A rename would replace it without a word.
