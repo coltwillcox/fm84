@@ -113,6 +113,11 @@ fn a_file_in_the_way_is_asked_about() {
     // Still counted, so the bar reaches its end.
     assert_eq!(keeping.bytes, 16);
 
+    let mut both = Asking::new(Clash::KeepBoth, Reply::Abort);
+    extract(&archive, &[(PathBuf::from("note.txt"), dest.clone())], &mut both).unwrap();
+    assert_eq!(fs::read_to_string(&dest).unwrap(), "mine");
+    assert_eq!(fs::read_to_string(dir.join("note (2).txt")).unwrap(), "from the archive");
+
     let mut replacing = Asking::new(Clash::Replace, Reply::Abort);
     extract(&archive, &[(PathBuf::from("note.txt"), dest.clone())], &mut replacing).unwrap();
     assert_eq!(fs::read_to_string(&dest).unwrap(), "from the archive");

@@ -149,5 +149,22 @@ fn files_in_the_way_are_asked_about_one_at_a_time() {
     let (asked, held, _) = run(Clashes::ReplaceAll, &|_| Answer::Abort, &from, &onto);
     assert_eq!((asked, held), (0, vec!["new".to_string(); 4]));
 
+    // Keep both leaves what was there and puts the new one beside it, and
+    // is nothing skipped; for all, it is asked once - and F11's Keep both
+    // asks nothing.
+    let beside = |onto: &std::path::Path| ["a (2)", "b (2)", "c (2)"].map(|file| std::fs::read_to_string(onto.join(file)).ok());
+    let (from, onto) = fresh("keep-one");
+    let (asked, held, said) = run(Clashes::Ask, &|name| if name == "b" { Answer::KeepBoth } else { Answer::Skip }, &from, &onto);
+    assert_eq!((asked, held), (3, vec!["old".into(), "old".into(), "old".into(), "new".into()]));
+    assert_eq!(beside(&onto), [None, Some("new".to_string()), None]);
+    assert_eq!(said.as_deref(), Some("Copy finished, 2 entries skipped"));
+    let (from, onto) = fresh("keep-all");
+    let (asked, held, said) = run(Clashes::Ask, &|_| Answer::KeepBothAll, &from, &onto);
+    assert_eq!((asked, held, said), (1, vec!["old".into(), "old".into(), "old".into(), "new".into()], None));
+    assert_eq!(beside(&onto), [Some("new".to_string()), Some("new".to_string()), Some("new".to_string())]);
+    let (from, onto) = fresh("keep-f11");
+    let (asked, _, _) = run(Clashes::KeepBothAll, &|_| Answer::Abort, &from, &onto);
+    assert_eq!((asked, beside(&onto).iter().flatten().count()), (0, 3));
+
     std::fs::remove_dir_all(&dir).unwrap();
 }

@@ -327,6 +327,32 @@ fn copy_and_move_go_where_the_destination_says() {
     assert_eq!(std::fs::read_to_string(right.join("a.txt")).unwrap(), "a");
     app_state.reset_error();
 
+    // Again, and K keeps both: the question offers it, and the copy goes in
+    // beside the one there.
+    std::fs::write(right.join("a.txt"), "theirs").unwrap();
+    on_a(&mut app_state);
+    press(&mut app_state, KeyCode::F(5));
+    press(&mut app_state, KeyCode::Enter);
+    let started = std::time::Instant::now();
+    while !app_state.job.as_ref().is_some_and(|job| job.clash.is_some()) {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "never asked");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    // Drawn once the job has run long enough to be worth showing.
+    app_state.job.as_mut().unwrap().started -= std::time::Duration::from_secs(5);
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+    assert!(screen.contains("K - Keep both") && screen.contains("B - Keep both all"), "not offered");
+    press(&mut app_state, KeyCode::Char('k'));
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert_eq!(std::fs::read_to_string(right.join("a.txt")).unwrap(), "theirs");
+    assert_eq!(std::fs::read_to_string(right.join("a (2).txt")).unwrap(), "a");
+    std::fs::remove_file(right.join("a (2).txt")).unwrap();
+    std::fs::write(right.join("a.txt"), "a").unwrap();
+
     // The name edited, one key at a time.
     on_a(&mut app_state);
     press(&mut app_state, KeyCode::F(5));

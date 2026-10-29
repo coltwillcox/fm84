@@ -108,6 +108,7 @@ impl Options {
                         "ask" => OnExisting::Ask,
                         "overwrite" => OnExisting::Overwrite,
                         "refuse" => OnExisting::Refuse,
+                        "keep-both" => OnExisting::KeepBoth,
                         _ => options.on_existing,
                     }
                 }
@@ -274,6 +275,7 @@ impl Options {
                 OnExisting::Ask => "ask",
                 OnExisting::Overwrite => "overwrite",
                 OnExisting::Refuse => "refuse",
+                OnExisting::KeepBoth => "keep-both",
             },
             self.terminal,
             self.editor,

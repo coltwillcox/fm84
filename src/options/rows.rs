@@ -175,6 +175,7 @@ impl Options {
                 OnExisting::Ask => "Ask",
                 OnExisting::Overwrite => "Overwrite",
                 OnExisting::Refuse => "Refuse",
+                OnExisting::KeepBoth => "Keep both",
             }
             .to_string(),
             OptionRow::Terminal if self.terminal.is_empty() => "Automatic".to_string(),
@@ -273,7 +274,7 @@ impl Options {
             OptionRow::DeleteToTrash => self.delete_to_trash = !self.delete_to_trash,
             OptionRow::ConfirmCopyMove => self.confirm_copy_move = !self.confirm_copy_move,
             OptionRow::OnExisting => {
-                let policies = [OnExisting::Ask, OnExisting::Overwrite, OnExisting::Refuse];
+                let policies = [OnExisting::Ask, OnExisting::Overwrite, OnExisting::KeepBoth, OnExisting::Refuse];
                 self.on_existing = step(&policies, self.on_existing, forward);
             }
             OptionRow::RememberDirs => self.remember_dirs = !self.remember_dirs,

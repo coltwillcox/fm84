@@ -401,3 +401,59 @@ fn a_long_name_of_wide_characters_still_copies() {
     assert_eq!(fs::read_to_string(&dest).unwrap(), "crab");
     fs::remove_dir_all(&dir).unwrap();
 }
+
+/// The name a copy kept beside the file in its way is given: numbered
+/// before the ending - all of an archive's double one - and on past the
+/// numbers already taken.
+#[test]
+fn a_free_name_is_numbered_before_its_ending() {
+    let dir = scratch("free-name");
+    let free = |name: &str| free_name(&dir.join(name)).file_name().unwrap().to_string_lossy().into_owned();
+    assert_eq!(free("notes.txt"), "notes (2).txt");
+    assert_eq!(free("src.tar.gz"), "src (2).tar.gz");
+    assert_eq!(free("SRC.TAR.XZ"), "SRC (2).TAR.XZ");
+    assert_eq!(free(".bashrc"), ".bashrc (2)");
+    assert_eq!(free("Makefile"), "Makefile (2)");
+    fs::write(dir.join("notes (2).txt"), "").unwrap();
+    fs::write(dir.join("notes (3).txt"), "").unwrap();
+    assert_eq!(free("notes.txt"), "notes (4).txt");
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Keep both writes the new one beside what is in the way, which is left
+/// as it was: a file, a link, files merged into a directory, and a move -
+/// whose source then goes.
+#[test]
+fn keep_both_writes_beside_what_is_in_the_way() {
+    let dir = scratch("keep-both");
+    let (from, onto) = (dir.join("from"), dir.join("onto"));
+    fs::create_dir_all(from.join("sub")).unwrap();
+    fs::create_dir_all(onto.join("sub")).unwrap();
+    fs::write(from.join("a.txt"), "new").unwrap();
+    fs::write(onto.join("a.txt"), "old").unwrap();
+    fs::write(from.join("sub/b.txt"), "new b").unwrap();
+    fs::write(onto.join("sub/b.txt"), "old b").unwrap();
+
+    let mut keeping = Clashing::new(Clash::KeepBoth);
+    copy_path(from.join("a.txt"), onto.join("a.txt"), false, &mut keeping).unwrap();
+    assert_eq!((fs::read_to_string(onto.join("a.txt")).unwrap(), fs::read_to_string(onto.join("a (2).txt")).unwrap()), ("old".into(), "new".into()));
+
+    copy_path(from.join("sub"), onto.join("sub"), true, &mut keeping).unwrap();
+    assert_eq!((fs::read_to_string(onto.join("sub/b.txt")).unwrap(), fs::read_to_string(onto.join("sub/b (2).txt")).unwrap()), ("old b".into(), "new b".into()));
+
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink("a.txt", from.join("link")).unwrap();
+        fs::write(onto.join("link"), "a file").unwrap();
+        copy_path(from.join("link"), onto.join("link"), false, &mut keeping).unwrap();
+        assert_eq!(fs::read_link(onto.join("link (2)")).unwrap(), Path::new("a.txt"));
+        assert_eq!(fs::read_to_string(onto.join("link")).unwrap(), "a file");
+    }
+
+    // A third time: on past the number taken.
+    move_path(from.join("a.txt"), onto.join("a.txt"), &mut keeping).unwrap();
+    assert_eq!(fs::read_to_string(onto.join("a (3).txt")).unwrap(), "new");
+    assert!(!from.join("a.txt").exists());
+    assert_eq!(fs::read_to_string(onto.join("a.txt")).unwrap(), "old");
+    fs::remove_dir_all(&dir).unwrap();
+}

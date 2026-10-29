@@ -148,6 +148,9 @@ pub enum OnExisting {
     Overwrite,
     /// Refuse the whole transfer, as fm84 always did.
     Refuse,
+    /// Keep what is there, and write each file beside it under a name of
+    /// its own.
+    KeepBoth,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

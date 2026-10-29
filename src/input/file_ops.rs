@@ -244,6 +244,7 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
     match app_state.options.on_existing {
         OnExisting::Refuse if !taken.is_empty() => app_state.display_error(format!("Destination already exists: {}", taken[0].display())),
         OnExisting::Overwrite => app_state.start_transfer(items, is_copy, Clashes::ReplaceAll),
+        OnExisting::KeepBoth => app_state.start_transfer(items, is_copy, Clashes::KeepBothAll),
         OnExisting::Ask | OnExisting::Refuse => app_state.start_transfer(items, is_copy, Clashes::Ask),
     }
 }
@@ -271,6 +272,7 @@ fn submit_extract(app_state: &mut AppState, archive: PathBuf, items: Vec<(PathBu
     match app_state.options.on_existing {
         OnExisting::Refuse if !taken.is_empty() => app_state.display_error(format!("Destination already exists: {}", taken[0].display())),
         OnExisting::Overwrite => app_state.start_extract(archive, extracting, Clashes::ReplaceAll, None),
+        OnExisting::KeepBoth => app_state.start_extract(archive, extracting, Clashes::KeepBothAll, None),
         OnExisting::Ask | OnExisting::Refuse => app_state.start_extract(archive, extracting, Clashes::Ask, None),
     }
 }
@@ -334,7 +336,11 @@ fn go_extract_all(app_state: &mut AppState, archive: PathBuf, destination: &Path
     if !destination.is_dir() {
         return app_state.display_error(format!("No such directory: {}", destination.display()));
     }
-    let clashes = if app_state.options.on_existing == OnExisting::Overwrite { Clashes::ReplaceAll } else { Clashes::Ask };
+    let clashes = match app_state.options.on_existing {
+        OnExisting::Overwrite => Clashes::ReplaceAll,
+        OnExisting::KeepBoth => Clashes::KeepBothAll,
+        OnExisting::Ask | OnExisting::Refuse => Clashes::Ask,
+    };
     app_state.start_extract(archive, vec![(PathBuf::new(), destination.to_path_buf())], clashes, None);
 }
 
@@ -410,11 +416,13 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
         Some(dir) => return app_state.display_error(format!("No such directory: {}", dir.display())),
         None => return app_state.display_error(format!("Cannot pack into {}", dest.display())),
     }
-    let replacing = match dest.symlink_metadata() {
+    let (dest, replacing) = match dest.symlink_metadata() {
         Ok(metadata) if metadata.is_dir() => return app_state.display_error(format!("{} is a directory", dest.display())),
-        Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => true,
-        Ok(_) => return app_state.display_error(format!("Already exists: {} - another name, or Overwrite under F11", dest.display())),
-        Err(_) => false,
+        Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => (dest, true),
+        // Beside it, as a copy keeps both.
+        Ok(_) if app_state.options.on_existing == OnExisting::KeepBoth => (crate::fs_ops::free_name(&dest), false),
+        Ok(_) => return app_state.display_error(format!("Already exists: {} - another name, or Overwrite or Keep both under F11", dest.display())),
+        Err(_) => (dest, false),
     };
     app_state.start_pack(sources, dest, format, replacing);
 }

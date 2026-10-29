@@ -58,14 +58,14 @@ pub fn extract(archive: &Path, items: &[(PathBuf, PathBuf)], report: Report<'_>)
         let Some(points_to) = &entry.link else {
             continue;
         };
-        match settle_clash(&source(&entry.path), target, report) {
-            Some(Outcome::Cancelled) => return Ok(Transfer::Cancelled),
-            Some(_) => continue,
-            None => {}
-        }
+        let target = match settle_clash(&source(&entry.path), target, report) {
+            Ok(target) => target,
+            Err(Outcome::Cancelled) => return Ok(Transfer::Cancelled),
+            Err(_) => continue,
+        };
         attempt(&source(&entry.path), report, |_| {
-            clear_for_link(target)?;
-            make_link(points_to, target)
+            clear_for_link(&target)?;
+            make_link(points_to, &target)
         })?;
     }
 
@@ -88,19 +88,19 @@ pub fn extract(archive: &Path, items: &[(PathBuf, PathBuf)], report: Report<'_>)
         let (at, target) = &reading[&position];
         let entry = index.entry(*at);
         let from = source(&entry.path);
-        // Asked once for each: a Retry reads it again, and is not asked again.
+        let mut target = target.clone();
         if contents.is_ok() {
-            match settle_clash(&from, target, &mut *report) {
-                Some(Outcome::Cancelled) => {
+            match settle_clash(&from, &target, &mut *report) {
+                Ok(chosen) => target = chosen,
+                Err(Outcome::Cancelled) => {
                     cancelled = true;
                     return Next::Stop;
                 }
-                Some(_) => {
+                Err(_) => {
                     // Counted as dealt with, so the bar still reaches the end.
                     report.step(Step::Advanced(entry.size));
                     return Next::Go;
                 }
-                None => {}
             }
         }
         let written = contents.and_then(|reader| {
@@ -110,11 +110,11 @@ pub fn extract(archive: &Path, items: &[(PathBuf, PathBuf)], report: Report<'_>)
             if entry.kind == EntryKind::Link {
                 let mut points_to = Vec::new();
                 reader.take(4096).read_to_end(&mut points_to)?;
-                clear_for_link(target)?;
-                make_link(&crate::archive::link_target(&points_to), target)?;
+                clear_for_link(&target)?;
+                make_link(&crate::archive::link_target(&points_to), &target)?;
                 return Ok(Transfer::Done);
             }
-            write_beside(target, reader, &mut *report, &|file, temp| finish_file(file, temp, entry))
+            write_beside(&target, reader, &mut *report, &|file, temp| finish_file(file, temp, entry))
         });
         match written {
             Ok(Transfer::Done) => Next::Go,
@@ -148,17 +148,17 @@ pub fn extract(archive: &Path, items: &[(PathBuf, PathBuf)], report: Report<'_>)
         let from = source(&entry.path);
         match entry.kind {
             EntryKind::HardLink => {
-                match settle_clash(&from, target, report) {
-                    Some(Outcome::Cancelled) => return Ok(Transfer::Cancelled),
-                    Some(_) => continue,
-                    None => {}
-                }
+                let target = match settle_clash(&from, target, report) {
+                    Ok(target) => target,
+                    Err(Outcome::Cancelled) => return Ok(Transfer::Cancelled),
+                    Err(_) => continue,
+                };
                 let original = entry.link.as_ref().and_then(|named| placed.get(named));
                 attempt(&from, report, |_| -> Result<(), Error> {
                     match original {
                         Some(original) if path_exists(original) => {
-                            clear_for_link(target)?;
-                            fs::hard_link(original, target)
+                            clear_for_link(&target)?;
+                            fs::hard_link(original, &target)
                         }
                         _ => Err(Error::other(format!("A hard link to {}, which is not being copied out", entry.link.as_deref().unwrap_or(Path::new("?")).display()))),
                     }

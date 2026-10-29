@@ -360,6 +360,15 @@ fn alt_p_packs_into_the_other_panel() {
     assert!(app_state.job.is_none());
     app_state.reset_error();
 
+    // With F11 on Keep both, beside it.
+    app_state.options.on_existing = crate::options::OnExisting::KeepBoth;
+    alt_p(&mut app_state);
+    app_state.dialog_input().unwrap().set(out.join("photos.7z").display().to_string());
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert!(out.join("photos (2).7z").is_file());
+    app_state.options.on_existing = crate::options::OnExisting::Ask;
+
     // Not a name an archive has, nor into an archive, nor from inside one.
     alt_p(&mut app_state);
     app_state.dialog_input().unwrap().set(out.join("photos.rar").display().to_string());

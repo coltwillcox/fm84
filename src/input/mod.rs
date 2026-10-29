@@ -193,6 +193,8 @@ fn job_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         KeyCode::Char('a') | KeyCode::Char('A') if clash => job.answer(Answer::OverwriteAll),
         KeyCode::Char('s') | KeyCode::Char('S') if clash => job.answer(Answer::SkipAll),
         KeyCode::Char('o') | KeyCode::Char('O') if clash => job.answer(Answer::OverwriteOlder),
+        KeyCode::Char('k') | KeyCode::Char('K') if clash => job.answer(Answer::KeepBoth),
+        KeyCode::Char('b') | KeyCode::Char('B') if clash => job.answer(Answer::KeepBothAll),
         // An entry that failed, waiting on what to do about it.
         KeyCode::Char('r') | KeyCode::Char('R') if job.problem.is_some() => job.answer(Answer::Retry),
         KeyCode::Char('s') | KeyCode::Char('S') if job.problem.is_some() => job.answer(Answer::Skip),

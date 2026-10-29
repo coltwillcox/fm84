@@ -85,6 +85,9 @@ pub enum Clash {
     Replace,
     /// Leave what is there, and the source where it was.
     Keep,
+    /// Leave what is there, and write the source beside it under a name of
+    /// its own: `name (2).ext`.
+    KeepBoth,
     /// Stop the whole job.
     Abort,
 }
@@ -193,34 +196,42 @@ pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
         return Ok(Transfer::Done);
     };
     let outcome = if metadata.file_type().is_symlink() {
-        settle_clash(&source, &dest, report).map_or_else(|| copy_link(&source, &dest, report), Ok)?
+        match settle_clash(&source, &dest, report) {
+            Ok(target) => copy_link(&source, &target, report)?,
+            Err(outcome) => outcome,
+        }
     } else if is_dir {
         copy_dir_recursive(&source, &dest, report)?
     } else {
-        settle_clash(&source, &dest, report).map_or_else(|| copy_file(&source, &dest, report), Ok)?
+        match settle_clash(&source, &dest, report) {
+            Ok(target) => copy_file(&source, &target, report)?,
+            Err(outcome) => outcome,
+        }
     };
     Ok(outcome.into())
 }
 
-/// When `dest` is already there and is not a directory - a file or a link -
-/// ask whether `source` may be written over it. None to go ahead; otherwise
-/// how the entry came out without it: left where it was, or the job stopped.
-/// A directory in the way is not asked about here: a directory is merged
-/// into it, and a file onto it fails, which is asked about as a failure.
-pub(super) fn settle_clash(source: &Path, dest: &Path, report: Report<'_>) -> Option<Outcome> {
-    let existing = dest.symlink_metadata().ok()?;
-    if existing.is_dir() {
-        return None;
+/// Where `source` is to be written, when `dest` may already be there: at
+/// `dest` itself, or beside it under a name of its own. A file or a link in
+/// the way is asked about; a directory is not - a directory is merged into
+/// it, and a file onto it fails, which is asked about as a failure. Err for
+/// how the entry came out without being written: left where it was, or the
+/// job stopped.
+pub(super) fn settle_clash(source: &Path, dest: &Path, report: Report<'_>) -> Result<PathBuf, Outcome> {
+    match dest.symlink_metadata() {
+        Ok(existing) if !existing.is_dir() => {}
+        _ => return Ok(dest.to_path_buf()),
     }
     match report.exists(source, dest) {
-        Clash::Replace => None,
+        Clash::Replace => Ok(dest.to_path_buf()),
+        Clash::KeepBoth => Ok(free_name(dest)),
         Clash::Keep => {
             // Counted as dealt with, so the bar still reaches the end.
             let bytes = source.symlink_metadata().map_or(0, |metadata| if metadata.is_file() { metadata.len() } else { 0 });
             let carry_on = report.step(Step::Starting(source)) && report.step(Step::Advanced(bytes));
-            Some(if carry_on { Outcome::Skipped } else { Outcome::Cancelled })
+            Err(if carry_on { Outcome::Skipped } else { Outcome::Cancelled })
         }
-        Clash::Abort => Some(Outcome::Cancelled),
+        Clash::Abort => Err(Outcome::Cancelled),
     }
 }
 
@@ -402,12 +413,12 @@ fn copy_dir_recursive(source: &Path, dest: &Path, report: Report<'_>) -> Result<
         // the link, so do the same.
         let outcome = if file_type.is_dir() {
             copy_dir_recursive(&entry_path, &dest_path, &mut *report)?
-        } else if let Some(outcome) = settle_clash(&entry_path, &dest_path, &mut *report) {
-            outcome
-        } else if file_type.is_symlink() {
-            copy_link(&entry_path, &dest_path, &mut *report)?
         } else {
-            copy_file(&entry_path, &dest_path, &mut *report)?
+            match settle_clash(&entry_path, &dest_path, &mut *report) {
+                Err(outcome) => outcome,
+                Ok(target) if file_type.is_symlink() => copy_link(&entry_path, &target, &mut *report)?,
+                Ok(target) => copy_file(&entry_path, &target, &mut *report)?,
+            }
         };
         match outcome {
             Outcome::Cancelled => return Ok(Outcome::Cancelled),
@@ -470,12 +481,17 @@ fn move_across(source: &Path, dest: &Path, report: Report<'_>) -> Result<Outcome
         return Ok(if removed.is_some() { Outcome::Done } else { Outcome::Skipped });
     }
 
-    // Asked first, since the rename below would replace it without a word.
-    if !metadata.is_dir()
-        && let Some(outcome) = settle_clash(source, dest, report)
-    {
-        return Ok(outcome);
-    }
+    // Asked first, since the rename below would replace it without a word -
+    // and asked where to: over it, or beside it.
+    let dest = if metadata.is_dir() {
+        dest.to_path_buf()
+    } else {
+        match settle_clash(source, dest, report) {
+            Ok(target) => target,
+            Err(outcome) => return Ok(outcome),
+        }
+    };
+    let dest = dest.as_path();
 
     // Within one filesystem - merging into a directory already there - a
     // rename does it at once: a file replaces the one in the way, and a

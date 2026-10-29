@@ -226,8 +226,9 @@ fn render_job_clash(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState
     lines.extend([
         Line::from(Span::styled(describe("New     ", clash.source_size, clash.source_modified, clash.dest_modified), style_file())),
         Line::from(Span::styled(describe("Existing", clash.dest_size, clash.dest_modified, clash.source_modified), style_file())),
-        Line::from(Span::styled("Y - Overwrite    N - Skip    O - Overwrite all older", style_columns())),
-        Line::from(Span::styled("A - Overwrite all    S - Skip all    Esc - Abort", style_columns())),
+        Line::from(Span::styled("Y - Overwrite    N - Skip    K - Keep both", style_columns())),
+        Line::from(Span::styled("A - Overwrite all    S - Skip all    B - Keep both all", style_columns())),
+        Line::from(Span::styled("O - Overwrite all older    Esc - Abort", style_columns())),
     ]);
     if app_state.quit_armed {
         lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));

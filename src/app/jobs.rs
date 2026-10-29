@@ -130,6 +130,9 @@ pub enum Clashes {
     Ask,
     ReplaceAll,
     KeepAll,
+    /// Keep every file in the way, and write each beside it under a name of
+    /// its own.
+    KeepBothAll,
     /// Write over a file only when it is older than the one replacing it.
     ReplaceOlder,
 }
@@ -159,6 +162,11 @@ pub enum Answer {
     /// Write over this one and every other in the way when it is older than
     /// the one replacing it, and leave the rest - without asking again.
     OverwriteOlder,
+    /// Keep the file in the way, and write this one beside it as
+    /// `name (2).ext`.
+    KeepBoth,
+    /// Keep both, for this one and every other in the way.
+    KeepBothAll,
 }
 
 /// What the worker sends back. Bytes are per chunk rather than a running total,
@@ -250,7 +258,7 @@ impl Progress for JobProgress<'_> {
             }
             Answer::Delete => Reply::Delete,
             // Answers to a clash, which a failure is never asked.
-            Answer::Overwrite | Answer::OverwriteAll | Answer::OverwriteOlder => Reply::Skip,
+            Answer::Overwrite | Answer::OverwriteAll | Answer::OverwriteOlder | Answer::KeepBoth | Answer::KeepBothAll => Reply::Skip,
         }
     }
 
@@ -293,6 +301,11 @@ impl Progress for JobProgress<'_> {
                         self.clashes = Clashes::KeepAll;
                         Clash::Keep
                     }
+                    Answer::KeepBoth => Clash::KeepBoth,
+                    Answer::KeepBothAll => {
+                        self.clashes = Clashes::KeepBothAll;
+                        Clash::KeepBoth
+                    }
                     Answer::OverwriteOlder => {
                         self.clashes = Clashes::ReplaceOlder;
                         replace_if_older(modified(source), modified(dest))
@@ -302,6 +315,7 @@ impl Progress for JobProgress<'_> {
             }
             Clashes::ReplaceAll => Clash::Replace,
             Clashes::KeepAll => Clash::Keep,
+            Clashes::KeepBothAll => Clash::KeepBoth,
             Clashes::ReplaceOlder => replace_if_older(modified(source), modified(dest)),
         };
         if clash == Clash::Keep {
