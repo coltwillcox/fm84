@@ -1,4 +1,4 @@
-use super::fixtures::{Put, scratch, tar, zip};
+use super::fixtures::{Put, scratch, sevenz, tar, zip};
 use super::*;
 
 fn names(index: &Index, inner: &str) -> Vec<String> {
@@ -167,5 +167,114 @@ fn a_file_named_like_an_archive_that_is_not_one_fails_to_read() {
         std::fs::write(dir.join(name), "plain text, not an archive").unwrap();
         assert!(super::index(&dir.join(name)).is_err(), "{name}");
     }
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// One archive made in every format fm84 reads: a 7z both solid, every file
+/// in one block, and not.
+fn every_format(dir: &Path) -> Vec<PathBuf> {
+    let mut made = Vec::new();
+    for name in ["a.zip", "a.tar", "a.tar.gz", "a.tar.zst", "a.tar.xz", "a.tar.bz2"] {
+        let path = dir.join(name);
+        if name.ends_with("zip") {
+            zip(&path, &[("docs/notes.txt", Put::File(b"notes")), ("docs/deep/more.txt", Put::File(b"more!")), ("top.txt", Put::File(b"top"))]);
+        } else {
+            tar(&path, &[(b"docs/notes.txt", Put::File(b"notes")), (b"docs/deep/more.txt", Put::File(b"more!")), (b"top.txt", Put::File(b"top"))]);
+        }
+        made.push(path);
+    }
+    for (name, solid) in [("solid.7z", true), ("loose.7z", false)] {
+        let path = dir.join(name);
+        sevenz(&path, &[("docs/notes.txt", Put::File(b"notes")), ("docs/deep/more.txt", Put::File(b"more!")), ("top.txt", Put::File(b"top"))], solid);
+        made.push(path);
+    }
+    made
+}
+
+/// Every format lists the same tree and reads the same contents - asked for
+/// last first, which in a solid 7z means reading through what comes before.
+#[test]
+fn every_format_lists_and_reads_alike() {
+    let dir = scratch("formats");
+    for path in every_format(&dir) {
+        let name = path.file_name().unwrap().to_string_lossy().into_owned();
+        let index = super::index(&path).unwrap_or_else(|e| panic!("{name}: {e}"));
+        assert_eq!(names(&index, ""), ["docs", "top.txt"], "{name}");
+        assert_eq!(names(&index, "docs"), ["deep", "notes.txt"], "{name}");
+        assert_eq!(index.size_of(Path::new("")), 13, "{name}");
+
+        let wanted = ["top.txt", "docs/deep/more.txt", "docs/notes.txt"];
+        let positions: Vec<usize> = wanted.iter().map(|inner| index.entry(index.find(Path::new(inner)).unwrap()).position.unwrap()).collect();
+        let mut read = Vec::new();
+        read_entries(&path, index.kind, &positions, &mut |position, contents| {
+            let mut text = String::new();
+            contents.unwrap().read_to_string(&mut text).unwrap();
+            read.push((position, text));
+            Next::Go
+        })
+        .unwrap();
+        read.sort();
+        let mut expected: Vec<(usize, String)> = positions.iter().zip(["top", "more!", "notes"]).map(|(&position, text)| (position, text.to_string())).collect();
+        expected.sort();
+        assert_eq!(read, expected, "{name}");
+    }
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A wanted entry that is only partly read, or not at all, does not throw the
+/// next one in its block off: what was left of it is read past.
+#[test]
+fn a_solid_7z_entry_left_half_read_does_not_spoil_the_next() {
+    let dir = scratch("7z-drain");
+    let path = dir.join("a.7z");
+    sevenz(&path, &[("first", Put::File(b"0123456789")), ("second", Put::File(b"second"))], true);
+    let index = super::index(&path).unwrap();
+    let positions: Vec<usize> = ["first", "second"].iter().map(|inner| index.entry(index.find(Path::new(inner)).unwrap()).position.unwrap()).collect();
+    let mut second = String::new();
+    read_entries(&path, index.kind, &positions, &mut |position, contents| {
+        let contents = contents.unwrap();
+        if position == positions[0] {
+            let mut half = [0; 3];
+            contents.read_exact(&mut half).unwrap();
+        } else {
+            contents.read_to_string(&mut second).unwrap();
+        }
+        Next::Go
+    })
+    .unwrap();
+    assert_eq!(second, "second");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// zstd written a frame at a time - by pzstd, or two files joined - is one
+/// archive, read on past the end of the first frame.
+#[test]
+fn a_tar_zst_of_several_frames_reads_whole() {
+    let dir = scratch("zst-frames");
+    let plain = dir.join("a.tar");
+    tar(&plain, &[(b"one", Put::File(b"first")), (b"two", Put::File(b"second"))]);
+    let bytes = std::fs::read(&plain).unwrap();
+    let (front, back) = bytes.split_at(700);
+    let mut joined = ruzstd::encoding::compress_to_vec(front, ruzstd::encoding::CompressionLevel::Fastest);
+    joined.extend(ruzstd::encoding::compress_to_vec(back, ruzstd::encoding::CompressionLevel::Fastest));
+    let path = dir.join("a.tar.zst");
+    std::fs::write(&path, joined).unwrap();
+    assert_eq!(names(&super::index(&path).unwrap(), ""), ["one", "two"]);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A 7z made on Windows names its directories with backslashes; one that
+/// would reach outside is refused as in any other format; a link written by
+/// Unix is a link.
+#[test]
+fn a_7z_reads_either_separator_and_refuses_what_reaches_out() {
+    let dir = scratch("7z-names");
+    let path = dir.join("a.7z");
+    sevenz(&path, &[("win\\dir\\file.txt", Put::File(b"w")), ("..\\escape", Put::File(b"x")), ("link", Put::Link("win/dir/file.txt"))], false);
+    let index = super::index(&path).unwrap();
+    assert_eq!(names(&index, ""), ["link", "win"]);
+    assert_eq!(names(&index, "win/dir"), ["file.txt"]);
+    assert_eq!(index.refused, 1);
+    assert_eq!(index.entry(index.find(Path::new("link")).unwrap()).kind, EntryKind::Link);
     std::fs::remove_dir_all(&dir).unwrap();
 }

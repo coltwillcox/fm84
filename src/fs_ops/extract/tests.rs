@@ -1,5 +1,5 @@
 use super::*;
-use crate::archive::fixtures::{Put, scratch, tar, zip};
+use crate::archive::fixtures::{Put, scratch, sevenz, tar, zip};
 
 /// Answers every file in the way, and every failure, the same way, counts
 /// the bytes, and can stop after so many files.
@@ -57,12 +57,18 @@ impl Progress for Asking {
 #[test]
 fn a_directory_comes_out_whole() {
     let dir = scratch("extract-tree");
-    for name in ["a.zip", "a.tar.gz"] {
+    for name in ["a.zip", "a.tar.gz", "a.tar.zst", "a.tar.xz", "a.tar.bz2", "a.7z"] {
         let archive = dir.join(name);
         if name.ends_with("zip") {
             zip(
                 &archive,
                 &[("docs/notes.txt", Put::File(b"notes")), ("docs/deep/more.txt", Put::File(b"more!")), ("docs/empty/", Put::Dir), ("other.txt", Put::File(b"no"))],
+            );
+        } else if name.ends_with("7z") {
+            sevenz(
+                &archive,
+                &[("docs/empty", Put::Dir), ("docs/notes.txt", Put::File(b"notes")), ("docs/deep/more.txt", Put::File(b"more!")), ("other.txt", Put::File(b"no"))],
+                true,
             );
         } else {
             tar(
@@ -82,7 +88,7 @@ fn a_directory_comes_out_whole() {
         assert!(!out.join("other.txt").exists());
         assert_eq!(asking.bytes, 10);
         assert_eq!(asking.bytes, measure_extract(&archive, &[PathBuf::from("docs")]));
-        if name.ends_with("gz") {
+        if name.starts_with("a.tar") {
             let modified = fs::metadata(out.join("docs/notes.txt")).unwrap().modified().unwrap();
             assert_eq!(modified, std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_700_000_000));
         }
@@ -119,10 +125,12 @@ fn a_file_in_the_way_is_asked_about() {
 #[test]
 fn a_link_comes_out_as_a_link() {
     let dir = scratch("extract-link");
-    for name in ["a.zip", "a.tar"] {
+    for name in ["a.zip", "a.tar", "a.7z"] {
         let archive = dir.join(name);
         if name.ends_with("zip") {
             zip(&archive, &[("target.txt", Put::File(b"t")), ("link", Put::Link("target.txt"))]);
+        } else if name.ends_with("7z") {
+            sevenz(&archive, &[("target.txt", Put::File(b"t")), ("link", Put::Link("target.txt"))], true);
         } else {
             tar(&archive, &[(b"target.txt", Put::File(b"t")), (b"link", Put::Link("target.txt"))]);
         }

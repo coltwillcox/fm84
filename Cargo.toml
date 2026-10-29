@@ -3,8 +3,8 @@ name = "fm84"
 version = "0.35.0"
 edition = "2024"
 # Let chains in `if` and `while`, which the code leans on throughout, are
-# stable from 1.88.
-rust-version = "1.88"
+# stable from 1.88; sevenz-rust2, which reads 7z, needs 1.93.
+rust-version = "1.93"
 license = "MIT"
 description = "A synthwave dual-pane TUI file manager"
 repository = "https://github.com/coltwillcox/fm84"
@@ -16,12 +16,16 @@ categories = ["command-line-utilities", "filesystem"]
 exclude = ["images/", ".github/"]
 
 [dependencies]
+bzip2 = "0.6.1"
 chrono = "0.4.40"
 color-eyre = "0.6.3"
 crossterm = "0.29.0"
 flate2 = "1.1.10"
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
+lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "optimization", "xz"] }
 ratatui = "0.29.0"
+ruzstd = "0.9.1"
+sevenz-rust2 = { version = "0.24.1", default-features = false, features = ["bzip2", "ppmd", "deflate"] }
 syntect = "5.2"
 tar = { version = "0.4.46", default-features = false }
 trash = "5.2.9"
@@ -45,3 +49,7 @@ opt-level = 3
 lto = true
 codegen-units = 1
 strip = true
+
+[dev-dependencies]
+lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "encoder", "xz"] }
+sevenz-rust2 = { version = "0.24.1", default-features = false, features = ["compress"] }

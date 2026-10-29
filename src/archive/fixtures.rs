@@ -35,13 +35,10 @@ pub fn zip(path: &Path, entries: &[(&str, Put)]) {
     zip.finish().unwrap();
 }
 
-/// A tar, gzipped when the name says so. Names go into the header as bytes,
+/// A tar, compressed as its name says. Names go into the header as bytes,
 /// past the checks the crate's own builder makes, so `..` can be written.
 pub fn tar(path: &Path, entries: &[(&[u8], Put)]) {
-    let file = std::fs::File::create(path).unwrap();
-    let gzip = path.to_string_lossy().ends_with("gz");
-    let writer: Box<dyn Write> = if gzip { Box::new(flate2::write::GzEncoder::new(file, flate2::Compression::fast())) } else { Box::new(file) };
-    let mut tar = tar::Builder::new(writer);
+    let mut tar = tar::Builder::new(Vec::new());
     for (name, put) in entries {
         let mut header = tar::Header::new_gnu();
         let field = &mut header.as_gnu_mut().unwrap().name;
@@ -69,5 +66,64 @@ pub fn tar(path: &Path, entries: &[(&[u8], Put)]) {
         header.set_cksum();
         tar.append(&header, data).unwrap();
     }
-    tar.into_inner().unwrap().flush().unwrap();
+    let bytes = tar.into_inner().unwrap();
+    std::fs::write(path, compress(path, &bytes)).unwrap();
+}
+
+/// `bytes` as the name of `path` says they are compressed.
+fn compress(path: &Path, bytes: &[u8]) -> Vec<u8> {
+    use super::Kind;
+    match super::kind_of(path) {
+        Some(Kind::TarGz) => {
+            let mut gzip = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast());
+            gzip.write_all(bytes).unwrap();
+            gzip.finish().unwrap()
+        }
+        Some(Kind::TarZst) => ruzstd::encoding::compress_to_vec(bytes, ruzstd::encoding::CompressionLevel::Fastest),
+        Some(Kind::TarXz) => {
+            let mut xz = lzma_rust2::XzWriter::new(Vec::new(), lzma_rust2::XzOptions::with_preset(1)).unwrap();
+            xz.write_all(bytes).unwrap();
+            xz.finish().unwrap()
+        }
+        Some(Kind::TarBz2) => {
+            let mut bz = bzip2::write::BzEncoder::new(Vec::new(), bzip2::Compression::fast());
+            bz.write_all(bytes).unwrap();
+            bz.finish().unwrap()
+        }
+        _ => bytes.to_vec(),
+    }
+}
+
+/// A 7z. Solid puts every file in one block, as 7-Zip does by default, so
+/// one is only reached by reading through those before it.
+pub fn sevenz(path: &Path, entries: &[(&str, Put)], solid: bool) {
+    use sevenz_rust2::{ArchiveEntry, ArchiveWriter, SourceReader};
+    let mut writer = ArchiveWriter::create(path).unwrap();
+    let mut block: (Vec<ArchiveEntry>, Vec<SourceReader<&[u8]>>) = (Vec::new(), Vec::new());
+    for (name, put) in entries {
+        let (mut entry, data): (ArchiveEntry, &[u8]) = match put {
+            Put::Dir => {
+                writer.push_archive_entry(ArchiveEntry::new_directory(name), None::<&[u8]>).unwrap();
+                continue;
+            }
+            Put::File(bytes) => (ArchiveEntry::new_file(name), bytes),
+            Put::Link(target) => {
+                let mut entry = ArchiveEntry::new_file(name);
+                entry.has_windows_attributes = true;
+                entry.windows_attributes = 0x8000 | (0o120777 << 16);
+                (entry, target.as_bytes())
+            }
+        };
+        if solid {
+            block.0.push(entry);
+            block.1.push(SourceReader::new(data));
+        } else {
+            entry.has_stream = true;
+            writer.push_archive_entry(entry, Some(data)).unwrap();
+        }
+    }
+    if !block.0.is_empty() {
+        writer.push_archive_entries(block.0, block.1).unwrap();
+    }
+    writer.finish().unwrap();
 }

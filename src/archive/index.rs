@@ -1,7 +1,7 @@
 //! What an archive holds, read once into a tree that can be listed a
 //! directory at a time.
 
-use super::{Kind, open, tar_reader, zip_error};
+use super::{Kind, open, sevenz_error, tar_reader, zip_error};
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::io;
@@ -190,7 +190,8 @@ impl Index {
     pub(super) fn read(archive: &Path, kind: Kind) -> io::Result<Self> {
         match kind {
             Kind::Zip => Self::read_zip(archive),
-            Kind::Tar | Kind::TarGz => Self::read_tar(archive, kind),
+            Kind::SevenZ => Self::read_7z(archive),
+            _ => Self::read_tar(archive, kind),
         }
     }
 
@@ -224,6 +225,49 @@ impl Index {
                 link: None,
                 position: Some(position),
                 encrypted: file.encrypted(),
+            });
+        }
+        Ok(index)
+    }
+
+    /// A 7z keeps its list of entries in one header, read without unpacking
+    /// anything. Its names may be written with either separator. A mode is
+    /// there when Unix wrote it, in the top half of the Windows attributes.
+    fn read_7z(archive: &Path) -> io::Result<Self> {
+        const UNIX_EXTENSION: u32 = 0x8000;
+        const LINK: u32 = 0o120000;
+        let mut index = Index::new(Kind::SevenZ);
+        let reader = sevenz_rust2::ArchiveReader::new(open(archive)?, sevenz_rust2::Password::empty()).map_err(sevenz_error)?;
+        for (position, file) in reader.archive().files.iter().enumerate() {
+            // What an update deleted, not something in the archive.
+            if file.is_anti_item {
+                continue;
+            }
+            let Some(path) = inner_path(file.name.replace('\\', "/").as_bytes()) else {
+                index.refused += 1;
+                continue;
+            };
+            if path.as_os_str().is_empty() {
+                continue;
+            }
+            let mode = (file.has_windows_attributes && file.windows_attributes & UNIX_EXTENSION != 0).then_some(file.windows_attributes >> 16);
+            let kind = if file.is_directory {
+                EntryKind::Dir
+            } else if mode.is_some_and(|mode| mode & 0o170000 == LINK) {
+                EntryKind::Link
+            } else {
+                EntryKind::File
+            };
+            index.add(Entry {
+                path,
+                kind,
+                size: if kind == EntryKind::File { file.size } else { 0 },
+                modified: file.has_last_modified_date.then(|| SystemTime::from(file.last_modified_date)),
+                mode,
+                owner: None,
+                link: None,
+                position: Some(position),
+                encrypted: false,
             });
         }
         Ok(index)
