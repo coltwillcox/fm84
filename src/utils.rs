@@ -98,7 +98,9 @@ pub fn substitute(word: &str, value: &OsStr) -> OsString {
 /// without support ignore it, and it travels over SSH, which is why this is
 /// preferred to linking a platform clipboard library.
 pub fn set_system_clipboard(text: &str) {
-    if text.len() > OSC52_MAX_BYTES {
+    // Not from a test: the terminal running it would take the escape, and
+    // the clipboard of whoever ran the tests would change under them.
+    if cfg!(test) || text.len() > OSC52_MAX_BYTES {
         return;
     }
     let mut out = stdout();
