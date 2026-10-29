@@ -74,6 +74,41 @@ Print the version and exit.
 .TP
 .B \-\-
 End the options, for a directory whose name starts with a dash.
+.SH ARCHIVES
+Enter on a
+.IR .zip ,
+.IR .tar ,
+.I .tar.gz
+or
+.I .tgz
+opens it in the panel like a directory, and its directories open as any do.
+The panel's path runs through it, as
+.IR ~/photos.zip/2024 ,
+so tabs, history, bookmarks, Ctrl+L and remembered directories work inside
+one; Backspace at its top comes back out onto the archive.
+.PP
+An archive is read-only.
+F5 copies out of it, a directory whole, asking about files in the way as any
+copy does; times and permissions come out as the archive kept them, and links
+as links.
+F3 copies a file out to a scratch directory and shows it there; Enter and
+Ctrl+O open it from there with the system's program.
+F12 and the lines under the panels read entries in place, and Space and
+Alt+Shift+Enter size directories from what the archive says.
+Everything that would write into an archive says so and changes nothing:
+renaming, making, deleting, moving, copying or linking into it, Alt+A and F4.
+Find files and comparing files do not reach inside one.
+.PP
+A name that would land outside where it is copied to, with
+.BR .. ,
+an absolute path or a drive, is left out of the listing, as is anything
+that would be written through a link in the archive.
+An encrypted zip entry is marked in the detail lines, and cannot be copied
+out without the password, which fm84 does not ask for.
+.PP
+An archive written while a panel is in it is read again; one deleted is
+left.
+The scratch directory is removed when fm84 quits.
 .SH LEAVING THE SHELL WHERE FM84 WAS LEFT
 A program cannot change the directory of the shell that started it, so
 quitting fm84 leaves the shell where it was.
@@ -107,7 +142,16 @@ Move the cursor.
 Switch panels.
 .TP
 .B Enter
-Open the directory, or run the file.
+Open the directory, go into an archive, or open the file as the system
+does.
+See
+.BR ARCHIVES .
+.TP
+.B Shift+Enter Ctrl+O
+Open what is under the cursor as the system does, with the program it opens
+that kind of file with; an archive too, which Enter goes into.
+Ctrl+O is for terminals that send Shift+Enter as plain Enter; only those with
+kitty's keyboard protocol, and Windows, tell the two apart.
 .TP
 .B Backspace
 Go to the parent directory.
@@ -503,7 +547,7 @@ Where the trash is, as the freedesktop.org trash specification has it.
 Quit normally.
 .TP
 .B 1
-Not run from a terminal, or an error that stopped it \(em writing the
+Not run from a terminal, or an error that stopped it, writing the
 .B \-\-choosedir
 file among them.
 .TP

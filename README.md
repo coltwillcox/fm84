@@ -70,7 +70,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ↔️ **Ctrl+← / Ctrl+→** - send the left or right panel to the directory under the cursor, keeping the focus where it is; on a file, to the directory it is in
 - 🔁 **Ctrl+U** - swap the panels, as in Midnight Commander: each takes its tabs, cursor, selection and history to the other side, and the focus goes with the one it was in
 - 🪞 **Alt+I** - send the other panel to this one's directory, its cursor on the same entry
-- ↩️ **Enter** - dive into directories
+- ↩️ **Enter** - dive into directories, and into archives - see [Archives](#-archives)
+- 🚀 **Shift+Enter** / **Ctrl+O** - open what is under the cursor as the system would, with the program it opens that kind of file with; an archive too. Ctrl+O is for terminals that send Shift+Enter as plain Enter - GNOME Terminal, Konsole, xterm, Terminal.app, tmux - where only kitty's keyboard protocol (kitty, foot, WezTerm, Ghostty, Alacritty) or Windows tells them apart
 - ⬅️ **Backspace** - ascend to parent realm
 - 🧭 **Ctrl+L** - or a click on a panel's path - edit the active panel's path in place, in the line above it, and go there with **Enter** (**Esc**, or a click anywhere else, leaves it as it was). **Tab** fills out a name as far as the entries agree, `~` is home, and a path without a leading `/` starts from the panel. A file is landed on, in the directory it is in; somewhere that is not there is said to be, and the panel stays put
 - ⏪ **Alt+← / Alt+→** - back and forward through where the tab has been, as in a browser, landing on the entry the cursor was on. Each tab keeps its own, up to 50 steps back; a directory gone since is passed over
@@ -117,7 +118,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
 - **+** / **-** / **\*** 🎯 - Select or deselect by a pattern such as `*.jpg;*.png` (`*`, `?`, `[a-z]`, `[!0-9]`; lower case matches either case), or invert the selection of files - **Alt+\*** inverts directories too. Patterns pick files; end one with `/` for directories, as in `*/`. Once a quick search is under way, `-` types into it instead
 - 📋 **Ctrl+C** / **Alt+C** - copy the full paths, or just the names, of what is selected - or of the entry under the cursor - to the clipboard, a line each; on `..`, the panel's own directory. It goes over OSC 52, so it reaches the system clipboard over SSH too, and the built-in editor pastes it either way
-- 🖱️ **Double-click** - open directories or view files
+- 🖱️ **Double-click** - open directories and archives, or open files as Enter does
 - 🖱️ **Mouse scroll** - scroll content in Viewer, Editor, and file panels
 
 ### 🔄 Live Panels
@@ -248,6 +249,16 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - ⌨️ **Up/Down** to move, **Enter**, **Space** or **Left/Right** to change, Enter again to save a typed command
 - 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it, and bookmarks in `bookmarks`
 
+### 📦 Archives
+- 📂 **Gone into like directories** - Enter on a `.zip`, `.tar`, `.tar.gz` or `.tgz` opens it in the panel, and its directories open as any do. The path runs through it - `~/photos.zip/2024/june` - so tabs, history, bookmarks, Ctrl+L and remembered directories all work inside one, and Backspace at its top comes back out onto the archive
+- 📋 **Copied out with F5** - to the other panel, or wherever the dialog is told, a directory whole, asked about files in the way as any copy is, with the same progress bar and Esc. Times and permissions come out as the archive kept them; links come out as links
+- 👁️ **F3, F12 and the detail lines** - a file is copied out to a scratch directory and shown, the preview reads the head of it, and the lines under the panels give its exact size, time, mode and, from a tar, its owner. Enter or Ctrl+O open it with the system's program the same way. The scratch directory goes when fm84 quits
+- 📏 **Sizes at once** - Space and Alt+Shift+Enter size directories inside an archive from what it says, with nothing to walk
+- 🔒 **Read-only** - renaming, making, deleting, moving out, moving or copying in, links and attributes all say "Archives are read-only" and leave it as it was. F4 too: F3 shows a file instead. Find files and comparing files do not reach inside one yet
+- 🛡️ **Safe to open** - a name that would land outside where it is copied to - `../`, an absolute path, a drive - never gets into the listing, nor anything that would be written through a link in the archive. An encrypted zip entry says so in the detail lines, and copying it out says it needs the password
+- ♻️ **Kept up to date** - an archive written while a panel is in it is read again, climbing out of a directory it no longer has, and one deleted is left. A large `.tar.gz` is read once and kept, so going in and out of its directories does not unpack it again
+- 💬 **Not an archive after all** - a file named like one that will not read says why, and the panel stays where it was
+
 ### 📂 Directory Sizes
 - 📏 **Calculated on select** - press Space on a directory to calculate its size; a link to one is selected but not counted, for the same reason as below
 - 🗂️ **Every directory at once** - `Alt+Shift+Enter`, as in Total Commander (`Alt+Enter` too, for a terminal that cannot report Shift with Enter), sizes every directory in the panel, top to bottom, four at a time; the rest show `…` while they wait their turn. Links to directories are left out, since one to `/` or to a slow mount would walk all of it
@@ -269,7 +280,8 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Ctrl+L` | Go to a path (`Tab` completes a name; or click the path) |
 | `Alt+←` / `Alt+→` | Back / forward through where the tab has been |
 | `Ctrl+D` | Bookmarks (`A` add, `D` remove, `Enter` or `1`…`9` go) |
-| `Enter` | Open directory / Execute |
+| `Enter` | Open directory, go into an archive, or open a file |
+| `Shift+Enter` / `Ctrl+O` | Open as the system would (an archive too) |
 | `Backspace` | Go to parent directory |
 | `Home` / `End` | Jump to first / last item |
 | `PageUp` / `PageDown` | Page navigation |
