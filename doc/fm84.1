@@ -291,6 +291,22 @@ Invert the selection of files.
 .B Alt+*
 Invert the selection of files and directories.
 .TP
+.B Alt+H
+Work out the checksums of what is chosen, a directory's files all the way
+down, as a job: SHA-256, and Tab for SHA-512 or MD5.
+C copies them \- one file's checksum alone \- and W writes them as
+.BR sha256sum (1)
+does, to
+.I name.sha256
+for one file or
+.I SHA256SUMS
+for several.
+On a checksum file, written by
+.BR sha256sum (1),
+.BR md5sum (1)
+or in BSD's style, check the files it names instead, the failures listed
+first.
+.TP
 .B Alt+A
 Change the permissions, owner, group and modified time of what is selected,
 or of the entry under the cursor.
