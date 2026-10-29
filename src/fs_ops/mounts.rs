@@ -42,7 +42,9 @@ pub fn list_mounts() -> Vec<Mount> {
         kind: MountKind::Disk,
     }];
     mounts.extend(home_mount());
-    if let Ok(table) = fs::read_to_string("/proc/mounts") {
+    // As bytes: a mount point is any name at all, and one that is not UTF-8
+    // would otherwise lose every mount in the table.
+    if let Ok(table) = fs::read("/proc/mounts") {
         mounts.extend(parse_proc_mounts(&table));
     }
     mounts
@@ -52,28 +54,30 @@ pub fn list_mounts() -> Vec<Mount> {
 /// enough to tell machinery from media: what separates them is being backed by
 /// a real device, or being a fuse mount somewhere the user chose.
 #[cfg(target_os = "linux")]
-fn parse_proc_mounts(table: &str) -> Vec<Mount> {
+fn parse_proc_mounts(table: &[u8]) -> Vec<Mount> {
+    use std::os::unix::ffi::OsStringExt;
     let mut found: Vec<Mount> = Vec::new();
 
-    for line in table.lines() {
-        let mut fields = line.split_whitespace();
+    for line in table.split(|&byte| byte == b'\n') {
+        let mut fields = line.split(u8::is_ascii_whitespace).filter(|field| !field.is_empty());
         let (Some(source), Some(target), Some(fstype)) = (fields.next(), fields.next(), fields.next()) else {
             continue;
         };
-        // /proc/mounts escapes spaces and tabs as octal.
-        let target = target.replace("\\040", " ").replace("\\011", "\t");
+        let (source, fstype) = (String::from_utf8_lossy(source), String::from_utf8_lossy(fstype));
+        let path = PathBuf::from(OsString::from_vec(unescape_octal(target)));
 
         // Root is listed separately. The rest of these trees are machinery:
         // credentials, portals and gvfs under /run, and fusectl under /sys,
-        // which a filesystem-type check alone would let through.
+        // which a filesystem-type check alone would let through. Compared a
+        // component at a time, so /development or /system is not among them.
         const MACHINERY: [&str; 4] = ["/run", "/sys", "/proc", "/dev"];
         // One branch of /run is not machinery: udisks2 mounts removable media
         // under /run/media, which is where a stick plugged into a desktop
-        // actually turns up. The trailing slash keeps it to that directory
-        // rather than anything merely starting with the name.
-        const REMOVABLE_MEDIA: &str = "/run/media/";
-        let machinery = MACHINERY.iter().any(|prefix| target.starts_with(prefix)) && !target.starts_with(REMOVABLE_MEDIA);
-        if target == "/" || machinery {
+        // actually turns up - inside it, not the directory itself.
+        const REMOVABLE_MEDIA: &str = "/run/media";
+        let removable = path.starts_with(REMOVABLE_MEDIA) && path != Path::new(REMOVABLE_MEDIA);
+        let machinery = MACHINERY.iter().any(|prefix| path.starts_with(prefix)) && !removable;
+        if path == Path::new("/") || machinery {
             continue;
         }
 
@@ -83,20 +87,42 @@ fn parse_proc_mounts(table: &str) -> Vec<Mount> {
             continue;
         }
 
-        let path = PathBuf::from(&target);
         if found.iter().any(|mount| mount.path == path) {
             continue;
         }
-        let label = path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_else(|| target.clone());
+        let label = path.file_name().map_or_else(|| path.to_string_lossy().into_owned(), |name| name.to_string_lossy().into_owned());
         found.push(Mount {
-            path,
             label,
-            kind: classify_mount(source, fstype, is_fuse),
+            kind: classify_mount(&source, &fstype, is_fuse),
+            path,
         });
     }
 
     found.sort_by(|a, b| a.path.cmp(&b.path));
     found
+}
+
+/// A field of /proc/mounts as the name it stands for. The kernel writes
+/// space, tab, newline and backslash as `\\` and three octal digits, which
+/// would otherwise split the line or be read as the escapes themselves.
+#[cfg(target_os = "linux")]
+fn unescape_octal(field: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(field.len());
+    let mut index = 0;
+    while index < field.len() {
+        let digits = field.get(index + 1..index + 4).filter(|digits| digits.iter().all(|digit| (b'0'..=b'7').contains(digit)));
+        match (field[index], digits) {
+            (b'\\', Some(digits)) => {
+                out.push(digits.iter().fold(0u8, |byte, digit| byte.wrapping_mul(8).wrapping_add(digit - b'0')));
+                index += 4;
+            }
+            (byte, _) => {
+                out.push(byte);
+                index += 1;
+            }
+        }
+    }
+    out
 }
 
 /// Optical media announce themselves by filesystem type; removable media by a
@@ -171,7 +197,7 @@ fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
 
     #[test]
     fn keeps_media_and_drops_machinery() {
-        let mounts = parse_proc_mounts(TABLE);
+        let mounts = parse_proc_mounts(TABLE.as_bytes());
         let paths: Vec<String> = mounts.iter().map(|m| m.path.display().to_string()).collect();
 
         assert_eq!(
@@ -195,6 +221,21 @@ fusectl /sys/fs/fuse/connections fusectl rw,nosuid 0 0
         assert_eq!(boot.kind, MountKind::Disk);
         // Octal escapes are decoded for display.
         assert!(mounts.iter().any(|m| m.label == "My Backup"));
+    }
+
+    /// Every escape the kernel writes is read back, a name need not be
+    /// UTF-8, and the machinery is matched by whole directory names.
+    #[test]
+    fn escapes_and_lookalike_names_are_read_as_they_are() {
+        use std::os::unix::ffi::OsStrExt;
+        let table = b"/dev/sdd1 /mnt/a\\134b\\012c ext4 rw 0 0\n\
+/dev/sde1 /development ext4 rw 0 0\n\
+/dev/sdf1 /system ext4 rw 0 0\n\
+/dev/sdg1 /mnt/caf\xe9 ext4 rw 0 0\n\
+/dev/sdh1 /run/media ext4 rw 0 0\n";
+        let mounts = parse_proc_mounts(table);
+        let paths: Vec<&[u8]> = mounts.iter().map(|m| m.path.as_os_str().as_bytes()).collect();
+        assert_eq!(paths, [&b"/development"[..], b"/mnt/a\\b\nc", b"/mnt/caf\xe9", b"/system"]);
     }
 
     #[test]
