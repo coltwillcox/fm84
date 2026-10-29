@@ -6,6 +6,13 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.37.0] - 2026-10-29
+
+### ✨ Added
+- 🗃️ **Pack with Alt+P** - what is chosen, packed into a new `.zip`, `.7z`, `.tar.gz`, `.tar.xz`, `.tar.bz2` or `.tar`, as a job with the progress bar and Esc, asking about what cannot be read. The dialog opens on the other panel's directory with a name from what is packed, and **Tab** goes through the formats by the ending of the name. Modes, times and links go in as they are, and a 7z is packed solid, as 7-Zip packs one. It is written beside where it goes and put there whole, so a cancel leaves nothing, and an archive made inside the directory being packed leaves itself out. One already at the name is written over only when F11 says Overwrite; afterwards the panel showing it lands on it. A zip or a 7z cannot hold a name that is not UTF-8, which is asked about; a tar keeps it. `.tar.zst` is read but not made
+
+---
+
 ## [0.36.0] - 2026-10-29
 
 ### ✨ Added
