@@ -90,11 +90,10 @@ fn a_checksum_file_written_checks_out() {
     }
     let sources: Vec<(PathBuf, bool)> = ["a.txt", "b.txt", "c.txt"].iter().map(|name| (dir.join(name), false)).collect();
     let (found, _) = targets(&sources, &dir);
-    let sums = compute(&found, Algorithm::Sha256, &mut Quiet).unwrap();
+    let sums = compute(&found, &mut Quiet).unwrap();
     let report = Report::Computed {
         algorithm: Algorithm::Sha256,
         base: dir.clone(),
-        sources,
         sums,
     };
     let (file, text) = report.sums_file().unwrap();
@@ -111,15 +110,18 @@ fn a_checksum_file_written_checks_out() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
-/// One file's checksum is written under its own name, and copied alone.
+/// One file's checksum is written under its own name, and copied alone -
+/// whichever algorithm is shown, each from the same reading of the file.
 #[test]
 fn a_single_file_gets_a_file_of_its_own() {
-    let report = Report::Computed {
-        algorithm: Algorithm::Md5,
+    let mut report = Report::Computed {
+        algorithm: Algorithm::Sha256,
         base: PathBuf::from("/x"),
-        sources: Vec::new(),
-        sums: vec![(PathBuf::from("big.iso"), Ok("900150983cd24fb0d6963f7d28e17f72".to_string()))],
+        sums: vec![(PathBuf::from("big.iso"), Ok(["sha-256".to_string(), "sha-512".to_string(), "900150983cd24fb0d6963f7d28e17f72".to_string()]))],
     };
+    assert_eq!(report.to_copy(), "sha-256");
+    report.step(false);
+    assert_eq!(report.shown(), Some(Algorithm::Md5));
     let (file, text) = report.sums_file().unwrap();
     assert_eq!(file, Path::new("/x/big.iso.md5"));
     assert_eq!(text, b"900150983cd24fb0d6963f7d28e17f72  big.iso\n");

@@ -391,14 +391,20 @@ fn run_extract(archive: PathBuf, items: Vec<(PathBuf, PathBuf)>, mut progress: J
 
 /// The worker thread behind working out checksums. What cannot be read is
 /// listed as such rather than asked about: a report is what is wanted.
-fn run_compute(sources: Vec<(PathBuf, bool)>, base: PathBuf, algorithm: crate::checksum::Algorithm, mut progress: JobProgress<'_>) {
+/// Every algorithm's at once, so the popup goes between them without
+/// reading anything again; SHA-256 shown first.
+fn run_compute(sources: Vec<(PathBuf, bool)>, base: PathBuf, mut progress: JobProgress<'_>) {
     let (targets, unreadable) = crate::checksum::targets(&sources, &base);
     let _ = progress.updates.send(JobUpdate::Total(targets.iter().map(|target| target.size).sum()));
-    let Some(mut sums) = crate::checksum::compute(&targets, algorithm, &mut progress) else {
+    let Some(mut sums) = crate::checksum::compute(&targets, &mut progress) else {
         return progress.finish(Ok(Transfer::Cancelled));
     };
     sums.extend(unreadable.into_iter().map(|(name, error)| (name, Err(error))));
-    let _ = progress.updates.send(JobUpdate::Checksums(Box::new(crate::checksum::Report::Computed { algorithm, base, sources, sums })));
+    let _ = progress.updates.send(JobUpdate::Checksums(Box::new(crate::checksum::Report::Computed {
+        algorithm: crate::checksum::Algorithm::Sha256,
+        base,
+        sums,
+    })));
     progress.finish(Ok(Transfer::Done));
 }
 
@@ -494,8 +500,8 @@ impl AppState {
 
     /// Work out the checksums of `sources`, each named from `base`, and show
     /// them once they are all in.
-    pub fn start_checksums(&mut self, sources: Vec<(PathBuf, bool)>, base: PathBuf, algorithm: crate::checksum::Algorithm) {
-        self.start_job(TransferKind::Checksum, Clashes::Ask, move |progress| run_compute(sources, base, algorithm, progress));
+    pub fn start_checksums(&mut self, sources: Vec<(PathBuf, bool)>, base: PathBuf) {
+        self.start_job(TransferKind::Checksum, Clashes::Ask, move |progress| run_compute(sources, base, progress));
     }
 
     /// Check the files a checksum file names against it.

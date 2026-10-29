@@ -494,8 +494,18 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     press(&mut app_state, KeyCode::Char('c'));
     assert_eq!(app_state.clipboard, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
 
+    // All worked out already: Tab changes what is shown in place, with no
+    // job and the same popup, and Shift+Tab or Left goes back.
     press(&mut app_state, KeyCode::Tab);
-    finish(&mut app_state);
+    assert!(app_state.job.is_none());
+    press(&mut app_state, KeyCode::BackTab);
+    assert_eq!(report(&app_state).report.shown(), Some(crate::checksum::Algorithm::Sha256));
+    press(&mut app_state, KeyCode::Left);
+    assert_eq!(report(&app_state).report.shown(), Some(crate::checksum::Algorithm::Md5));
+    press(&mut app_state, KeyCode::Char('c'));
+    assert_eq!(app_state.clipboard, "900150983cd24fb0d6963f7d28e17f72");
+    press(&mut app_state, KeyCode::Right);
+    press(&mut app_state, KeyCode::Tab);
     let sha512 = "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f";
     assert!(matches!(
         &report(&app_state).report,
@@ -507,7 +517,7 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
-    for part in [&sha512[..64], &sha512[64..90], "W - Write notes.txt.sha512", "Tab - MD5"] {
+    for part in [&sha512[..64], &sha512[64..90], " SHA-256 ", " SHA-512 ", " MD5 ", "W - Write notes.txt.sha512", "Tab - Algorithm"] {
         assert!(screen.contains(part), "{part} not drawn");
     }
     press(&mut app_state, KeyCode::Char('w'));

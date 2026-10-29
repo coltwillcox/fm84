@@ -442,12 +442,14 @@ pub(super) fn open_checksums(app_state: &mut AppState) {
     }
     if !sources.is_empty() {
         let base = app_state.panel_dir(is_left);
-        app_state.start_checksums(sources, base, crate::checksum::Algorithm::Sha256);
+        app_state.start_checksums(sources, base);
     }
 }
 
 /// Keys on the checksum report: scrolling, C to copy, W to write a checksum
-/// file, Tab for the next algorithm, Esc or Enter to close.
+/// file, Tab or Right for the next algorithm and Shift+Tab or Left for the
+/// one before - all worked out already, so the list changes in place - and
+/// Esc or Enter to close.
 pub(super) fn checksums_key(app_state: &mut AppState, code: KeyCode) {
     let Some(Dialog::Checksums(view)) = &mut app_state.dialog else {
         return;
@@ -467,14 +469,8 @@ pub(super) fn checksums_key(app_state: &mut AppState, code: KeyCode) {
             app_state.clipboard = text;
         }
         KeyCode::Char('w' | 'W') => write_checksums(app_state),
-        KeyCode::Tab => {
-            if let Some(Dialog::Checksums(view)) = app_state.dialog.take() {
-                match view.report {
-                    crate::checksum::Report::Computed { algorithm, base, sources, .. } => app_state.start_checksums(sources, base, algorithm.next()),
-                    report => app_state.dialog = Some(Dialog::Checksums(Box::new(crate::app::ChecksumView { report, ..*view }))),
-                }
-            }
-        }
+        KeyCode::Tab | KeyCode::Right => view.report.step(true),
+        KeyCode::BackTab | KeyCode::Left => view.report.step(false),
         KeyCode::Esc | KeyCode::Enter => app_state.dialog = None,
         _ => {}
     }

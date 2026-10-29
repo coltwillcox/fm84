@@ -33,19 +33,34 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
     let rows: Vec<String> = lines.iter().flat_map(|line| rows_of(line, inner_width)).collect();
 
     let (title, keys) = match &view.report {
-        Report::Computed { algorithm, .. } => {
+        Report::Computed { .. } => {
             let file = view.report.sums_file().and_then(|(path, _)| path.file_name().map(|name| name.to_string_lossy().into_owned()));
             let write = file.map(|name| format!("W - Write {name}    ")).unwrap_or_default();
-            (format!(" {} ", algorithm.name()), format!("C - Copy    {write}Tab - {}    Esc - Close", algorithm.next().name()))
+            (" Checksums ".to_string(), format!("Tab - Algorithm    C - Copy    {write}Esc - Close"))
         }
         Report::Checked { file, .. } => (format!(" Checked against {} ", shown_name(file)), "C - Copy    Esc - Close".to_string()),
     };
 
-    // A border, the summary and a blank row above, a blank row and the keys
-    // below.
-    let popup_area = centered(screen_layout(area)[2], width, rows.len() + 6);
+    // Above the list, what it sums up to, and for checksums worked out, the
+    // algorithms there are to choose between - all worked out already, the
+    // one shown marked.
+    let mut head = vec![Line::from(Span::styled(view.report.summary(), style_title())), Line::from("")];
+    if let Some(shown) = view.report.shown() {
+        let mut options = Vec::new();
+        for algorithm in crate::checksum::Algorithm::ALL {
+            if !options.is_empty() {
+                options.push(Span::raw("  "));
+            }
+            let style = if algorithm == shown { style_selection() } else { style_columns() };
+            options.push(Span::styled(format!(" {} ", algorithm.name()), style));
+        }
+        head.extend([Line::from(options), Line::from("")]);
+    }
+
+    // A border, the head above, a blank row and the keys below.
+    let popup_area = centered(screen_layout(area)[2], width, rows.len() + head.len() + 4);
     let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
-    let room = (inner.height as usize).saturating_sub(4).max(1);
+    let room = (inner.height as usize).saturating_sub(head.len() + 2).max(1);
     view.room = room;
     view.scroll = view.scroll.min(rows.len().saturating_sub(room));
 
@@ -57,7 +72,7 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
     clear(f, popup_area);
     f.render_widget(block, popup_area);
 
-    let mut shown = vec![Line::from(Span::styled(view.report.summary(), style_title())), Line::from("")];
+    let mut shown = head;
     shown.extend(rows.into_iter().skip(view.scroll).take(room).map(|row| Line::from(Span::styled(row, style_file()))));
     shown.push(Line::from(""));
     shown.push(Line::from(Span::styled(keys, style_columns())));

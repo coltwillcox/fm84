@@ -51,9 +51,15 @@ impl Algorithm {
         }
     }
 
-    pub fn next(self) -> Self {
-        let at = Algorithm::ALL.iter().position(|&algorithm| algorithm == self).unwrap_or(0);
-        Algorithm::ALL[(at + 1) % Algorithm::ALL.len()]
+    /// Where it is in ALL, and in the checksums worked out for a file.
+    fn index(self) -> usize {
+        Algorithm::ALL.iter().position(|&algorithm| algorithm == self).unwrap_or(0)
+    }
+
+    /// The next in ALL, round to the first after the last; or the one before.
+    pub fn step(self, forward: bool) -> Self {
+        let count = Algorithm::ALL.len();
+        Algorithm::ALL[(self.index() + if forward { 1 } else { count - 1 }) % count]
     }
 
     /// The algorithm a checksum of this many hex digits was worked out with.
@@ -106,24 +112,39 @@ impl Hasher {
     }
 }
 
+/// A file's checksums in every algorithm, in the order of ALL.
+pub type Sums = [String; 3];
+
 /// The checksum of a file, its bytes counted onto the bar as they are read.
 /// None when the bar says to stop. A pipe or a device is refused: it would
 /// wait for good, or never end.
 pub fn hash_file(path: &Path, algorithm: Algorithm, report: &mut dyn Progress) -> io::Result<Option<String>> {
+    Ok(hash_with(path, &[algorithm], report)?.map(|mut hexes| hexes.remove(0)))
+}
+
+/// A file's checksums in every algorithm at once, the file read only once:
+/// switching between them afterwards is instant.
+pub fn hash_all(path: &Path, report: &mut dyn Progress) -> io::Result<Option<Sums>> {
+    Ok(hash_with(path, &Algorithm::ALL, report)?.map(|hexes| hexes.try_into().expect("one for each")))
+}
+
+fn hash_with(path: &Path, algorithms: &[Algorithm], report: &mut dyn Progress) -> io::Result<Option<Vec<String>>> {
     if !crate::fs_ops::is_regular_file(path) {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "Not a regular file"));
     }
     let mut file = std::fs::File::open(path)?;
-    let mut hasher = algorithm.hasher();
+    let mut hashers: Vec<Hasher> = algorithms.iter().map(|algorithm| algorithm.hasher()).collect();
     let mut chunk = vec![0; 256 * 1024];
     loop {
         let read = match file.read(&mut chunk) {
-            Ok(0) => return Ok(Some(hasher.hex())),
+            Ok(0) => return Ok(Some(hashers.into_iter().map(Hasher::hex).collect())),
             Ok(read) => read,
             Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
             Err(error) => return Err(error),
         };
-        hasher.update(&chunk[..read]);
+        for hasher in &mut hashers {
+            hasher.update(&chunk[..read]);
+        }
         if !report.step(Step::Advanced(read as u64)) {
             return Ok(None);
         }
@@ -309,26 +330,37 @@ pub enum Check {
 /// What Alt+H found, for the popup.
 #[derive(Debug)]
 pub enum Report {
-    /// Worked out: each name with its checksum, or why it has none.
-    Computed {
-        algorithm: Algorithm,
-        base: PathBuf,
-        sources: Vec<(PathBuf, bool)>,
-        sums: Vec<(PathBuf, Result<String, String>)>,
-    },
+    /// Worked out: each name with its checksums, or why it has none, and
+    /// the algorithm whose are shown.
+    Computed { algorithm: Algorithm, base: PathBuf, sums: Vec<(PathBuf, Result<Sums, String>)> },
     /// Checked against `file`: each name with how it came out.
     Checked { file: PathBuf, results: Vec<(PathBuf, Algorithm, Check)>, not_understood: usize },
 }
 
 impl Report {
+    /// The algorithm whose checksums are shown, for those worked out.
+    pub fn shown(&self) -> Option<Algorithm> {
+        match self {
+            Report::Computed { algorithm, .. } => Some(*algorithm),
+            Report::Checked { .. } => None,
+        }
+    }
+
+    /// Show the checksums of the next algorithm, or the one before.
+    pub fn step(&mut self, forward: bool) {
+        if let Report::Computed { algorithm, .. } = self {
+            *algorithm = algorithm.step(forward);
+        }
+    }
+
     /// The lines it is shown as, and copied as: a checksum file's own lines
     /// for what was worked out, and for what was checked, what failed first.
     pub fn lines(&self) -> Vec<String> {
         match self {
-            Report::Computed { sums, .. } => sums
+            Report::Computed { algorithm, sums, .. } => sums
                 .iter()
                 .map(|(name, sum)| match sum {
-                    Ok(hex) => format!("{hex}  {}", name.display()),
+                    Ok(hexes) => format!("{}  {}", hexes[algorithm.index()], name.display()),
                     Err(error) => format!("{}  {}: {error}", "-".repeat(8), name.display()),
                 })
                 .collect(),
@@ -385,7 +417,7 @@ impl Report {
     /// every line.
     pub fn to_copy(&self) -> String {
         match self {
-            Report::Computed { sums, .. } if sums.len() == 1 => sums[0].1.clone().unwrap_or_default(),
+            Report::Computed { algorithm, sums, .. } if sums.len() == 1 => sums[0].1.as_ref().map(|hexes| hexes[algorithm.index()].clone()).unwrap_or_default(),
             _ => self.lines().join("\n"),
         }
     }
@@ -397,7 +429,7 @@ impl Report {
         let Report::Computed { algorithm, base, sums, .. } = self else {
             return None;
         };
-        let written: Vec<(&PathBuf, &String)> = sums.iter().filter_map(|(name, sum)| sum.as_ref().ok().map(|hex| (name, hex))).collect();
+        let written: Vec<(&PathBuf, &String)> = sums.iter().filter_map(|(name, sum)| sum.as_ref().ok().map(|hexes| (name, &hexes[algorithm.index()]))).collect();
         let name = match &written[..] {
             [] => return None,
             [(single, _)] => format!("{}{}", single.file_name()?.to_string_lossy(), algorithm.extension()),
@@ -408,14 +440,14 @@ impl Report {
     }
 }
 
-/// Work out the checksum of each target. None when cancelled.
-pub fn compute(targets: &[Target], algorithm: Algorithm, report: &mut dyn Progress) -> Option<Vec<(PathBuf, Result<String, String>)>> {
+/// Work out every checksum of each target. None when cancelled.
+pub fn compute(targets: &[Target], report: &mut dyn Progress) -> Option<Vec<(PathBuf, Result<Sums, String>)>> {
     let mut sums = Vec::with_capacity(targets.len());
     for target in targets {
         if !report.step(Step::Starting(&target.path)) {
             return None;
         }
-        sums.push((target.name.clone(), hash_file(&target.path, algorithm, report).transpose()?.map_err(|error| error.to_string())));
+        sums.push((target.name.clone(), hash_all(&target.path, report).transpose()?.map_err(|error| error.to_string())));
     }
     Some(sums)
 }
