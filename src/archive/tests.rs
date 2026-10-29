@@ -278,3 +278,71 @@ fn a_7z_reads_either_separator_and_refuses_what_reaches_out() {
     assert_eq!(index.entry(index.find(Path::new("link")).unwrap()).kind, EntryKind::Link);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Archives 7-Zip itself made: `7z a -mx=9` of a directory and a file, both
+/// dated 2024-01-02 03:04:05; and one file encrypted with `-p`, its names
+/// with `-mhe=on` too.
+fn seven_zip_made(dir: &Path, name: &str) -> PathBuf {
+    let bytes: &[u8] = match name {
+        "plain.7z" => include_bytes!("testdata/plain.7z"),
+        "secret.7z" => include_bytes!("testdata/secret.7z"),
+        _ => include_bytes!("testdata/hidden.7z"),
+    };
+    let path = dir.join(name);
+    std::fs::write(&path, bytes).unwrap();
+    path
+}
+
+/// What 7-Zip writes - solid, LZMA2, a mode in the top of the attributes -
+/// lists and reads as written.
+#[test]
+fn a_7z_from_7_zip_reads_as_it_was_made() {
+    use chrono::TimeZone;
+    let dir = scratch("7-zip");
+    let path = seven_zip_made(&dir, "plain.7z");
+    let index = super::index(&path).unwrap();
+    assert_eq!(names(&index, ""), ["b.txt", "dir"]);
+    assert_eq!(names(&index, "dir"), ["a.txt"]);
+    let b = index.entry(index.find(Path::new("b.txt")).unwrap());
+    assert_eq!(b.mode.map(|mode| mode & 0o777), Some(0o644));
+    let made = chrono::Local.with_ymd_and_hms(2024, 1, 2, 3, 4, 5).unwrap();
+    assert_eq!(b.modified, Some(SystemTime::from(made)));
+
+    let positions: Vec<usize> = ["dir/a.txt", "b.txt"].iter().map(|inner| index.entry(index.find(Path::new(inner)).unwrap()).position.unwrap()).collect();
+    let mut read = Vec::new();
+    read_entries(&path, index.kind, &positions, &mut |_, contents| {
+        let mut text = String::new();
+        contents.unwrap().read_to_string(&mut text).unwrap();
+        read.push(text);
+        Next::Go
+    })
+    .unwrap();
+    read.sort();
+    assert_eq!(read, ["alpha", "bravo"]);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// An encrypted 7z says so: its files when read, if its names can be listed,
+/// and the archive itself when they are encrypted too - not that it is packed
+/// by a method fm84 does not know.
+#[test]
+fn an_encrypted_7z_says_it_needs_the_password() {
+    let dir = scratch("7z-secret");
+    let path = seven_zip_made(&dir, "secret.7z");
+    let index = super::index(&path).unwrap();
+    assert_eq!(names(&index, ""), ["b.txt"]);
+    let position = index.entry(index.find(Path::new("b.txt")).unwrap()).position.unwrap();
+    let mut said = None;
+    read_entries(&path, index.kind, &[position], &mut |_, contents| {
+        said = Some(contents.err().map(|e| e.to_string()));
+        Next::Go
+    })
+    .unwrap();
+    let said = said.flatten().unwrap_or_default();
+    assert!(said.starts_with("Encrypted"), "{said}");
+
+    let hidden = seven_zip_made(&dir, "hidden.7z");
+    let said = super::index(&hidden).unwrap_err().to_string();
+    assert!(said.starts_with("Encrypted"), "{said}");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
