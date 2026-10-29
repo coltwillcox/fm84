@@ -522,7 +522,7 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     for piece in sha512.as_bytes().chunks(56) {
         assert!(screen.contains(std::str::from_utf8(piece).unwrap()), "{} not drawn", std::str::from_utf8(piece).unwrap());
     }
-    for part in [" SHA-256 ", " SHA-512 ", " MD5 ", "W - Write", "Tab - Algorithm", "Esc - Close"] {
+    for part in [" SHA-256 ", " SHA-512 ", " MD5 ", "Enter - Write", "Tab - Algorithm", "Esc - Close"] {
         assert!(screen.contains(part), "{part} not drawn");
     }
     // One size whatever is shown: as wide as every popup, as tall as the
@@ -546,7 +546,7 @@ fn alt_h_works_out_writes_and_checks_checksums() {
         press(&mut app_state, KeyCode::Tab);
         assert_eq!(popup_box(&mut app_state), sized);
     }
-    press(&mut app_state, KeyCode::Char('w'));
+    press(&mut app_state, KeyCode::Enter);
     assert!(app_state.dialog.is_none());
     assert_eq!(std::fs::read_to_string(dir.join("notes.txt.sha512")).unwrap(), format!("{sha512}  notes.txt\n"));
     assert_eq!(app_state.children_left[app_state.state_left.selected().unwrap()].name_full, "notes.txt.sha512");
@@ -557,7 +557,7 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     finish(&mut app_state);
     assert_eq!(report(&app_state).report.summary(), "2 files");
     assert_eq!(popup_box(&mut app_state), sized);
-    press(&mut app_state, KeyCode::Char('w'));
+    press(&mut app_state, KeyCode::Enter);
     app_state.selected_left.clear();
     alt_h(&mut app_state);
     finish(&mut app_state);
@@ -568,5 +568,10 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     finish(&mut app_state);
     assert_eq!(report(&app_state).report.summary(), "1 OK, 1 FAILED");
     assert_eq!(report(&app_state).report.lines()[0], "FAILED   photos/a.jpg");
+    // A check has nothing to write: Enter only closes it.
+    let before: Vec<_> = std::fs::read_dir(&dir).unwrap().map(|entry| entry.unwrap().file_name()).collect();
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.dialog.is_none());
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), before.len());
     std::fs::remove_dir_all(&dir).unwrap();
 }

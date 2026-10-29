@@ -446,10 +446,10 @@ pub(super) fn open_checksums(app_state: &mut AppState) {
     }
 }
 
-/// Keys on the checksum report: scrolling, C to copy, W to write a checksum
-/// file, Tab or Right for the next algorithm and Shift+Tab or Left for the
-/// one before - all worked out already, so the list changes in place - and
-/// Esc or Enter to close.
+/// Keys on the checksum report: scrolling, C to copy, Enter to write a
+/// checksum file, Tab or Right for the next algorithm and Shift+Tab or Left
+/// for the one before - all worked out already, so the list changes in
+/// place - and Esc to close.
 pub(super) fn checksums_key(app_state: &mut AppState, code: KeyCode) {
     let Some(Dialog::Checksums(view)) = &mut app_state.dialog else {
         return;
@@ -468,15 +468,18 @@ pub(super) fn checksums_key(app_state: &mut AppState, code: KeyCode) {
             app_state.find_note = Some(if text.contains('\n') { "Copied the report".to_string() } else { format!("Copied: {text}") });
             app_state.clipboard = text;
         }
-        KeyCode::Char('w' | 'W') => write_checksums(app_state),
+
         KeyCode::Tab | KeyCode::Right => view.report.step(true),
         KeyCode::BackTab | KeyCode::Left => view.report.step(false),
+        // Enter writes what was worked out; a check has nothing to write,
+        // and Enter closes it as Esc does.
+        KeyCode::Enter if view.report.shown().is_some() => write_checksums(app_state),
         KeyCode::Esc | KeyCode::Enter => app_state.dialog = None,
         _ => {}
     }
 }
 
-/// W on the checksum report: the checksum file written beside what it is
+/// Enter on the checksum report: the checksum file written beside what it is
 /// of, as sha256sum would write it, and landed on. What is already at its
 /// name goes by F11's When destination exists, as Pack goes by it.
 fn write_checksums(app_state: &mut AppState) {

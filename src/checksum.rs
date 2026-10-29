@@ -422,7 +422,7 @@ impl Report {
         }
     }
 
-    /// The checksum file W writes, and the name it is written under: the
+    /// The checksum file Enter writes, and the name it is written under: the
     /// file's own name with the ending for one file, the GNU name for more.
     /// What could not be read is left out.
     pub fn sums_file(&self) -> Option<(PathBuf, Vec<u8>)> {
