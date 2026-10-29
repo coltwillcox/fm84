@@ -103,6 +103,8 @@ fn a_session_path_comes_back_as_it_went() {
     }
     // Written before paths were escaped: a % with no hex after it is itself.
     assert_eq!(unescape_path("/tmp/50%off"), PathBuf::from("/tmp/50%off"));
+    // A sign is not a digit, though from_str_radix takes one.
+    assert_eq!(unescape_path("/tmp/%+1x"), PathBuf::from("/tmp/%+1x"));
 }
 
 #[test]

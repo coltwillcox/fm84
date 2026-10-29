@@ -88,7 +88,9 @@ pub(super) fn unescape_path(text: &str) -> PathBuf {
     let mut out = Vec::with_capacity(bytes.len());
     let mut index = 0;
     while index < bytes.len() {
-        let hex = bytes.get(index + 1..index + 3).and_then(|pair| std::str::from_utf8(pair).ok());
+        // Two hex digits and nothing else: from_str_radix would also take
+        // a sign, reading "%+1" as a byte.
+        let hex = bytes.get(index + 1..index + 3).filter(|pair| pair.iter().all(u8::is_ascii_hexdigit)).and_then(|pair| std::str::from_utf8(pair).ok());
         match (bytes[index], hex.and_then(|pair| u8::from_str_radix(pair, 16).ok())) {
             (b'%', Some(byte)) => {
                 out.push(byte);
