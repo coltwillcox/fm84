@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-29" "fm84 0.33.1" "User Commands"
+.TH FM84 1 "2026-10-29" "fm84 0.33.2" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -134,6 +134,12 @@ Space on a directory also counts its size, unless it is a link to one.
 Count the size of every directory in the panel, a few at a time, the rest
 shown waiting.
 Links to directories are left out.
+As
+.BR du (1)
+counts: a file with several hard links once, and nothing on
+.IR /proc ,
+.I /sys
+and the like.
 .TP
 .B + \-
 Select or deselect by pattern:

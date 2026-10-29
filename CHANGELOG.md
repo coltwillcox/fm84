@@ -6,6 +6,17 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.33.2] - 2026-10-29
+
+### 🐛 Fixed
+- 📏 **Directory sizes as du gives them** - a file with several hard links was counted under each of its names, and sizing `/` walked into `/proc` and `/sys`, where one file alone claims the size of all memory. Each file now counts once, and filesystems the kernel makes up count nothing. A copy's progress still counts every link, since it writes each
+- 💿 **Mounts in the drive strip** - one mount point whose name was not UTF-8 emptied the whole strip; a newline or a backslash in a mount's name came through as the kernel's escape for it; and `/development`, `/system` or anything else merely starting like `/dev`, `/sys`, `/run` or `/proc` was left out as machinery
+- ⎋ **Esc during a copy** - pressed just as a question was on its way, it found nothing to answer, and the question came up anyway, waiting on a second answer. It is taken as answered
+- 🔗 **A link written over** - a copy onto a symlink removed the link before putting the file in its place, so a failure then left neither. The file takes the link's place in one step
+- 📍 **The session file** read `%+1` in a path as a byte, though a sign is no hex digit
+
+---
+
 ## [0.33.1] - 2026-10-29
 
 ### 🐛 Fixed
