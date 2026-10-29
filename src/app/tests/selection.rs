@@ -36,6 +36,26 @@ fn space_sizes_a_directory_off_the_ui_thread() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// A link to a directory is selected by Space but not sized: one to / or to
+/// a slow mount would walk all of it, as Alt+Shift+Enter already knew.
+#[cfg(unix)]
+#[test]
+fn space_selects_a_link_to_a_directory_without_sizing_it() {
+    let dir = std::env::temp_dir().join(format!("fm84-sizing-link-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    std::os::unix::fs::symlink(dir.join("sub"), dir.join("link")).unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.open_dir(true, dir.clone(), Some("link".as_ref()));
+    app_state.toggle_selection();
+    assert!(app_state.selected_left.contains(std::ffi::OsStr::new("link")));
+    assert!(app_state.dir_sizing.is_empty());
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// Shift+F2: each side selects what only it has and the newer of what
 /// both have; the size settles it only when the times agree.
 #[test]

@@ -163,7 +163,9 @@ impl AppState {
                     if !selected_set.remove(&item.name_os) {
                         selected_set.insert(item.name_os.clone());
 
-                        if calculate_size && item.is_dir {
+                        // Not through a link, for the reason size_all_dirs
+                        // leaves them out.
+                        if calculate_size && item.is_dir && !item.is_symlink {
                             to_size = Some(item.path_in(current_dir));
                         }
                     }
