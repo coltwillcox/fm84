@@ -125,6 +125,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'c' {
             copy_names(app_state, false);
         }
+        // Alt+P packs what is chosen into an archive.
+        if in_panel && c == 'p' {
+            open_pack(app_state);
+        }
         // Alt+I sends the other panel to this one's directory.
         if in_panel && c == 'i' {
             app_state.same_dir_in_other_panel();
@@ -270,6 +274,12 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         },
         Some(Dialog::Symlink { .. }) => match code {
             KeyCode::Enter => handle_symlink_confirm(app_state),
+            KeyCode::Esc => app_state.dialog = None,
+            _ => edit_text(app_state, code),
+        },
+        Some(Dialog::Pack { .. }) => match code {
+            KeyCode::Enter => handle_pack_confirm(app_state),
+            KeyCode::Tab => cycle_pack_format(app_state),
             KeyCode::Esc => app_state.dialog = None,
             _ => edit_text(app_state, code),
         },

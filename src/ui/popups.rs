@@ -272,6 +272,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
             TransferKind::Delete => " Deleting ".to_string(),
             TransferKind::Trash => " Moving to trash ".to_string(),
             TransferKind::Extract => " Extracting ".to_string(),
+            TransferKind::Pack => " Packing ".to_string(),
         }
     };
     let popup_area = popup_rect(30, area);
@@ -335,6 +336,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Delete => " Cannot delete ",
         TransferKind::Trash => " Cannot move to trash ",
         TransferKind::Extract => " Cannot extract ",
+        TransferKind::Pack => " Cannot pack ",
     };
     let popup_area = popup_rect(30, area);
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
@@ -648,8 +650,10 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
 /// move.
 /// F5, F6 and Ctrl+Shift+F5: what is chosen, and where it is to go, typed.
 /// `verb` names the operation, and `preposition` leads into the destination.
-/// `what` names a single source when "file" or "directory" would not say it.
-pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], what: Option<&str>, verb: &str, preposition: &str, input: &TextInput) {
+/// `what` names a single source when "file" or "directory" would not say it,
+/// and `also` is a key the dialog answers beyond Enter and Esc.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], what: Option<&str>, verb: &str, preposition: &str, input: &TextInput, also: Option<&str>) {
     let popup_area = popup_rect(35, area);
     let count = sources.len();
 
@@ -685,7 +689,14 @@ pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, s
     popup_body(
         f,
         popup_area,
-        vec![Line::from(Span::styled(source_msg, style_title())), input_line, Line::from(Span::styled(format!("Enter - {verb}    Esc - Cancel"), style_columns()))],
+        vec![
+            Line::from(Span::styled(source_msg, style_title())),
+            input_line,
+            Line::from(Span::styled(
+                [Some(format!("Enter - {verb}")), also.map(str::to_string), Some("Esc - Cancel".to_string())].into_iter().flatten().collect::<Vec<_>>().join("    "),
+                style_columns(),
+            )),
+        ],
     );
 }
 

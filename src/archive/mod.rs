@@ -135,7 +135,7 @@ fn open(archive: &Path) -> io::Result<BufReader<File>> {
     Ok(BufReader::new(File::open(archive)?))
 }
 
-fn zip_error(error: zip::result::ZipError) -> io::Error {
+pub(crate) fn zip_error(error: zip::result::ZipError) -> io::Error {
     match error {
         zip::result::ZipError::Io(error) => error,
         zip::result::ZipError::UnsupportedArchive(zip::result::ZipError::PASSWORD_REQUIRED) => encrypted(),
@@ -157,7 +157,7 @@ fn encrypted() -> io::Error {
     io::Error::new(io::ErrorKind::Unsupported, "Encrypted: fm84 cannot read it without the password")
 }
 
-fn sevenz_error(error: sevenz_rust2::Error) -> io::Error {
+pub(crate) fn sevenz_error(error: sevenz_rust2::Error) -> io::Error {
     match error {
         sevenz_rust2::Error::Io(error, _) | sevenz_rust2::Error::FileOpen(error, _) => error,
         // Built without AES, an encrypted 7z reads as one packed by a method

@@ -317,3 +317,63 @@ fn ctrl_c_copies_a_path_through_an_archive() {
     assert_eq!(PathBuf::from(&app_state.clipboard), archive.join("2024/notes.txt"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+P packs what is chosen into an archive in the other panel, named
+/// after it, and lands there on what it made; Tab goes through the formats
+/// by the ending of the name.
+#[test]
+fn alt_p_packs_into_the_other_panel() {
+    let dir = scratch("pack-keys");
+    let (here, out) = (dir.join("here"), dir.join("out"));
+    std::fs::create_dir_all(here.join("photos")).unwrap();
+    std::fs::write(here.join("photos/beach.txt"), "sand").unwrap();
+    std::fs::create_dir_all(&out).unwrap();
+    let mut app_state = AppState::new();
+    app_state.open_dir(false, out.clone(), None);
+    app_state.is_left_active = true;
+    app_state.open_dir(true, here.clone(), Some("photos".as_ref()));
+    let alt_p = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('p'), KeyModifiers::ALT));
+    let typed = |app_state: &mut AppState| PathBuf::from(&app_state.dialog_input().unwrap().text);
+
+    alt_p(&mut app_state);
+    assert_eq!(typed(&mut app_state), out.join("photos.zip"));
+    let mut seen = Vec::new();
+    for _ in 0..6 {
+        press(&mut app_state, KeyCode::Tab);
+        seen.push(typed(&mut app_state).file_name().unwrap().to_string_lossy().into_owned());
+    }
+    assert_eq!(seen, ["photos.7z", "photos.tar.gz", "photos.tar.xz", "photos.tar.bz2", "photos.tar", "photos.zip"]);
+    press(&mut app_state, KeyCode::Tab);
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    let index = crate::archive::index(&out.join("photos.7z")).unwrap();
+    assert!(index.find(std::path::Path::new("photos/beach.txt")).is_some());
+    let landed = &app_state.children_right[app_state.state_right.selected().unwrap()];
+    assert_eq!(landed.name_full, "photos.7z");
+
+    // Not again over it, unless F11 says to overwrite.
+    alt_p(&mut app_state);
+    app_state.dialog_input().unwrap().set(out.join("photos.7z").display().to_string());
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Already exists"), "{:?}", app_state.error);
+    assert!(app_state.job.is_none());
+    app_state.reset_error();
+
+    // Not a name an archive has, nor into an archive, nor from inside one.
+    alt_p(&mut app_state);
+    app_state.dialog_input().unwrap().set(out.join("photos.rar").display().to_string());
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Name it as an archive"), "{:?}", app_state.error);
+    app_state.reset_error();
+    alt_p(&mut app_state);
+    app_state.dialog_input().unwrap().set(out.join("photos.7z/inside.zip").display().to_string());
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(app_state.error.as_deref(), Some(crate::app::READ_ONLY));
+    app_state.reset_error();
+    app_state.open_dir(true, out.join("photos.7z"), None);
+    alt_p(&mut app_state);
+    assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy it out of the archive first"), "{:?}", app_state.error);
+    assert!(app_state.dialog.is_none());
+    std::fs::remove_dir_all(&dir).unwrap();
+}

@@ -321,25 +321,7 @@ pub(super) fn write_beside<R: Read + ?Sized>(dest: &Path, reader: &mut R, report
         if copied == 0 {
             finish(&dst_file, &temp);
             drop(dst_file);
-            // The one moment the destination changes, and it changes all at
-            // once: anything reading it sees the old bytes or the new ones.
-            let placed = if replacing {
-                // A rename takes a link's place without following it, and
-                // in one step. Cleared first, the link was lost whenever the
-                // rename then failed; that is kept for where it refuses -
-                // Windows, over a link to a directory.
-                rename(&temp, dest).or_else(|_| clear_link(dest).and_then(|()| rename(&temp, dest)))
-            } else if path_exists(dest) {
-                // Taken while the copy ran, and nobody said it could be
-                // replaced. A rename would replace it without a word.
-                Err(Error::new(ErrorKind::AlreadyExists, format!("Destination already exists: {}", dest.display())))
-            } else {
-                rename(&temp, dest)
-            };
-            if let Err(e) = placed {
-                let _ = remove_file(&temp);
-                return Err(e);
-            }
+            place(&temp, dest, replacing)?;
             return Ok(Transfer::Done);
         }
         if !report.step(Step::Advanced(copied)) {
@@ -348,6 +330,30 @@ pub(super) fn write_beside<R: Read + ?Sized>(dest: &Path, reader: &mut R, report
             return Ok(Transfer::Cancelled);
         }
     }
+}
+
+/// Put a temporary, written whole, where it belongs: the one moment the
+/// destination changes, and it changes all at once - anything reading it sees
+/// the old bytes or the new ones. `replacing` says something was there when
+/// the writing began and may be written over. The temporary goes either way.
+pub(super) fn place(temp: &Path, dest: &Path, replacing: bool) -> Result<(), Error> {
+    let placed = if replacing {
+        // A rename takes a link's place without following it, and in one
+        // step. Cleared first, the link was lost whenever the rename then
+        // failed; that is kept for where it refuses - Windows, over a link
+        // to a directory.
+        rename(temp, dest).or_else(|_| clear_link(dest).and_then(|()| rename(temp, dest)))
+    } else if path_exists(dest) {
+        // Taken while the copy ran, and nobody said it could be replaced. A
+        // rename would replace it without a word.
+        Err(Error::new(ErrorKind::AlreadyExists, format!("Destination already exists: {}", dest.display())))
+    } else {
+        rename(temp, dest)
+    };
+    if placed.is_err() {
+        let _ = remove_file(temp);
+    }
+    placed
 }
 
 /// Give a copy the access and modification times of what it was copied

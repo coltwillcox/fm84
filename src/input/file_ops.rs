@@ -2,6 +2,7 @@
 //! and Shift+F3, which picks two files to compare.
 
 use super::*;
+use crate::fs_ops::PackFormat;
 
 /// F2 on the entry under the cursor, typed into in place of its name.
 pub(super) fn open_rename(app_state: &mut AppState) {
@@ -335,6 +336,87 @@ fn go_extract_all(app_state: &mut AppState, archive: PathBuf, destination: &Path
     }
     let clashes = if app_state.options.on_existing == OnExisting::Overwrite { Clashes::ReplaceAll } else { Clashes::Ask };
     app_state.start_extract(archive, vec![(PathBuf::new(), destination.to_path_buf())], clashes, None);
+}
+
+/// Alt+P: pack what is chosen into an archive, asking where - opening on the
+/// other panel's directory with a name from what is packed: a file's without
+/// its ending, a directory's, or for several the name of the directory they
+/// are in. A zip unless Tab says otherwise.
+pub(super) fn open_pack(app_state: &mut AppState) {
+    let is_left = app_state.is_left_active;
+    if app_state.panel_archive(is_left).is_some() {
+        return app_state.display_error("Copy it out of the archive first: what is packed has to be on the disk".to_string());
+    }
+    let sources = chosen_items(app_state);
+    if sources.is_empty() {
+        return;
+    }
+    let base = match &sources[..] {
+        [(path, true)] => path.file_name().map(std::ffi::OsStr::to_os_string),
+        [(path, false)] => path.file_stem().map(std::ffi::OsStr::to_os_string),
+        _ => app_state.panel_dir(is_left).file_name().map(std::ffi::OsStr::to_os_string),
+    };
+    let base = base.map_or_else(|| "archive".to_string(), |name| name.to_string_lossy().into_owned());
+    let name = format!("{base}{}", PackFormat::Zip.extension());
+    let mut input = TextInput::new();
+    input.set(app_state.panel_dir(!is_left).join(name).to_string_lossy().into_owned());
+    app_state.dialog = Some(Dialog::Pack { sources, input });
+}
+
+/// Tab on the pack dialog: the next format, by the ending of the name.
+pub(super) fn cycle_pack_format(app_state: &mut AppState) {
+    let Some(Dialog::Pack { input, .. }) = &mut app_state.dialog else {
+        return;
+    };
+    input.set(next_pack_format(&input.text));
+}
+
+/// `name` with the ending of the format after the one it has - longest
+/// ending first, so `.tar.gz` is not taken for `.gz` on a `.tar` - or a zip's
+/// for one with none.
+pub(super) fn next_pack_format(name: &str) -> String {
+    // The front of the name with `ending` taken off it, in any case.
+    let without = |ending: &str| {
+        let at = name.len().checked_sub(ending.len())?;
+        (name.is_char_boundary(at) && name[at..].eq_ignore_ascii_case(ending)).then(|| &name[..at])
+    };
+    let mut known: Vec<(usize, PackFormat)> = PackFormat::ALL.iter().copied().enumerate().collect();
+    known.sort_by_key(|(_, format)| std::cmp::Reverse(format.extension().len()));
+    match known.into_iter().find_map(|(at, format)| without(format.extension()).map(|front| (at, front))) {
+        Some((at, front)) => format!("{front}{}", PackFormat::ALL[(at + 1) % PackFormat::ALL.len()].extension()),
+        None => format!("{name}{}", PackFormat::Zip.extension()),
+    }
+}
+
+/// Enter on the pack dialog. A name that is not absolute is from the
+/// active panel's directory. What is already there is written over only
+/// when F11 says to overwrite: one archive in place of another is not asked
+/// about a file at a time, as a copy is.
+pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
+    let Some(Dialog::Pack { sources, input }) = app_state.dialog.take() else {
+        return;
+    };
+    if input.text.trim().is_empty() {
+        return;
+    }
+    let dest = typed_path(&input.text, &app_state.panel_dir(app_state.is_left_active));
+    let Some(format) = PackFormat::of(&dest) else {
+        let endings: Vec<&str> = PackFormat::ALL.iter().map(|format| format.extension()).collect();
+        return app_state.display_error(format!("Name it as an archive, ending in {}", endings.join(", ")));
+    };
+    match dest.parent() {
+        Some(dir) if crate::archive::locate(dir).is_some() => return app_state.display_error(READ_ONLY.to_string()),
+        Some(dir) if dir.is_dir() => {}
+        Some(dir) => return app_state.display_error(format!("No such directory: {}", dir.display())),
+        None => return app_state.display_error(format!("Cannot pack into {}", dest.display())),
+    }
+    let replacing = match dest.symlink_metadata() {
+        Ok(metadata) if metadata.is_dir() => return app_state.display_error(format!("{} is a directory", dest.display())),
+        Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => true,
+        Ok(_) => return app_state.display_error(format!("Already exists: {} - another name, or Overwrite under F11", dest.display())),
+        Err(_) => false,
+    };
+    app_state.start_pack(sources, dest, format, replacing);
 }
 
 /// Shift+F3: which two files to compare. Two files selected in the panel you

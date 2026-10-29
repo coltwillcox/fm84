@@ -415,3 +415,17 @@ fn a_copy_goes_where_the_other_panel_is_going() {
     assert_eq!(std::path::PathBuf::from(&app_state.dialog_input().unwrap().text), dir.join("going").join("a.txt"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Tab on the pack dialog: whatever case the ending is in, and whatever
+/// comes before it, even a character whose lower case is shorter.
+#[test]
+fn the_pack_format_goes_round_by_its_ending() {
+    use super::super::file_ops::next_pack_format;
+    assert_eq!(next_pack_format("a.ZIP"), "a.7z");
+    assert_eq!(next_pack_format("a.TAR.GZ"), "a.tar.xz");
+    assert_eq!(next_pack_format("a.tar"), "a.zip");
+    assert_eq!(next_pack_format("plain"), "plain.zip");
+    // The Kelvin sign is three bytes, and its lower case one.
+    assert_eq!(next_pack_format("\u{212A}.zip"), "\u{212A}.7z");
+    assert_eq!(next_pack_format("x\u{212A}"), "x\u{212A}.zip");
+}

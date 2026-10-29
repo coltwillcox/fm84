@@ -48,6 +48,16 @@ pub enum AfterJob {
         shown: (PathBuf, PathBuf),
         then: Option<(PathBuf, Vec<(PathBuf, PathBuf)>)>,
     },
+    /// Not from an archive: an archive packed, landed on in whichever panel
+    /// shows where it went.
+    Land(PathBuf),
+}
+
+impl AfterJob {
+    /// Copied out only to be looked at, which changes nothing in the panels.
+    fn to_scratch(&self) -> bool {
+        !matches!(self, AfterJob::Land(_))
+    }
 }
 
 /// Which of the long jobs is running. They share a popup, a worker and a
@@ -60,6 +70,8 @@ pub enum TransferKind {
     Trash,
     /// Copying out of an archive.
     Extract,
+    /// Making one.
+    Pack,
 }
 
 impl TransferKind {
@@ -71,6 +83,7 @@ impl TransferKind {
             TransferKind::Delete => "Delete",
             TransferKind::Trash => "Move to trash",
             TransferKind::Extract => "Extract",
+            TransferKind::Pack => "Pack",
         }
     }
 }
@@ -346,6 +359,20 @@ fn run_extract(archive: PathBuf, items: Vec<(PathBuf, PathBuf)>, mut progress: J
     progress.finish(outcome);
 }
 
+/// The worker thread behind packing: what goes in is found first, which
+/// gives the bar its total, and then written.
+fn run_pack(sources: Vec<(PathBuf, bool)>, dest: PathBuf, format: crate::fs_ops::PackFormat, replacing: bool, mut progress: JobProgress<'_>) {
+    let outcome = match crate::fs_ops::plan_pack(&sources, &dest, format, &mut progress) {
+        Ok(Some(plan)) => {
+            let _ = progress.updates.send(JobUpdate::Total(plan.bytes));
+            crate::fs_ops::pack(&plan, &dest, format, replacing, &mut progress)
+        }
+        Ok(None) => Ok(Transfer::Cancelled),
+        Err(error) => Err(error),
+    };
+    progress.finish(outcome);
+}
+
 /// The worker thread behind a copy or move.
 ///
 /// Renames come first and on their own. A move within one filesystem is a
@@ -402,6 +429,16 @@ impl AppState {
             skipped: 0,
             after: None,
         });
+    }
+
+    /// Pack `sources` into a new archive at `dest`, written over only when
+    /// `replacing`, and land on it once it is there.
+    pub fn start_pack(&mut self, sources: Vec<(PathBuf, bool)>, dest: PathBuf, format: crate::fs_ops::PackFormat, replacing: bool) {
+        let land = dest.clone();
+        self.start_job(TransferKind::Pack, Clashes::Ask, move |progress| run_pack(sources, dest, format, replacing, progress));
+        if let Some(job) = &mut self.job {
+            job.after = Some(AfterJob::Land(land));
+        }
     }
 
     /// Copy entries out of `archive`, each its path inside and where it
@@ -480,7 +517,7 @@ impl AppState {
 
         // An entry copied out to be looked at changed nothing anyone can
         // see: the panels, their selections and sizes stay as they are.
-        if job.after.is_none() {
+        if job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
             // Both panels: a move empties one and fills the other, and a copy
             // into the same directory shows up on the side it came from.
             self.reload_panel(true, None);
@@ -504,6 +541,13 @@ impl AppState {
                     self.display_error(format!("Cannot open file: {e}"));
                 }
                 return;
+            }
+            (Ok(Transfer::Done), Some(AfterJob::Land(archive))) => {
+                for is_left in [true, false] {
+                    if archive.parent() == Some(self.panel_dir(is_left).as_path()) {
+                        self.reload_panel(is_left, archive.file_name());
+                    }
+                }
             }
             (Ok(Transfer::Done), Some(AfterJob::Compare { files, shown, then })) if job.skipped == 0 => {
                 match then {
