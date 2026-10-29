@@ -236,8 +236,16 @@ pub fn user_at_host() -> (String, bool) {
     (format!("{}@{}", variable("USERNAME"), variable("COMPUTERNAME")), false)
 }
 
+/// Bytes a copy of `path` writes. Every hard link is a file of its own to a
+/// copy, so each is counted, unlike the size walk_dir_size shows.
 pub fn calculate_dir_size(path: &Path) -> Result<u64, Error> {
-    walk_dir_size(path, &AtomicBool::new(false), &mut |_| {}).map(Option::unwrap_or_default)
+    SizeWalk {
+        cancel: &AtomicBool::new(false),
+        found: &mut |_| {},
+        linked: None,
+    }
+    .dir(path, None)
+    .map(Option::unwrap_or_default)
 }
 
 /// Bytes in the files under `path`, links not followed. `found` is told each
@@ -247,27 +255,130 @@ pub fn calculate_dir_size(path: &Path) -> Result<u64, Error> {
 /// Only `path` itself has to be readable. Anything inside that is not - a
 /// directory locked to its owner, a file gone mid-walk - counts as nothing,
 /// the way du carries on past what it cannot read rather than giving up.
+///
+/// As du counts, too: a file with several hard links once, however many of
+/// them the walk passes, and nothing in a filesystem the kernel makes up -
+/// /proc alone claims a file the size of all memory, and /sys thousands of
+/// pages - so sizing / gives the disk's own size.
 pub fn walk_dir_size(path: &Path, cancel: &AtomicBool, found: &mut dyn FnMut(u64)) -> Result<Option<u64>, Error> {
-    let mut total = 0u64;
-    for entry in read_dir(path)? {
-        if cancel.load(Ordering::Relaxed) {
-            return Ok(None);
+    SizeWalk {
+        cancel,
+        found,
+        linked: Some(std::collections::HashSet::new()),
+    }
+    .dir(path, None)
+}
+
+struct SizeWalk<'a> {
+    cancel: &'a AtomicBool,
+    found: &'a mut dyn FnMut(u64),
+    /// The hard-linked files met so far, by device and inode, when each is
+    /// to be counted once. None counts every link.
+    linked: Option<std::collections::HashSet<(u64, u64)>>,
+}
+
+impl SizeWalk<'_> {
+    /// `parent_device` is the device of the directory `path` is in, None at
+    /// the top. Only where the walk steps onto another device is it asked
+    /// what the filesystem there is, so a walk within one costs nothing more.
+    fn dir(&mut self, path: &Path, parent_device: Option<u64>) -> Result<Option<u64>, Error> {
+        let device = device_of(path);
+        if (parent_device.is_none() || device != parent_device) && is_pseudo_filesystem(path) {
+            return Ok(Some(0));
         }
-        let Ok(entry) = entry else { continue };
-        // file_type() uses readdir's d_type on Linux - no extra stat syscall
-        let Ok(file_type) = entry.file_type() else { continue };
-        if file_type.is_dir() {
-            match walk_dir_size(&entry.path(), cancel, found) {
-                Ok(Some(size)) => total += size,
-                Ok(None) => return Ok(None),
-                Err(_) => {}
+        let mut total = 0u64;
+        for entry in read_dir(path)? {
+            if self.cancel.load(Ordering::Relaxed) {
+                return Ok(None);
             }
-        } else if let Ok(metadata) = entry.metadata() {
-            total += metadata.len();
-            found(metadata.len());
+            let Ok(entry) = entry else { continue };
+            // file_type() uses readdir's d_type on Linux - no extra stat syscall
+            let Ok(file_type) = entry.file_type() else { continue };
+            if file_type.is_dir() {
+                match self.dir(&entry.path(), device) {
+                    Ok(Some(size)) => total += size,
+                    Ok(None) => return Ok(None),
+                    Err(_) => {}
+                }
+            } else if let Ok(metadata) = entry.metadata()
+                && self.first_sight(&metadata)
+            {
+                total += metadata.len();
+                (self.found)(metadata.len());
+            }
+        }
+        Ok(Some(total))
+    }
+
+    /// False for a file already counted under another of its names.
+    #[cfg(unix)]
+    fn first_sight(&mut self, metadata: &fs::Metadata) -> bool {
+        use std::os::unix::fs::MetadataExt;
+        match &mut self.linked {
+            Some(linked) if metadata.nlink() > 1 => linked.insert((metadata.dev(), metadata.ino())),
+            _ => true,
         }
     }
-    Ok(Some(total))
+
+    #[cfg(not(unix))]
+    fn first_sight(&mut self, _metadata: &fs::Metadata) -> bool {
+        true
+    }
+}
+
+#[cfg(unix)]
+fn device_of(path: &Path) -> Option<u64> {
+    use std::os::unix::fs::MetadataExt;
+    path.symlink_metadata().ok().map(|metadata| metadata.dev())
+}
+
+#[cfg(not(unix))]
+fn device_of(_path: &Path) -> Option<u64> {
+    None
+}
+
+/// True for a filesystem the kernel makes up as it is read - procfs, sysfs
+/// and their kin - whose sizes are no bytes on any disk.
+#[cfg(target_os = "linux")]
+fn is_pseudo_filesystem(path: &Path) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    const PSEUDO: [u32; 15] = [
+        0x9fa0,      // proc
+        0x6265_6572, // sysfs
+        0x6462_6720, // debugfs
+        0x7472_6163, // tracefs
+        0x7363_6673, // securityfs
+        0x0027_e0eb, // cgroup
+        0x6367_7270, // cgroup2
+        0xcafe_4a11, // bpf
+        0x6165_676c, // pstore
+        0xde5e_81e4, // efivarfs
+        0x6265_6570, // configfs
+        0x1cd1,      // devpts
+        0x6573_5543, // fusectl
+        0x4249_4e4d, // binfmt_misc
+        0x1980_0202, // mqueue
+    ];
+    let Ok(c_path) = std::ffi::CString::new(path.as_os_str().as_bytes()) else {
+        return false;
+    };
+    // SAFETY: c_path is a valid NUL-terminated string and stats is only read
+    // back after statfs reports success.
+    let kind = unsafe {
+        let mut stats = std::mem::zeroed::<libc::statfs>();
+        if libc::statfs(c_path.as_ptr(), &mut stats) != 0 {
+            return false;
+        }
+        // The field's width differs between architectures; every magic
+        // number fits in 32 bits.
+        stats.f_type as u32
+    };
+    PSEUDO.contains(&kind)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn is_pseudo_filesystem(_path: &Path) -> bool {
+    false
 }
 
 /// The parts of an entry the columns have no room for: its exact size, the

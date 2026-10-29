@@ -22,6 +22,28 @@ fn a_size_walk_counts_what_it_can_and_stops_when_asked() {
     fs::remove_dir_all(&dir).unwrap();
 }
 
+/// A file under two names is shown once in a directory's size, as du shows
+/// it - but a copy writes it twice, so measuring for one counts both.
+#[cfg(unix)]
+#[test]
+fn a_hard_linked_file_is_sized_once_and_measured_twice() {
+    let dir = scratch("walk-links");
+    fs::write(dir.join("a.bin"), vec![0u8; 1000]).unwrap();
+    fs::create_dir(dir.join("sub")).unwrap();
+    fs::hard_link(dir.join("a.bin"), dir.join("sub").join("again.bin")).unwrap();
+
+    assert_eq!(walk_dir_size(&dir, &AtomicBool::new(false), &mut |_| {}).unwrap(), Some(1000));
+    assert_eq!(calculate_dir_size(&dir).unwrap(), 2000);
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// /proc holds a file the size of all memory, none of it on a disk.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_filesystem_the_kernel_makes_up_has_no_size() {
+    assert_eq!(walk_dir_size(Path::new("/proc"), &AtomicBool::new(false), &mut |_| {}).unwrap(), Some(0));
+}
+
 #[test]
 fn measure_adds_up_files_and_walks_directories() {
     let dir = scratch("measure");
