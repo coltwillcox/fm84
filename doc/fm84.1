@@ -446,9 +446,12 @@ Cancel it.
 .B R S A
 Retry, Skip, or Skip all, when an entry fails.
 .TP
-.B Y N A S O
-Overwrite, Skip, Overwrite all, Skip all, or Overwrite all older, when a
-file is already there.
+.B Y N K A S B O
+Overwrite, Skip, Keep both, Overwrite all, Skip all, Keep both all, or
+Overwrite all older, when a file is already there.
+Keep both leaves it, and writes the new one beside it as
+.IR "name (2).ext" ,
+numbered on past any already taken.
 .TP
 .B D
 Delete for good, when the trash will not take an entry.
