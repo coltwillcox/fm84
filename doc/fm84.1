@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-25" "fm84 0.33.0" "User Commands"
+.TH FM84 1 "2026-10-29" "fm84 0.33.1" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -128,7 +128,7 @@ directory sizes; stop waiting on a directory that has not answered.
 .TP
 .B Space Insert
 Select or deselect the entry.
-Space on a directory also counts its size.
+Space on a directory also counts its size, unless it is a link to one.
 .TP
 .B Alt+Shift+Enter Alt+Enter
 Count the size of every directory in the panel, a few at a time, the rest

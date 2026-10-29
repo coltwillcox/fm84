@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.33.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.33.1** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -249,7 +249,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it, and bookmarks in `bookmarks`
 
 ### 📂 Directory Sizes
-- 📏 **Calculated on select** - press Space on a directory to calculate its size
+- 📏 **Calculated on select** - press Space on a directory to calculate its size; a link to one is selected but not counted, for the same reason as below
 - 🗂️ **Every directory at once** - `Alt+Shift+Enter`, as in Total Commander (`Alt+Enter` too, for a terminal that cannot report Shift with Enter), sizes every directory in the panel, top to bottom, four at a time; the rest show `…` while they wait their turn. Links to directories are left out, since one to `/` or to a slow mount would walk all of it
 - 🧵 **Counted in the background** - the Size column shows the running total with a `…` while it counts, the panels keep answering, and Esc stops it, as does leaving the directory (unless the other panel is in it too); a slow disk or a huge tree no longer holds up the interface
 - 📌 **Persistent display** - sizes stay visible after deselecting, until a copy, move or delete may have changed them
@@ -362,7 +362,7 @@ fm84                 # panels and tabs where you left them (or the current direc
 fm84 ~/Music         # left panel in ~/Music
 fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
 fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.33.0
+fm84 --version       # fm84 0.33.1
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -449,5 +449,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.33.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.33.1 ▄▀▄▀▄▀</code>
 </p>

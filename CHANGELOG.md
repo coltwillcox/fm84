@@ -6,6 +6,15 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.33.1] - 2026-10-29
+
+### 🐛 Fixed
+- 🔼 **A file named `...`** was taken for the `..` row above it, whose name its stem matched: Enter on it went up a directory, and it could not be selected, renamed, copied, moved or deleted. The parent row is told apart by the name on disk
+- 🪟 **Opening a file on Windows** went through `cmd /C start`, which read the path as a command line: a file named `x&calc` ran calc, and `%VAR%` in a name was expanded. Files are handed to the shell directly
+- 🔗 **Space on a link to a directory** counted the size of everything it pointed at - all of `/`, or a slow mount, for a link to one. It is selected and left uncounted, as Alt+Shift+Enter already left links out
+
+---
+
 ## [0.33.0] - 2026-10-25
 
 ### ✨ Added
