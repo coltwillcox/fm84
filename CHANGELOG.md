@@ -6,6 +6,20 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.35.0] - 2026-10-29
+
+### ✨ Added
+- 📦 **Archives as directories** - Enter on a `.zip`, `.tar`, `.tar.gz` or `.tgz` opens it in the panel, and its directories open as any do. The path runs through it - `~/photos.zip/2024` - so tabs, history, bookmarks, Ctrl+L and remembered directories all work inside one, and Backspace at its top comes back out onto the archive. Read-only: renaming, making, deleting, moving, copying or linking into it, Alt+A and F4 say so and change nothing
+- 📋 **Copy out with F5** - a file or a directory whole, to the other panel or wherever the dialog is told, as a job with the progress bar, Esc, the questions about files in the way and Retry/Skip/Abort. Times and permissions come out as the archive kept them, and links as links
+- 👁️ **F3, F12 and the detail lines inside an archive** - F3 copies a file out to a scratch directory and shows it, removed when fm84 quits; the preview reads the head of an entry in place, and the lines under the panels give its exact size, time, mode, a tar's owner, and whether a zip entry is encrypted. Space and Alt+Shift+Enter size directories from what the archive says, at once
+- 🛡️ **Safe to open** - a name that would land outside where it is copied to (`../`, an absolute path, a drive) never gets into the listing, nor anything that would be written through a link in the archive. A file named like an archive that will not read says why, and the panel stays where it was
+- 🚀 **Shift+Enter / Ctrl+O** - open what is under the cursor with the program the system opens it with, as Enter did before it went into archives; an archive too. Ctrl+O is for terminals that send Shift+Enter as plain Enter
+
+### 🛠️ Changed
+- ↩️ **Enter and double-click on an archive** go into it rather than opening it with the system's program; Shift+Enter and Ctrl+O do that now
+
+---
+
 ## [0.34.0] - 2026-10-29
 
 ### ✨ Added
