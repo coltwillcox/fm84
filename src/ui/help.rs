@@ -29,6 +29,7 @@ const HELP: &[(&str, &[&str])] = &[
             "F8 - Move to trash",
             "  Shift+F8 delete permanently",
             "Alt+A - Permissions, owner, time",
+            "Alt+P - Pack into an archive (Tab format)",
             "F9 - Open terminal",
             "F10 - Quit",
             "F11 - Options (Alt+F1/F2 drives)",

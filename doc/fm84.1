@@ -111,6 +111,27 @@ Everything that would write into an archive says so and changes nothing:
 renaming, making, deleting, moving, copying or linking into it, Alt+A and F4.
 Find files does not reach inside one.
 .PP
+Alt+P packs what is chosen into a new
+.IR .zip ,
+.IR .7z ,
+.IR .tar.gz ,
+.IR .tar.xz ,
+.I .tar.bz2
+or
+.IR .tar ,
+as a job like a copy, keeping modes, times and links.
+A zip or a 7z cannot hold a name that is not UTF-8, which is asked about; a
+tar keeps it.
+A 7z is packed solid.
+The archive is written beside where it goes and put there whole, so a cancel
+leaves nothing, and one made inside the directory being packed leaves itself
+out.
+One already at the name is written over only when the options say to
+overwrite.
+A
+.I .tar.zst
+is read but not made.
+.PP
 A compressed tar is read on past the end of its first stream, so files joined
 end to end are one archive.
 A 7z is listed from its header without unpacking anything; one packed solid
@@ -398,6 +419,11 @@ Open a terminal in the panel's directory.
 .B Alt+F9 Ctrl+F9
 Extract the whole of the archive under the cursor, or of the one the panel is
 in, to the other panel or wherever the dialog is told.
+.TP
+.B Alt+P
+Pack what is chosen into a new archive, asking where: on the other panel's
+directory, named after what is packed.
+Tab goes through the formats by the ending of the name.
 .TP
 .B F10
 Quit.
