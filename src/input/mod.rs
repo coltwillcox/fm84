@@ -273,6 +273,11 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc => app_state.dialog = None,
             _ => edit_text(app_state, code),
         },
+        Some(Dialog::Extract { .. }) => match code {
+            KeyCode::Enter => handle_extract_confirm(app_state),
+            KeyCode::Esc => app_state.dialog = None,
+            _ => edit_text(app_state, code),
+        },
         Some(Dialog::LargeFile(_)) if yes => app_state.confirm_large_file(),
         Some(Dialog::Delete { .. } | Dialog::LargeFile(_)) if no => app_state.dialog = None,
         Some(&Dialog::SaveChanges { then_quit }) => match code {

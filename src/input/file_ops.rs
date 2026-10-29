@@ -274,6 +274,69 @@ fn submit_extract(app_state: &mut AppState, archive: PathBuf, items: Vec<(PathBu
     }
 }
 
+/// Alt+F9: the whole of an archive - the one under the cursor, or the one
+/// the panel is inside - extracted to where the dialog is told, opening on
+/// the other panel's directory. Without the dialog, when F11 turns off
+/// confirming copies, straight there.
+pub(super) fn open_extract_all(app_state: &mut AppState) {
+    let is_left = app_state.is_left_active;
+    let archive = match app_state.panel_archive(is_left) {
+        Some(archive) => archive.clone(),
+        None => {
+            let (children, state, dir) = if is_left {
+                (&app_state.children_left, &app_state.state_left, &app_state.dir_left)
+            } else {
+                (&app_state.children_right, &app_state.state_right, &app_state.dir_right)
+            };
+            let item = state.selected().and_then(|index| children.get(index));
+            match item.map(|item| item.path_in(dir)).filter(|path| item.is_some_and(|item| !item.is_dir) && crate::archive::kind_of(path).is_some()) {
+                Some(path) => path,
+                None => return app_state.display_error("Put the cursor on an archive to extract it".to_string()),
+            }
+        }
+    };
+    let other = app_state.panel_dir(!is_left);
+    if !app_state.options.confirm_copy_move {
+        return go_extract_all(app_state, archive, &other);
+    }
+    let mut text = other.to_string_lossy().into_owned();
+    if !text.ends_with(std::path::is_separator) {
+        text.push(std::path::MAIN_SEPARATOR);
+    }
+    let mut input = TextInput::new();
+    input.set(text);
+    app_state.dialog = Some(Dialog::Extract { archive, input });
+}
+
+/// Enter on the extract dialog. A path that is not absolute is from the
+/// directory the panel is in - for one inside an archive, the directory the
+/// archive is in.
+pub(super) fn handle_extract_confirm(app_state: &mut AppState) {
+    let Some(Dialog::Extract { archive, input }) = app_state.dialog.take() else {
+        return;
+    };
+    if input.text.trim().is_empty() {
+        return;
+    }
+    let base = app_state.panel_real_dir(app_state.is_left_active);
+    let destination = typed_path(&input.text, &base);
+    go_extract_all(app_state, archive, &destination);
+}
+
+/// Everything in `archive`, into `destination`, which has to be there. Each
+/// file in the way is asked about as the job reaches it, or written over as
+/// F11 says: the archive is not read here, so nothing can be checked ahead.
+fn go_extract_all(app_state: &mut AppState, archive: PathBuf, destination: &Path) {
+    if crate::archive::locate(destination).is_some() {
+        return app_state.display_error(READ_ONLY.to_string());
+    }
+    if !destination.is_dir() {
+        return app_state.display_error(format!("No such directory: {}", destination.display()));
+    }
+    let clashes = if app_state.options.on_existing == OnExisting::Overwrite { Clashes::ReplaceAll } else { Clashes::Ask };
+    app_state.start_extract(archive, vec![(PathBuf::new(), destination.to_path_buf())], clashes, None);
+}
+
 /// Shift+F3: which two files to compare. Two files selected in the panel you
 /// are in, in the order it lists them; otherwise the file under the cursor,
 /// against the one of the same name in the other panel, or failing that the

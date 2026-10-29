@@ -648,12 +648,13 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
 /// move.
 /// F5, F6 and Ctrl+Shift+F5: what is chosen, and where it is to go, typed.
 /// `verb` names the operation, and `preposition` leads into the destination.
-pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], verb: &str, preposition: &str, input: &TextInput) {
+/// `what` names a single source when "file" or "directory" would not say it.
+pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], what: Option<&str>, verb: &str, preposition: &str, input: &TextInput) {
     let popup_area = popup_rect(35, area);
     let count = sources.len();
 
     let title = if count == 1 {
-        let item_type = if sources[0].1 { "directory" } else { "file" };
+        let item_type = what.unwrap_or(if sources[0].1 { "directory" } else { "file" });
         format!(" {} {} ", verb, item_type)
     } else {
         format!(" {} {} items ", verb, count)

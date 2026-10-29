@@ -234,3 +234,43 @@ fn a_path_through_an_archive_is_gone_to() {
     assert_eq!(shown(&app_state), ["..", "beach.txt"]);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+F9 extracts the whole of the archive under the cursor - or, Ctrl+F9,
+/// of the one the panel is inside - into the other panel; on anything else
+/// it says what it wants.
+#[test]
+fn alt_f9_extracts_a_whole_archive() {
+    let (dir, archive, mut app_state) = setup("extract-all");
+    let out = dir.join("out");
+
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(9), KeyModifiers::ALT));
+    assert!(matches!(app_state.dialog, Some(Dialog::Extract { .. })));
+    assert_eq!(PathBuf::from(&app_state.dialog_input().unwrap().text), out);
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert_eq!(std::fs::read_to_string(out.join("2024/june/beach.txt")).unwrap(), "sand and sea");
+    assert_eq!(std::fs::read_to_string(out.join("readme.txt")).unwrap(), "read me");
+
+    // From inside it, into a directory typed: relative to where the archive is.
+    std::fs::create_dir(dir.join("again")).unwrap();
+    app_state.open_dir(true, archive.join("2024"), None);
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(9), KeyModifiers::CONTROL));
+    app_state.dialog_input().unwrap().set("again".to_string());
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(std::fs::read_to_string(dir.join("again/readme.txt")).unwrap(), "read me");
+
+    // Not onto an archive, nor into one.
+    app_state.open_dir(true, dir.clone(), Some("out".as_ref()));
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(9), KeyModifiers::ALT));
+    assert_eq!(app_state.error.as_deref(), Some("Put the cursor on an archive to extract it"));
+    app_state.reset_error();
+    on(&mut app_state, "photos.zip");
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(9), KeyModifiers::ALT));
+    app_state.dialog_input().unwrap().set(archive.join("2024").display().to_string());
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(app_state.error.as_deref(), Some(crate::app::READ_ONLY));
+    assert!(app_state.job.is_none());
+    std::fs::remove_dir_all(&dir).unwrap();
+}

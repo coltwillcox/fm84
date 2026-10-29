@@ -104,6 +104,8 @@ pub enum Dialog {
     /// except that a lone directory is named as a file is - the link is the
     /// new entry, not something to go inside it.
     Symlink { sources: Vec<(PathBuf, bool)>, input: TextInput, opened_with: String, default: PathBuf },
+    /// Alt+F9: where to extract the whole of an archive to.
+    Extract { archive: PathBuf, input: TextInput },
     /// A file big enough to be worth asking about before it is opened.
     LargeFile(LargeFile),
     /// Unsaved edits, on the way out of the editor. `then_quit` when it was
@@ -469,7 +471,7 @@ impl AppState {
     /// typed into: a name, a pattern, something to find, a text option.
     pub fn dialog_input(&mut self) -> Option<&mut TextInput> {
         match self.dialog.as_mut()? {
-            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Prompt(_, input) => Some(input),
+            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Extract { input, .. } | Dialog::Prompt(_, input) => Some(input),
             Dialog::Options { editing } => editing.as_mut(),
             Dialog::Attributes(form) => form.fields.get_mut(form.focus).map(|field| &mut field.input),
             Dialog::FindFiles(find) => match find.as_mut() {

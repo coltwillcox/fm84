@@ -60,6 +60,9 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(7) => toggle_create(app_state, true),
         // Shift deletes for good, whatever F11 says F8 does.
         KeyCode::F(8) | KeyCode::Delete => open_delete(app_state, key.modifiers.contains(KeyModifiers::SHIFT)),
+        // Alt+F9 extracts an archive, as in Total Commander. Ctrl is an
+        // alias, since desktops take Alt+F9 for hiding a window.
+        KeyCode::F(9) if drive_chord => open_extract_all(app_state),
         KeyCode::F(9) => open_terminal(app_state),
         KeyCode::F(11) => app_state.dialog = Some(Dialog::Options { editing: None }),
         KeyCode::F(12) => app_state.show_preview = !app_state.show_preview,
