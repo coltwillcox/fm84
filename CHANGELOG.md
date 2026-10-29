@@ -6,6 +6,14 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.34.0] - 2026-10-29
+
+### ✨ Added
+- 📍 **cd84 - leave the shell where fm84 was left** - a program cannot change its shell's directory, so quitting fm84 dropped you back where you started. `cd84` is a shell function that runs fm84 and, on quitting, goes to the directory of the active panel, passing on its arguments and its exit status. fm84 prints it itself - `eval "$(fm84 --shell-init bash)"` in `~/.bashrc`, and the same for zsh, fish and PowerShell - so it matches the binary it came with, and `cargo install` users get it too. Any directory name works, a trailing newline or bytes that are not UTF-8 included, and the shell stays put if fm84 did not quit normally
+- 📝 **--choosedir FILE** - what `cd84` is built on: on quitting, fm84 writes the active panel's directory to `FILE`, exactly as it is named and with nothing after it, for any other wrapper that wants it
+
+---
+
 ## [0.33.2] - 2026-10-29
 
 ### 🐛 Fixed

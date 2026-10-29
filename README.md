@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.33.2** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.34.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -359,11 +359,13 @@ cargo run --release
 ### ⌨️ Command line
 
 ```bash
-fm84                 # panels and tabs where you left them (or the current directory)
-fm84 ~/Music         # left panel in ~/Music
-fm84 ~/Music /mnt    # left in ~/Music, right in /mnt
-fm84 --help          # usage, and where the config lives
-fm84 --version       # fm84 0.33.2
+fm84                    # panels and tabs where you left them (or the current directory)
+fm84 ~/Music            # left panel in ~/Music
+fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
+fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
+fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
+fm84 --help             # usage, and where the config lives
+fm84 --version          # fm84 0.34.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -371,6 +373,19 @@ fm84 --version       # fm84 0.33.2
 A directory given takes the place of the tab that would have shown; the panel's other tabs stay. A directory that does not exist is reported in the shell before anything starts. `--` ends the options, for a directory whose name starts with a dash.
 
 *Debug builds compile dependencies optimised too, so a plain `cargo run` still decodes images at full speed. The first debug build takes a little longer for it.*
+
+### 📍 cd84 - leave the shell where fm84 was left
+
+A program cannot change its shell's directory, so quitting fm84 normally drops you back where you started. `cd84` is a shell function that fixes that: it runs fm84, and on quitting goes to the directory of the active panel. Arguments pass through (`cd84 ~/Music`), and so does fm84's exit status. fm84 prints the function itself, so it always matches the binary it came with - `cargo install` users get it too. Add one line to your shell's startup file:
+
+```bash
+eval "$(fm84 --shell-init bash)"                               # ~/.bashrc
+eval "$(fm84 --shell-init zsh)"                                # ~/.zshrc
+fm84 --shell-init fish | source                                # ~/.config/fish/config.fish
+fm84 --shell-init powershell | Out-String | Invoke-Expression  # $PROFILE
+```
+
+Then start fm84 as `cd84`. It works for any directory name, a trailing newline or bytes that are not UTF-8 included, and stays put if fm84 did not quit normally. Underneath, `--choosedir FILE` has fm84 write the directory to `FILE` on quitting, for any other wrapper that wants it.
 
 ---
 
@@ -450,5 +465,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.33.2 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.34.0 ▄▀▄▀▄▀</code>
 </p>
