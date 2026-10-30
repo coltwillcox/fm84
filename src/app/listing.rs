@@ -343,6 +343,7 @@ impl AppState {
             self.search_clear();
             if leaving.dir != found {
                 self.forget_sizes_in(&leaving.dir);
+                self.record_visit(&leaving.dir, &found);
             }
         }
 

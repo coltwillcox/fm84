@@ -29,6 +29,7 @@ mod editing;
 mod filter;
 mod find;
 mod find_files;
+mod history;
 mod jobs;
 mod listing;
 mod preview;
@@ -40,7 +41,7 @@ mod tests;
 mod text_input;
 mod viewing;
 
-pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
+pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, history::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -140,6 +141,8 @@ pub enum Dialog {
     FindFiles(Box<FindFiles>),
     /// Ctrl+D: the directories kept to go back to, and the one highlighted.
     Bookmarks { list: Vec<PathBuf>, index: usize },
+    /// Alt+Down: the directories visited, narrowed by what is typed.
+    History(Box<HistoryList>),
     /// A click on a panel's git branch: the repository's branches, to change
     /// to another.
     Branches(Box<BranchList>),
@@ -238,6 +241,9 @@ pub struct AppState {
     pub selected_left: HashSet<OsString>,
     pub selected_right: HashSet<OsString>,
     pub dir_sizes: HashMap<PathBuf, u64>,
+    /// Every directory either panel has been in this run, newest first, for
+    /// Alt+Down.
+    pub visited: Vec<PathBuf>,
     pub last_click_time: Option<Instant>,
     pub last_click_pos: (u16, u16),
     // Where the last frame actually drew things. Mouse handling reads these
@@ -434,6 +440,7 @@ impl AppState {
             selected_left: HashSet::new(),
             selected_right: HashSet::new(),
             dir_sizes: HashMap::new(),
+            visited: Vec::new(),
             last_click_time: None,
             last_click_pos: (0, 0),
             table_area_left: Rect::default(),
@@ -500,6 +507,7 @@ impl AppState {
         match self.dialog.as_mut()? {
             Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Extract { input, .. } | Dialog::Pack { input, .. } | Dialog::Prompt(_, input) => Some(input),
             Dialog::Options { editing } => editing.as_mut(),
+            Dialog::History(list) => Some(&mut list.input),
             Dialog::Attributes(form) => form.fields.get_mut(form.focus).map(|field| &mut field.input),
             Dialog::FindFiles(find) => match find.as_mut() {
                 FindFiles::Asking { name, containing, on_containing } => Some(if *on_containing { containing } else { name }),

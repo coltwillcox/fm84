@@ -396,6 +396,23 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                 _ => {}
             }
         }
+        // Typing narrows the list; the arrows go up and down it.
+        Some(Dialog::History(_)) => {
+            let page = 10;
+            match code {
+                KeyCode::Esc => app_state.dialog = None,
+                KeyCode::Enter => app_state.go_to_history(),
+                KeyCode::Up => app_state.move_history_cursor(-1),
+                KeyCode::Down => app_state.move_history_cursor(1),
+                KeyCode::PageUp => app_state.move_history_cursor(-page),
+                KeyCode::PageDown => app_state.move_history_cursor(page),
+                KeyCode::Char(_) | KeyCode::Backspace | KeyCode::Delete => {
+                    edit_text(app_state, code);
+                    app_state.history_typed();
+                }
+                _ => edit_text(app_state, code),
+            }
+        }
         Some(Dialog::Branches(_)) => match code {
             KeyCode::Esc => app_state.dialog = None,
             KeyCode::Enter => app_state.switch_branch(),
@@ -485,6 +502,7 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
             input.insert(character);
         }
         app_state.filter_typed();
+        app_state.history_typed();
     } else if app_state.dialog.is_none() && app_state.is_editing() {
         app_state.editor_insert_text(text);
     }

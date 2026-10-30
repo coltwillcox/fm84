@@ -48,6 +48,10 @@ pub const UNDO_LIMIT: usize = 200;
 // more, but nobody steps back fifty directories by key.
 pub const HISTORY_MAX: usize = 50;
 
+// Directories Alt+Down lists, across both panels and every tab. Narrowed by
+// typing, so more than fit on screen is no trouble.
+pub const VISITED_MAX: usize = 200;
+
 // Terminals commonly reject oversized OSC 52 payloads, and a megabyte of
 // base64 is not worth sending anyway; the internal clipboard still holds it.
 pub const OSC52_MAX_BYTES: usize = 64 * 1024;

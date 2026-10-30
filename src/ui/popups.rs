@@ -580,7 +580,6 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     let width = inner.width as usize;
     // One blank row and two of keys under the list.
     let rows = (inner.height as usize).saturating_sub(3);
-    let home = std::env::var_os("HOME").map(PathBuf::from).filter(|home| !home.as_os_str().is_empty());
 
     let mut lines = Vec::new();
     if list.is_empty() {
@@ -588,12 +587,7 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     }
     let first = if rows > 0 && index >= rows { index + 1 - rows } else { 0 };
     for (number, path) in list.iter().enumerate().skip(first).take(rows) {
-        // Home as ~, as Ctrl+L reads it back.
-        let shown = match home.as_ref().and_then(|home| path.strip_prefix(home).ok()) {
-            Some(rest) if rest.as_os_str().is_empty() => "~".to_string(),
-            Some(rest) => format!("~{}{}", std::path::MAIN_SEPARATOR, rest.to_string_lossy()),
-            None => path.to_string_lossy().into_owned(),
-        };
+        let shown = from_home(path);
         let label = if number < 9 { format!("{} ", number + 1) } else { "  ".to_string() };
         let mark = if path == here { "• " } else { "  " };
         let room = width.saturating_sub(label.len() + mark.len());
@@ -607,6 +601,57 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     }
     lines.push(Line::from(Span::styled("Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove", style_columns())).centered());
     lines.push(Line::from(Span::styled("Shift+Up/Down - Move    Esc - Close", style_columns())).centered());
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+/// A directory with home as ~, as Ctrl+L reads it back.
+fn from_home(path: &Path) -> String {
+    let home = std::env::var_os("HOME").map(PathBuf::from).filter(|home| !home.as_os_str().is_empty());
+    match home.as_ref().and_then(|home| path.strip_prefix(home).ok()) {
+        Some(rest) if rest.as_os_str().is_empty() => "~".to_string(),
+        Some(rest) => format!("~{}{}", std::path::MAIN_SEPARATOR, rest.to_string_lossy()),
+        None => path.to_string_lossy().into_owned(),
+    }
+}
+
+/// Alt+Down: the directories visited, newest first, under the words that
+/// narrow them, the active panel's own marked - laid out as the bookmarks
+/// are.
+pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &crate::app::HistoryList, here: &Path) {
+    let popup_area = popup_rect(60, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(" Directory History ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    // The field and a blank row above the list; a blank row and the keys
+    // under it.
+    let rows = (inner.height as usize).saturating_sub(4);
+
+    let label = "Filter: ";
+    let mut field = vec![Span::styled(label, style_columns())];
+    let typed = list.input.cursor_spans_within(width.saturating_sub(label.len()), style_input(), style_input_cursor());
+    let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+    field.extend(typed);
+    field.push(Span::styled(" ".repeat(width.saturating_sub(label.len() + typed_width)), style_input()));
+    let mut lines = vec![Line::from(field), Line::from("")];
+
+    if list.shown.is_empty() {
+        lines.push(Line::from(Span::styled("Nothing visited matches", style_file())));
+    }
+    let first = if rows > 0 && list.index >= rows { list.index + 1 - rows } else { 0 };
+    for (number, path) in list.shown.iter().enumerate().skip(first).take(rows) {
+        let mark = if path == here { "• " } else { "  " };
+        let text = format!("{mark}{}", tail_of(&printable_name(&from_home(path)), width.saturating_sub(mark.len())));
+        let pad = " ".repeat(width.saturating_sub(display_width(&text)));
+        let style = if number == list.index { style_title().bg(palette().selected_background) } else { style_dir() };
+        lines.push(Line::from(Span::styled(format!("{text}{pad}"), style)));
+    }
+    while lines.len() < rows + 3 {
+        lines.push(Line::from(""));
+    }
+    lines.push(Line::from(Span::styled("Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close", style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 

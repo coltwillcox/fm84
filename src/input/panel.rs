@@ -69,6 +69,8 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         // Back and forward through where this tab has been, as a browser.
         KeyCode::Left if key.modifiers.contains(KeyModifiers::ALT) => app_state.travel(true),
         KeyCode::Right if key.modifiers.contains(KeyModifiers::ALT) => app_state.travel(false),
+        // Anywhere that has been, across the tabs, as Total Commander's.
+        KeyCode::Down if key.modifiers.contains(KeyModifiers::ALT) => app_state.open_history(),
         KeyCode::Left if control => app_state.open_in_panel(true),
         KeyCode::Right if control => app_state.open_in_panel(false),
         // Space toggles the selection and moves on, working out the size of a

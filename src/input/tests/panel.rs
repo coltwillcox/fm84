@@ -394,3 +394,61 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+Down lists where the panels have been, across tabs and both sides,
+/// newest first and each once, opening on the newest that is not here.
+/// Words typed narrow it; Enter goes to the one highlighted, and one gone
+/// since is said to be.
+#[test]
+fn alt_down_goes_back_anywhere_that_has_been() {
+    let dir = std::env::temp_dir().join(format!("fm84-history-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    for name in ["music/jazz", "music/rock", "photos", "gone"] {
+        std::fs::create_dir_all(dir.join(name)).unwrap();
+    }
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(true, dir.join("music/jazz"), None);
+    app_state.new_tab();
+    app_state.open_dir(true, dir.join("photos"), None);
+    app_state.open_dir(false, dir.join("music/rock"), None);
+    app_state.open_dir(true, dir.join("gone"), None);
+    app_state.open_dir(true, dir.join("music/jazz"), None);
+    let shown = |app_state: &AppState| match &app_state.dialog {
+        Some(Dialog::History(list)) => (list.shown.iter().map(|path| path.strip_prefix(&dir).unwrap_or(path).to_path_buf()).collect::<Vec<_>>(), list.index),
+        _ => panic!("not open"),
+    };
+    let alt_down = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Down, KeyModifiers::ALT));
+
+    alt_down(&mut app_state);
+    let (list, index) = shown(&app_state);
+    let names: Vec<&str> = list.iter().map(|path| path.to_str().unwrap()).collect();
+    assert_eq!(&names[..5], ["music/jazz", "gone", "music/rock", "photos", ""]);
+    assert_eq!(index, 1, "on the newest that is not where the panel is");
+
+    // Each word, anywhere in the path; Backspace widens it again.
+    for c in "mus k".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    assert_eq!(shown(&app_state).0, [std::path::PathBuf::from("music/rock")]);
+    press(&mut app_state, KeyCode::Backspace);
+    press(&mut app_state, KeyCode::Backspace);
+    assert_eq!(shown(&app_state).0, [std::path::PathBuf::from("music/jazz"), std::path::PathBuf::from("music/rock")]);
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.dialog.is_none());
+    assert_eq!(app_state.dir_left, dir.join("music/rock"));
+
+    // Gone since: said so, and the panel stays.
+    std::fs::remove_dir(dir.join("gone")).unwrap();
+    alt_down(&mut app_state);
+    for c in "gone".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.is_some());
+    assert_eq!(app_state.dir_left, dir.join("music/rock"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

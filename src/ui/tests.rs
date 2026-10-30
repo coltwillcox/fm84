@@ -234,6 +234,11 @@ fn every_input_field_wears_the_rename_colours() {
     app_state.open_find_files();
     render_ui(&mut terminal, &mut app_state);
     assert_eq!(reversed(&terminal), 1, "Alt+F7");
+    app_state.open_history();
+    app_state.dialog_input().unwrap().set("typed".to_string());
+    render_ui(&mut terminal, &mut app_state);
+    assert_eq!(reversed(&terminal), 1, "Alt+Down");
+    assert!(!marked(&terminal), "Alt+Down: a mark reached the terminal");
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -258,6 +263,8 @@ fn popups_share_a_width_and_keep_to_the_panels() {
         let bottom = (top..rows.len()).find(|&y| rows[y].chars().nth(left) == Some('└')).unwrap();
         (left, right - left + 1, top, bottom)
     };
+    app_state.open_history();
+    let history = app_state.dialog.take().unwrap();
     let mut input = TextInput::new();
     input.set("/b".to_string());
     let dialogs = vec![
@@ -283,6 +290,7 @@ fn popups_share_a_width_and_keep_to_the_panels() {
         ),
         (" Unsaved Changes ", Dialog::SaveChanges { then_quit: false }),
         (" Bookmarks ", Dialog::Bookmarks { list: vec![PathBuf::from("/a")], index: 0 }),
+        (" Directory History ", history),
     ];
     let mut widths = Vec::new();
     for (title, dialog) in dialogs {

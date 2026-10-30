@@ -257,6 +257,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::Attributes(form)) => attribute_rows = render_attributes_popup(f, area, form),
             Some(Dialog::Branches(list)) => branch_rows = render_branches_popup(f, area, list),
             Some(Dialog::Bookmarks { list, index }) => render_bookmarks_popup(f, area, list, *index, &app_state.panel_dir(app_state.is_left_active)),
+            Some(Dialog::History(list)) => render_history_popup(f, area, list, &app_state.panel_dir(app_state.is_left_active)),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {
