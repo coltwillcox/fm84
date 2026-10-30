@@ -261,7 +261,11 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     }
 
     crate::archive::clean_scratch();
-    if let Some(file) = choosedir {
+    // Shift+F10 leaves the shell where it was: nothing written, and cd84
+    // finds the file empty.
+    if let Some(file) = choosedir
+        && !app_state.stay_put
+    {
         // Inside an archive, which a shell cannot cd into: the directory the
         // archive is in.
         let dir = if app_state.panel_archive(app_state.is_left_active).is_some() {

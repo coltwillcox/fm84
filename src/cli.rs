@@ -106,7 +106,8 @@ pub fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Command, String
 /// `cd84`: fm84, and then the shell goes to the directory it was left in. A
 /// program cannot change its shell's directory, so fm84 writes it to a file
 /// with --choosedir and the function does the cd. Nothing is written when
-/// fm84 does not quit as it should, and the shell then stays where it was.
+/// fm84 does not quit as it should, or quits with Shift+F10, and the shell
+/// then stays where it was.
 pub fn shell_init(shell: Shell) -> &'static str {
     match shell {
         Shell::Posix => {

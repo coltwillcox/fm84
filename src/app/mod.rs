@@ -318,6 +318,9 @@ pub struct AppState {
     /// F10 was pressed during a job. The job carries on; a second press is
     /// what leaves. Cleared when the job ends, so it only ever covers one.
     pub quit_armed: bool,
+    /// The quit was Shift+F10: leave without telling `cd84` where, so the
+    /// shell stays where it was. Set by every F10, so the last one decides.
+    pub stay_put: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -457,6 +460,7 @@ impl AppState {
             image_cache: ImageCache::default(),
             cursor_detail: None,
             quit_armed: false,
+            stay_put: false,
             drive_strip_left: Strip::default(),
             drive_strip_right: Strip::default(),
             tabs_left: Tabs::new(vec![dir_root.clone()], 0),

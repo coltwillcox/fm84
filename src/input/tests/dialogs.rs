@@ -222,6 +222,19 @@ fn find_files_finds_and_goes_there() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// Shift+F10 quits like F10 but says to leave the shell where it was, and
+/// the last F10 decides: one with Shift, then a job's plain second F10, is a
+/// normal quit.
+#[test]
+fn shift_f10_quits_without_moving_the_shell() {
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    assert!(!handle_key(&mut app_state, KeyEvent::new(KeyCode::F(10), KeyModifiers::SHIFT)));
+    assert!(app_state.stay_put);
+    assert!(!press(&mut app_state, KeyCode::F(10)));
+    assert!(!app_state.stay_put);
+}
+
 /// F10 leaves at once, unless the editor holds edits nobody has saved:
 /// then the save prompt comes up first, over anything else in the way.
 #[test]

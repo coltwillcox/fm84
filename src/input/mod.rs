@@ -65,6 +65,7 @@ fn handle_key(app_state: &mut AppState, key: KeyEvent) -> bool {
     }
     // F10 means the same over everything else.
     if key.code == KeyCode::F(10) {
+        app_state.stay_put = key.modifiers.contains(KeyModifiers::SHIFT);
         return !request_quit(app_state);
     }
     if app_state.error.is_some() {
@@ -212,7 +213,10 @@ fn job_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         // noticed - and because what is part way through writing is left
         // behind. The first press only offers it: the job runs on untouched,
         // and Esc is still the way to stop it.
-        KeyCode::F(10) if app_state.quit_armed => return false,
+        KeyCode::F(10) if app_state.quit_armed => {
+            app_state.stay_put = key.modifiers.contains(KeyModifiers::SHIFT);
+            return false;
+        }
         KeyCode::F(10) => app_state.quit_armed = true,
         // Nothing else means anything while a job runs: it would act on
         // panels about to be reread.
