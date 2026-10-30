@@ -46,6 +46,7 @@ pub enum Theme {
     Vaporwave,
     HighContrast,
     Military,
+    Picard,
     Dracula,
     Monokai,
     Nord,
@@ -62,12 +63,13 @@ pub enum Theme {
 impl Theme {
     /// In the order F11 steps through them: fm84's own, then the well-known
     /// dark schemes, then the light ones.
-    pub const ALL: [Theme; 16] = [
+    pub const ALL: [Theme; 17] = [
         Theme::Synthwave,
         Theme::Outrun,
         Theme::Vaporwave,
         Theme::HighContrast,
         Theme::Military,
+        Theme::Picard,
         Theme::Dracula,
         Theme::Monokai,
         Theme::Nord,
@@ -88,6 +90,7 @@ impl Theme {
             Theme::Vaporwave => "Vaporwave",
             Theme::HighContrast => "High contrast",
             Theme::Military => "Military",
+            Theme::Picard => "Picard",
             Theme::Dracula => "Dracula",
             Theme::Monokai => "Monokai",
             Theme::Nord => "Nord",
@@ -110,6 +113,7 @@ impl Theme {
             Theme::Vaporwave => "vaporwave",
             Theme::HighContrast => "high-contrast",
             Theme::Military => "military",
+            Theme::Picard => "picard",
             Theme::Dracula => "dracula",
             Theme::Monokai => "monokai",
             Theme::Nord => "nord",

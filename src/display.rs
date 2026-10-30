@@ -141,6 +141,27 @@ const MILITARY: Palette = Palette {
     selected_marker: rgb(255, 190, 0),             // Amber
 };
 
+// A starship's console: orange, periwinkle, lavender and tan on black, the
+// cursor a deep blue band, red for alerts.
+const PICARD: Palette = Palette {
+    background: rgb(0, 0, 0), // Space
+    gutter: rgb(16, 12, 24),  // Near black violet
+    light: false,
+    syntax_theme: DARK_SYNTAX,
+    border: rgb(255, 153, 0),                      // Console orange
+    columns: rgb(204, 153, 204),                   // Lavender
+    directory: rgb(153, 153, 255),                 // Periwinkle
+    directory_dark: rgb(96, 96, 170),              // Dim periwinkle
+    directory_bracket: rgb(153, 153, 255),         // Periwinkle
+    file: rgb(255, 204, 153),                      // Tan
+    rename_background: rgb(170, 40, 40),           // Red alert
+    selected_background: rgb(51, 51, 153),         // Deep blue
+    selected_background_inactive: rgb(34, 30, 64), // Night blue
+    selected_foreground: rgb(255, 204, 153),       // Tan
+    title: rgb(255, 153, 0),                       // Console orange
+    selected_marker: rgb(255, 85, 85),             // Alert red
+};
+
 // The schemes below take their colours from each one's published palette.
 
 const DRACULA: Palette = Palette {
@@ -362,6 +383,7 @@ pub fn palette_of(theme: Theme) -> &'static Palette {
         Theme::Vaporwave => &VAPORWAVE,
         Theme::HighContrast => &HIGH_CONTRAST,
         Theme::Military => &MILITARY,
+        Theme::Picard => &PICARD,
         Theme::Dracula => &DRACULA,
         Theme::Monokai => &MONOKAI,
         Theme::Nord => &NORD,
