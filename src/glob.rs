@@ -1,5 +1,6 @@
-//! Shell-style patterns, for selecting files by name with + and -. Small
-//! enough to write rather than bring in a crate for.
+//! Shell-style patterns, for selecting files by name with + and -, and for
+//! narrowing a panel with Ctrl+S. Small enough to write rather than bring in
+//! a crate for.
 
 /// One or more patterns, separated by `;` - "*.jpg;*.png". `*` is any run of
 /// characters, `?` any one, `[abc]` and `[a-z]` one of those, `[!abc]` one
@@ -16,11 +17,33 @@
 pub struct Glob {
     patterns: Vec<(Vec<char>, bool)>,
     fold: bool,
+    /// A pattern without the `/` takes directories too, as the filter has it.
+    either: bool,
 }
 
 impl Glob {
     /// None when there is no pattern in it at all.
     pub fn new(text: &str) -> Option<Self> {
+        Self::parse(text, false)
+    }
+
+    /// Ctrl+S's filter, which narrows a panel rather than picking from it: a
+    /// pattern without `/` keeps the directories it matches as well as the
+    /// files, and one with nothing wild in it - `rep` - is looked for
+    /// anywhere in the name, as `*rep*`.
+    pub fn filter(text: &str) -> Option<Self> {
+        let widened: Vec<String> = text
+            .split(';')
+            .map(|pattern| {
+                let trimmed = pattern.trim();
+                let (name, slash) = trimmed.strip_suffix('/').map_or((trimmed, ""), |name| (name, "/"));
+                if name.is_empty() || name.contains(['*', '?', '[']) { trimmed.to_string() } else { format!("*{name}*{slash}") }
+            })
+            .collect();
+        Self::parse(&widened.join(";"), true)
+    }
+
+    fn parse(text: &str, either: bool) -> Option<Self> {
         let fold = !text.chars().any(char::is_uppercase);
         let patterns: Vec<(Vec<char>, bool)> = text
             .split(';')
@@ -33,12 +56,12 @@ impl Glob {
             .filter(|(pattern, _)| !pattern.is_empty())
             .map(|(pattern, for_dirs)| (pattern.chars().map(|c| fold_if(c, fold)).collect(), for_dirs))
             .collect();
-        if patterns.is_empty() { None } else { Some(Glob { patterns, fold }) }
+        if patterns.is_empty() { None } else { Some(Glob { patterns, fold, either }) }
     }
 
     pub fn matches(&self, name: &str, is_dir: bool) -> bool {
         let name: Vec<char> = name.chars().map(|c| fold_if(c, self.fold)).collect();
-        self.patterns.iter().any(|(pattern, for_dirs)| *for_dirs == is_dir && matches(pattern, &name))
+        self.patterns.iter().any(|(pattern, for_dirs)| (*for_dirs == is_dir || (self.either && !for_dirs)) && matches(pattern, &name))
     }
 }
 
@@ -182,6 +205,30 @@ mod tests {
 
         assert!(Glob::new("").is_none());
         assert!(Glob::new(" ; /").is_none());
+    }
+
+    #[test]
+    fn the_filter_looks_anywhere_in_the_name_and_takes_directories_too() {
+        let plain = Glob::filter("rep").unwrap();
+        assert!(plain.matches("report.txt", false));
+        assert!(plain.matches("Prep", false));
+        assert!(plain.matches("repos", true));
+        assert!(!plain.matches("main.rs", false));
+
+        let wild = Glob::filter("*.rs").unwrap();
+        assert!(wild.matches("main.rs", false));
+        assert!(!wild.matches("main.rsx", false));
+        assert!(wild.matches("crate.rs", true));
+
+        let dirs = Glob::filter("src/").unwrap();
+        assert!(dirs.matches("src", true));
+        assert!(dirs.matches("old-src", true));
+        assert!(!dirs.matches("src", false));
+
+        let several = Glob::filter("toml; *.md").unwrap();
+        assert!(several.matches("Cargo.toml", false));
+        assert!(several.matches("README.md", false));
+        assert!(Glob::filter(" ; ").is_none());
     }
 
     #[test]

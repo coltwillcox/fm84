@@ -80,6 +80,10 @@ impl AppState {
                 self.start_replace();
             }
             PromptKind::GoTo => self.go_to_path(&input.text),
+            PromptKind::Filter => {
+                self.filter_before.clear();
+                self.set_filter(self.is_left_active, &input.text);
+            }
         }
     }
 

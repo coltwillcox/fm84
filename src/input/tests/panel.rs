@@ -321,3 +321,76 @@ fn leaving_a_directory_stops_sizing_what_is_in_it() {
     app_state.cancel_dir_sizes();
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Ctrl+S narrows the panel as the pattern is typed, keeping the parent
+/// entry and letting go of what is selected but no longer shown. Esc puts
+/// back the filter there was, Enter keeps it; a reread is narrowed too,
+/// and going somewhere else drops it.
+#[test]
+fn ctrl_s_filters_the_panel_as_it_is_typed() {
+    let dir = std::env::temp_dir().join(format!("fm84-filter-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("reports")).unwrap();
+    for name in ["report.txt", "notes.md", "main.rs"] {
+        std::fs::write(dir.join(name), "").unwrap();
+    }
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), Some("notes.md".as_ref()));
+    app_state.selected_left.insert("main.rs".into());
+    app_state.selected_left.insert("report.txt".into());
+    // In order of name, whatever F11 sorts by.
+    let names = |app_state: &AppState| {
+        let mut names: Vec<String> = app_state.children_left.iter().map(|item| item.name_full.clone()).collect();
+        names.sort();
+        names
+    };
+    let shown = names(&app_state);
+    let ctrl_s = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL));
+
+    ctrl_s(&mut app_state);
+    assert!(matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::Filter, _))));
+    for c in "rep".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    assert_eq!(names(&app_state), ["..", "report.txt", "reports"]);
+    // The cursor's entry went, so it is on the first match.
+    assert_eq!(app_state.state_left.selected(), Some(1));
+    assert!(!app_state.children_left[1].is_parent());
+    assert_eq!(app_state.selected_left, std::collections::HashSet::from(["report.txt".into()]));
+
+    // Esc puts back what there was before: nothing.
+    press(&mut app_state, KeyCode::Esc);
+    assert!(app_state.dialog.is_none() && app_state.filter_left.is_none());
+    assert_eq!(names(&app_state), shown);
+
+    ctrl_s(&mut app_state);
+    for c in "*.md;*.rs".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(names(&app_state), ["..", "main.rs", "notes.md"]);
+    assert_eq!(app_state.filter_left.as_ref().map(|filter| filter.text.as_str()), Some("*.md;*.rs"));
+
+    // Opened again, it starts from the filter in place, which Esc keeps.
+    ctrl_s(&mut app_state);
+    press(&mut app_state, KeyCode::Backspace);
+    assert_eq!(names(&app_state), ["..", "notes.md"]);
+    press(&mut app_state, KeyCode::Esc);
+    assert_eq!(names(&app_state), ["..", "main.rs", "notes.md"]);
+
+    // A file arriving is narrowed as everything else is.
+    std::fs::write(dir.join("lib.rs"), "").unwrap();
+    std::fs::write(dir.join("todo.txt"), "").unwrap();
+    app_state.reload_panel(true, None);
+    assert_eq!(names(&app_state), ["..", "lib.rs", "main.rs", "notes.md"]);
+
+    // Somewhere else, and it is gone - also on coming back.
+    app_state.open_dir(true, dir.join("reports"), None);
+    assert!(app_state.filter_left.is_none());
+    app_state.open_dir(true, dir.clone(), None);
+    assert_eq!(app_state.children_left.len(), shown.len() + 2);
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}

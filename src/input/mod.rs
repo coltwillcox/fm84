@@ -164,6 +164,8 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             }
             // Ctrl+L, as a browser's address bar.
             'l' if in_panel => app_state.open_go_to(),
+            // Ctrl+S, Total Commander's quick filter.
+            's' if in_panel => app_state.open_filter_prompt(),
             // Ctrl+O opens what is under the cursor as the system would, as
             // Shift+Enter does where the terminal can send it.
             'o' if in_panel => open_cursor_externally(app_state),
@@ -432,11 +434,15 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         // Find or go to line, at the foot of the viewer or editor, or a
         // pattern to select by, at the foot of the panels.
         Some(&Dialog::Prompt(kind, _)) => match code {
+            KeyCode::Esc if kind == PromptKind::Filter => app_state.cancel_filter_prompt(),
             KeyCode::Esc => app_state.dialog = None,
             KeyCode::Enter => app_state.confirm_prompt(),
             KeyCode::Char(c) if kind == PromptKind::GoToLine && !c.is_ascii_digit() => {}
             KeyCode::Tab if kind == PromptKind::GoTo => app_state.complete_go_to(),
-            _ => edit_text(app_state, code),
+            _ => {
+                edit_text(app_state, code);
+                app_state.filter_typed();
+            }
         },
         Some(_) => {}
     }
@@ -473,6 +479,7 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
         for character in text.chars().filter(|character| !character.is_control()) {
             input.insert(character);
         }
+        app_state.filter_typed();
     } else if app_state.dialog.is_none() && app_state.is_editing() {
         app_state.editor_insert_text(text);
     }

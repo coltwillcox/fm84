@@ -47,6 +47,12 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
             app_state.dialog = None;
         }
     }
+    // A click keeps the filter as typed so far, and goes on to be the click:
+    // one on the other panel would otherwise have the typing narrow that.
+    if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::Filter, _))) {
+        app_state.dialog = None;
+        app_state.filter_before.clear();
+    }
     // A label on the key bar is its key. Not under the rename field or a
     // prompt, which would take the key as one of theirs.
     if mouse_event.kind == MouseEventKind::Down(MouseButton::Left)

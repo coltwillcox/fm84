@@ -26,6 +26,7 @@ mod bookmarks;
 mod branches;
 mod compare;
 mod editing;
+mod filter;
 mod find;
 mod find_files;
 mod jobs;
@@ -39,7 +40,7 @@ mod tests;
 mod text_input;
 mod viewing;
 
-pub use self::{archives::*, attribute_form::*, branches::*, editing::*, find_files::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
+pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -57,6 +58,8 @@ pub enum PromptKind {
     /// Ctrl+L: a path for the panel to go to, typed over the panel's own in
     /// the line above it rather than at the foot of the screen.
     GoTo,
+    /// Ctrl+S: a pattern to narrow the active panel to, as it is typed.
+    Filter,
 }
 
 /// What fills the space between the top bar and the bottom one: the two
@@ -183,6 +186,11 @@ pub struct AppState {
     pub state_right: TableState,
     pub children_left: Vec<Item>,
     pub children_right: Vec<Item>,
+    /// Ctrl+S: what each panel is narrowed to, if anything.
+    pub filter_left: Option<PanelFilter>,
+    pub filter_right: Option<PanelFilter>,
+    /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
+    pub filter_before: String,
     pub search_input: String,
     pub cached_clock: String,
     pub cached_separator_height: u16,
@@ -396,6 +404,9 @@ impl AppState {
             state_right,
             children_left: Vec::new(),
             children_right: Vec::new(),
+            filter_left: None,
+            filter_right: None,
+            filter_before: String::new(),
             search_input: String::new(),
             cached_clock: String::new(),
             cached_separator_height: 0,

@@ -362,6 +362,7 @@ impl AppState {
 
         match listed.items {
             Ok(items) => {
+                let items = self.filter_listing(is_left, &found, items);
                 let selected = if is_left { &mut self.selected_left } else { &mut self.selected_right };
                 prune_selection(selected, &items);
                 let index = wanted.and_then(|name| items.iter().position(|item| item.name_os == name)).unwrap_or(previous_index).min(items.len().saturating_sub(1));

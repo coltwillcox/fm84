@@ -91,6 +91,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             PromptKind::Deselect => " Deselect: ",
             PromptKind::Replace => " Replace: ",
             PromptKind::ReplaceWith => " With: ",
+            PromptKind::Filter => " Filter: ",
             PromptKind::GoTo => unreachable!("typed in the path bar"),
         };
         render_prompt_bar(f, area, label, input, status_style);

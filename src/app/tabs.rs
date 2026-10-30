@@ -260,6 +260,8 @@ impl AppState {
         self.tabs_left.list[self.tabs_left.active] = left;
         self.tabs_right.list[self.tabs_right.active] = right;
         std::mem::swap(&mut self.tabs_left, &mut self.tabs_right);
+        // Each filter goes with its directory, and is kept once there.
+        std::mem::swap(&mut self.filter_left, &mut self.filter_right);
         for is_left in [true, false] {
             let active = self.tabs_mut(is_left).active;
             self.show_tab(is_left, TabUndo::Active(active));

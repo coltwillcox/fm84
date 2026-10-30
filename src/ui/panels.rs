@@ -357,17 +357,24 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
     // One side's path, padded and followed by the border up to where the next
     // part of the line starts. With which of the spans is the branch, if
     // there is one.
-    let side = |dir: &std::path::Path, branch: Option<String>, length: usize, style: Style, editing: Option<&TextInput>, end: &'static str| -> (Vec<Span<'static>>, Option<usize>) {
+    let side = |dir: &std::path::Path, filter: Option<String>, branch: Option<String>, length: usize, style: Style, editing: Option<&TextInput>, end: &'static str| -> (Vec<Span<'static>>, Option<usize>) {
         let mut spans = vec![Span::styled(" ", style)];
-        // The branch, and the dash before it.
-        let branch = branch.filter(|label| editing.is_none() && length.saturating_sub(8 + display_width(label) + 1) >= PATH_ROOM);
+        // The filter, then the branch, each with a dash before it. The
+        // filter goes on first: what is not shown matters more than where.
+        let filter = filter.filter(|label| editing.is_none() && length.saturating_sub(8 + display_width(label) + 1) >= PATH_ROOM);
+        let filter_width = filter.as_ref().map_or(0, |label| display_width(label) + 1);
+        let branch = branch.filter(|label| editing.is_none() && length.saturating_sub(8 + filter_width + display_width(label) + 1) >= PATH_ROOM);
         let branch_width = branch.as_ref().map_or(0, |label| display_width(label) + 1);
         match editing {
             // As wide as the side has room for, the cursor kept in view.
             Some(input) => spans.extend(input.cursor_spans_within(length.saturating_sub(7), style_input(), style_input_cursor())),
-            None => spans.push(Span::styled(limit_path_string(dir, length.saturating_sub(8 + branch_width)), style)),
+            None => spans.push(Span::styled(limit_path_string(dir, length.saturating_sub(8 + filter_width + branch_width)), style)),
         }
         spans.push(Span::styled(" ", style));
+        if let Some(label) = filter {
+            spans.push(Span::styled("─", style_border()));
+            spans.push(Span::styled(label, style_title()));
+        }
         let mut label_at = None;
         if let Some(label) = branch {
             spans.push(Span::styled("─", style_border()));
@@ -381,12 +388,14 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
 
     let mut border_line = vec![Span::styled("├──", style_border())];
     let mut branches = [None, None];
+    // Kept short: a long pattern would push the path off the line.
+    let filter_label = |is_left: bool| app_state.filter(is_left).map(|filter| format!(" filter: {} ", tail_of(&filter.text, 24)));
     let sides = [
-        (&app_state.dir_left, &app_state.branch_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
-        (&app_state.dir_right, &app_state.branch_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),
+        (&app_state.dir_left, filter_label(true), &app_state.branch_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
+        (&app_state.dir_right, filter_label(false), &app_state.branch_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),
     ];
-    for (branch, (dir, label, length, style, editing, end)) in branches.iter_mut().zip(sides) {
-        let (spans, label_at) = side(dir, branch_label(label), length, style, editing, end);
+    for (branch, (dir, filter, label, length, style, editing, end)) in branches.iter_mut().zip(sides) {
+        let (spans, label_at) = side(dir, filter, branch_label(label), length, style, editing, end);
         if let Some(label_at) = label_at {
             // Measured from what is drawn before it, as the strips are.
             let before: usize = border_line.iter().chain(&spans[..label_at]).map(|span| display_width(&span.content)).sum();
