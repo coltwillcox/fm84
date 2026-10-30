@@ -121,6 +121,26 @@ const HIGH_CONTRAST: Palette = Palette {
     selected_marker: rgb(255, 255, 0),
 };
 
+// Olive drab and khaki, with brass and an amber marker: field kit at night.
+const MILITARY: Palette = Palette {
+    background: rgb(20, 24, 14), // Olive black
+    gutter: rgb(14, 17, 10),     // Darker olive
+    light: false,
+    syntax_theme: DARK_SYNTAX,
+    border: rgb(112, 128, 72),                     // Olive drab
+    columns: rgb(196, 178, 122),                   // Khaki
+    directory: rgb(160, 194, 88),                  // Leaf green
+    directory_dark: rgb(94, 114, 54),              // Dark olive
+    directory_bracket: rgb(160, 194, 88),          // Leaf green
+    file: rgb(206, 204, 176),                      // Bone
+    rename_background: rgb(140, 62, 30),           // Rust
+    selected_background: rgb(74, 88, 44),          // OD green
+    selected_background_inactive: rgb(40, 48, 26), // Deep olive
+    selected_foreground: rgb(238, 228, 184),       // Pale khaki
+    title: rgb(212, 186, 104),                     // Brass
+    selected_marker: rgb(255, 190, 0),             // Amber
+};
+
 // The schemes below take their colours from each one's published palette.
 
 const DRACULA: Palette = Palette {
@@ -341,6 +361,7 @@ pub fn palette_of(theme: Theme) -> &'static Palette {
         Theme::Outrun => &OUTRUN,
         Theme::Vaporwave => &VAPORWAVE,
         Theme::HighContrast => &HIGH_CONTRAST,
+        Theme::Military => &MILITARY,
         Theme::Dracula => &DRACULA,
         Theme::Monokai => &MONOKAI,
         Theme::Nord => &NORD,
