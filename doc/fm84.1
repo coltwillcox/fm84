@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-30" "fm84 0.39.0" "User Commands"
+.TH FM84 1 "2026-10-30" "fm84 0.40.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -229,6 +229,12 @@ Back and forward through the directories the tab has been in, landing on
 the entry the cursor was on.
 Each tab keeps its own.
 .TP
+.B Alt+Down
+Every directory either panel has been in this run, across all their tabs,
+newest first, opening on the newest that is not the panel's own.
+Typing narrows it to the paths holding every word typed; Up and Down
+choose, Enter goes, Esc closes.
+.TP
 .B Ctrl+D
 Bookmarks.
 .B Enter
@@ -303,6 +309,15 @@ an empty one shows everything.
 What is selected but filtered out is let go.
 The filter stays while the panel is in its directory, and goes when it
 moves elsewhere.
+.TP
+.B Ctrl+B
+Flat view: every file under the panel's directory in one list, each by its
+path from there; sorted by size, it finds what takes the space.
+Directories are walked, not listed, and links to them are not followed.
+Operations work on the files as anywhere, and F2 renames one where it is.
+Inside an archive too.
+At most 100000 files are listed.
+Ctrl+B again goes back; going anywhere else drops it.
 .TP
 .B Alt+H
 Work out the checksums of what is chosen, a directory's files all the way

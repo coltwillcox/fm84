@@ -6,6 +6,15 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.40.0] - 2026-10-30
+
+### ✨ Added
+- 🕰️ **Directory history with Alt+↓** - every directory either panel has been in this run, across all their tabs, newest first and each once, opening on the newest that is not where the panel is. Typing narrows it to the paths that hold every word typed, in any order, lower case matching either case; **Enter** goes, and one gone since is said to be
+- 🌳 **Flat view with Ctrl+B** - every file under the panel's directory in one list, by its path from there, as Total Commander's branch view; sorted by size, it finds what takes the space. Directories are walked, not listed, links to them not followed, and pseudo-filesystems not gone into. Every operation works on the files, F2 renaming one where it is; inside archives too, and with Ctrl+S's filter. Ctrl+B again goes back, onto what holds the file the cursor was on. At most 100000 files, and Esc stops a walk that takes too long
+- 🎨 **Two themes** - **Military**, olive drab and khaki with brass titles and an amber marker, and **Picard**, a starship's console in orange, periwinkle, lavender and tan on black
+
+---
+
 ## [0.39.0] - 2026-10-30
 
 ### ✨ Added

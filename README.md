@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.39.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.40.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -36,16 +36,20 @@
 <td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-1.png" width="380"><br><sub><b>F11 - Options</b><br>Panels, behaviour, appearance, viewer and editor. Every row changes in place with <code>Enter</code> or <code>&larr;</code>/<code>&rarr;</code>.</sub></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="380"><br><sub><b>Outrun</b><br>One of fifteen palettes - hot pink on near-black.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="380"><br><sub><b>Outrun</b><br>One of seventeen palettes - hot pink on near-black.</sub></td>
 <td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-3.png" width="380"><br><sub><b>Nord</b><br>The muted blue-grey end of the same range.</sub></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-4.png" width="380"><br><sub><b>Catppuccin Latte</b><br>Light themes too, and the whole interface follows the palette, viewer and editor included.</sub></td>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-5.png" width="380"><br><sub><b>F12 - Preview</b><br>The opposite pane shows whatever the cursor is on, without leaving the panel you are in.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-4.png" width="380"><br><sub><b>Picard</b><br>A starship's console - orange, periwinkle and tan on black, the cursor a deep blue band.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-5.png" width="380"><br><sub><b>Military</b><br>Olive drab and khaki, with brass titles and an amber marker.</sub></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-6.png" width="380"><br><sub><b>F3 - Images</b><br>A JPEG as coloured ASCII, each character on its own colour. <code>F</code> switches Fit and Fill, <code>+</code>/<code>-</code> zoom, <code>X</code> cycles Image, Text and Hex.</sub></td>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-7.png" width="380"><br><sub><b>F4 - Editor</b><br>Syntax highlighting, line numbers, selection and undo - editing fm84's own source.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-6.png" width="380"><br><sub><b>Catppuccin Latte</b><br>Light themes too, and the whole interface follows the palette, viewer and editor included.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-7.png" width="380"><br><sub><b>F12 - Preview</b><br>The opposite pane shows whatever the cursor is on, without leaving the panel you are in.</sub></td>
+</tr>
+<tr>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-8.png" width="380"><br><sub><b>F3 - Images</b><br>A JPEG as coloured ASCII, each character on its own colour. <code>F</code> switches Fit and Fill, <code>+</code>/<code>-</code> zoom, <code>X</code> cycles Image, Text and Hex.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-9.png" width="380"><br><sub><b>F4 - Editor</b><br>Syntax highlighting, line numbers, selection and undo - editing fm84's own source.</sub></td>
 </tr>
 </table>
 
@@ -75,6 +79,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ⬅️ **Backspace** - ascend to parent realm
 - 🧭 **Ctrl+L** - or a click on a panel's path - edit the active panel's path in place, in the line above it, and go there with **Enter** (**Esc**, or a click anywhere else, leaves it as it was). **Tab** fills out a name as far as the entries agree, `~` is home, and a path without a leading `/` starts from the panel. A file is landed on, in the directory it is in; somewhere that is not there is said to be, and the panel stays put
 - ⏪ **Alt+← / Alt+→** - back and forward through where the tab has been, as in a browser, landing on the entry the cursor was on. Each tab keeps its own, up to 50 steps back; a directory gone since is passed over
+- 🕰️ **Alt+↓ directory history** - every directory either panel has been in this run, across all their tabs, newest first and each once, opening on the newest that is not where you are - so Alt+↓ then Enter goes back to where you just were. Typing narrows it to the paths that hold every word typed, in any order (`mus k` finds `~/music/rock`), lower case matching either case; **↑/↓** and **PgUp/PgDn** choose, **Enter** goes, **Esc** closes. One gone since is said to be, and the panel stays put
 - 🔖 **Bookmarks** - **Ctrl+D** lists the directories kept to go back to: **Enter**, or **1**…**9**, takes the panel there, **A** or **Insert** keeps the panel's directory, **D** or **Delete** forgets the one highlighted, **Shift+↑/↓** move it up or down the list. The panel's own directory is marked. One that has gone since is said to be, and the panel stays put. Kept in `bookmarks` beside the config, a `bookmark = path` line each, fine to edit by hand
 - 🔗 **Symlinked directories** - listed and entered like the real thing
 - 🔒 **Directories you cannot read** - refused with the reason, and the panel stays where it was
@@ -89,6 +94,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ⬆️⬇️ **Navigate matches** - Up/Down arrows jump between results
 - 🧹 **Esc** - clear the search vibes
 - 🧪 **Ctrl+S filter** - narrows the panel to what a pattern matches, as it is typed, for a directory of thousands where search only moves the cursor. A word on its own is looked for anywhere in the name (`rep` finds `report.txt` and `prep/`); `*`, `?` and `[a-z]` work as for `+`, several separated by `;`, and one ending in `/` keeps only directories. Lower case matches either case. **Enter** keeps it, shown in the path bar; **Esc** puts back the filter there was; an empty one shows everything again. `..` always stays. What is selected but filtered out is let go, so a copy or delete never takes what cannot be seen. The filter belongs to its directory: rereads are narrowed too, Ctrl+U takes it along, and going anywhere else drops it
+- 🌳 **Ctrl+B flat view** - every file under the panel's directory in one list, as Total Commander's branch view, each by its path from there (`sub/deep/notes.txt`). Sorted by size (Ctrl+F6), it finds what is taking the space. Directories are walked rather than listed; links to them are not followed, nothing in `/proc`, `/sys` and the like is gone into, and what is hidden stays hidden unless F11 shows it. Copy, move, delete, view, edit, compare and select work on the files as anywhere - F5 copies them without the directories they are in - and F2 renames one where it is. Inside an archive too. The path bar says `flat`; it combines with Ctrl+S, so `*.rs` across a whole tree works. Ctrl+B again goes back, onto what holds the file the cursor was on, and going anywhere else drops it. A tree too big to wait for gets **Esc** as any slow directory does, and the list stops at 100000 files, saying so
 
 ### 🔭 Find Files (Alt+F7)
 - 🎯 **By name, and by what is in them** - a name pattern as `+` takes it (`*.jpg;*.png`, `*/` for directories), and text the file has to hold, lower case matching either case. **Ctrl+F7** works too, for desktops that take Alt+F7 for moving windows. The last search is offered again
@@ -227,8 +233,8 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 👁️ **Preview on startup** - start with F12's preview open
 
 **Appearance**
-- 🎨 **Theme** - switched on the spot, 15 of them:
-  - fm84's own: **Synthwave**, **Outrun**, **Vaporwave**, **High contrast**
+- 🎨 **Theme** - switched on the spot, 17 of them:
+  - fm84's own: **Synthwave**, **Outrun**, **Vaporwave**, **High contrast**, **Military**, **Picard**
   - dark: **Dracula**, **Monokai**, **Nord**, **Gruvbox Dark**, **Solarized Dark**, **Tokyo Night**, **Catppuccin Mocha**
   - light: **Solarized Light**, **Gruvbox Light**, **Catppuccin Latte**, **GitHub Light**
   - each brings its own background, gutter and syntax colours; on a light one, extension colours darken and pictures draw dark ink on the light background
@@ -285,6 +291,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Alt+I` | Same directory in the other panel |
 | `Ctrl+L` | Go to a path (`Tab` completes a name; or click the path) |
 | `Alt+←` / `Alt+→` | Back / forward through where the tab has been |
+| `Alt+↓` | Every directory visited, across the tabs (type to narrow, `Enter` go) |
 | `Ctrl+D` | Bookmarks (`A` add, `D` remove, `Enter` or `1`…`9` go) |
 | `Enter` | Open directory, go into an archive, or open a file |
 | `Shift+Enter` / `Ctrl+O` | Open as the system would (an archive too) |
@@ -293,6 +300,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `PageUp` / `PageDown` | Page navigation |
 | `[a-z0-9]` | Quick search |
 | `Ctrl+S` | Filter the panel by a pattern, as it is typed (`Esc` puts back the one there was) |
+| `Ctrl+B` | Flat view: every file under the directory in one list; again to go back |
 | `Esc` | Clear search / Close dialogs, the Viewer and the Editor / Stop directory sizing / Stop waiting on a directory that has not answered |
 | `F1` | Help |
 | `F2` | Rename |
@@ -388,7 +396,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.39.0
+fm84 --version          # fm84 0.40.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -488,5 +496,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.39.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.40.0 ▄▀▄▀▄▀</code>
 </p>
