@@ -31,6 +31,7 @@ sha2 = "0.11.1"
 syntect = "5.2"
 tar = { version = "0.4.46", default-features = false }
 trash = "5.2.9"
+unicode-normalization = "0.1.26"
 unicode-width = "0.2"
 zip = { version = "9.1.3", default-features = false, features = ["deflate-flate2"] }
 

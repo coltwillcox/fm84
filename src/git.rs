@@ -3,6 +3,7 @@
 //! knows a repository's every layout and rule, rather than reading refs the
 //! way the path bar's label does.
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
@@ -23,7 +24,10 @@ pub enum Mark {
 }
 
 /// The marks for a directory's entries, by their paths from it - a name, or
-/// under Ctrl+B a path through the directories below.
+/// under Ctrl+B a path through the directories below. Kept, and looked up,
+/// in Unicode's composed form: git on macOS gives `é` as one character
+/// while a file made on an older Mac disk holds it as `e` and an accent,
+/// and the two would never meet.
 #[derive(Debug, Default)]
 pub struct Status {
     /// What git named itself: a file, or an untracked or ignored directory
@@ -39,6 +43,8 @@ impl Status {
     /// untracked or ignored directory - which git names whole - is as that
     /// directory is.
     pub fn mark(&self, name: &OsStr, is_dir: bool) -> Option<Mark> {
+        let name = composed(name);
+        let name: &OsStr = &name;
         if let Some(&mark) = self.named.get(name) {
             return Some(mark);
         }
@@ -51,6 +57,7 @@ impl Status {
     /// Take in a line of `git status --porcelain`, by its path from the
     /// directory listed.
     fn add(&mut self, path: PathBuf, mark: Mark) {
+        let path = PathBuf::from(composed(path.as_os_str()).into_owned());
         if mark != Mark::Ignored {
             for dir in path.ancestors().skip(1).filter(|dir| !dir.as_os_str().is_empty()) {
                 let held = self.inside.entry(dir.as_os_str().to_os_string()).or_insert(mark);
@@ -68,7 +75,9 @@ pub fn status(dir: &Path) -> Result<Status, String> {
     // Paths come back from the top of the repository; this is where `dir`
     // sits in it, with a / on the end, or nothing at the top.
     let prefix = git_bytes(dir, &["rev-parse", "--show-prefix"])?;
+    // Git for Windows could end it as Windows does.
     let prefix = prefix.strip_suffix(b"\n").unwrap_or(&prefix);
+    let prefix = prefix.strip_suffix(b"\r").unwrap_or(prefix);
     let output = git_bytes(dir, &["status", "--porcelain=v1", "-z", "--ignored", "--untracked-files=normal", "--", "."])?;
     let mut status = Status::default();
     let mut records = output.split(|&byte| byte == 0);
@@ -99,6 +108,16 @@ pub fn status(dir: &Path) -> Result<Status, String> {
         status.add(from_git(path), mark);
     }
     Ok(status)
+}
+
+/// A name in Unicode's composed form, as it is when it already is - most
+/// are. One that is not valid Unicode is left as it is.
+fn composed(name: &OsStr) -> Cow<'_, OsStr> {
+    use unicode_normalization::{UnicodeNormalization, is_nfc};
+    match name.to_str() {
+        Some(text) if !is_nfc(text) => Cow::Owned(OsString::from(text.nfc().collect::<String>())),
+        _ => Cow::Borrowed(name),
+    }
 }
 
 /// A path as git writes it - bytes, separated by / - as the system's own.
@@ -270,6 +289,19 @@ mod tests {
         assert_eq!(below.mark(OsStr::new("deep"), true), Some(Mark::Modified));
         assert_eq!(below.mark(OsStr::new("file.txt"), false), None);
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// An accented name matches whichever way either side spells it.
+    #[test]
+    fn an_accent_matches_composed_or_not() {
+        let (composed, decomposed) = ("caf\u{e9}.txt", "cafe\u{301}.txt");
+        let sep = std::path::MAIN_SEPARATOR;
+        for (from_git, on_disk) in [(composed, decomposed), (decomposed, composed)] {
+            let mut status = Status::default();
+            status.add(PathBuf::from(format!("r\u{e9}sum\u{e9}{sep}{from_git}")), Mark::Modified);
+            assert_eq!(status.mark(OsStr::new(&format!("re\u{301}sume\u{301}{sep}{on_disk}")), false), Some(Mark::Modified));
+            assert_eq!(status.mark(OsStr::new("re\u{301}sume\u{301}"), true), Some(Mark::Modified));
+        }
     }
 
     #[test]
