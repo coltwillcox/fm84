@@ -388,8 +388,15 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
 
     let mut border_line = vec![Span::styled("├──", style_border())];
     let mut branches = [None, None];
-    // Kept short: a long pattern would push the path off the line.
-    let filter_label = |is_left: bool| app_state.filter(is_left).map(|filter| format!(" filter: {} ", tail_of(&filter.text, 24)));
+    // How the panel is narrowed or widened: Ctrl+B's flat list, Ctrl+S's
+    // pattern - kept short, as a long one would push the path off the line.
+    let filter_label = |is_left: bool| {
+        let parts: Vec<String> = [app_state.flat(is_left).map(|_| "flat".to_string()), app_state.filter(is_left).map(|filter| format!("filter: {}", tail_of(&filter.text, 24)))]
+            .into_iter()
+            .flatten()
+            .collect();
+        (!parts.is_empty()).then(|| format!(" {} ", parts.join(", ")))
+    };
     let sides = [
         (&app_state.dir_left, filter_label(true), &app_state.branch_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
         (&app_state.dir_right, filter_label(false), &app_state.branch_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),

@@ -452,3 +452,75 @@ fn alt_down_goes_back_anywhere_that_has_been() {
     assert_eq!(app_state.dir_left, dir.join("music/rock"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Ctrl+B lists every file under the panel's directory by its path from
+/// there - not the directories, nor what is hidden when F11 hides it - and
+/// sorted by size it finds the biggest. F2 renames a file where it is; Ctrl+B
+/// again goes back, onto what holds the file the cursor was on, and going
+/// anywhere else drops it.
+#[test]
+fn ctrl_b_lists_every_file_below() {
+    let dir = std::env::temp_dir().join(format!("fm84-flat-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("sub/deep")).unwrap();
+    std::fs::create_dir_all(dir.join(".secret")).unwrap();
+    std::fs::write(dir.join("a.txt"), "a").unwrap();
+    std::fs::write(dir.join("sub/b.bin"), "b".repeat(100)).unwrap();
+    std::fs::write(dir.join("sub/deep/c.txt"), "c".repeat(10)).unwrap();
+    std::fs::write(dir.join(".secret/key"), "").unwrap();
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(dir.join("sub"), dir.join("again")).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.options.show_hidden = false;
+    app_state.options.sort_key = crate::options::SortKey::Name;
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
+    let names = |app_state: &AppState| app_state.children_left.iter().map(|item| item.name_full.clone()).collect::<Vec<_>>();
+    let cursor = |app_state: &AppState| app_state.children_left[app_state.state_left.selected().unwrap()].name_full.clone();
+    let ctrl_b = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
+    let sep = std::path::MAIN_SEPARATOR;
+
+    ctrl_b(&mut app_state);
+    assert_eq!(app_state.flat_left.as_ref(), Some(&dir));
+    assert_eq!(names(&app_state), ["..".to_string(), "a.txt".to_string(), format!("sub{sep}b.bin"), format!("sub{sep}deep{sep}c.txt")]);
+    let deep = app_state.children_left.iter().find(|item| item.name_full.ends_with("c.txt")).unwrap();
+    assert_eq!((deep.name.as_str(), deep.extension.as_str()), (format!("sub{sep}deep{sep}c").as_str(), "txt"));
+
+    // Sorted by size, the biggest last.
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(6), KeyModifiers::CONTROL));
+    assert_eq!(names(&app_state)[1..], ["a.txt".to_string(), format!("sub{sep}deep{sep}c.txt"), format!("sub{sep}b.bin")]);
+    assert!(app_state.flat_left.is_some(), "a reread keeps it");
+
+    // F2 offers the file's own name, and renames it where it is.
+    let at = app_state.children_left.iter().position(|item| item.name_full.ends_with("c.txt")).unwrap();
+    app_state.state_left.select(Some(at));
+    press(&mut app_state, KeyCode::F(2));
+    assert_eq!(app_state.dialog_input().unwrap().text, "c.txt");
+    app_state.dialog_input().unwrap().set("d.txt".to_string());
+    press(&mut app_state, KeyCode::Enter);
+    assert!(dir.join("sub/deep/d.txt").exists() && app_state.error.is_none());
+    assert_eq!(cursor(&app_state), format!("sub{sep}deep{sep}d.txt"));
+
+    // Back to the directory, on what holds that file.
+    ctrl_b(&mut app_state);
+    assert!(app_state.flat_left.is_none());
+    assert_eq!(cursor(&app_state), "sub");
+
+    // Somewhere else and back, and it is not flat any more.
+    ctrl_b(&mut app_state);
+    press(&mut app_state, KeyCode::Backspace);
+    assert!(app_state.flat_left.is_none());
+    app_state.open_dir(true, dir.clone(), None);
+    assert!(names(&app_state).contains(&"sub".to_string()));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A flat walk nobody wants any more stops.
+#[test]
+fn a_flat_walk_stops_when_told() {
+    let stop = std::sync::atomic::AtomicBool::new(true);
+    let options = crate::options::Options::default();
+    let walked = crate::fs_ops::load_flat_rows(&std::env::temp_dir(), &options, &stop);
+    assert!(walked.is_err_and(|e| e.kind() == std::io::ErrorKind::Interrupted) || std::fs::read_dir(std::env::temp_dir()).unwrap().next().is_none());
+}

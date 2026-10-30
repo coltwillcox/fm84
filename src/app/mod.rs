@@ -29,6 +29,7 @@ mod editing;
 mod filter;
 mod find;
 mod find_files;
+mod flat;
 mod history;
 mod jobs;
 mod listing;
@@ -201,6 +202,9 @@ pub struct AppState {
     pub filter_right: Option<PanelFilter>,
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
+    /// Ctrl+B: the directory each panel lists every file under, if any.
+    pub flat_left: Option<PathBuf>,
+    pub flat_right: Option<PathBuf>,
     pub search_input: String,
     pub cached_clock: String,
     pub cached_separator_height: u16,
@@ -373,6 +377,12 @@ impl Item {
         dir.join(&self.name_os)
     }
 
+    /// The last part of the name as shown: the name itself, or under Ctrl+B,
+    /// the file's own without the directories it is in.
+    pub fn leaf(&self) -> &str {
+        self.name_full.rsplit(std::path::is_separator).next().unwrap_or(&self.name_full)
+    }
+
     /// The `..` row the listing puts first. Told by the name the filesystem
     /// holds, never by `name`: that is a file's stem, and the stem of a file
     /// called `...` is `..`.
@@ -420,6 +430,8 @@ impl AppState {
             filter_left: None,
             filter_right: None,
             filter_before: String::new(),
+            flat_left: None,
+            flat_right: None,
             search_input: String::new(),
             cached_clock: String::new(),
             cached_separator_height: 0,

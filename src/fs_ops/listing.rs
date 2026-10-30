@@ -125,6 +125,100 @@ fn row(name_os: OsString, is_dir: bool, is_symlink: bool, size_bytes: u64, modif
     }
 }
 
+/// A row for a file found under the directory listed, named by its path
+/// from there - `sub/notes.txt` - so that it is shown, sorted and found by
+/// that, and every operation reaches it through `path_in` as any other.
+fn flat_row(name_os: OsString, is_symlink: bool, size_bytes: u64, modified_at: Option<std::time::SystemTime>, attributes: String) -> Item {
+    let mut item = row(name_os, false, is_symlink, size_bytes, modified_at, attributes);
+    if let Some(dir) = Path::new(&item.name_os).parent().filter(|dir| !dir.as_os_str().is_empty()) {
+        item.name = format!("{}{}{}", dir.to_string_lossy(), std::path::MAIN_SEPARATOR, item.name);
+    }
+    item
+}
+
+/// Ctrl+B: every file under `path`, however deep, in one list - `..` first,
+/// the rest sorted as F11 says, so sorting by size finds what takes the
+/// space. Directories are walked, not listed, and a link to one is not
+/// followed; what is hidden is left out, and what is inside it, unless F11
+/// shows hidden files. A directory that cannot be read is passed over, and
+/// nothing in a filesystem the kernel makes up is gone into.
+///
+/// No more than FLAT_MAX files, the second value saying so when there were
+/// more. `cancel`, set once nobody wants the listing, stops the walk.
+pub fn load_flat_rows(path: &Path, options: &Options, cancel: &AtomicBool) -> Result<(Vec<Item>, bool), Error> {
+    let mut children = Vec::new();
+    if path.parent().is_some() {
+        children.push(parent_row());
+    }
+    let mut truncated = false;
+    let mut stack: Vec<(PathBuf, PathBuf, Option<u64>)> = vec![(path.to_path_buf(), PathBuf::new(), None)];
+    let mut top = true;
+    'walk: while let Some((dir, relative, parent_device)) = stack.pop() {
+        let device = device_of(&dir);
+        if !top && device != parent_device && is_pseudo_filesystem(&dir) {
+            continue;
+        }
+        // Only the directory itself has to be readable.
+        let entries = match read_dir(&dir) {
+            Ok(entries) => entries,
+            Err(e) if top => return Err(e),
+            Err(_) => continue,
+        };
+        top = false;
+        for entry in entries {
+            if cancel.load(Ordering::Relaxed) {
+                return Err(Error::new(ErrorKind::Interrupted, "stopped"));
+            }
+            let Ok(entry) = entry else { continue };
+            let Ok(file_type) = entry.file_type() else { continue };
+            let name = entry.file_name();
+            let is_symlink = file_type.is_symlink();
+            let metadata = if is_symlink { fs::metadata(entry.path()).or_else(|_| entry.metadata()).ok() } else { entry.metadata().ok() };
+            if !options.show_hidden && is_hidden(&name.to_string_lossy(), metadata.as_ref()) {
+                continue;
+            }
+            if file_type.is_dir() {
+                stack.push((entry.path(), relative.join(&name), device));
+                continue;
+            }
+            // A link to a directory is neither listed nor gone into.
+            if metadata.as_ref().is_some_and(|metadata| metadata.is_dir()) {
+                continue;
+            }
+            if children.len() >= crate::constants::FLAT_MAX + usize::from(path.parent().is_some()) {
+                truncated = true;
+                break 'walk;
+            }
+            let size_bytes = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+            let modified_at = metadata.as_ref().and_then(|m| m.modified().ok());
+            let attributes = metadata.as_ref().map(|metadata| format_attributes(metadata, false, is_symlink)).unwrap_or_default();
+            children.push(flat_row(relative.join(&name).into_os_string(), is_symlink, size_bytes, modified_at, attributes));
+        }
+    }
+    let sort_start = usize::from(path.parent().is_some());
+    children[sort_start..].sort_by(|a, b| compare_rows(a, b, options));
+    Ok((children, truncated))
+}
+
+/// Ctrl+B inside an archive: every file under `inner`, from the index.
+pub fn archive_flat_rows(index: &crate::archive::Index, inner: &Path, options: &Options) -> Vec<Item> {
+    use crate::archive::EntryKind;
+    let hidden = |path: &Path| path.components().any(|part| part.as_os_str().as_encoded_bytes().starts_with(b"."));
+    let mut children = vec![parent_row()];
+    for at in index.subtree(inner) {
+        let entry = index.entry(at);
+        let Ok(relative) = entry.path.strip_prefix(inner) else { continue };
+        if entry.kind == EntryKind::Dir || relative.as_os_str().is_empty() || (!options.show_hidden && hidden(relative)) {
+            continue;
+        }
+        let kind = if entry.kind == EntryKind::Link { 'l' } else { '-' };
+        let attributes = entry.mode.map(|mode| format!("{kind}{}", mode_string(mode))).unwrap_or_default();
+        children.push(flat_row(relative.as_os_str().to_os_string(), entry.kind == EntryKind::Link, entry.size, entry.modified, attributes));
+    }
+    children[1..].sort_by(|a, b| compare_rows(a, b, options));
+    children
+}
+
 /// The rows for the directory at `inner` in an archive, as a directory on the
 /// disk lists: `..` first, which from the archive's root leads out of it, and
 /// the rest sorted as F11 says. Its own files are hidden as a dot hides them.

@@ -39,6 +39,23 @@ pub struct PendingListing {
     pub(super) tab: Option<TabSwitch>,
     pub(super) travel: Travel,
     pub(super) answer: Receiver<Listed>,
+    /// Stops a flat walk once the listing is not wanted.
+    pub(super) _stop: StopOnDrop,
+    /// Ctrl+B as it was before this listing was asked for by it, to put
+    /// back if the listing never comes.
+    pub(super) restore_flat: Option<Option<PathBuf>>,
+}
+
+/// Set as it goes. A listing dropped unused - Esc, or another in its place -
+/// has a walk under Ctrl+B stop rather than go on through a whole disk for
+/// nobody. Once taken in, the walk is over anyway.
+#[derive(Default)]
+pub(super) struct StopOnDrop(Arc<AtomicBool>);
+
+impl Drop for StopOnDrop {
+    fn drop(&mut self) {
+        self.0.store(true, Ordering::Relaxed);
+    }
 }
 
 #[cfg(test)]
@@ -53,6 +70,8 @@ impl PendingListing {
             tab: None,
             travel: Travel::Go,
             answer,
+            _stop: StopOnDrop::default(),
+            restore_flat: None,
         }
     }
 }
@@ -71,14 +90,19 @@ pub(super) struct Listed {
     pub(super) disk: Option<(u64, u64)>,
     /// The archive the directory runs through, when it is inside one.
     pub(super) archive: Option<PathBuf>,
+    /// A flat listing that stopped at FLAT_MAX files.
+    pub(super) truncated: bool,
 }
 
 /// Everything a panel needs from the disk, read on the listing thread.
-pub(super) fn read_listing(dir: &Path, options: &Options) -> Listed {
+/// `flat`, for a panel under Ctrl+B, has every file under `dir` listed, and
+/// stops the walk once set - but only for `dir` itself: one climbed out of
+/// to a parent is listed as any directory is.
+pub(super) fn read_listing(dir: &Path, options: &Options, flat: Option<&AtomicBool>) -> Listed {
     // Ahead of climbing to a directory that is there, which would climb
     // straight out of an archive.
     if let Some(located) = crate::archive::locate(dir) {
-        return read_archive_listing(dir, located, options);
+        return read_archive_listing(dir, located, options, flat.is_some());
     }
     let Some(found) = nearest_existing_dir(dir) else {
         return Listed {
@@ -88,10 +112,18 @@ pub(super) fn read_listing(dir: &Path, options: &Options) -> Listed {
             stamp: None,
             disk: None,
             archive: None,
+            truncated: false,
         };
     };
     let stamp = std::fs::metadata(&found).and_then(|metadata| metadata.modified()).ok();
-    let items = load_directory_rows(&found, options);
+    let mut truncated = false;
+    let items = match flat.filter(|_| found == dir) {
+        Some(cancel) => crate::fs_ops::load_flat_rows(&found, options, cancel).map(|(items, cut)| {
+            truncated = cut;
+            items
+        }),
+        None => load_directory_rows(&found, options),
+    };
     let disk = disk_usage(&found);
     let branch = crate::fs_ops::git_branch(&found);
     Listed {
@@ -101,6 +133,7 @@ pub(super) fn read_listing(dir: &Path, options: &Options) -> Listed {
         stamp,
         disk,
         archive: None,
+        truncated,
     }
 }
 
@@ -109,7 +142,7 @@ pub(super) fn read_listing(dir: &Path, options: &Options) -> Listed {
 /// in it stops the climb at the directory it is in, for Ctrl+L to land on.
 /// What the disk says - its space, the branch, the time to watch - is of the
 /// archive file and the directory it is in.
-fn read_archive_listing(dir: &Path, located: crate::archive::Located, options: &Options) -> Listed {
+fn read_archive_listing(dir: &Path, located: crate::archive::Located, options: &Options, flat: bool) -> Listed {
     let archive = located.archive;
     let outside = archive.parent().unwrap_or(&archive).to_path_buf();
     let (found, items) = match crate::archive::index(&archive) {
@@ -121,7 +154,12 @@ fn read_archive_listing(dir: &Path, located: crate::archive::Located, options: &
             // Not joined when empty: that would end the path in a separator,
             // and a file's path with one on the end does not stat.
             let found = if inner.as_os_str().is_empty() { archive.clone() } else { archive.join(inner) };
-            (found, Ok(crate::fs_ops::archive_rows(&index, inner, options)))
+            let rows = if flat && found == dir {
+                crate::fs_ops::archive_flat_rows(&index, inner, options)
+            } else {
+                crate::fs_ops::archive_rows(&index, inner, options)
+            };
+            (found, Ok(rows))
         }
         // Said as what it is: an archive fm84 cannot read, not a missing
         // directory.
@@ -135,6 +173,7 @@ fn read_archive_listing(dir: &Path, located: crate::archive::Located, options: &
         stamp,
         disk: disk_usage(&outside),
         archive: Some(archive),
+        truncated: false,
     }
 }
 
@@ -158,7 +197,7 @@ impl AppState {
         if is_left { &self.listing_left } else { &self.listing_right }
     }
 
-    fn listing_mut(&mut self, is_left: bool) -> &mut Option<PendingListing> {
+    pub(super) fn listing_mut(&mut self, is_left: bool) -> &mut Option<PendingListing> {
         if is_left { &mut self.listing_left } else { &mut self.listing_right }
     }
 
@@ -243,10 +282,22 @@ impl AppState {
     pub(super) fn request_listing(&mut self, is_left: bool, dir: PathBuf, navigate: bool, select: Option<OsString>, tab: Option<TabSwitch>, travel: Travel) -> Option<bool> {
         let (sender, answer) = mpsc::channel();
         let (worker_dir, options) = (dir.clone(), self.options.clone());
+        let flat = self.flat(is_left).is_some_and(|flat| *flat == dir);
+        let cancel = Arc::new(AtomicBool::new(false));
+        let worker_cancel = Arc::clone(&cancel);
         std::thread::spawn(move || {
-            let _ = sender.send(read_listing(&worker_dir, &options));
+            let _ = sender.send(read_listing(&worker_dir, &options, flat.then_some(&*worker_cancel)));
         });
-        let pending = PendingListing { dir, navigate, select, tab, travel, answer };
+        let pending = PendingListing {
+            dir,
+            navigate,
+            select,
+            tab,
+            travel,
+            answer,
+            _stop: StopOnDrop(cancel),
+            restore_flat: None,
+        };
         match pending.answer.recv_timeout(self.listing_wait) {
             Ok(listed) => {
                 // One asked for earlier and still on its way read the
@@ -281,6 +332,9 @@ impl AppState {
                 Err(TryRecvError::Empty) => *self.listing_mut(is_left) = Some(pending),
                 Err(TryRecvError::Disconnected) => {
                     self.display_error(format!("Cannot read {}", pending.dir.display()));
+                    if let Some(flat) = pending.restore_flat.clone() {
+                        *self.flat_mut(is_left) = flat;
+                    }
                     self.undo_tab(is_left, pending.tab);
                 }
             }
@@ -292,6 +346,9 @@ impl AppState {
     /// the thread finds is never asked for.
     pub fn cancel_listing(&mut self, is_left: bool) {
         if let Some(pending) = self.listing_mut(is_left).take() {
+            if let Some(flat) = pending.restore_flat.clone() {
+                *self.flat_mut(is_left) = flat;
+            }
             self.undo_tab(is_left, pending.tab);
         }
     }
@@ -326,6 +383,10 @@ impl AppState {
             return false;
         }
         let leaving = self.panel_as_tab(is_left);
+        // Flat for the directory Ctrl+B was pressed in, and no other.
+        if self.flat(is_left).is_some_and(|flat| *flat != found) {
+            *self.flat_mut(is_left) = None;
+        }
 
         // Gone from under it, and climbed out of to `found`.
         let relocated = found != pending.dir && !to_file;
@@ -378,6 +439,9 @@ impl AppState {
             // Gone unreadable while the panel is in it. Said once: the watcher
             // only speaks up again when the directory changes.
             Err(e) => self.display_error(e.to_string()),
+        }
+        if listed.truncated {
+            self.find_note = Some(format!("Only the first {} files are listed", crate::constants::FLAT_MAX));
         }
 
         // What is watched for a change: the archive file, for a directory

@@ -48,6 +48,10 @@ pub const UNDO_LIMIT: usize = 200;
 // more, but nobody steps back fifty directories by key.
 pub const HISTORY_MAX: usize = 50;
 
+// Files Ctrl+B lists at most. Pressed at the root of a big disk, the walk
+// would otherwise go on for minutes and hold millions of rows.
+pub const FLAT_MAX: usize = 100_000;
+
 // Directories Alt+Down lists, across both panels and every tab. Narrowed by
 // typing, so more than fit on screen is no trouble.
 pub const VISITED_MAX: usize = 200;

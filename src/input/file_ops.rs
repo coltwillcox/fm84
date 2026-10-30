@@ -20,8 +20,9 @@ pub(super) fn open_rename(app_state: &mut AppState) {
         return;
     }
 
+    // Under Ctrl+B, the file's own name: it is renamed where it is.
     let mut input = TextInput::new();
-    input.set(item.name_full.clone());
+    input.set(item.leaf().to_string());
     app_state.dialog = Some(Dialog::Rename(input));
 }
 
@@ -60,7 +61,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
     // the file to its own lossy reading.
     // Nothing to rename to: treat it as a cancel, the way F7 treats an empty
     // name. Composing it would point at the parent directory instead.
-    if new_name == item.name_full || new_name.is_empty() {
+    if new_name == item.leaf() || new_name.is_empty() {
         return;
     }
     // A rename stays in its directory; moving is F6.
@@ -69,8 +70,10 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
         return;
     }
 
+    // In the directory the file is in, which under Ctrl+B can be one below.
     let original_path = item.path_in(parent_path);
-    let new_path = parent_path.join(&new_name);
+    let new_path = original_path.with_file_name(&new_name);
+    let landing = Path::new(&item.name_os).with_file_name(&new_name);
 
     // rename() replaces the destination without a word. Equal paths mean the
     // name was left alone, which is a no-op rather than a collision - and so
@@ -87,7 +90,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
             if let Some(size) = app_state.dir_sizes.remove(&original_path) {
                 app_state.dir_sizes.insert(new_path, size);
             }
-            app_state.reload_panel(app_state.is_left_active, Some(new_name.as_ref()));
+            app_state.reload_panel(app_state.is_left_active, Some(landing.as_os_str()));
         }
         Err(e) => app_state.display_error(e.to_string()),
     }

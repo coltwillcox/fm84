@@ -166,6 +166,8 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             'l' if in_panel => app_state.open_go_to(),
             // Ctrl+S, Total Commander's quick filter.
             's' if in_panel => app_state.open_filter_prompt(),
+            // Ctrl+B, Total Commander's branch view.
+            'b' if in_panel => app_state.toggle_flat(),
             // Ctrl+O opens what is under the cursor as the system would, as
             // Shift+Enter does where the terminal can send it.
             'o' if in_panel => open_cursor_externally(app_state),

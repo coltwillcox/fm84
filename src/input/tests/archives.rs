@@ -398,3 +398,28 @@ fn alt_h_inside_an_archive_says_to_copy_out_first() {
     assert!(app_state.job.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Ctrl+B lists every file in an archive at once, by its path from where
+/// the panel is, and F3 opens one from there as from its own directory.
+#[test]
+fn ctrl_b_lists_every_file_in_an_archive() {
+    let (dir, archive, mut app_state) = setup("flat");
+    press(&mut app_state, KeyCode::Enter);
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
+    assert_eq!(app_state.flat_left.as_ref(), Some(&archive));
+    let mut names = shown(&app_state);
+    names[1..].sort();
+    assert_eq!(names, ["..", "2024/june/beach.txt", "2024/notes.txt", "readme.txt"]);
+
+    on(&mut app_state, "2024/june/beach.txt");
+    press(&mut app_state, KeyCode::F(3));
+    finish(&mut app_state);
+    let Screen::Viewer(state) = &app_state.screen else {
+        panic!("not viewing: {:?}", app_state.error);
+    };
+    assert_eq!(state.content_lines, ["sand and sea"]);
+    let scratch = state.file_path.parent().unwrap().to_path_buf();
+    std::fs::remove_dir_all(&scratch).unwrap();
+    let _ = std::fs::remove_dir(scratch.parent().unwrap());
+    std::fs::remove_dir_all(&dir).unwrap();
+}
