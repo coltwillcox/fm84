@@ -544,6 +544,7 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
     // given up to a narrow panel - it shows the whole name, or Cargo.lock and
     // Cargo.toml would read the same.
     let has_ext_column = columns.contains(&Column::Ext);
+    let git = app_state.git_status(is_left);
 
     for (index, child) in children.iter().enumerate().take(end).skip(start) {
         let is_renaming_current_item = is_renaming_current_side && (index == selected);
@@ -578,14 +579,21 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
             spans.push(Span::styled(dir_suffix, bracket_style));
             (Cell::from(Line::from(spans)), String::new())
         } else {
-            (
-                Cell::from(Line::from(vec![
-                    Span::styled(dir_prefix, bracket_style),
-                    Span::styled(printable_name(if has_ext_column { &child.name } else { &child.name_full }), text_style),
-                    Span::styled(dir_suffix, bracket_style),
-                ])),
-                printable_name(&child.extension),
-            )
+            let mut name = printable_name(if has_ext_column { &child.name } else { &child.name_full });
+            let mark = git.and_then(|git| git.mark(&child.name_os, child.is_dir)).map(git_mark);
+            // The mark at the far end of the column, a space before it, the
+            // name cut short to make room for both when it has to be.
+            let mut trailing = Vec::new();
+            if let Some((letter, color)) = mark {
+                let room = (name_width as usize).saturating_sub(dir_prefix.len() + dir_suffix.len() + 2);
+                name = cut_to_width(&name, room);
+                let used = dir_prefix.len() + display_width(&name) + dir_suffix.len();
+                trailing.push(Span::raw(" ".repeat((name_width as usize).saturating_sub(used + 1))));
+                trailing.push(Span::styled(letter, Style::default().fg(color).add_modifier(Modifier::BOLD)));
+            }
+            let mut spans = vec![Span::styled(dir_prefix, bracket_style), Span::styled(name, text_style), Span::styled(dir_suffix, bracket_style)];
+            spans.extend(trailing);
+            (Cell::from(Line::from(spans)), printable_name(&child.extension))
         };
 
         // Get size - for directories, show calculated size if available
@@ -620,6 +628,29 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
     }
 
     (rows, start)
+}
+
+/// How each of git's marks is drawn at the end of an entry's name.
+fn git_mark(mark: crate::git::Mark) -> (&'static str, ratatui::style::Color) {
+    use crate::git::Mark;
+    match mark {
+        Mark::Modified => ("M", palette().title),
+        Mark::Staged => ("S", palette().columns),
+        Mark::Untracked => ("?", palette().directory),
+        Mark::Ignored => ("!", palette().directory_dark),
+        Mark::Conflict => ("U", palette().rename_background),
+    }
+}
+
+/// `text` no wider than `room` columns, cut from the end.
+fn cut_to_width(text: &str, room: usize) -> String {
+    let mut used = 0;
+    text.chars()
+        .take_while(|&character| {
+            used += char_display_width(character);
+            used <= room
+        })
+        .collect()
 }
 
 fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::PreviewState, is_left: bool) {

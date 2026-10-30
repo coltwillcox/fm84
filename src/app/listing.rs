@@ -447,6 +447,7 @@ impl AppState {
         // What is watched for a change: the archive file, for a directory
         // inside one, which has no time of its own.
         let probe = listed.archive.clone().unwrap_or_else(|| found.clone());
+        self.request_git_marks(is_left, &found, listed.branch.is_some() && listed.archive.is_none());
         if is_left {
             self.disk_left = listed.disk;
             self.branch_left = listed.branch;

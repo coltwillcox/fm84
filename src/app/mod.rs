@@ -30,6 +30,7 @@ mod filter;
 mod find;
 mod find_files;
 mod flat;
+mod git_marks;
 mod history;
 mod jobs;
 mod listing;
@@ -42,7 +43,7 @@ mod tests;
 mod text_input;
 mod viewing;
 
-pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, history::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
+pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, git_marks::*, history::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -205,6 +206,9 @@ pub struct AppState {
     /// Ctrl+B: the directory each panel lists every file under, if any.
     pub flat_left: Option<PathBuf>,
     pub flat_right: Option<PathBuf>,
+    /// What git says of each panel's entries.
+    pub git_left: PanelGit,
+    pub git_right: PanelGit,
     pub search_input: String,
     pub cached_clock: String,
     pub cached_separator_height: u16,
@@ -432,6 +436,8 @@ impl AppState {
             filter_before: String::new(),
             flat_left: None,
             flat_right: None,
+            git_left: PanelGit::default(),
+            git_right: PanelGit::default(),
             search_input: String::new(),
             cached_clock: String::new(),
             cached_separator_height: 0,

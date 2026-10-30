@@ -14,6 +14,7 @@ pub enum OptionRow {
     ColumnSize,
     ColumnModified,
     ColumnAttributes,
+    GitMarks,
     DateFormat,
     SizeUnits,
     ConfirmDelete,
@@ -40,7 +41,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 33] = [
+pub const OPTION_ROWS: [OptionRow; 34] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -50,6 +51,7 @@ pub const OPTION_ROWS: [OptionRow; 33] = [
     OptionRow::ColumnSize,
     OptionRow::ColumnModified,
     OptionRow::ColumnAttributes,
+    OptionRow::GitMarks,
     OptionRow::DateFormat,
     OptionRow::SizeUnits,
     OptionRow::ConfirmDelete,
@@ -88,6 +90,7 @@ impl OptionRow {
             OptionRow::ColumnSize => "Size column",
             OptionRow::ColumnModified => "Modified column",
             OptionRow::ColumnAttributes => "Attributes column",
+            OptionRow::GitMarks => "Git marks",
             OptionRow::DateFormat => "Date format",
             OptionRow::SizeUnits => "Size units",
             OptionRow::ConfirmDelete => "Confirm delete",
@@ -134,7 +137,10 @@ impl OptionRow {
     /// Whether changing this row changes what the panels hold, rather than
     /// only how they are drawn. The sizes are written out as the rows load.
     pub fn affects_listing(self) -> bool {
-        matches!(self, OptionRow::ShowHidden | OptionRow::SortKey | OptionRow::SortDirection | OptionRow::DirsFirst | OptionRow::CaseSensitive | OptionRow::SizeUnits)
+        matches!(
+            self,
+            OptionRow::ShowHidden | OptionRow::SortKey | OptionRow::SortDirection | OptionRow::DirsFirst | OptionRow::CaseSensitive | OptionRow::SizeUnits | OptionRow::GitMarks
+        )
     }
 }
 
@@ -157,6 +163,7 @@ impl Options {
             OptionRow::ColumnSize => on_off(self.column_size),
             OptionRow::ColumnModified => on_off(self.column_modified),
             OptionRow::ColumnAttributes => on_off(self.column_attributes),
+            OptionRow::GitMarks => on_off(self.git_marks),
             OptionRow::DateFormat => match self.date_format {
                 DateFormat::Short => "dd/mm/yy",
                 DateFormat::Iso => "yyyy-mm-dd",
@@ -265,6 +272,7 @@ impl Options {
             OptionRow::ColumnSize => self.column_size = !self.column_size,
             OptionRow::ColumnModified => self.column_modified = !self.column_modified,
             OptionRow::ColumnAttributes => self.column_attributes = !self.column_attributes,
+            OptionRow::GitMarks => self.git_marks = !self.git_marks,
             OptionRow::DateFormat => {
                 let formats = [DateFormat::Short, DateFormat::Iso, DateFormat::Relative];
                 self.date_format = step(&formats, self.date_format, forward);

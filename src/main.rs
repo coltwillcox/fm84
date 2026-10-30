@@ -234,6 +234,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.poll_branch_switch();
         app_state.poll_find_files();
         app_state.poll_dir_sizes();
+        app_state.poll_git_marks();
         app_state.image_cache.collect();
         send_cursor_shape(&app_state.options);
         render_ui(terminal, &mut app_state);

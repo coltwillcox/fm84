@@ -85,6 +85,7 @@ impl Options {
                 "column_size" => options.column_size = flag(options.column_size),
                 "column_modified" => options.column_modified = flag(options.column_modified),
                 "column_attributes" => options.column_attributes = flag(options.column_attributes),
+                "git_marks" => options.git_marks = flag(options.git_marks),
                 "date_format" => {
                     options.date_format = match value {
                         "short" => DateFormat::Short,
@@ -216,6 +217,8 @@ impl Options {
              column_size = {}\n\
              column_modified = {}\n\
              column_attributes = {}\n\
+             # M modified, S staged, ? untracked, ! ignored, U in conflict.\n\
+             git_marks = {}\n\
              # short, iso or relative.\n\
              date_format = {}\n\
              # binary (KiB) or decimal (kB).\n\
@@ -266,6 +269,7 @@ impl Options {
             self.column_size,
             self.column_modified,
             self.column_attributes,
+            self.git_marks,
             date_format,
             size_units,
             self.confirm_delete,

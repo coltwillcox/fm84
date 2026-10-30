@@ -743,3 +743,71 @@ fn the_scroll_bar_style_from_f11_draws_both_thumbs() {
     assert_eq!(app_state.options.value(crate::options::OptionRow::ScrollBars), "Heavy ┃━");
     std::fs::remove_file(path).unwrap();
 }
+
+/// In a repository, what git says of each entry is marked at the far end of
+/// its name, once git has answered; a name too long for the room is cut to
+/// leave it showing.
+#[test]
+fn git_marks_sit_at_the_end_of_the_name() {
+    let dir = std::env::temp_dir().join(format!("fm84-git-marks-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let run = |arguments: &[&str]| {
+        std::process::Command::new("git")
+            .arg("-C")
+            .arg(&dir)
+            .args(["-c", "user.name=fm84", "-c", "user.email=fm84@localhost", "-c", "commit.gpgsign=false"])
+            .args(arguments)
+            .output()
+            .is_ok_and(|output| output.status.success())
+    };
+    if !run(&["init", "--quiet"]) {
+        let _ = std::fs::remove_dir_all(&dir);
+        return;
+    }
+    let long = format!("{}.txt", "a".repeat(80));
+    std::fs::write(dir.join("kept.txt"), "one").unwrap();
+    std::fs::write(dir.join(&long), "one").unwrap();
+    assert!(run(&["add", "."]) && run(&["commit", "--quiet", "-m", "first"]));
+    std::fs::write(dir.join("kept.txt"), "two").unwrap();
+    std::fs::write(dir.join(&long), "two").unwrap();
+    std::fs::write(dir.join("new.txt"), "").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.options.column_ext = false;
+    app_state.open_dir(true, dir.clone(), None);
+    let started = std::time::Instant::now();
+    while app_state.git_status(true).is_none() {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "git never answered");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_git_marks();
+    }
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer();
+    let rows: Vec<String> = (0..buffer.area.height).map(|y| (0..60).map(|x| buffer[(x, y)].symbol()).collect()).collect();
+    // The Name column ends where its separator starts.
+    let ends_with = |name: &str, mark: &str| {
+        rows.iter().any(|row| {
+            let before = row.split('│').nth(1).unwrap_or_default();
+            before.contains(name) && before.trim_end().ends_with(&format!(" {mark}"))
+        })
+    };
+    assert!(ends_with("kept.txt", "M"), "{rows:#?}");
+    assert!(ends_with("new.txt", "?"), "{rows:#?}");
+    assert!(ends_with("aaaa", "M"), "the long name cut for its mark: {rows:#?}");
+
+    // Off in F11: gone with the reread that follows, and git not asked.
+    app_state.options.git_marks = false;
+    app_state.reload_panel(true, None);
+    assert!(app_state.git_status(true).is_none() && app_state.git_left.dir == dir);
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer();
+    let marked = (0..buffer.area.height).any(|y| {
+        let row: String = (0..60).map(|x| buffer[(x, y)].symbol()).collect();
+        row.split('│').nth(1).unwrap_or_default().trim_end().ends_with(" M")
+    });
+    assert!(!marked);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

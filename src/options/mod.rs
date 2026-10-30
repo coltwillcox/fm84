@@ -251,6 +251,9 @@ pub struct Options {
     pub column_size: bool,
     pub column_modified: bool,
     pub column_attributes: bool,
+    /// Mark what git says of each entry - modified, staged, untracked,
+    /// ignored, in conflict - at the end of its name.
+    pub git_marks: bool,
     pub date_format: DateFormat,
     pub size_units: SizeUnits,
     pub confirm_delete: bool,
@@ -312,6 +315,7 @@ impl Default for Options {
             column_size: true,
             column_modified: true,
             column_attributes: true,
+            git_marks: true,
             date_format: DateFormat::Short,
             size_units: SizeUnits::Binary,
             confirm_delete: true,
