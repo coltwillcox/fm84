@@ -156,6 +156,60 @@ fn symlinks_from_the_keys() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// Tab turns Alt+F5's symbolic link into a hard link: another name for the
+/// same file, which outlives the original. A directory is refused and named,
+/// and the files beside it are still linked.
+#[cfg(unix)]
+#[test]
+fn tab_makes_a_hard_link_instead() {
+    use std::os::unix::fs::MetadataExt;
+    let dir = std::env::temp_dir().join(format!("fm84-hard-link-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let (src, dst) = (dir.join("src"), dir.join("dst"));
+    std::fs::create_dir_all(src.join("sub")).unwrap();
+    std::fs::create_dir_all(&dst).unwrap();
+    for name in ["a.txt", "b.txt"] {
+        std::fs::write(src.join(name), name).unwrap();
+    }
+    let mut app_state = AppState::new();
+    app_state.open_dir(false, dst.clone(), None);
+    app_state.is_left_active = true;
+    app_state.open_dir(true, src.clone(), Some("a.txt".as_ref()));
+    let link = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::F(5), KeyModifiers::ALT));
+    let hard = |app_state: &AppState| matches!(app_state.dialog, Some(Dialog::Symlink { hard: true, .. }));
+    let inode = |path: &std::path::Path| std::fs::symlink_metadata(path).unwrap().ino();
+
+    link(&mut app_state);
+    assert!(!hard(&app_state));
+    press(&mut app_state, KeyCode::Tab);
+    assert!(hard(&app_state));
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.dialog.is_none() && app_state.error.is_none());
+    assert!(!std::fs::symlink_metadata(dst.join("a.txt")).unwrap().file_type().is_symlink());
+    assert_eq!(inode(&dst.join("a.txt")), inode(&src.join("a.txt")));
+    std::fs::remove_file(src.join("a.txt")).unwrap();
+    assert_eq!(std::fs::read_to_string(dst.join("a.txt")).unwrap(), "a.txt");
+
+    // Tab again goes back to a symbolic link, and each dialog starts as one.
+    link(&mut app_state);
+    press(&mut app_state, KeyCode::Tab);
+    press(&mut app_state, KeyCode::Tab);
+    assert!(!hard(&app_state));
+    press(&mut app_state, KeyCode::Esc);
+
+    // A directory among files: passed over and named.
+    app_state.reload_panel(true, None);
+    app_state.selected_left.insert("b.txt".into());
+    app_state.selected_left.insert("sub".into());
+    link(&mut app_state);
+    press(&mut app_state, KeyCode::Tab);
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Could not link 1 of 2") && error.contains("directory")), "{:?}", app_state.error);
+    assert_eq!(inode(&dst.join("b.txt")), inode(&src.join("b.txt")));
+    assert!(!crate::fs_ops::path_exists(&dst.join("sub")));
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// Alt+A opens on what the entries have in common; what is typed over it
 /// is applied to each, and what cannot be read leaves the form open.
 #[cfg(unix)]

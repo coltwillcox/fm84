@@ -233,7 +233,10 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
             Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),
             Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_destination_popup(f, area, sources, None, if *is_copy { "Copy" } else { "Move" }, "to", input, None),
-            Some(Dialog::Symlink { sources, input, .. }) => render_destination_popup(f, area, sources, None, "Symlink", "at", input, None),
+            Some(Dialog::Symlink { sources, input, hard, .. }) => {
+                let (verb, other) = if *hard { ("Hard link", "Tab - Symlink") } else { ("Symlink", "Tab - Hard link") };
+                render_destination_popup(f, area, sources, None, verb, "at", input, Some(other));
+            }
             Some(Dialog::Extract { archive, input }) => render_destination_popup(f, area, &[(archive.clone(), false)], Some("archive"), "Extract", "to", input, None),
             Some(Dialog::Checksums(_)) => {
                 if let Some(Dialog::Checksums(view)) = &mut app_state.dialog {

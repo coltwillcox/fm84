@@ -44,6 +44,20 @@ pub fn create_symlink(target: &Path, link: &Path, is_dir: bool) -> Result<(), Er
     }
 }
 
+/// A hard link at `link` to the file `target`, as `ln` makes one: another
+/// name for the same file, on the same filesystem. Never in place of
+/// anything already there, and never to a directory, which no filesystem
+/// fm84 runs on allows.
+pub fn create_hard_link(target: &Path, link: &Path, is_dir: bool) -> Result<(), Error> {
+    if is_dir {
+        return Err(Error::new(ErrorKind::InvalidInput, "a directory cannot be hard linked"));
+    }
+    if path_exists(link) {
+        return Err(Error::new(ErrorKind::AlreadyExists, format!("{} already exists", link.display())));
+    }
+    std::fs::hard_link(target, link)
+}
+
 /// Save `content` over the file at `path` so that a failure partway - a full
 /// disk, a device gone, fm84 killed - leaves the file as it was rather than
 /// truncated. Written straight over, the file is emptied the moment the write

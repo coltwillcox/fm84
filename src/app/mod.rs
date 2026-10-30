@@ -103,10 +103,17 @@ pub enum Dialog {
         default: PathBuf,
     },
     /// Ctrl+Shift+F5, waiting to be confirmed: a symbolic link to each of
-    /// `sources`, made where `input` says. Opened and read as Transfer is,
-    /// except that a lone directory is named as a file is - the link is the
-    /// new entry, not something to go inside it.
-    Symlink { sources: Vec<(PathBuf, bool)>, input: TextInput, opened_with: String, default: PathBuf },
+    /// `sources`, made where `input` says - or a hard link, which Tab
+    /// switches to. Opened and read as Transfer is, except that a lone
+    /// directory is named as a file is - the link is the new entry, not
+    /// something to go inside it.
+    Symlink {
+        sources: Vec<(PathBuf, bool)>,
+        input: TextInput,
+        opened_with: String,
+        default: PathBuf,
+        hard: bool,
+    },
     /// Alt+F9: where to extract the whole of an archive to.
     Extract { archive: PathBuf, input: TextInput },
     /// Alt+P: the archive to pack what is chosen into, its format by the

@@ -551,11 +551,12 @@ pub(super) fn open_compare(app_state: &mut AppState) {
     }
 }
 
-/// Ctrl+Shift+F5: a symbolic link to what is chosen. For a single entry,
-/// file or directory, it opens on that name in the other panel, ready to be
-/// given another; for several, on the other panel's directory, a link in it
-/// for each under its own name. Always asked, whatever F11 says about
-/// confirming copies: there is no destination to take for granted.
+/// Ctrl+Shift+F5: a symbolic link to what is chosen, or with Tab a hard
+/// link. For a single entry, file or directory, it opens on that name in the
+/// other panel, ready to be given another; for several, on the other panel's
+/// directory, a link in it for each under its own name. Always asked,
+/// whatever F11 says about confirming copies: there is no destination to
+/// take for granted.
 pub(super) fn open_symlink(app_state: &mut AppState) {
     let sources = chosen_items(app_state);
     // A link to an entry of an archive would point at nothing on the disk.
@@ -573,14 +574,21 @@ pub(super) fn open_symlink(app_state: &mut AppState) {
     }
     let mut input = TextInput::new();
     input.set(opened_with.clone());
-    app_state.dialog = Some(Dialog::Symlink { sources, input, opened_with, default });
+    app_state.dialog = Some(Dialog::Symlink {
+        sources,
+        input,
+        opened_with,
+        default,
+        hard: false,
+    });
 }
 
-/// Enter on the symlink dialog. Read as F5 reads where to copy to, each link
-/// pointing at its source by the absolute path. An entry that cannot be
-/// linked is passed over and named, and the rest are still made.
+/// Enter on the symlink dialog. Read as F5 reads where to copy to, each
+/// symbolic link pointing at its source by the absolute path. An entry that
+/// cannot be linked - a directory, for a hard link - is passed over and
+/// named, and the rest are still made.
 pub(super) fn handle_symlink_confirm(app_state: &mut AppState) {
-    let Some(Dialog::Symlink { sources, input, opened_with, default }) = app_state.dialog.take() else {
+    let Some(Dialog::Symlink { sources, input, opened_with, default, hard }) = app_state.dialog.take() else {
         return;
     };
     let links = if input.text == opened_with {
@@ -612,7 +620,8 @@ pub(super) fn handle_symlink_confirm(app_state: &mut AppState) {
 
     let mut failed = Vec::new();
     for (target, link, is_dir) in &links {
-        if let Err(e) = create_symlink(target, link, *is_dir) {
+        let made = if hard { create_hard_link(target, link, *is_dir) } else { create_symlink(target, link, *is_dir) };
+        if let Err(e) = made {
             failed.push(format!("{}: {}", link.display(), e));
         }
     }

@@ -190,6 +190,7 @@ fn every_input_field_wears_the_rename_colours() {
                 input: typed(),
                 opened_with: String::new(),
                 default: std::path::PathBuf::from("/b"),
+                hard: false,
             },
         ),
         ("+", Dialog::Prompt(PromptKind::Select, typed())),
