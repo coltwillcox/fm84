@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.38.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.39.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -88,6 +88,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔎 **Type-ahead search** - just start typing to find files
 - ⬆️⬇️ **Navigate matches** - Up/Down arrows jump between results
 - 🧹 **Esc** - clear the search vibes
+- 🧪 **Ctrl+S filter** - narrows the panel to what a pattern matches, as it is typed, for a directory of thousands where search only moves the cursor. A word on its own is looked for anywhere in the name (`rep` finds `report.txt` and `prep/`); `*`, `?` and `[a-z]` work as for `+`, several separated by `;`, and one ending in `/` keeps only directories. Lower case matches either case. **Enter** keeps it, shown in the path bar; **Esc** puts back the filter there was; an empty one shows everything again. `..` always stays. What is selected but filtered out is let go, so a copy or delete never takes what cannot be seen. The filter belongs to its directory: rereads are narrowed too, Ctrl+U takes it along, and going anywhere else drops it
 
 ### 🔭 Find Files (Alt+F7)
 - 🎯 **By name, and by what is in them** - a name pattern as `+` takes it (`*.jpg;*.png`, `*/` for directories), and text the file has to hold, lower case matching either case. **Ctrl+F7** works too, for desktops that take Alt+F7 for moving windows. The last search is offered again
@@ -107,7 +108,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels. Each file is written beside its destination and renamed into place only once it is whole, so a copy that is cancelled, fails or is cut short by quitting never leaves half a file under the real name. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🧯 **One bad entry doesn't sink the job** - a file that will not copy, move or delete (a socket, a pipe, a permission refused, a disk full) stops the job and asks: **R** retry, **S** skip, **A** skip all, **Esc** abort. A skipped entry is left where it was, and a directory holding one stays with it, so a move never leaves anything gone from both sides. The end says how many were skipped
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
-- **Alt+F5** 🔗 - Make a symbolic link to what is chosen. **Ctrl+Shift+F5** works too, as in Total Commander, where the terminal lets it through - kitty keeps it for reloading its config. It asks where, as F5 does, opening on the entry's name in the other panel - a directory too, since the link is the new entry - or, for several, on the other panel's directory, with a link in it for each. Each points at the absolute path of what it links to. Nothing already there is written over: an entry that cannot be linked is named, and the rest are still made. On Windows it takes Developer Mode or the right to make links
+- **Alt+F5** 🔗 - Make a symbolic link to what is chosen. **Ctrl+Shift+F5** works too, as in Total Commander, where the terminal lets it through - kitty keeps it for reloading its config. It asks where, as F5 does, opening on the entry's name in the other panel - a directory too, since the link is the new entry - or, for several, on the other panel's directory, with a link in it for each. Each points at the absolute path of what it links to. **Tab** makes hard links instead - another name for the same file, which outlives the original; files only, on the same filesystem. Nothing already there is written over: an entry that cannot be linked is named, and the rest are still made. On Windows a symbolic link takes Developer Mode or the right to make links
 - **Shift+F2** ⚖️ - Compare directories, as in Total Commander: each panel selects what differs from the other - an entry only it has, and of a file both have, the newer one, or both when the times agree and the sizes do not. Times within two seconds count as the same, as FAT keeps them no finer. Directories both have are not gone into. What was selected before is replaced, ready for F5 to copy across, and the status bar says how many differ
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
 - **F8** / **Delete** 🗑️ - Move files & folders to the system's trash (selected items or cursor item, with confirmation - which F11 can turn off - and progress). What the trash will not take - a read-only disk, one with nowhere to keep a trash - is asked about, with **D** to delete it for good. F11 can make F8 delete permanently instead
@@ -115,7 +116,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **Alt+H** #️⃣ - Checksums of what is selected, or of the file under the cursor, a directory's files all the way down. SHA-256, SHA-512 and MD5 are all worked out in one reading of each file, as a job with the progress bar and Esc, and shown in one popup - wrapped, never cut, however long - with the algorithms in a row above them: **Tab** or **→** shows the next one's, **Shift+Tab** or **←** the one before, at once. **C** copies them - one file's checksum alone, for pasting where it is to be compared - and **Enter** writes them as `sha256sum` does, to `name.sha256` for one file or `SHA256SUMS` for several, and lands on it; a name already taken goes by F11's When destination exists. On a checksum file - `*.sha256`, `*.md5`, `SHA256SUMS` and the like, written by `sha256sum`, `md5sum` or in BSD's `SHA256 (name) = …` - it checks the files it names instead, and says what failed, what is missing and what is OK, the failures first. What cannot be read is listed as such, not asked about. Inside an archive, copy out first
 - **Alt+A** 🔐 - Change attributes, as in Total Commander: the permissions, owner, group and modified time of what is selected, or of the entry under the cursor. Each field opens on what the entries have in common, and one left as it is, or emptied, changes nothing. The mode is octal (`755`) or as `chmod` takes it (`u+x,go-w`, `a=rX`), so several entries whose modes differ can each gain or lose a bit; with one entry, what it comes to is shown beside it. Owner and group go by name or number, and the time as `2026-10-23 14:02:11`. **Tab** or a click moves between the fields, a click putting the cursor where it lands. Something typed that cannot be read is said so before anything changes; an entry that refuses is passed over and named. On Windows only the time
 - **F9** 💻 - Open external terminal in current directory (which one is set under F11)
-- **F10** 🚪 - Exit to the void - asking first about unsaved changes in the editor
+- **F10** 🚪 - Exit to the void - asking first about unsaved changes in the editor. **Shift+F10** leaves `cd84` in the directory it started from
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
 - **+** / **-** / **\*** 🎯 - Select or deselect by a pattern such as `*.jpg;*.png` (`*`, `?`, `[a-z]`, `[!0-9]`; lower case matches either case), or invert the selection of files - **Alt+\*** inverts directories too. Patterns pick files; end one with `/` for directories, as in `*/`. Once a quick search is under way, `-` types into it instead
 - 📋 **Ctrl+C** / **Alt+C** - copy the full paths, or just the names, of what is selected - or of the entry under the cursor - to the clipboard, a line each; on `..`, the panel's own directory. It goes over OSC 52, so it reaches the system clipboard over SSH too, and the built-in editor pastes it either way
@@ -291,6 +292,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Home` / `End` | Jump to first / last item |
 | `PageUp` / `PageDown` | Page navigation |
 | `[a-z0-9]` | Quick search |
+| `Ctrl+S` | Filter the panel by a pattern, as it is typed (`Esc` puts back the one there was) |
 | `Esc` | Clear search / Close dialogs, the Viewer and the Editor / Stop directory sizing / Stop waiting on a directory that has not answered |
 | `F1` | Help |
 | `F2` | Rename |
@@ -300,7 +302,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `F3` / `Shift+F3` or `N` / `P` | Next / previous difference (in Compare) |
 | `F4` | Edit file (built-in, or the editor set under F11) |
 | `F5` | Copy (to the other panel, or wherever the dialog is told) |
-| `Alt+F5` / `Ctrl+Shift+F5` | Make a symbolic link (in the other panel, or wherever the dialog is told) |
+| `Alt+F5` / `Ctrl+Shift+F5` | Make a symbolic link (in the other panel, or wherever the dialog is told; `Tab` for a hard link) |
 | `F6` | Move (to the other panel, or wherever the dialog is told) |
 | `F7` | Create directory |
 | `Shift+F4` | Create empty file |
@@ -313,6 +315,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `D` | Delete permanently, when the trash will not take an entry |
 | `F9` | Open terminal (the one set under F11, if any) |
 | `F10` | Quit (twice during an operation; asks first about unsaved edits) |
+| `Shift+F10` | Quit, leaving `cd84` in the directory it started from |
 | `F11` | Options - panels, behaviour, appearance, viewer and editor |
 | `F12` | Preview cursor file in other panel |
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
@@ -385,7 +388,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.38.0
+fm84 --version          # fm84 0.39.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -405,7 +408,7 @@ fm84 --shell-init fish | source                                # ~/.config/fish/
 fm84 --shell-init powershell | Out-String | Invoke-Expression  # $PROFILE
 ```
 
-Then start fm84 as `cd84`. It works for any directory name, a trailing newline or bytes that are not UTF-8 included, and stays put if fm84 did not quit normally. Underneath, `--choosedir FILE` has fm84 write the directory to `FILE` on quitting, for any other wrapper that wants it.
+Then start fm84 as `cd84`. It works for any directory name, a trailing newline or bytes that are not UTF-8 included, and stays put if fm84 did not quit normally - or quit with **Shift+F10**, for the times you only wanted a look around. Underneath, `--choosedir FILE` has fm84 write the directory to `FILE` on quitting, for any other wrapper that wants it.
 
 ---
 
@@ -485,5 +488,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.38.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.39.0 ▄▀▄▀▄▀</code>
 </p>

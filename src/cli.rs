@@ -173,7 +173,8 @@ Arguments:
 
 Options:
       --choosedir <FILE>    On quitting, write the active panel's directory
-                            to FILE, for a shell function to cd to
+                            to FILE, for a shell function to cd to;
+                            Shift+F10 quits without writing it
       --shell-init <SHELL>  Print cd84, a function that does that, for bash,
                             zsh, fish or powershell, and exit
   -h, --help                Print this help and exit

@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-29" "fm84 0.38.0" "User Commands"
+.TH FM84 1 "2026-10-30" "fm84 0.39.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -155,7 +155,7 @@ quitting fm84 leaves the shell where it was.
 .B cd84
 does the rest: it runs fm84, and on quitting goes to the directory of the
 active panel, passing on its arguments and its exit status.
-It stays put when fm84 did not quit normally.
+It stays put when fm84 did not quit normally, or quit with Shift+F10.
 To have it, add one line to the shell's startup file:
 .TP
 bash, in ~/.bashrc
@@ -291,6 +291,19 @@ Invert the selection of files.
 .B Alt+*
 Invert the selection of files and directories.
 .TP
+.B Ctrl+S
+Filter the panel: only what the pattern matches is shown, narrowing as it
+is typed.
+A word without \fB*\fR, \fB?\fR or \fB[\fR is looked for anywhere in the
+name; a pattern takes directories as well as files, and one ending in
+.B /
+directories only.
+Enter keeps it, shown in the path bar; Esc puts back the filter there was;
+an empty one shows everything.
+What is selected but filtered out is let go.
+The filter stays while the panel is in its directory, and goes when it
+moves elsewhere.
+.TP
 .B Alt+H
 Work out the checksums of what is chosen, a directory's files all the way
 down, as a job: SHA-256, SHA-512 and MD5 at once, in one reading of each
@@ -413,6 +426,7 @@ entry, its name in the other panel; for several, the other panel's
 directory, with a link in it for each.
 Each points at the absolute path of what it links to, and nothing already
 there is written over.
+Tab makes hard links instead: files only, on the same filesystem.
 Ctrl+Shift+F5 is as in Total Commander; kitty keeps it for reloading its
 config, so Alt+F5 is there too.
 .TP
@@ -446,6 +460,11 @@ Tab goes through the formats by the ending of the name.
 .B F10
 Quit.
 Twice while a copy, move or delete runs; asks first about unsaved edits.
+.TP
+.B Shift+F10
+Quit, leaving
+.B cd84
+in the directory it started from.
 .TP
 .B F11
 Options.

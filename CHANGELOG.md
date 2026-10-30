@@ -6,6 +6,15 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.39.0] - 2026-10-30
+
+### ✨ Added
+- 🧪 **Filter a panel with Ctrl+S** - only what a pattern matches is shown, narrowing as it is typed, for a directory of thousands where search only moves the cursor. A word on its own is looked for anywhere in the name; `*`, `?` and `[a-z]` work as for `+`, several separated by `;`, and the pattern takes directories as well as files - one ending in `/` only directories. **Enter** keeps it, shown in the path bar; **Esc** puts back the filter there was; an empty one shows everything again. `..` always stays, and what is selected but filtered out is let go, so a copy or delete never takes what cannot be seen. The filter belongs to its directory: rereads are narrowed too, Ctrl+U takes it along, and going anywhere else drops it
+- 🔗 **Hard links** - **Tab** in Alt+F5's dialog makes hard links instead of symbolic ones: another name for the same file, which outlives the original. Files only, on the same filesystem; a directory among them is named, and the rest are still linked
+- 🚪 **Shift+F10** quits without moving the shell - `cd84` stays in the directory it started from, for the times fm84 was only for a look around
+
+---
+
 ## [0.38.0] - 2026-10-29
 
 ### ✨ Added
