@@ -15,6 +15,7 @@ use ratatui::widgets::TableState;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
@@ -34,6 +35,7 @@ mod git_marks;
 mod history;
 mod jobs;
 mod listing;
+mod open_with;
 mod preview;
 mod selection;
 mod settings;
@@ -44,7 +46,7 @@ mod text_input;
 mod user_menu;
 mod viewing;
 
-pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, git_marks::*, history::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, user_menu::*, viewing::*};
+pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, git_marks::*, history::*, jobs::*, listing::*, open_with::*, preview::*, selection::*, tabs::*, text_input::*, user_menu::*, viewing::*};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -148,6 +150,8 @@ pub enum Dialog {
     History(Box<HistoryList>),
     /// Alt+M: the user's own commands.
     UserMenu(Box<UserMenu>),
+    /// Alt+O: the programs the entry under the cursor can be opened with.
+    OpenWith(Box<OpenWith>),
     /// A click on a panel's git branch: the repository's branches, to change
     /// to another.
     Branches(Box<BranchList>),

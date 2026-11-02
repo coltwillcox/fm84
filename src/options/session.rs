@@ -107,6 +107,66 @@ pub fn menu_file() -> Option<PathBuf> {
     Some(path)
 }
 
+/// A line of the `open` file: the extensions it is for, and the program.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Association {
+    /// Without their dots, as written; `*` is every file.
+    pub extensions: Vec<String>,
+    pub command: String,
+    /// Run in this terminal, written with a `!` in front.
+    pub terminal: bool,
+}
+
+/// What a new `open` file says.
+const OPEN_TEMPLATE: &str = "\
+# The programs fm84 opens files with, by extension, as
+#   extensions = command
+# The first line for a file is what Enter and Shift+Enter open it with, in
+# place of the system's choice; Alt+O lists them all, then what the system
+# offers. Extensions are separated by spaces, any case, without the dot -
+# tar.gz works too - and * is every file. The command runs in the shell, in
+# the file's directory, with {file} where the file goes, or on the end if it
+# is not there; {name} {dir} {other} as in the user menu, and unquoted.
+# A ! in front runs it in this terminal, fm84 waiting until it is done.
+#
+# pdf epub = zathura
+# jpg jpeg png gif webp = gimp
+# md txt = !vim
+# * = !less
+";
+
+/// The `open` file's lines, in order. One with no extension or no command
+/// is passed over.
+pub fn load_associations() -> Vec<Association> {
+    config_path("open").and_then(|path| fs::read_to_string(path).ok()).map(|text| parse_associations(&text)).unwrap_or_default()
+}
+
+pub(super) fn parse_associations(text: &str) -> Vec<Association> {
+    key_values(text)
+        .filter_map(|(extensions, command)| {
+            let extensions: Vec<String> = extensions.split([' ', '\t', ',']).map(|extension| extension.trim_start_matches('.')).filter(|extension| !extension.is_empty()).map(String::from).collect();
+            let (command, terminal) = match command.strip_prefix('!') {
+                Some(command) => (command.trim(), true),
+                None => (command, false),
+            };
+            (!extensions.is_empty() && !command.is_empty()).then(|| Association {
+                extensions,
+                command: command.to_string(),
+                terminal,
+            })
+        })
+        .collect()
+}
+
+/// The `open` file, written with examples if there is none yet.
+pub fn associations_file() -> Option<PathBuf> {
+    let path = config_path("open")?;
+    if !path.exists() {
+        let _ = write_config_file("open", OPEN_TEMPLATE);
+    }
+    Some(path)
+}
+
 /// A path as a session line holds it. `display()` would lose any name that is
 /// not valid UTF-8, and the reader trims each value, so spaces at either end
 /// would go too. Those bytes, control characters and `%` itself are written

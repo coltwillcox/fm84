@@ -21,7 +21,7 @@ mod screens;
 #[cfg(test)]
 mod tests;
 
-pub(crate) use self::launch::open_with_default;
+pub(crate) use self::launch::{detach, open_with_default};
 use self::{file_ops::*, launch::*, mouse::*, panel::*, screens::*};
 
 pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
@@ -141,6 +141,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         // Alt+M, the user's own commands, as F2 is in Midnight Commander.
         if in_panel && c == 'm' {
             app_state.open_user_menu();
+        }
+        // Alt+O, the programs the entry under the cursor can be opened with.
+        if in_panel && c == 'o' {
+            open_cursor_with(app_state);
         }
     } else {
         match c {
@@ -418,6 +422,25 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                 {
                     menu.index = wanted;
                     run_user_menu_entry(app_state);
+                }
+            }
+            _ => {}
+        },
+        Some(Dialog::OpenWith(_)) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Enter => app_state.open_with_chosen(),
+            KeyCode::Up => app_state.move_open_with_cursor(-1),
+            KeyCode::Down => app_state.move_open_with_cursor(1),
+            KeyCode::Home => app_state.move_open_with_cursor(isize::MIN),
+            KeyCode::End => app_state.move_open_with_cursor(isize::MAX),
+            KeyCode::Char('e') | KeyCode::Char('E') => app_state.edit_associations(),
+            KeyCode::Char(c @ '1'..='9') => {
+                let wanted = c as usize - '1' as usize;
+                if let Some(Dialog::OpenWith(menu)) = &mut app_state.dialog
+                    && wanted < menu.openers.len()
+                {
+                    menu.index = wanted;
+                    app_state.open_with_chosen();
                 }
             }
             _ => {}

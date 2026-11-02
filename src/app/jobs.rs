@@ -51,6 +51,8 @@ pub struct ChecksumView {
 pub enum AfterJob {
     View(PathBuf),
     Open(PathBuf),
+    /// Opened with the program picked from Alt+O's chooser.
+    OpenWith(PathBuf, Box<crate::opener::Opener>),
     /// Compare the two files, once out, shown under the paths they have in
     /// the panels. `then` is a second archive to copy out of first, when the
     /// two are in different ones.
@@ -619,12 +621,8 @@ impl AppState {
         }
         match (&result, job.after) {
             (Ok(Transfer::Done), Some(AfterJob::View(path))) if job.skipped == 0 => return self.request_open(path, false),
-            (Ok(Transfer::Done), Some(AfterJob::Open(path))) if job.skipped == 0 => {
-                if let Err(e) = crate::input::open_with_default(&path) {
-                    self.display_error(format!("Cannot open file: {e}"));
-                }
-                return;
-            }
+            (Ok(Transfer::Done), Some(AfterJob::Open(path))) if job.skipped == 0 => return self.open_outside(&path, false),
+            (Ok(Transfer::Done), Some(AfterJob::OpenWith(path, opener))) if job.skipped == 0 => return self.launch(&opener, &path),
             (Ok(Transfer::Done), Some(AfterJob::Land(archive))) => {
                 for is_left in [true, false] {
                     if archive.parent() == Some(self.panel_dir(is_left).as_path()) {

@@ -12,6 +12,7 @@ mod fs_ops;
 mod git;
 mod glob;
 mod input;
+mod opener;
 mod options;
 mod scroll_bar;
 mod search;
@@ -303,9 +304,13 @@ fn write_chosen_dir(file: &std::path::Path, dir: &std::path::Path) -> io::Result
 fn run_user_command(terminal: &mut Tui, app_state: &mut AppState, mut command: app::UserCommand) -> io::Result<()> {
     use std::io::Write;
     restore_terminal()?;
-    println!("\n── {} ──", utils::printable_name(&command.label));
+    if command.pause {
+        println!("\n── {} ──", utils::printable_name(&command.label));
+    }
     let result = command.process.status();
-    if let Ok(status) = &result {
+    if let Ok(status) = &result
+        && (command.pause || !status.success())
+    {
         if !status.success() {
             println!("\n{} exited with {}", utils::printable_name(&command.label), status);
         }

@@ -649,6 +649,46 @@ pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     f.render_widget(Paragraph::new(lines), inner);
 }
 
+/// Alt+O: the programs the file can be opened with, named in a column with
+/// what each runs beside it - laid out as the user menu is.
+pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, menu: &crate::app::OpenWith) {
+    let popup_area = popup_rect(60, area);
+    let name = menu.path.file_name().map(|name| printable_name(&name.to_string_lossy())).unwrap_or_default();
+    let title = format!(" Open {} With ", cut_to(&name, (popup_area.width as usize).saturating_sub(16)));
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    let rows = (inner.height as usize).saturating_sub(2);
+
+    let mut lines = Vec::new();
+    let label_width = menu.openers.iter().map(|opener| display_width(&printable_name(&opener.label))).max().unwrap_or(0).min(width / 2);
+    let first = if rows > 0 && menu.index >= rows { menu.index + 1 - rows } else { 0 };
+    for (number, opener) in menu.openers.iter().enumerate().skip(first).take(rows) {
+        let key = if number < 9 { format!("{} ", number + 1) } else { "  ".to_string() };
+        let label = cut_to(&printable_name(&opener.label), label_width);
+        let label = format!("{label}{}", " ".repeat(label_width.saturating_sub(display_width(&label))));
+        let room = width.saturating_sub(key.len() + label_width + 3);
+        let detail = if opener.terminal { format!("[terminal] {}", opener.detail) } else { opener.detail.clone() };
+        let detail = cut_to(&printable_name(&detail), room);
+        let used = key.len() + label_width + 3 + display_width(&detail);
+        let pad = " ".repeat(width.saturating_sub(used));
+        let (style, quiet) = if number == menu.index {
+            (style_title().bg(palette().selected_background), style_columns().bg(palette().selected_background))
+        } else {
+            (style_dir(), style_columns())
+        };
+        lines.push(Line::from(vec![Span::styled(format!("{key}{label}   "), style), Span::styled(format!("{detail}{pad}"), quiet)]));
+    }
+    while lines.len() < rows + 1 {
+        lines.push(Line::from(""));
+    }
+    lines.push(Line::from(Span::styled("Enter/1-9 - Open    E - Edit associations    Esc - Close", style_columns())).centered());
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
 /// `text` no wider than `room` columns, cut from the end with an ellipsis.
 fn cut_to(text: &str, room: usize) -> String {
     if display_width(text) <= room {

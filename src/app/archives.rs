@@ -36,6 +36,12 @@ impl AppState {
     /// to the program the system opens it with. A job, with its bar and Esc:
     /// out of a large .tar.gz it can take a while.
     pub fn open_archive_entry(&mut self, path: &Path, view: bool) {
+        self.extract_then(path, |dest| if view { AfterJob::View(dest) } else { AfterJob::Open(dest) });
+    }
+
+    /// `path`, inside the archive the active panel is in, copied out to a
+    /// scratch directory of its own, and then `after` with where it went.
+    pub(super) fn extract_then(&mut self, path: &Path, after: impl FnOnce(PathBuf) -> AfterJob) {
         let Some(archive) = self.panel_archive(self.is_left_active).cloned() else {
             return;
         };
@@ -49,7 +55,7 @@ impl AppState {
                 return;
             }
         };
-        let after = if view { AfterJob::View(dest.clone()) } else { AfterJob::Open(dest.clone()) };
+        let after = after(dest.clone());
         self.start_extract(archive, vec![(inner.to_path_buf(), dest)], Clashes::ReplaceAll, Some(after));
     }
 

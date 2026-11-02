@@ -703,3 +703,82 @@ fn user_menu_commands_get_every_name_whole() {
     run(&mut app_state, KeyCode::Enter);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+#[cfg(unix)]
+#[test]
+fn alt_o_opens_a_file_with_the_program_picked() {
+    use crate::opener::{Launch, Opener};
+    let dir = std::env::temp_dir().join(format!("fm84-open-with-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let name = "it's a \"file\".txt";
+    let file = dir.join(name);
+    std::fs::write(&file, "").unwrap();
+    let out = dir.join("out");
+    let mut app_state = AppState::new();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), Some(name.as_ref()));
+    let alt_o = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('o'), KeyModifiers::ALT));
+
+    // The chooser ends with the system's own choice.
+    alt_o(&mut app_state);
+    let Some(Dialog::OpenWith(menu)) = &app_state.dialog else { panic!("no chooser") };
+    assert_eq!(menu.path, file);
+    assert_eq!(menu.openers.last().map(|opener| &opener.launch), Some(&Launch::Default));
+    press(&mut app_state, KeyCode::Esc);
+    assert!(app_state.dialog.is_none());
+
+    let chooser = |openers: Vec<Opener>| Dialog::OpenWith(Box::new(crate::app::OpenWith { path: file.clone(), openers, index: 0 }));
+    let shell = |command: String, terminal: bool| Opener {
+        label: "Test".to_string(),
+        detail: command.clone(),
+        launch: Launch::Shell(command),
+        terminal,
+    };
+
+    // In the terminal: handed to the main loop, which waits only on a failure.
+    // The file goes on the end of a command that does not say where.
+    app_state.dialog = Some(chooser(vec![shell(format!("printf '%s' > '{}'", out.display()), true)]));
+    press(&mut app_state, KeyCode::Enter);
+    let mut command = app_state.user_command.take().expect("nothing to run");
+    assert!(!command.pause);
+    assert!(command.process.status().unwrap().success());
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), file.display().to_string());
+
+    // A desktop entry's Exec, with its field codes - and %% for a % of its own.
+    std::fs::remove_file(&out).unwrap();
+    let words = ["sh", "-c", &format!("printf '%%s|%%s' \"$1\" \"$2\" > '{}'", out.display()), "sh", "%c", "%f"].map(String::from).to_vec();
+    let desktop = Opener {
+        label: "Viewer".to_string(),
+        detail: String::new(),
+        launch: Launch::Desktop {
+            words,
+            name: "Viewer".to_string(),
+            icon: None,
+            entry: dir.join("viewer.desktop"),
+        },
+        terminal: true,
+    };
+    app_state.dialog = Some(chooser(vec![shell("false".to_string(), true), desktop]));
+    press(&mut app_state, KeyCode::Char('2'));
+    let mut command = app_state.user_command.take().expect("nothing to run");
+    assert!(command.process.status().unwrap().success());
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), format!("Viewer|{}", file.display()));
+
+    // In a window of its own: started, and not waited for.
+    std::fs::remove_file(&out).unwrap();
+    app_state.dialog = Some(chooser(vec![shell(format!("cp {{file}} '{}'", out.display()), false)]));
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.user_command.is_none() && app_state.error.is_none());
+    let start = std::time::Instant::now();
+    while !out.exists() && start.elapsed() < std::time::Duration::from_secs(5) {
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(out.exists());
+
+    // Nothing for the parent entry.
+    app_state.state_left.select(Some(0));
+    alt_o(&mut app_state);
+    assert!(app_state.dialog.is_none());
+    std::fs::remove_dir_all(&dir).unwrap();
+}

@@ -27,6 +27,9 @@ pub struct MenuValues {
 pub struct UserCommand {
     pub label: String,
     pub process: std::process::Command,
+    /// Wait for Enter after it, whatever it did; otherwise only after one
+    /// that failed, to read why.
+    pub pause: bool,
 }
 
 impl AppState {

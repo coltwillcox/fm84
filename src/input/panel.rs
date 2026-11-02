@@ -206,9 +206,24 @@ pub(super) fn open_cursor_externally(app_state: &mut AppState) {
     open_externally(app_state, path, is_dir);
 }
 
-/// Hand `path` to the program the system opens it with. From inside an
-/// archive it is copied out first, and a directory there has nowhere on the
-/// disk to be opened from.
+/// Alt+O: the chooser of programs for the entry under the cursor.
+pub(super) fn open_cursor_with(app_state: &mut AppState) {
+    let is_left = app_state.is_left_active;
+    let (state, children, dir) = if is_left {
+        (&app_state.state_left, &app_state.children_left, &app_state.dir_left)
+    } else {
+        (&app_state.state_right, &app_state.children_right, &app_state.dir_right)
+    };
+    let Some(item) = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()) else {
+        return;
+    };
+    let (path, is_dir) = (item.path_in(dir), item.is_dir);
+    app_state.open_with_menu(path, is_dir);
+}
+
+/// Hand `path` to the program the `open` file or the system opens it
+/// with. From inside an archive it is copied out first, and a directory
+/// there has nowhere on the disk to be opened from.
 fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
     if app_state.panel_archive(app_state.is_left_active).is_some() {
         if !is_dir {
@@ -216,9 +231,7 @@ fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
         }
         return;
     }
-    if let Err(e) = open_with_default(&path) {
-        app_state.display_error(format!("Cannot open file: {}", e));
-    }
+    app_state.open_outside(&path, is_dir);
 }
 
 /// What F5, F6 and F8 work on in the active panel: what is selected, or the

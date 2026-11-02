@@ -159,3 +159,11 @@ fn menu_lines_read_as_label_and_command() {
     // Split at the first =, so the command may hold more.
     assert_eq!(pairs, [("Disk use", "du -sh {files}"), ("Count", "wc -l {file} | sort = fine")]);
 }
+
+#[test]
+fn open_lines_read_as_extensions_and_command() {
+    let text = "# pdf = nothing\npdf  .EPUB,djvu = zathura {file}\nmd = ! vim\n = no extensions\ntxt =\n* = !less\n";
+    let lines = parse_associations(text);
+    let read: Vec<(Vec<&str>, &str, bool)> = lines.iter().map(|line| (line.extensions.iter().map(String::as_str).collect(), line.command.as_str(), line.terminal)).collect();
+    assert_eq!(read, [(vec!["pdf", "EPUB", "djvu"], "zathura {file}", false), (vec!["md"], "vim", true), (vec!["*"], "less", true)]);
+}

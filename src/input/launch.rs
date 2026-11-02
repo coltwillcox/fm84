@@ -66,20 +66,20 @@ fn spawn_configured_terminal(command: &str, dir: &std::path::Path) -> std::io::R
 
 /// Keep a started terminal alive after fm84 exits, and out of its signals.
 #[cfg(unix)]
-fn detach(process: &mut Command) {
+pub(crate) fn detach(process: &mut Command) {
     use std::os::unix::process::CommandExt;
     process.process_group(0);
 }
 
 #[cfg(windows)]
-fn detach(process: &mut Command) {
+pub(crate) fn detach(process: &mut Command) {
     use std::os::windows::process::CommandExt;
     const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
     process.creation_flags(CREATE_NEW_PROCESS_GROUP);
 }
 
 #[cfg(not(any(unix, windows)))]
-fn detach(_process: &mut Command) {}
+pub(crate) fn detach(_process: &mut Command) {}
 
 #[cfg(target_os = "macos")]
 fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
@@ -154,5 +154,6 @@ pub(super) fn run_user_menu_entry(app_state: &mut AppState) {
     app_state.user_command = Some(crate::app::UserCommand {
         process: crate::app::shell_command(&entry.command, &values),
         label: entry.label,
+        pause: true,
     });
 }

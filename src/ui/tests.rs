@@ -302,6 +302,19 @@ fn popups_share_a_width_and_keep_to_the_panels() {
                 file: None,
             })),
         ),
+        (
+            " Open a With ",
+            Dialog::OpenWith(Box::new(crate::app::OpenWith {
+                path: PathBuf::from("/a"),
+                openers: vec![crate::opener::Opener {
+                    label: "System default".to_string(),
+                    detail: String::new(),
+                    launch: crate::opener::Launch::Default,
+                    terminal: false,
+                }],
+                index: 0,
+            })),
+        ),
     ];
     let mut widths = Vec::new();
     for (title, dialog) in dialogs {
