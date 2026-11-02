@@ -302,7 +302,9 @@ fn desktop_entry(id: &str, app_dirs: &[PathBuf]) -> Option<Opener> {
 }
 
 /// A desktop file's value with its escapes read: `\s` a space, `\n`, `\t`,
-/// `\r`, and `\\` one backslash.
+/// `\r`, and `\\` one backslash. This comes before the quoting of `Exec`
+/// is read, which has escapes of its own, so a backslash in a quoted word
+/// is written four times over and a `$` as `\\$`.
 fn unescape(value: &str) -> String {
     let mut out = String::new();
     let mut chars = value.chars();
@@ -316,8 +318,9 @@ fn unescape(value: &str) -> String {
             Some('n') => out.push('\n'),
             Some('t') => out.push('\t'),
             Some('r') => out.push('\r'),
+            Some('\\') => out.push('\\'),
             Some(other) => {
-                // Left for the quoting of `Exec` to read.
+                // Not an escape here: left for the quoting of `Exec` to read.
                 out.push('\\');
                 out.push(other);
             }
@@ -503,9 +506,13 @@ mod tests {
 
     #[test]
     fn exec_lines_split_as_the_spec_quotes_them() {
-        let exec = unescape(r#"env "A=b c" app\s--x "say \"hi\" \\ \$HOME" %U"#);
+        // As a file has them: each backslash the quoting wants doubled again.
+        let exec = unescape(r#"env "A=b c" app\s--x "say \"hi\" \\\\ \\$HOME" a\\b %U"#);
         let words = split_exec(&exec);
-        assert_eq!(words, ["env", "A=b c", "app", "--x", r#"say "hi" \ $HOME"#, "%U"]);
+        assert_eq!(words, ["env", "A=b c", "app", "--x", r#"say "hi" \ $HOME"#, r"a\b", "%U"]);
+        // What Wine writes for a Windows path.
+        let wine = split_exec(&unescape(r#"wine "C:\\\\Program Files\\\\app.exe""#));
+        assert_eq!(wine, ["wine", r"C:\Program Files\app.exe"]);
         let entry = Path::new("/apps/app.desktop");
         let file = Path::new("/home/me/a b.txt");
         let args = |words: &[&str], icon| exec_args(&words.iter().map(|word| word.to_string()).collect::<Vec<_>>(), file, "App", icon, entry);
