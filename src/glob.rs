@@ -14,8 +14,14 @@
 /// and one without is for files, so that `+` then Enter on `*` takes the files
 /// and leaves the directories, whose selection would sweep whole trees into
 /// the next copy or delete.
+///
+/// Under Ctrl+B a name is a path through the directories below, as
+/// `sub/a.txt`, and a pattern is matched against the file's own name, as
+/// anywhere else: `test_*` is every test file, however deep. One with a `/` before
+/// its end, `src/*.rs`, is about the path, and is matched against all of it;
+/// so is a plain word typed into the filter, which looks anywhere.
 pub struct Glob {
-    patterns: Vec<(Vec<char>, bool)>,
+    patterns: Vec<Pattern>,
     fold: bool,
     /// A pattern without the `/` takes directories too, as the filter has it.
     either: bool,
@@ -24,7 +30,7 @@ pub struct Glob {
 impl Glob {
     /// None when there is no pattern in it at all.
     pub fn new(text: &str) -> Option<Self> {
-        Self::parse(text, false)
+        Self::parse(text, false, &[])
     }
 
     /// Ctrl+S's filter, which narrows a panel rather than picking from it: a
@@ -32,20 +38,28 @@ impl Glob {
     /// files, and one with nothing wild in it - `rep` - is looked for
     /// anywhere in the name, as `*rep*`.
     pub fn filter(text: &str) -> Option<Self> {
+        let mut plain = Vec::new();
         let widened: Vec<String> = text
             .split(';')
             .map(|pattern| {
                 let trimmed = pattern.trim();
                 let (name, slash) = trimmed.strip_suffix('/').map_or((trimmed, ""), |name| (name, "/"));
-                if name.is_empty() || name.contains(['*', '?', '[']) { trimmed.to_string() } else { format!("*{name}*{slash}") }
+                if name.is_empty() {
+                    return trimmed.to_string();
+                }
+                let wild = name.contains(['*', '?', '[']);
+                plain.push(!wild);
+                if wild { trimmed.to_string() } else { format!("*{name}*{slash}") }
             })
             .collect();
-        Self::parse(&widened.join(";"), true)
+        Self::parse(&widened.join(";"), true, &plain)
     }
 
-    fn parse(text: &str, either: bool) -> Option<Self> {
+    /// `plain` says, pattern by pattern, which were plain words widened to
+    /// look anywhere - and so anywhere in a path too.
+    fn parse(text: &str, either: bool, plain: &[bool]) -> Option<Self> {
         let fold = !text.chars().any(char::is_uppercase);
-        let patterns: Vec<(Vec<char>, bool)> = text
+        let patterns: Vec<Pattern> = text
             .split(';')
             .map(str::trim)
             .filter(|pattern| !pattern.is_empty())
@@ -54,15 +68,32 @@ impl Glob {
                 None => (pattern, false),
             })
             .filter(|(pattern, _)| !pattern.is_empty())
-            .map(|(pattern, for_dirs)| (pattern.chars().map(|c| fold_if(c, fold)).collect(), for_dirs))
+            .enumerate()
+            .map(|(index, (pattern, for_dirs))| Pattern {
+                // Either separator, typed, stands for the one the names have.
+                chars: pattern.chars().map(|c| if std::path::is_separator(c) { '/' } else { fold_if(c, fold) }).collect(),
+                for_dirs,
+                whole: pattern.contains(std::path::is_separator) || plain.get(index).copied().unwrap_or(false),
+            })
             .collect();
         if patterns.is_empty() { None } else { Some(Glob { patterns, fold, either }) }
     }
 
     pub fn matches(&self, name: &str, is_dir: bool) -> bool {
-        let name: Vec<char> = name.chars().map(|c| fold_if(c, self.fold)).collect();
-        self.patterns.iter().any(|(pattern, for_dirs)| (*for_dirs == is_dir || (self.either && !for_dirs)) && matches(pattern, &name))
+        let path: Vec<char> = name.chars().map(|c| if std::path::is_separator(c) { '/' } else { fold_if(c, self.fold) }).collect();
+        let leaf = &path[path.iter().rposition(|&c| c == '/').map_or(0, |at| at + 1)..];
+        self.patterns
+            .iter()
+            .any(|pattern| (pattern.for_dirs == is_dir || (self.either && !pattern.for_dirs)) && matches(&pattern.chars, if pattern.whole { &path } else { leaf }))
     }
+}
+
+struct Pattern {
+    chars: Vec<char>,
+    /// Ended in `/`: for directories.
+    for_dirs: bool,
+    /// Matched against the whole of a path, rather than its last name.
+    whole: bool,
 }
 
 fn fold_if(c: char, fold: bool) -> char {
@@ -224,6 +255,20 @@ mod tests {
         assert!(dirs.matches("src", true));
         assert!(dirs.matches("old-src", true));
         assert!(!dirs.matches("src", false));
+
+        // Under Ctrl+B: a pattern by the file's own name, one with a / in it
+        // or a plain word by the path.
+        let sep = std::path::MAIN_SEPARATOR;
+        let deep = format!("src{sep}tests{sep}test_one.rs");
+        assert!(Glob::filter("test_*").unwrap().matches(&deep, false));
+        assert!(Glob::new("test_*").unwrap().matches(&deep, false));
+        assert!(Glob::new("[s-u]*.rs").unwrap().matches(&deep, false));
+        assert!(!Glob::new("s*").unwrap().matches(&deep, false));
+        assert!(Glob::new("src/*/*.rs").unwrap().matches(&deep, false));
+        assert!(!Glob::new("tests/*").unwrap().matches(&deep, false));
+        assert!(Glob::filter("tests").unwrap().matches(&deep, false));
+        assert!(Glob::filter("tests/test_*").is_some_and(|glob| !glob.matches(&deep, false)));
+        assert!(Glob::filter("*tests/test_*").unwrap().matches(&deep, false));
 
         let several = Glob::filter("toml; *.md").unwrap();
         assert!(several.matches("Cargo.toml", false));
