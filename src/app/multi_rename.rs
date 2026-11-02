@@ -171,11 +171,13 @@ fn fold_for_fs(path: &Path) -> String {
 }
 
 /// `old`'s name and extension: the extension after the last dot, and none
-/// for a name whose only dot starts it, as `.bashrc`.
-pub fn split_name(old: &str) -> (&str, &str) {
+/// for a name whose only dot starts it, as `.bashrc`. One ending in a dot,
+/// as `file.`, has an extension with nothing in it - which is not none: the
+/// dot is part of the name, and `[N].[E]` keeps it.
+pub fn split_name(old: &str) -> (&str, Option<&str>) {
     match old.rsplit_once('.') {
-        Some((name, extension)) if !name.is_empty() => (name, extension),
-        _ => (old, ""),
+        Some((name, extension)) if !name.is_empty() => (name, Some(extension)),
+        _ => (old, None),
     }
 }
 
@@ -202,9 +204,9 @@ pub fn new_name(old: &str, index: usize, pattern: &str, find: &str, replace: &st
             break;
         };
         let token = &after[..close];
-        match expand(token, name, extension, index) {
+        match expand(token, name, extension.unwrap_or_default(), index) {
             Some(text) => {
-                if text.is_empty() && token == "E" && out.ends_with('.') {
+                if extension.is_none() && token == "E" && out.ends_with('.') {
                     out.pop();
                 }
                 out.push_str(&text);
@@ -441,6 +443,9 @@ mod tests {
         // No extension, and no dot left behind for it.
         assert_eq!(named("Makefile", 0, "[N].[E]"), "Makefile");
         assert_eq!(named(".bashrc", 0, "[N].[E]"), ".bashrc");
+        // An extension with nothing in it keeps its dot.
+        assert_eq!(named("file.", 0, "[N].[E]"), "file.");
+        assert_eq!(named("file.", 0, "[N]_old.[E]"), "file_old.");
         assert_eq!(named("x.txt", 0, "[E]_[N]"), "txt_x");
         // Letters by their place, counted from 1, cut short at the end.
         assert_eq!(named("abcdefg.txt", 0, "[N2-4]"), "bcd");
