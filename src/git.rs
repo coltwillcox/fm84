@@ -36,6 +36,10 @@ pub struct Status {
     /// For a directory, the strongest of what is changed inside it. Nothing
     /// that is only ignored: a directory is not ignored for holding some.
     inside: HashMap<OsString, Mark>,
+    /// For a directory git names whole - untracked, or ignored - or one
+    /// inside it: what all of it is. Git says nothing of its entries, only of
+    /// the directory, and so does `--`.
+    whole: Option<Mark>,
 }
 
 impl Status {
@@ -43,6 +47,10 @@ impl Status {
     /// untracked or ignored directory - which git names whole - is as that
     /// directory is.
     pub fn mark(&self, name: &OsStr, is_dir: bool) -> Option<Mark> {
+        if let Some(whole) = self.whole {
+            // The way out is not in it.
+            return (name != "..").then_some(whole);
+        }
         let name = composed(name);
         let name: &OsStr = &name;
         if let Some(&mark) = self.named.get(name) {
@@ -91,13 +99,6 @@ pub fn status(dir: &Path) -> Result<Status, String> {
         if matches!(x, b'R' | b'C') {
             records.next();
         }
-        let Some(path) = record[3..].strip_prefix(prefix) else {
-            continue;
-        };
-        let path = path.strip_suffix(b"/").unwrap_or(path);
-        if path.is_empty() {
-            continue;
-        }
         let mark = match (x, y) {
             (b'?', b'?') => Mark::Untracked,
             (b'!', b'!') => Mark::Ignored,
@@ -105,6 +106,19 @@ pub fn status(dir: &Path) -> Result<Status, String> {
             (_, b' ') => Mark::Staged,
             _ => Mark::Modified,
         };
+        // The directory listed, or one it is inside, named whole: what is
+        // listed is all of it as that one is.
+        if record[3..].ends_with(b"/") && prefix.starts_with(&record[3..]) {
+            status.whole = Some(mark);
+            continue;
+        }
+        let Some(path) = record[3..].strip_prefix(prefix) else {
+            continue;
+        };
+        let path = path.strip_suffix(b"/").unwrap_or(path);
+        if path.is_empty() {
+            continue;
+        }
         status.add(from_git(path), mark);
     }
     Ok(status)
@@ -288,6 +302,17 @@ mod tests {
         assert_eq!(below.mark(OsStr::new("main.rs"), false), Some(Mark::Staged));
         assert_eq!(below.mark(OsStr::new("deep"), true), Some(Mark::Modified));
         assert_eq!(below.mark(OsStr::new("file.txt"), false), None);
+
+        // Inside an untracked or an ignored directory, and one below that:
+        // all of it as the directory is, but the way out.
+        // Git does not see a directory with nothing in it.
+        std::fs::create_dir_all(dir.join("fresh/deeper")).unwrap();
+        std::fs::write(dir.join("fresh/deeper/b.txt"), "").unwrap();
+        for (inside, mark) in [("fresh", Mark::Untracked), ("fresh/deeper", Mark::Untracked), ("build", Mark::Ignored)] {
+            let status = super::status(&dir.join(inside)).unwrap();
+            assert_eq!(status.mark(OsStr::new("a.txt"), false), Some(mark), "{inside}");
+            assert_eq!(status.mark(OsStr::new(".."), true), None);
+        }
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
