@@ -175,10 +175,15 @@ fn mime_by_name(name: &str, data: &[PathBuf]) -> Option<String> {
 }
 
 /// The start of the file holds no NUL and is UTF-8, short of a character
-/// cut off at the end of what was read.
+/// cut off at the end of what was read. Only a regular file is looked into:
+/// opening a named pipe waits for something to write to it, and reading a
+/// terminal waits for a key, either of them for ever.
 fn reads_as_text(path: &Path) -> bool {
     use std::io::Read;
     let mut start = Vec::new();
+    if !crate::fs_ops::is_regular_file(path) {
+        return false;
+    }
     let Ok(file) = std::fs::File::open(path) else {
         return false;
     };
@@ -461,6 +466,13 @@ mod tests {
         std::fs::write(root.join("blob"), [0u8, 1, 2]).unwrap();
         assert_eq!(mime("notes"), ["text/plain"]);
         assert!(mime("blob").is_empty());
+        // A pipe is not opened, which would wait for a writer for ever.
+        #[cfg(unix)]
+        {
+            let pipe = std::ffi::CString::new(root.join("pipe").into_os_string().into_encoded_bytes()).unwrap();
+            assert_eq!(unsafe { libc::mkfifo(pipe.as_ptr(), 0o600) }, 0);
+            assert!(mime("pipe").is_empty());
+        }
         std::fs::remove_dir_all(&root).unwrap();
     }
 
