@@ -55,6 +55,10 @@ pub fn create_hard_link(target: &Path, link: &Path, is_dir: bool) -> Result<(), 
     if path_exists(link) {
         return Err(Error::new(ErrorKind::AlreadyExists, format!("{} already exists", link.display())));
     }
+    // Of a symbolic link, the file it points at. Linux would link the
+    // symlink itself, macOS what it points at; and a second name for a
+    // relative symlink, put in another directory, points at nothing.
+    let target = if target.is_symlink() { std::fs::canonicalize(target)? } else { target.to_path_buf() };
     std::fs::hard_link(target, link)
 }
 

@@ -207,6 +207,18 @@ fn tab_makes_a_hard_link_instead() {
     assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Could not link 1 of 2") && error.contains("directory")), "{:?}", app_state.error);
     assert_eq!(inode(&dst.join("b.txt")), inode(&src.join("b.txt")));
     assert!(!crate::fs_ops::path_exists(&dst.join("sub")));
+
+    // Of a relative symlink: the file it points at, not a second symlink
+    // that would point at nothing from where it is.
+    std::fs::create_dir_all(src.join("sub")).unwrap();
+    std::os::unix::fs::symlink("../b.txt", src.join("sub/to-b")).unwrap();
+    crate::fs_ops::create_hard_link(&src.join("sub/to-b"), &dst.join("to-b"), false).unwrap();
+    assert!(!std::fs::symlink_metadata(dst.join("to-b")).unwrap().file_type().is_symlink());
+    assert_eq!(inode(&dst.join("to-b")), inode(&src.join("b.txt")));
+    // One that points at nothing is refused.
+    std::os::unix::fs::symlink("gone", src.join("dangling")).unwrap();
+    assert!(crate::fs_ops::create_hard_link(&src.join("dangling"), &dst.join("dangling"), false).is_err());
+    assert!(!crate::fs_ops::path_exists(&dst.join("dangling")));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
