@@ -131,8 +131,9 @@ impl MultiRename {
             .collect();
         let targets: Vec<PathBuf> = self.entries.iter().zip(&names).map(|(entry, name)| entry.path.with_file_name(name)).collect();
         let changing: Vec<bool> = self.entries.iter().zip(&names).map(|(entry, name)| *name != entry.old).collect();
-        // What is moving away frees its name for another to take.
-        let leaving: HashSet<&Path> = self.entries.iter().zip(&changing).filter(|(_, changing)| **changing).map(|(entry, _)| entry.path.as_path()).collect();
+        // What is moving away frees its name for another to take - told
+        // apart as the filesystem tells names apart, as the rest are.
+        let leaving: HashSet<String> = self.entries.iter().zip(&changing).filter(|(_, changing)| **changing).map(|(entry, _)| fold_for_fs(&entry.path)).collect();
         let mut seen: HashMap<String, usize> = HashMap::new();
         for target in &targets {
             *seen.entry(fold_for_fs(target)).or_default() += 1;
@@ -151,7 +152,7 @@ impl MultiRename {
                     Some(RenameProblem::NotPlain)
                 } else if seen[&fold_for_fs(target)] > 1 {
                     Some(RenameProblem::Twice)
-                } else if !leaving.contains(target.as_path()) && path_exists(target) && !crate::fs_ops::is_same_entry(&entry.path, target) {
+                } else if !leaving.contains(&fold_for_fs(target)) && path_exists(target) && !crate::fs_ops::is_same_entry(&entry.path, target) {
                     Some(RenameProblem::Taken)
                 } else {
                     None
@@ -344,8 +345,10 @@ impl AppState {
             .filter(|(entry, (name, _))| *name != entry.old)
             .map(|(entry, (name, _))| (entry.path.clone(), entry.path.with_file_name(name)))
             .collect();
-        let sources: HashSet<&Path> = moves.iter().map(|(from, _)| from.as_path()).collect();
-        let chained = moves.iter().any(|(from, to)| to != from && sources.contains(to.as_path()));
+        // On a filesystem that does not tell case apart, `b` is in the way
+        // of `a` going to `B` until it has gone itself.
+        let sources: HashSet<String> = moves.iter().map(|(from, _)| fold_for_fs(from)).collect();
+        let chained = moves.iter().any(|(from, to)| to != from && sources.contains(&fold_for_fs(to)));
         let result = if chained { rename_through_scratch(&moves) } else { rename_each(&moves) };
 
         let renamed = match &result {
