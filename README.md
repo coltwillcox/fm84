@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.40.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.41.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -75,7 +75,9 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔁 **Ctrl+U** - swap the panels, as in Midnight Commander: each takes its tabs, cursor, selection and history to the other side, and the focus goes with the one it was in
 - 🪞 **Alt+I** - send the other panel to this one's directory, its cursor on the same entry
 - ↩️ **Enter** - dive into directories, and into archives - see [Archives](#-archives)
-- 🚀 **Shift+Enter** / **Ctrl+O** - open what is under the cursor as the system would, with the program it opens that kind of file with; an archive too. Ctrl+O is for terminals that send Shift+Enter as plain Enter - GNOME Terminal, Konsole, xterm, Terminal.app, tmux - where only kitty's keyboard protocol (kitty, foot, WezTerm, Ghostty, Alacritty) or Windows tells them apart
+- 🚀 **Shift+Enter** / **Ctrl+O** - open what is under the cursor as the system would, with the program it opens that kind of file with - or the one you set for its extension, as below; an archive too. Ctrl+O is for terminals that send Shift+Enter as plain Enter - GNOME Terminal, Konsole, xterm, Terminal.app, tmux - where only kitty's keyboard protocol (kitty, foot, WezTerm, Ghostty, Alacritty) or Windows tells them apart
+- 🧰 **Alt+O open with** - the programs the entry under the cursor can be opened with, to pick one: your own for its extension first, then on Linux and the BSDs the applications the desktop says take its type - read from the same files `xdg-open` and the file managers read, a Rust source finding every editor that takes plain text - then the system's default, and on Windows its own Open With dialog. **Enter** or **1**…**9** opens it, **E** edits your list, **Esc** closes. One marked `[terminal]` runs in this terminal, fm84 coming back when it is done; the rest open in windows of their own. Inside an archive the file is copied out first
+- 🗂️ **Your own programs, by extension** - kept in `open` beside the config, a line each as `pdf epub = zathura`: extensions without their dots, any case, `tar.gz` too, `*` for every file. The first line that fits is what **Enter** and **Shift+Enter** open a file with, in place of the system's choice. The command runs in the shell, in the file's directory, with `{file}` where the file goes - on the end when it is not there - `{dir}` its directory, and `{name}` and `{other}` as in the user menu. A `!` in front runs it in this terminal, as `md = !vim`, waiting for Enter only when it fails. Alt+O's **E** makes the file, with examples
 - ⬅️ **Backspace** - ascend to parent realm
 - 🧭 **Ctrl+L** - or a click on a panel's path - edit the active panel's path in place, in the line above it, and go there with **Enter** (**Esc**, or a click anywhere else, leaves it as it was). **Tab** fills out a name as far as the entries agree, `~` is home, and a path without a leading `/` starts from the panel. A file is landed on, in the directory it is in; somewhere that is not there is said to be, and the panel stays put
 - ⏪ **Alt+← / Alt+→** - back and forward through where the tab has been, as in a browser, landing on the entry the cursor was on. Each tab keeps its own, up to 50 steps back; a directory gone since is passed over
@@ -85,6 +87,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔒 **Directories you cannot read** - refused with the reason, and the panel stays where it was
 - 🌿 **Git branch** - after a panel's path, the branch its directory is on when it is in a repository, or the commit when none is checked out. Read from the repository's own files, worktrees and submodules too, on the thread that reads the directory - no git needed, and no wait. It is the first to give way when the path needs the room
 - 🔀 **Switch branches** - click the branch and a popup lists the repository's local branches, the one checked out marked `•`. Pick one with the arrows and Enter, or click it and click it again; both panels are read again, so the label and the files follow. When git refuses - edits that the switch would lose - its own reason is shown and the branch stays as it was. This part runs git itself, so it needs git 2.23 or newer
+- 🏷️ **Git marks** - at the end of each name, what git says of it: **M** modified, **S** staged, **?** untracked, **!** ignored, **U** in conflict. A directory shows the strongest of what is changed inside it, and inside an untracked or ignored one everything is marked as it is. Asked of git on a thread of its own once the listing is in, so a large repository never holds the panel up - one at a time for each panel, however often it is reread - and matched whichever way an accent is written. Under Ctrl+B each file has its own. F11 turns them off
 - 👤 **user@host** - who fm84 runs as and where, beside the logo, reversed when it is root. Left off on a terminal too narrow for it
 - 💿 **Drive switcher** - click a drive icon, or use Alt+F1 / Alt+F2 (or Ctrl+F1 / Ctrl+F2), to send either panel to a mount; the one each panel is on sits in a block of colour, and removable and optical media get their own icons, including a USB stick mounted under `/run/media`. With more drives than fit, the strip shows a window onto them: `<` and `>` at its ends, or the wheel over it, move it a page along, and it follows the panel's drive and the one being chosen
 - 📑 **Tabs** - each panel keeps its own, in the row under its drives. **Ctrl+T** opens one beside the current tab in the same directory, **Ctrl+W** closes it (a panel keeps its last), **Ctrl+PgUp** / **Ctrl+PgDn** go round them and **Alt+1**…**Alt+8** to that tab, **Alt+9** to the last. Click a tab to show it, middle-click to close it. Each remembers its directory, cursor and selection, and with Remember directories on (F11) they are all there next time
@@ -94,7 +97,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ⬆️⬇️ **Navigate matches** - Up/Down arrows jump between results
 - 🧹 **Esc** - clear the search vibes
 - 🧪 **Ctrl+S filter** - narrows the panel to what a pattern matches, as it is typed, for a directory of thousands where search only moves the cursor. A word on its own is looked for anywhere in the name (`rep` finds `report.txt` and `prep/`); `*`, `?` and `[a-z]` work as for `+`, several separated by `;`, and one ending in `/` keeps only directories. Lower case matches either case. **Enter** keeps it, shown in the path bar; **Esc** puts back the filter there was; an empty one shows everything again. `..` always stays. What is selected but filtered out is let go, so a copy or delete never takes what cannot be seen. The filter belongs to its directory: rereads are narrowed too, Ctrl+U takes it along, and going anywhere else drops it
-- 🌳 **Ctrl+B flat view** - every file under the panel's directory in one list, as Total Commander's branch view, each by its path from there (`sub/deep/notes.txt`). Sorted by size (Ctrl+F6), it finds what is taking the space. Directories are walked rather than listed; links to them are not followed, nothing in `/proc`, `/sys` and the like is gone into, and what is hidden stays hidden unless F11 shows it. Copy, move, delete, view, edit, compare and select work on the files as anywhere - F5 copies them without the directories they are in - and F2 renames one where it is. Inside an archive too. The path bar says `flat`; it combines with Ctrl+S, so `*.rs` across a whole tree works. Ctrl+B again goes back, onto what holds the file the cursor was on, and going anywhere else drops it. A tree too big to wait for gets **Esc** as any slow directory does, and the list stops at 100000 files, saying so
+- 🌳 **Ctrl+B flat view** - every file under the panel's directory in one list, as Total Commander's branch view, each by its path from there (`sub/deep/notes.txt`). Sorted by size (Ctrl+F6), it finds what is taking the space. Directories are walked rather than listed; links to them are not followed, nothing in `/proc`, `/sys` and the like is gone into, and what is hidden stays hidden unless F11 shows it. Copy, move, delete, view, edit, compare and select work on the files as anywhere - F5 copies them without the directories they are in - and F2 renames one where it is. Inside an archive too. The path bar says `flat`; it combines with Ctrl+S, so `*.rs` across a whole tree works. Patterns, there and for `+` and `-`, go by each file's own name, so `test_*` finds every test file however deep; one with a `/` inside it, as `src/*/*.rs`, and a plain word in the filter go by the path. Ctrl+B again goes back, onto what holds the file the cursor was on, and going anywhere else drops it. A tree too big to wait for gets **Esc** as any slow directory does, and the list stops at 100000 files, saying so
 
 ### 🔭 Find Files (Alt+F7)
 - 🎯 **By name, and by what is in them** - a name pattern as `+` takes it (`*.jpg;*.png`, `*/` for directories), and text the file has to hold, lower case matching either case. **Ctrl+F7** works too, for desktops that take Alt+F7 for moving windows. The last search is offered again
@@ -105,6 +108,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 📝 File Operations
 - **F1** 💡 - Help/About: the keys, then what fm84 is - its version, licence and where it lives. Like every popup it sits over the panels, no taller than they are; when the list is longer, the arrows, PageUp/PageDown, Home/End and the wheel scroll it, and the corner says which lines show
 - **F2** ✏️ - Rename files & folders (arrows, Home/End, Backspace and Delete while typing, the field scrolling to keep the cursor in view on a long name); a change of case alone works on macOS and Windows too
+- 🏷️ **F2 with a selection** - every name selected changed at once, by a pattern: `[N]` the name, `[E]` the extension, `[C]` a counter, with **Find** and **Replace** after it and a change of case last - lower, UPPER, First letter or Title Case. `[N2-5]` is the name's letters 2 to 5, `[N3-]` from the third on; `[C10+5:3]` counts from 10 by fives in three digits, `010`, `015`… A table of old names beside new ones follows every key, and a name that cannot be had - one given twice, one something else already has, one that is not a plain name - is marked in red, and nothing is renamed until none is. `[N].[E]` with no extension leaves no dot. Names that go where another is leaving - `1` to `2` while `2` goes to `3` - are moved through names of their own first, so none is written over. **Tab** goes through the fields, **←**/**→** the case, **Enter** renames, **Esc** leaves them be
 - **F3** 👁️ - View files (text, hexdump, or images as ASCII art); Esc closes the viewer, F3 inside it finds the next match
 - **F4** 📝 - Edit files with **syntax highlighting** (Ctrl+S to save, Esc to close with an unsaved changes prompt, mouse click to position cursor)
 - **F5** 📋 - Copy (selected items or cursor item), keeping permissions and modified times where the filesystem can hold them
@@ -114,7 +118,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📊 **Progress while copying, moving and deleting** - a bar with the current file, how far along it is and the transfer rate; Esc cancels. Each file is written beside its destination and renamed into place only once it is whole, so a copy that is cancelled, fails or is cut short by quitting never leaves half a file under the real name. The work runs off the interface thread, so a slow or stalled disk cannot freeze the display
 - 🧯 **One bad entry doesn't sink the job** - a file that will not copy, move or delete (a socket, a pipe, a permission refused, a disk full) stops the job and asks: **R** retry, **S** skip, **A** skip all, **Esc** abort. A skipped entry is left where it was, and a directory holding one stays with it, so a move never leaves anything gone from both sides. The end says how many were skipped
 - 🚪 **A way out of an operation that will not finish** - F10 during one offers to leave; a second F10 takes it, for a disk that has stopped answering and never notices the cancel
-- **Alt+F5** 🔗 - Make a symbolic link to what is chosen. **Ctrl+Shift+F5** works too, as in Total Commander, where the terminal lets it through - kitty keeps it for reloading its config. It asks where, as F5 does, opening on the entry's name in the other panel - a directory too, since the link is the new entry - or, for several, on the other panel's directory, with a link in it for each. Each points at the absolute path of what it links to. **Tab** makes hard links instead - another name for the same file, which outlives the original; files only, on the same filesystem. Nothing already there is written over: an entry that cannot be linked is named, and the rest are still made. On Windows a symbolic link takes Developer Mode or the right to make links
+- **Alt+F5** 🔗 - Make a symbolic link to what is chosen. **Ctrl+Shift+F5** works too, as in Total Commander, where the terminal lets it through - kitty keeps it for reloading its config. It asks where, as F5 does, opening on the entry's name in the other panel - a directory too, since the link is the new entry - or, for several, on the other panel's directory, with a link in it for each. Each points at the absolute path of what it links to. **Tab** makes hard links instead - another name for the same file, which outlives the original; files only, on the same filesystem, and of a symbolic link the file it points at. Nothing already there is written over: an entry that cannot be linked is named, and the rest are still made. On Windows a symbolic link takes Developer Mode or the right to make links
 - **Shift+F2** ⚖️ - Compare directories, as in Total Commander: each panel selects what differs from the other - an entry only it has, and of a file both have, the newer one, or both when the times agree and the sizes do not. Times within two seconds count as the same, as FAT keeps them no finer. Directories both have are not gone into. What was selected before is replaced, ready for F5 to copy across, and the status bar says how many differ
 - **F7** 📂 - Create new directories (**Shift+F4** for an empty file); same editing keys as rename
 - **F8** / **Delete** 🗑️ - Move files & folders to the system's trash (selected items or cursor item, with confirmation - which F11 can turn off - and progress). What the trash will not take - a read-only disk, one with nowhere to keep a trash - is asked about, with **D** to delete it for good. F11 can make F8 delete permanently instead
@@ -122,6 +126,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - **Alt+H** #️⃣ - Checksums of what is selected, or of the file under the cursor, a directory's files all the way down. SHA-256, SHA-512 and MD5 are all worked out in one reading of each file, as a job with the progress bar and Esc, and shown in one popup - wrapped, never cut, however long - with the algorithms in a row above them: **Tab** or **→** shows the next one's, **Shift+Tab** or **←** the one before, at once. **C** copies them - one file's checksum alone, for pasting where it is to be compared - and **Enter** writes them as `sha256sum` does, to `name.sha256` for one file or `SHA256SUMS` for several, and lands on it; a name already taken goes by F11's When destination exists. On a checksum file - `*.sha256`, `*.md5`, `SHA256SUMS` and the like, written by `sha256sum`, `md5sum` or in BSD's `SHA256 (name) = …` - it checks the files it names instead, and says what failed, what is missing and what is OK, the failures first. What cannot be read is listed as such, not asked about. Inside an archive, copy out first
 - **Alt+A** 🔐 - Change attributes, as in Total Commander: the permissions, owner, group and modified time of what is selected, or of the entry under the cursor. Each field opens on what the entries have in common, and one left as it is, or emptied, changes nothing. The mode is octal (`755`) or as `chmod` takes it (`u+x,go-w`, `a=rX`), so several entries whose modes differ can each gain or lose a bit; with one entry, what it comes to is shown beside it. Owner and group go by name or number, and the time as `2026-10-23 14:02:11`. **Tab** or a click moves between the fields, a click putting the cursor where it lands. Something typed that cannot be read is said so before anything changes; an entry that refuses is passed over and named. On Windows only the time
 - **F9** 💻 - Open external terminal in current directory (which one is set under F11)
+- **Alt+M** 🧾 - The user menu: commands of your own, as F2 is in Midnight Commander, kept in `menu` beside the config, a line each as `label = command`. Each runs in the shell, in the panel's directory, with fm84 out of the way until Enter is pressed after it; the panels are read again after. In the command, `{file}` is the entry under the cursor, `{name}` its name alone, `{files}` what is chosen - the selection, or else the entry under the cursor - `{dir}` the panel's directory and `{other}` the other's. They go in as variables the shell expands, never pasted in as text, so a name with spaces, quotes or a `$` in it arrives whole; leave them unquoted. `{}` is the shell's own, as in `find -exec`. A command that needs an entry says so when there is none, or when the panel is inside an archive. **Enter** or **1**…**9** runs one, **E** edits the menu, which the first Alt+M makes with examples
 - **F10** 🚪 - Exit to the void - asking first about unsaved changes in the editor. **Shift+F10** leaves `cd84` in the directory it started from
 - **Space** / **Insert** ✅ - Select/deselect files for batch operations
 - **+** / **-** / **\*** 🎯 - Select or deselect by a pattern such as `*.jpg;*.png` (`*`, `?`, `[a-z]`, `[!0-9]`; lower case matches either case), or invert the selection of files - **Alt+\*** inverts directories too. Patterns pick files; end one with `/` for directories, as in `*/`. Once a quick search is under way, `-` types into it instead
@@ -220,6 +225,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 📁 **Directories first** - or mixed in among the files
 - 🔠 **Case-sensitive sort** - off by default, so `readme` and `README` sit together
 - 🧱 **Ext, Size, Modified and Attributes columns** - each on or off; with Ext off, Name shows the whole file name
+- 🏷️ **Git marks** - what git says of each entry, at the end of its name; on by default
 - 📅 **Date format** - `dd/mm/yy`, `yyyy-mm-dd`, or relative (`3 h ago`)
 - 📏 **Size units** - KiB (1024) or kB (1000), everywhere a size is shown
 
@@ -255,7 +261,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - ⚡ **Read pictures ahead** - decode the pictures either side of the one open, so PageUp and PageDown do not wait for each. Costs a few megabytes and a thread that wakes only while a picture is open
 
 - ⌨️ **Up/Down** to move, **Enter**, **Space** or **Left/Right** to change, Enter again to save a typed command
-- 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it, and bookmarks in `bookmarks`
+- 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it, bookmarks in `bookmarks`, Alt+M's commands in `menu`, and the programs files open with in `open`
 
 ### 📦 Archives
 - 📂 **Gone into like directories** - Enter on a `.zip`, `.7z`, `.tar`, `.tar.gz`, `.tar.zst`, `.tar.xz` or `.tar.bz2` (and `.tgz`, `.tzst`, `.txz`, `.tbz2`) opens it in the panel, and its directories open as any do. The path runs through it - `~/photos.zip/2024/june` - so tabs, history, bookmarks, Ctrl+L and remembered directories all work inside one, and Backspace at its top comes back out onto the archive
@@ -294,7 +300,8 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Alt+↓` | Every directory visited, across the tabs (type to narrow, `Enter` go) |
 | `Ctrl+D` | Bookmarks (`A` add, `D` remove, `Enter` or `1`…`9` go) |
 | `Enter` | Open directory, go into an archive, or open a file |
-| `Shift+Enter` / `Ctrl+O` | Open as the system would (an archive too) |
+| `Shift+Enter` / `Ctrl+O` | Open as the system would, or with the program set for the extension (an archive too) |
+| `Alt+O` | Open with: pick a program (`E` edits your own) |
 | `Backspace` | Go to parent directory |
 | `Home` / `End` | Jump to first / last item |
 | `PageUp` / `PageDown` | Page navigation |
@@ -303,7 +310,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Ctrl+B` | Flat view: every file under the directory in one list; again to go back |
 | `Esc` | Clear search / Close dialogs, the Viewer and the Editor / Stop directory sizing / Stop waiting on a directory that has not answered |
 | `F1` | Help |
-| `F2` | Rename |
+| `F2` | Rename; with a selection, rename them all by a pattern |
 | `Shift+F2` | Compare directories: select what differs in each panel |
 | `F3` | View file |
 | `=` / `Shift+F3` | Compare two files side by side |
@@ -322,6 +329,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `Y` / `N` / `A` / `S` / `O` | Overwrite / Skip / Overwrite all / Skip all / Overwrite all older, when a file is already there |
 | `D` | Delete permanently, when the trash will not take an entry |
 | `F9` | Open terminal (the one set under F11, if any) |
+| `Alt+M` | User menu: run commands of your own (`E` edits them) |
 | `F10` | Quit (twice during an operation; asks first about unsaved edits) |
 | `Shift+F10` | Quit, leaving `cd84` in the directory it started from |
 | `F11` | Options - panels, behaviour, appearance, viewer and editor |
@@ -396,7 +404,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.40.0
+fm84 --version          # fm84 0.41.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -496,5 +504,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.40.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.41.0 ▄▀▄▀▄▀</code>
 </p>

@@ -190,6 +190,8 @@ For fish, fm84 --shell-init fish | source; for PowerShell, put
 fm84 --shell-init powershell | Out-String | Invoke-Expression in $PROFILE.
 
 Config: {config}
+Beside it: session, bookmarks, menu (Alt+M's commands) and open (the
+programs files open with, by extension).
 Press F1 inside for the keys.",
         version = version()
     )

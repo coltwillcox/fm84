@@ -6,6 +6,21 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.41.0] - 2026-11-02
+
+### ✨ Added
+- 🏷️ **Git marks** - at the end of each name, what git says of it: **M** modified, **S** staged, **?** untracked, **!** ignored, **U** in conflict. A directory shows the strongest of what is changed inside it, and inside an untracked or ignored one everything is marked as it is. Git is asked on a thread of its own once the listing is in, one at a time for each panel however often it is reread, so a large repository never holds the panel up; names match whichever way an accent is written. Under Ctrl+B each file has its own. On by default; F11's **Git marks** turns them off
+- 🧾 **User menu with Alt+M** - commands of your own, as F2 is in Midnight Commander, from `menu` beside the config, a `label = command` line each. Each runs in the shell in the panel's directory, with the terminal handed over until Enter is pressed after it. `{file}`, `{name}`, `{files}`, `{dir}` and `{other}` reach the shell as variables rather than pasted in as text, so a name with spaces, quotes or a `$` arrives whole. **Enter** or **1**…**9** runs one, **E** edits the menu, which the first Alt+M makes with examples
+- 🧰 **Open with, Alt+O** - the programs the entry under the cursor can be opened with, to pick one: your own for its extension, then on Linux and the BSDs the applications the desktop says take its type - from the same files `xdg-open` reads - then the system's default, and on Windows its own Open With dialog. One marked `[terminal]` runs in this terminal. Inside an archive the file is copied out first
+- 🗂️ **Programs by extension** - `open` beside the config, a line each as `pdf epub = zathura`, `*` for every file and a leading `!` for a program that runs in the terminal. The first line that fits is what **Enter** and **Shift+Enter** open a file with, in place of the system's choice; Alt+O's **E** makes the file, with examples
+- 🏷️ **Multi-rename** - **F2** with a selection renames every entry selected by a pattern: `[N]` the name, `[E]` the extension and `[C]` a counter, `[N2-5]` for some of the letters and `[C10+5:3]` for where the counter starts, its step and its digits; then Find and Replace, and a change of case last. A table of old names beside new ones follows every key, marking any that cannot be had, and nothing is renamed until none is. Names that go where another is leaving are moved through names of their own first, so none is written over
+
+### 🐛 Fixed
+- 🌳 **Patterns in flat view** - `+`, `-` and Ctrl+S go by each file's own name, so `test_*` or `Cargo.toml` finds files however deep; one with a `/` inside it, and a plain word in the filter, still go by the path
+- 🔗 **A hard link to a symbolic link** links the file it points at, the same on every system, rather than on Linux a second symlink that could point at nothing from where it was put
+
+---
+
 ## [0.40.0] - 2026-10-30
 
 ### ✨ Added

@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-10-30" "fm84 0.40.0" "User Commands"
+.TH FM84 1 "2026-11-02" "fm84 0.41.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -24,6 +24,19 @@ A click on the branch lists the repository's local branches, to switch to
 another with Enter or a second click on it; that runs
 .BR git (1),
 2.23 or newer.
+At the end of each name is what git says of it:
+.B M
+modified,
+.B S
+staged,
+.B ?
+untracked,
+.B !
+ignored,
+.B U
+in conflict; a directory shows the strongest of what is inside it.
+Git is asked on a thread of its own, one at a time for each panel, and F11
+turns the marks off.
 .PP
 Anything that touches the disk is done off the thread that draws the screen,
 so a network mount that has stopped answering never freezes the interface;
@@ -182,8 +195,10 @@ Move the cursor.
 Switch panels.
 .TP
 .B Enter
-Open the directory, go into an archive, or open the file as the system
-does.
+Open the directory, go into an archive, or open the file with the program
+set for its extension in the
+.I open
+file, or as the system does.
 See
 .BR ARCHIVES .
 .TP
@@ -192,6 +207,26 @@ Open what is under the cursor as the system does, with the program it opens
 that kind of file with; an archive too, which Enter goes into.
 Ctrl+O is for terminals that send Shift+Enter as plain Enter; only those with
 kitty's keyboard protocol, and Windows, tell the two apart.
+A program set for the file's extension comes first, as for Enter.
+.TP
+.B Alt+O
+Open with: the programs the entry under the cursor can be opened with, to
+pick one with Enter or 1 to 9.
+Those set for its extension come first; then, on Linux and the BSDs, the
+applications the desktop says take its type, from the same
+.I mimeapps.list
+and
+.I mimeinfo.cache
+files
+.BR xdg\-open (1)
+reads; then the system's default, and on Windows its own Open With dialog.
+One marked
+.B [terminal]
+runs in this terminal.
+E edits the
+.I open
+file.
+Inside an archive the file is copied out first.
 .TP
 .B Backspace
 Go to the parent directory.
@@ -315,6 +350,10 @@ Flat view: every file under the panel's directory in one list, each by its
 path from there; sorted by size, it finds what takes the space.
 Directories are walked, not listed, and links to them are not followed.
 Operations work on the files as anywhere, and F2 renames one where it is.
+Patterns, for the filter and for + and -, go by each file's own name; one
+with a
+.B /
+inside it, and a plain word in the filter, by the path.
 Inside an archive too.
 At most 100000 files are listed.
 Ctrl+B again goes back; going anywhere else drops it.
@@ -393,6 +432,25 @@ mouse wheel scroll it.
 .TP
 .B F2
 Rename.
+With a selection, rename every entry selected by a pattern:
+.B [N]
+the name,
+.B [E]
+the extension,
+.B [C]
+a counter;
+.B [N2\-5]
+letters 2 to 5,
+.B [N3\-]
+from the third on,
+.B [C10+5:3]
+counting from 10 by fives in three digits.
+Find and Replace come after the pattern, and a change of case last.
+A table shows each old name beside its new one, marking those that cannot
+be had \- given twice, taken by something else, or not a plain name \- and
+nothing is renamed until none is.
+Names that go where another is leaving are moved through names of their own
+first, so none is written over.
 .TP
 .B Shift+F2
 Compare the panels' directories, as in Total Commander, and select in each
@@ -441,7 +499,8 @@ entry, its name in the other panel; for several, the other panel's
 directory, with a link in it for each.
 Each points at the absolute path of what it links to, and nothing already
 there is written over.
-Tab makes hard links instead: files only, on the same filesystem.
+Tab makes hard links instead: files only, on the same filesystem, and of a
+symbolic link the file it points at.
 Ctrl+Shift+F5 is as in Total Commander; kitty keeps it for reloading its
 config, so Alt+F5 is there too.
 .TP
@@ -462,6 +521,26 @@ Delete for good.
 .TP
 .B F9
 Open a terminal in the panel's directory.
+.TP
+.B Alt+M
+The user menu: commands of your own from the
+.I menu
+file, run in the shell in the panel's directory with the terminal handed
+over, until Enter is pressed after.
+In a command,
+.B {file}
+is the entry under the cursor,
+.B {name}
+its name,
+.B {files}
+what is chosen,
+.B {dir}
+the panel's directory and
+.B {other}
+the other panel's.
+They reach the shell as variables, so any name arrives whole; leave them
+unquoted.
+Enter or 1 to 9 runs one, and E edits the menu.
 .TP
 .B Alt+F9 Ctrl+F9
 Extract the whole of the archive under the cursor, or of the one the panel is
@@ -572,7 +651,7 @@ In the editor they move the view and leave the cursor where it is.
 .SH OPTIONS DIALOG
 F11 opens the options, changed in place with Enter, Space, Left or Right and
 saved as they change.
-Among them: hidden files, sort order, columns, date format and size units;
+Among them: hidden files, sort order, columns, git marks, date format and size units;
 confirmations, delete to trash, what to do when a destination exists, the
 terminal and editor commands, remembering directories; the theme, icons,
 clock, and the cursor's shape and whether it blinks; tab width, line numbers,
@@ -618,6 +697,24 @@ The directories kept with
 a
 .I bookmark = path
 line each, in order.
+.TP
+.I $XDG_CONFIG_HOME/fm84/menu
+The commands of
+.BR Alt+M ,
+a
+.I label = command
+line each, in order.
+Made with examples the first time the menu opens.
+.TP
+.I $XDG_CONFIG_HOME/fm84/open
+The programs files are opened with, by extension, a line each as
+.IR "pdf epub = zathura" ;
+.B *
+is every file.
+The first line that fits is what Enter and Shift+Enter use.
+The command runs in the shell in the file's directory, with
+.B {file}
+where the file goes, or on the end; a leading \fB!\fR runs it in this terminal.
 .SH ENVIRONMENT
 .TP
 .B XDG_CONFIG_HOME
@@ -645,6 +742,10 @@ in that order.
 .TP
 .B XDG_DATA_HOME
 Where the trash is, as the freedesktop.org trash specification has it.
+.TP
+.B XDG_DATA_DIRS XDG_CONFIG_DIRS
+With XDG_DATA_HOME and XDG_CONFIG_HOME, where Alt+O looks for the
+applications that take a file's type and the defaults chosen among them.
 .SH EXIT STATUS
 .TP
 .B 0

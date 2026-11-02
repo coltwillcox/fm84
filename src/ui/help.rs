@@ -11,6 +11,7 @@ const HELP: &[(&str, &[&str])] = &[
         &[
             "F1 - This help",
             "F2 - Rename folder/file",
+            "  with a selection: all by [N] [E] [C]",
             "  Shift+F2 compare directories",
             "F3 - View file (X text/hex/image)",
             "  F fit/fill, +/- zoom, W wrap",
@@ -32,6 +33,7 @@ const HELP: &[(&str, &[&str])] = &[
             "Alt+P - Pack into an archive (Tab format)",
             "Alt+H - Checksums (Tab algorithm); check a file",
             "F9 - Open terminal",
+            "Alt+M - User menu (E edits it)",
             "F10 - Quit",
             "  Shift+F10 quit, cd84 staying put",
             "F11 - Options (Alt+F1/F2 drives)",
@@ -40,6 +42,7 @@ const HELP: &[(&str, &[&str])] = &[
             "  .zip .7z .tar(.gz .zst .xz .bz2): read-only",
             "  F5 copies out, Alt+F9 (or Ctrl+F9) all of it",
             "  Shift+Enter (or Ctrl+O) open as the system does",
+            "  Alt+O open with... (E per extension)",
             "Ctrl+Left/Right - Dir to that panel",
             "  Ctrl+U swap panels, Alt+I same dir there",
             "Ctrl+L - Go to path (or click it)",
