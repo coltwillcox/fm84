@@ -243,6 +243,11 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
                     render_checksums_popup(f, area, view);
                 }
             }
+            Some(Dialog::MultiRename(_)) => {
+                if let Some(Dialog::MultiRename(rename)) = &mut app_state.dialog {
+                    render_multi_rename_popup(f, area, rename);
+                }
+            }
             Some(Dialog::Pack { sources, input }) => render_destination_popup(f, area, sources, None, "Pack", "into", input, Some("Tab - Format")),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),

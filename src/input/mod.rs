@@ -373,6 +373,22 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => app_state.dialog = None,
             _ => {}
         },
+        Some(Dialog::MultiRename(rename)) => {
+            let on_case = rename.focus == crate::app::CASE_ROW;
+            let page = rename.room.max(1) as isize;
+            match code {
+                KeyCode::Esc => app_state.dialog = None,
+                KeyCode::Enter => app_state.apply_multi_rename(),
+                KeyCode::Tab | KeyCode::Down => app_state.multi_rename_switch_field(true),
+                KeyCode::BackTab | KeyCode::Up => app_state.multi_rename_switch_field(false),
+                KeyCode::PageUp => app_state.multi_rename_scroll(-page),
+                KeyCode::PageDown => app_state.multi_rename_scroll(page),
+                KeyCode::Left if on_case => app_state.multi_rename_case(false),
+                KeyCode::Right | KeyCode::Char(' ') if on_case => app_state.multi_rename_case(true),
+                _ if on_case => {}
+                _ => edit_text(app_state, code),
+            }
+        }
         Some(Dialog::Attributes(_)) => match code {
             KeyCode::Esc => app_state.dialog = None,
             KeyCode::Enter => app_state.apply_attributes(),

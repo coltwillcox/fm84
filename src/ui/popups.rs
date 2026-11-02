@@ -689,6 +689,82 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     f.render_widget(Paragraph::new(lines), inner);
 }
 
+/// F2 with a selection: the pattern, find and replace and case, and under
+/// them every old name beside its new one, with what is wrong with any that
+/// cannot be had. The table's rows are kept for Page Up and Page Down.
+pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, rename: &mut crate::app::MultiRename) {
+    let popup_area = popup_rect(80, area);
+    let title = format!(" Rename {} Entries ", rename.entries.len());
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    const LABEL: usize = 10;
+    let room = width.saturating_sub(LABEL);
+
+    let mut lines = Vec::new();
+    for (index, label) in ["Name", "Find", "Replace"].iter().enumerate() {
+        let input = &rename.fields[index];
+        let mut spans = vec![Span::styled(format!("{label:<LABEL$}"), style_columns())];
+        let focused = rename.focus == index;
+        let typed = if focused {
+            input.cursor_spans_within(room, style_input(), style_input_cursor())
+        } else {
+            vec![Span::styled(tail_of(&input.text, room), style_file())]
+        };
+        let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+        spans.extend(typed);
+        let padding = " ".repeat(room.saturating_sub(typed_width));
+        spans.push(if focused { Span::styled(padding, style_input()) } else { Span::raw(padding) });
+        lines.push(Line::from(spans));
+    }
+    let case = format!("◂ {} ▸", rename.case.label());
+    let case_style = if rename.focus == crate::app::CASE_ROW { style_input() } else { style_file() };
+    lines.push(Line::from(vec![Span::styled(format!("{:<LABEL$}", "Case"), style_columns()), Span::styled(case, case_style)]));
+    for hint in ["[N] name   [E] extension   [C] counter", "[N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits"] {
+        lines.push(Line::from(Span::styled(cut_to(hint, width), style_columns())));
+    }
+    lines.push(Line::from(""));
+
+    // Old names on the left, new on the right, each half the width.
+    let half = width.saturating_sub(3) / 2;
+    let pad = |text: &str, to: usize| format!("{text}{}", " ".repeat(to.saturating_sub(display_width(text))));
+    lines.push(Line::from(vec![Span::styled(pad("Old name", half), style_title()), Span::styled("   New name", style_title())]));
+    // Above the table, and the blank row and keys below it.
+    let rows = (inner.height as usize).saturating_sub(lines.len() + 2);
+    rename.room = rows.max(1);
+    rename.scroll = rename.scroll.min(rename.entries.len().saturating_sub(rename.room));
+    let preview = rename.preview();
+    for (entry, (new, problem)) in rename.entries.iter().zip(&preview).skip(rename.scroll).take(rows) {
+        let old = cut_to(&printable_name(&entry.old), half);
+        let mut spans = vec![Span::styled(pad(&old, half), style_dir()), Span::styled(" → ", style_columns())];
+        match problem {
+            Some(problem) => {
+                let note = format!("  {}", problem.label());
+                let new = cut_to(&printable_name(new), half.saturating_sub(display_width(&note)));
+                spans.push(Span::styled(new, Style::new().fg(palette().selected_marker)));
+                spans.push(Span::styled(note, Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD)));
+            }
+            None if *new == entry.old => spans.push(Span::styled(cut_to(&printable_name(new), half), style_columns())),
+            None => spans.push(Span::styled(cut_to(&printable_name(new), half), style_file())),
+        }
+        lines.push(Line::from(spans));
+    }
+    let problems = preview.iter().filter(|(_, problem)| problem.is_some()).count();
+    while lines.len() < (inner.height as usize).saturating_sub(1) {
+        lines.push(Line::from(""));
+    }
+    let keys = if problems > 0 {
+        Line::from(Span::styled(cut_to(&format!("{problems} cannot be renamed as it stands    Esc - Cancel"), width), Style::new().fg(palette().selected_marker))).centered()
+    } else {
+        Line::from(Span::styled(cut_to("Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel", width), style_columns())).centered()
+    };
+    lines.push(keys);
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
 /// `text` no wider than `room` columns, cut from the end with an ellipsis.
 fn cut_to(text: &str, room: usize) -> String {
     if display_width(text) <= room {

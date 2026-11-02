@@ -4,9 +4,16 @@
 use super::*;
 use crate::fs_ops::PackFormat;
 
-/// F2 on the entry under the cursor, typed into in place of its name.
+/// F2 on the entry under the cursor, typed into in place of its name - or,
+/// with a selection, on every name selected at once, by a pattern.
 pub(super) fn open_rename(app_state: &mut AppState) {
     if app_state.refuse_in_archive(app_state.is_left_active) {
+        return;
+    }
+    let selected = if app_state.is_left_active { &app_state.selected_left } else { &app_state.selected_right };
+    if !selected.is_empty() {
+        let items = chosen_items(app_state).into_iter().map(|(path, _)| path).collect();
+        app_state.open_multi_rename(items);
         return;
     }
     let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };

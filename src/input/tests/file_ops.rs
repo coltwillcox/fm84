@@ -782,3 +782,87 @@ fn alt_o_opens_a_file_with_the_program_picked() {
     assert!(app_state.dialog.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+#[test]
+fn f2_on_a_selection_renames_every_name_by_a_pattern() {
+    let dir = std::env::temp_dir().join(format!("fm84-multi-rename-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    for (name, body) in [("1.txt", "one"), ("2.txt", "two"), ("3.txt", "three"), ("keep.md", "")] {
+        std::fs::write(dir.join(name), body).unwrap();
+    }
+    let mut app_state = AppState::new();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), Some("2.txt".as_ref()));
+    let select = |app_state: &mut AppState, names: &[&str]| {
+        app_state.selected_left = names.iter().map(|name| std::ffi::OsString::from(*name)).collect();
+    };
+    let set = |app_state: &mut AppState, field: usize, text: &str| {
+        let Some(Dialog::MultiRename(rename)) = &mut app_state.dialog else { panic!("no dialog") };
+        rename.fields[field].set(text.to_string());
+    };
+    let read = |name: &str| std::fs::read_to_string(dir.join(name)).ok();
+
+    // Each one up by one: 3 to 4 has to go first, or 1 would land on 2.
+    select(&mut app_state, &["1.txt", "2.txt", "3.txt"]);
+    press(&mut app_state, KeyCode::F(2));
+    assert!(matches!(app_state.dialog, Some(Dialog::MultiRename(_))));
+    set(&mut app_state, 0, "[C2].[E]");
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.dialog.is_none() && app_state.error.is_none(), "{:?}", app_state.error);
+    assert_eq!((read("1.txt"), read("2.txt"), read("3.txt"), read("4.txt")), (None, Some("one".into()), Some("two".into()), Some("three".into())));
+    assert!(app_state.selected_left.is_empty());
+    // The cursor followed its file, from 2.txt to 3.txt.
+    let cursor = app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).unwrap();
+    assert_eq!(cursor.name_os, "3.txt");
+
+    // Find and replace, after the pattern.
+    select(&mut app_state, &["2.txt", "3.txt"]);
+    press(&mut app_state, KeyCode::F(2));
+    set(&mut app_state, 0, "[N]");
+    set(&mut app_state, 1, "2");
+    set(&mut app_state, 2, "x");
+    let Some(Dialog::MultiRename(rename)) = &app_state.dialog else { panic!() };
+    assert_eq!(rename.preview().iter().map(|(name, _)| name.as_str()).collect::<Vec<_>>(), ["x", "3"]);
+    press(&mut app_state, KeyCode::Esc);
+
+    // Onto a name something not being renamed has: refused, nothing moved,
+    // the dialog left open to fix it.
+    select(&mut app_state, &["3.txt", "4.txt"]);
+    press(&mut app_state, KeyCode::F(2));
+    set(&mut app_state, 0, "[N]");
+    set(&mut app_state, 1, "4");
+    set(&mut app_state, 2, "keep.md");
+    {
+        let Some(Dialog::MultiRename(rename)) = &app_state.dialog else { panic!() };
+        let problems: Vec<_> = rename.preview().into_iter().map(|(_, problem)| problem).collect();
+        assert_eq!(problems, [None, Some(crate::app::RenameProblem::Taken)]);
+    }
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.is_some() && matches!(app_state.dialog, Some(Dialog::MultiRename(_))));
+    assert_eq!(read("4.txt"), Some("three".into()));
+    app_state.error = None;
+
+    // Both to one name.
+    set(&mut app_state, 0, "same");
+    set(&mut app_state, 1, "");
+    {
+        let Some(Dialog::MultiRename(rename)) = &app_state.dialog else { panic!() };
+        assert!(rename.preview().iter().all(|(_, problem)| *problem == Some(crate::app::RenameProblem::Twice)));
+    }
+
+    // The case, from its own row: Up from the name goes round to it.
+    set(&mut app_state, 0, "[N].[E]");
+    press(&mut app_state, KeyCode::Up);
+    press(&mut app_state, KeyCode::Right);
+    press(&mut app_state, KeyCode::Right);
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.is_none(), "{:?}", app_state.error);
+    assert_eq!((read("3.TXT"), read("4.TXT")), (Some("two".into()), Some("three".into())));
+
+    // Without a selection F2 still renames in place.
+    app_state.selected_left.clear();
+    press(&mut app_state, KeyCode::F(2));
+    assert!(matches!(app_state.dialog, Some(Dialog::Rename(_))));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

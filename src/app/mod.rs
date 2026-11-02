@@ -35,6 +35,7 @@ mod git_marks;
 mod history;
 mod jobs;
 mod listing;
+mod multi_rename;
 mod open_with;
 mod preview;
 mod selection;
@@ -46,7 +47,7 @@ mod text_input;
 mod user_menu;
 mod viewing;
 
-pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, git_marks::*, history::*, jobs::*, listing::*, open_with::*, preview::*, selection::*, tabs::*, text_input::*, user_menu::*, viewing::*};
+pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, tabs::*, text_input::*, user_menu::*, viewing::*};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -150,6 +151,8 @@ pub enum Dialog {
     History(Box<HistoryList>),
     /// Alt+M: the user's own commands.
     UserMenu(Box<UserMenu>),
+    /// F2 with a selection: every name selected changed by one pattern.
+    MultiRename(Box<MultiRename>),
     /// Alt+O: the programs the entry under the cursor can be opened with.
     OpenWith(Box<OpenWith>),
     /// A click on a panel's git branch: the repository's branches, to change
@@ -537,6 +540,7 @@ impl AppState {
             Dialog::Options { editing } => editing.as_mut(),
             Dialog::History(list) => Some(&mut list.input),
             Dialog::Attributes(form) => form.fields.get_mut(form.focus).map(|field| &mut field.input),
+            Dialog::MultiRename(rename) => rename.fields.get_mut(rename.focus),
             Dialog::FindFiles(find) => match find.as_mut() {
                 FindFiles::Asking { name, containing, on_containing } => Some(if *on_containing { containing } else { name }),
                 FindFiles::Found(_) => None,

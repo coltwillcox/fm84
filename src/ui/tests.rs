@@ -303,6 +303,19 @@ fn popups_share_a_width_and_keep_to_the_panels() {
             })),
         ),
         (
+            " Rename 2 Entries ",
+            Dialog::MultiRename(Box::new(crate::app::MultiRename::new(
+                ["a.txt", "b.txt"]
+                    .iter()
+                    .map(|name| crate::app::RenameEntry {
+                        path: PathBuf::from("/").join(name),
+                        old: name.to_string(),
+                        readable: true,
+                    })
+                    .collect(),
+            ))),
+        ),
+        (
             " Open a With ",
             Dialog::OpenWith(Box::new(crate::app::OpenWith {
                 path: PathBuf::from("/a"),
