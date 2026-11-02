@@ -47,9 +47,9 @@ impl Status {
     /// untracked or ignored directory - which git names whole - is as that
     /// directory is.
     pub fn mark(&self, name: &OsStr, is_dir: bool) -> Option<Mark> {
-        if let Some(whole) = self.whole {
-            // The way out is not in it.
-            return (name != "..").then_some(whole);
+        // The way out is not in the directory listed.
+        if name == ".." {
+            return None;
         }
         let name = composed(name);
         let name: &OsStr = &name;
@@ -59,7 +59,10 @@ impl Status {
         if is_dir && let Some(&mark) = self.inside.get(name) {
             return Some(mark);
         }
-        Path::new(name).ancestors().skip(1).filter(|dir| !dir.as_os_str().is_empty()).find_map(|dir| self.named.get(dir.as_os_str()).copied())
+        // What git says of the entry itself comes first - an ignored file in
+        // an untracked directory is named as ignored - and only then what it
+        // says of the directory it is all in.
+        Path::new(name).ancestors().skip(1).filter(|dir| !dir.as_os_str().is_empty()).find_map(|dir| self.named.get(dir.as_os_str()).copied()).or(self.whole)
     }
 
     /// Take in a line of `git status --porcelain`, by its path from the
@@ -308,11 +311,16 @@ mod tests {
         // Git does not see a directory with nothing in it.
         std::fs::create_dir_all(dir.join("fresh/deeper")).unwrap();
         std::fs::write(dir.join("fresh/deeper/b.txt"), "").unwrap();
+        std::fs::write(dir.join("fresh/x.log"), "").unwrap();
+        std::fs::write(dir.join(".gitignore"), "build/\n*.log\n").unwrap();
         for (inside, mark) in [("fresh", Mark::Untracked), ("fresh/deeper", Mark::Untracked), ("build", Mark::Ignored)] {
             let status = super::status(&dir.join(inside)).unwrap();
             assert_eq!(status.mark(OsStr::new("a.txt"), false), Some(mark), "{inside}");
             assert_eq!(status.mark(OsStr::new(".."), true), None);
         }
+        // But an ignored file in an untracked one is ignored.
+        let fresh = super::status(&dir.join("fresh")).unwrap();
+        assert_eq!(fresh.mark(OsStr::new("x.log"), false), Some(Mark::Ignored));
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
