@@ -291,6 +291,17 @@ fn popups_share_a_width_and_keep_to_the_panels() {
         (" Unsaved Changes ", Dialog::SaveChanges { then_quit: false }),
         (" Bookmarks ", Dialog::Bookmarks { list: vec![PathBuf::from("/a")], index: 0 }),
         (" Directory History ", history),
+        (
+            " User Menu ",
+            Dialog::UserMenu(Box::new(crate::app::UserMenu {
+                entries: vec![crate::options::MenuEntry {
+                    label: "Disk use".to_string(),
+                    command: "du -sh {files}".to_string(),
+                }],
+                index: 0,
+                file: None,
+            })),
+        ),
     ];
     let mut widths = Vec::new();
     for (title, dialog) in dialogs {

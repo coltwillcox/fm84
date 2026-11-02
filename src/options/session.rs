@@ -1,5 +1,5 @@
-//! The files kept beside the config: the panels' directories and tabs, and the
-//! bookmarks.
+//! The files kept beside the config: the panels' directories and tabs, the
+//! bookmarks, and Alt+M's commands.
 
 use super::*;
 
@@ -54,6 +54,57 @@ pub fn save_bookmarks(bookmarks: &[PathBuf]) -> io::Result<()> {
 
 pub(super) fn parse_bookmarks(text: &str) -> Vec<PathBuf> {
     key_values(text).filter(|&(key, value)| key == "bookmark" && !value.is_empty()).map(|(_, value)| unescape_path(value)).collect()
+}
+
+/// One of Alt+M's commands: what the menu calls it, and what runs.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MenuEntry {
+    pub label: String,
+    pub command: String,
+}
+
+/// What a new menu file says, for whoever opens it to add the first.
+const MENU_TEMPLATE: &str = "\
+# fm84's user menu, opened with Alt+M. A command a line, as
+#   label = command
+# Each runs in the shell, in the active panel's directory, with fm84 out of
+# the way until Enter is pressed after it. In the command:
+#   {file}   the entry under the cursor     {name}   its name alone
+#   {files}  what is chosen, the selection or else the entry under the cursor
+#   {dir}    the panel's directory          {other}  the other panel's
+# Leave them unquoted: each is one word to the shell, spaces and all - and
+# {files} one word for each.
+#
+# Disk use = du -sh {files}
+# Git log = git log --oneline --graph -20
+# Pack as tar.gz = tar czf {name}.tar.gz {files}
+# Diff with the other panel = diff -r {dir} {other}
+";
+
+/// Alt+M's commands, from the `menu` file beside the config, in order. A
+/// line without a label or a command is passed over.
+pub fn load_menu() -> Vec<MenuEntry> {
+    config_path("menu").and_then(|path| fs::read_to_string(path).ok()).map(|text| parse_menu(&text)).unwrap_or_default()
+}
+
+pub(super) fn parse_menu(text: &str) -> Vec<MenuEntry> {
+    key_values(text)
+        .filter(|(label, command)| !label.is_empty() && !command.is_empty())
+        .map(|(label, command)| MenuEntry {
+            label: label.to_string(),
+            command: command.to_string(),
+        })
+        .collect()
+}
+
+/// The menu file, written with a few examples to start from if there is
+/// none yet. None without a config directory.
+pub fn menu_file() -> Option<PathBuf> {
+    let path = config_path("menu")?;
+    if !path.exists() {
+        let _ = write_config_file("menu", MENU_TEMPLATE);
+    }
+    Some(path)
 }
 
 /// A path as a session line holds it. `display()` would lose any name that is

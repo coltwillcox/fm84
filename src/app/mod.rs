@@ -41,9 +41,10 @@ mod tabs;
 #[cfg(test)]
 mod tests;
 mod text_input;
+mod user_menu;
 mod viewing;
 
-pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, git_marks::*, history::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, viewing::*};
+pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, git_marks::*, history::*, jobs::*, listing::*, preview::*, selection::*, tabs::*, text_input::*, user_menu::*, viewing::*};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -145,6 +146,8 @@ pub enum Dialog {
     Bookmarks { list: Vec<PathBuf>, index: usize },
     /// Alt+Down: the directories visited, narrowed by what is typed.
     History(Box<HistoryList>),
+    /// Alt+M: the user's own commands.
+    UserMenu(Box<UserMenu>),
     /// A click on a panel's git branch: the repository's branches, to change
     /// to another.
     Branches(Box<BranchList>),
@@ -183,6 +186,8 @@ pub struct AppState {
     /// A file F4 is handing to an external editor. The main loop runs it,
     /// since only that can give the terminal up and take it back.
     pub external_edit: Option<PathBuf>,
+    /// A command from Alt+M's menu, for the main loop to hand the terminal to.
+    pub user_command: Option<UserCommand>,
     /// F12: the opposite panel shows what the cursor is on.
     pub show_preview: bool,
     pub preview: Option<PreviewState>,
@@ -419,6 +424,7 @@ impl AppState {
             help_scroll: 0,
             help_room: 0,
             external_edit: None,
+            user_command: None,
             show_preview: false,
             preview: None,
             clipboard: String::new(),

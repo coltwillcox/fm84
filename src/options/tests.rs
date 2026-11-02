@@ -150,3 +150,12 @@ fn every_row_sits_under_a_heading() {
     let headings = OPTION_ROWS.iter().filter(|row| row.section().is_some()).count();
     assert_eq!(headings, 4);
 }
+
+#[test]
+fn menu_lines_read_as_label_and_command() {
+    let text = "# a comment\nDisk use = du -sh {files}\n\n= no label\nno command =\nCount = wc -l {file} | sort = fine\n";
+    let menu = parse_menu(text);
+    let pairs: Vec<(&str, &str)> = menu.iter().map(|entry| (entry.label.as_str(), entry.command.as_str())).collect();
+    // Split at the first =, so the command may hold more.
+    assert_eq!(pairs, [("Disk use", "du -sh {files}"), ("Count", "wc -l {file} | sort = fine")]);
+}

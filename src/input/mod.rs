@@ -138,6 +138,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'i' {
             app_state.same_dir_in_other_panel();
         }
+        // Alt+M, the user's own commands, as F2 is in Midnight Commander.
+        if in_panel && c == 'm' {
+            app_state.open_user_menu();
+        }
     } else {
         match c {
             'f' if in_editor || in_viewer => app_state.open_prompt(PromptKind::Find),
@@ -398,6 +402,26 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                 _ => {}
             }
         }
+        Some(Dialog::UserMenu(_)) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Enter => run_user_menu_entry(app_state),
+            KeyCode::Up => app_state.move_user_menu_cursor(-1),
+            KeyCode::Down => app_state.move_user_menu_cursor(1),
+            KeyCode::Home => app_state.move_user_menu_cursor(isize::MIN),
+            KeyCode::End => app_state.move_user_menu_cursor(isize::MAX),
+            KeyCode::Char('e') | KeyCode::Char('E') => app_state.edit_user_menu(),
+            // 1 to 9 run that one straight away.
+            KeyCode::Char(c @ '1'..='9') => {
+                let wanted = c as usize - '1' as usize;
+                if let Some(Dialog::UserMenu(menu)) = &mut app_state.dialog
+                    && wanted < menu.entries.len()
+                {
+                    menu.index = wanted;
+                    run_user_menu_entry(app_state);
+                }
+            }
+            _ => {}
+        },
         // Typing narrows the list; the arrows go up and down it.
         Some(Dialog::History(_)) => {
             let page = 10;

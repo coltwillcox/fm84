@@ -629,3 +629,77 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     assert_eq!(std::fs::read_dir(&dir).unwrap().count(), before.len());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+M's commands run in the shell on what is chosen, every name reaching
+/// them whole - spaces, quotes, a dollar sign - in the panel's directory.
+/// One that names an entry is refused with nothing to name.
+#[cfg(unix)]
+#[test]
+fn user_menu_commands_get_every_name_whole() {
+    let dir = std::env::temp_dir().join(format!("fm84-user-menu-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let (here, other) = (dir.join("here"), dir.join("other side"));
+    std::fs::create_dir_all(&here).unwrap();
+    std::fs::create_dir_all(&other).unwrap();
+    let awkward = ["it's a file.txt", "$HOME and \"quotes\"", "-n"];
+    for name in awkward {
+        std::fs::write(here.join(name), "").unwrap();
+    }
+    let mut app_state = AppState::new();
+    app_state.open_dir(false, other.clone(), None);
+    app_state.is_left_active = true;
+    app_state.open_dir(true, here.clone(), Some(awkward[0].as_ref()));
+    let menu = |command: &str| {
+        Dialog::UserMenu(Box::new(crate::app::UserMenu {
+            entries: vec![crate::options::MenuEntry {
+                label: "Test".to_string(),
+                command: command.to_string(),
+            }],
+            index: 0,
+            file: None,
+        }))
+    };
+    let run = |app_state: &mut AppState, key: KeyCode| {
+        press(app_state, key);
+        let mut command = app_state.user_command.take().expect("nothing to run");
+        assert!(command.process.status().unwrap().success());
+    };
+    let out = dir.join("out");
+
+    for name in &awkward[1..] {
+        app_state.selected_left.insert((*name).into());
+    }
+    app_state.dialog = Some(menu(&format!(
+        "for f in {{files}}; do printf '%s\\n' \"$f\"; done > '{}'; printf '%s|%s|%s|%s' {{name}} {{dir}} {{other}} $PWD >> '{}'",
+        out.display(),
+        out.display()
+    )));
+    run(&mut app_state, KeyCode::Enter);
+    let written = std::fs::read_to_string(&out).unwrap();
+    let mut lines: Vec<&str> = written.lines().collect();
+    let last = lines.pop().unwrap();
+    let mut chosen: Vec<String> = lines.iter().map(|line| line.to_string()).collect();
+    chosen.sort();
+    let mut expected: Vec<String> = awkward[1..].iter().map(|name| here.join(name).display().to_string()).collect();
+    expected.sort();
+    assert_eq!(chosen, expected);
+    assert_eq!(last, format!("{}|{}|{}|{}", awkward[0], here.display(), other.display(), here.display()));
+
+    // 1 to 9 run one straight away.
+    app_state.dialog = Some(menu(&format!("touch {{file}}.done && mv {{file}}.done '{}'", out.display())));
+    run(&mut app_state, KeyCode::Char('1'));
+    assert!(out.exists() && !here.join(format!("{}.done", awkward[0])).exists());
+
+    // On .. with nothing selected, there is no entry to name.
+    app_state.selected_left.clear();
+    app_state.state_left.select(Some(0));
+    app_state.dialog = Some(menu("echo {file}"));
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.user_command.is_none());
+    assert!(app_state.error.as_deref().is_some_and(|error| error.contains("Nothing chosen")));
+    app_state.error = None;
+    // A command that names none runs anywhere.
+    app_state.dialog = Some(menu("true"));
+    run(&mut app_state, KeyCode::Enter);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

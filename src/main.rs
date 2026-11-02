@@ -252,6 +252,9 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         if let Some(path) = app_state.external_edit.take() {
             run_external_editor(terminal, &mut app_state, &path)?;
         }
+        if let Some(command) = app_state.user_command.take() {
+            run_user_command(terminal, &mut app_state, command)?;
+        }
     }
 
     // Nowhere to report a failure by now, and nothing lost by it but a
@@ -293,6 +296,33 @@ fn write_chosen_dir(file: &std::path::Path, dir: &std::path::Path) -> io::Result
 /// Give the terminal to the editor F11 names until it exits, then take it
 /// back. The command is split on whitespace; `{}` stands for the file, which
 /// otherwise goes on the end.
+/// A command from Alt+M's menu, with the terminal handed over to it as to an
+/// external editor. What it writes stays on screen until Enter, so it can be
+/// read; then fm84 comes back, and reads both panels again for whatever it
+/// changed.
+fn run_user_command(terminal: &mut Tui, app_state: &mut AppState, mut command: app::UserCommand) -> io::Result<()> {
+    use std::io::Write;
+    restore_terminal()?;
+    println!("\n── {} ──", utils::printable_name(&command.label));
+    let result = command.process.status();
+    if let Ok(status) = &result {
+        if !status.success() {
+            println!("\n{} exited with {}", utils::printable_name(&command.label), status);
+        }
+        print!("\nPress Enter to return to fm84 ");
+        let _ = stdout().flush();
+        let _ = io::stdin().read_line(&mut String::new());
+    }
+    take_terminal()?;
+    terminal.clear()?;
+    if let Err(e) = result {
+        app_state.display_error(format!("Cannot run {}: {}", command.label, e));
+    }
+    app_state.reload_panel(true, None);
+    app_state.reload_panel(false, None);
+    Ok(())
+}
+
 fn run_external_editor(terminal: &mut Tui, app_state: &mut AppState, path: &std::path::Path) -> io::Result<()> {
     let command = app_state.options.editor.clone();
     let mut parts: Vec<std::ffi::OsString> = command.split_whitespace().map(|part| utils::substitute(part, path.as_os_str())).collect();

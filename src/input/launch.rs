@@ -1,5 +1,5 @@
-//! Programs started from the panels: the terminal F9 opens, and whatever the
-//! system opens a file with.
+//! Programs started from the panels: the terminal F9 opens, whatever the
+//! system opens a file with, and the commands of Alt+M's menu.
 
 use super::*;
 
@@ -116,4 +116,43 @@ fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
         }
     }
     Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No terminal emulator found. Set $TERMINAL."))
+}
+
+/// Enter, or 1 to 9, on Alt+M's menu: the command highlighted, on what the
+/// active panel has chosen. One that names an entry needs one to be there,
+/// and on the disk rather than inside an archive; it is said so otherwise,
+/// and nothing runs. The main loop hands it the terminal.
+pub(super) fn run_user_menu_entry(app_state: &mut AppState) {
+    let Some(Dialog::UserMenu(menu)) = app_state.dialog.take() else {
+        return;
+    };
+    let Some(entry) = menu.entries.get(menu.index).cloned() else {
+        return;
+    };
+    let is_left = app_state.is_left_active;
+    let (needs_file, needs_files) = crate::app::uses_entries(&entry.command);
+    if (needs_file || needs_files) && app_state.refuse_in_archive(is_left) {
+        return;
+    }
+    let files: Vec<std::path::PathBuf> = chosen_items(app_state).into_iter().map(|(path, _)| path).collect();
+    let (children, state, dir) = if is_left {
+        (&app_state.children_left, &app_state.state_left, &app_state.dir_left)
+    } else {
+        (&app_state.children_right, &app_state.state_right, &app_state.dir_right)
+    };
+    let file = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()).map(|item| item.path_in(dir));
+    if (needs_file && file.is_none()) || (needs_files && files.is_empty()) {
+        app_state.display_error(format!("Nothing chosen for {}", entry.label));
+        return;
+    }
+    let values = crate::app::MenuValues {
+        file,
+        files,
+        dir: app_state.panel_real_dir(is_left),
+        other: app_state.panel_real_dir(!is_left),
+    };
+    app_state.user_command = Some(crate::app::UserCommand {
+        process: crate::app::shell_command(&entry.command, &values),
+        label: entry.label,
+    });
 }
