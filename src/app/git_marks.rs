@@ -11,7 +11,15 @@ pub struct PanelGit {
     /// The directory they are for.
     pub dir: PathBuf,
     pub status: Option<crate::git::Status>,
-    answer: Option<Receiver<Option<crate::git::Status>>>,
+    /// The one git running for the panel, and the directory it was asked
+    /// about. Never more than one: in a large repository a status can take
+    /// seconds, and a directory that keeps changing - a build writing into
+    /// it - would otherwise have a new one started at every reread, while
+    /// the ones before it still ran.
+    running: Option<(PathBuf, Receiver<Option<crate::git::Status>>)>,
+    /// Asked for again while one was running: once it is done, one more,
+    /// for however many rereads came meanwhile.
+    queued: bool,
 }
 
 impl AppState {
@@ -36,33 +44,106 @@ impl AppState {
             git.dir = dir.to_path_buf();
         }
         if !wanted {
+            // What is running is let go: it would only bring marks back.
             git.status = None;
-            git.answer = None;
+            git.running = None;
+            git.queued = false;
             return;
         }
-        let (sender, answer) = mpsc::channel();
-        let worker_dir = dir.to_path_buf();
-        std::thread::spawn(move || {
-            let _ = sender.send(crate::git::status(&worker_dir).ok());
-        });
-        git.answer = Some(answer);
+        if git.running.is_some() {
+            git.queued = true;
+        } else {
+            git.start();
+        }
     }
 
-    /// Take in whichever marks have come since the last frame.
+    /// Take in whichever marks have come since the last frame, and start
+    /// the git waiting for its turn.
     pub fn poll_git_marks(&mut self) {
         for is_left in [true, false] {
             let git = self.panel_git(is_left);
-            let Some(answer) = &git.answer else {
+            let Some((asked, answer)) = &git.running else {
                 continue;
             };
-            match answer.try_recv() {
-                Ok(status) => {
-                    git.status = status;
-                    git.answer = None;
-                }
-                Err(TryRecvError::Empty) => {}
-                Err(TryRecvError::Disconnected) => git.answer = None,
+            let status = match answer.try_recv() {
+                Ok(status) => status,
+                Err(TryRecvError::Empty) => continue,
+                Err(TryRecvError::Disconnected) => None,
+            };
+            // About a directory the panel has since left, it is no use.
+            if *asked == git.dir {
+                git.status = status;
+            }
+            git.running = None;
+            if std::mem::take(&mut git.queued) {
+                git.start();
             }
         }
+    }
+}
+
+impl PanelGit {
+    /// Git, on a thread of its own, about the panel's directory.
+    fn start(&mut self) {
+        let (sender, answer) = mpsc::channel();
+        let dir = self.dir.clone();
+        std::thread::spawn(move || {
+            let _ = sender.send(crate::git::status(&dir).ok());
+        });
+        self.running = Some((self.dir.clone(), answer));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Rereads while git runs wait for it, and come to one more run.
+    #[test]
+    fn one_git_at_a_time_and_one_more_for_what_came_meanwhile() {
+        let dir = std::env::temp_dir().join(format!("fm84-git-throttle-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let made = std::process::Command::new("git").arg("-C").arg(&dir).args(["init", "--quiet"]).output().is_ok_and(|output| output.status.success());
+        if !made {
+            return;
+        }
+        let mut app_state = AppState::new();
+        let other = dir.join("other");
+        for _ in 0..3 {
+            app_state.request_git_marks(true, &dir, true);
+        }
+        assert!(app_state.git_left.running.is_some() && app_state.git_left.queued);
+        // The queued one runs once the first is in, and then nothing more.
+        let wait = |app_state: &mut AppState| {
+            let start = Instant::now();
+            while app_state.git_left.running.is_some() && start.elapsed() < Duration::from_secs(10) {
+                app_state.poll_git_marks();
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        };
+        let start = Instant::now();
+        while app_state.git_left.queued && start.elapsed() < Duration::from_secs(10) {
+            app_state.poll_git_marks();
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert!(app_state.git_left.running.is_some(), "the one queued was not started");
+        wait(&mut app_state);
+        assert!(app_state.git_left.status.is_some() && !app_state.git_left.queued);
+
+        // An answer about a directory the panel has left is not taken.
+        app_state.request_git_marks(true, &dir, true);
+        std::fs::create_dir_all(&other).unwrap();
+        app_state.request_git_marks(true, &other, true);
+        assert!(app_state.git_left.status.is_none());
+        let start = Instant::now();
+        while app_state.git_left.queued && start.elapsed() < Duration::from_secs(10) {
+            app_state.poll_git_marks();
+            assert!(app_state.git_left.status.is_none(), "marks for the directory left behind");
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        wait(&mut app_state);
+        assert!(app_state.git_left.status.is_some() && app_state.git_left.dir == other);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
