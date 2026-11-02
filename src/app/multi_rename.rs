@@ -254,11 +254,16 @@ fn letters(text: &str, range: &str) -> Option<String> {
     Some(text.chars().skip(from - 1).take(to.saturating_sub(from - 1)).collect())
 }
 
+/// The longest name most filesystems allow, in bytes.
+const MAX_NAME: usize = 255;
+
 /// The counter for the `index`th entry: `[C]`, `[C10]`, `[C10+5]`, and any of
 /// them with `:3` for at least three digits.
 fn counter(spec: &str, index: usize) -> Option<String> {
     let (numbers, width) = match spec.split_once(':') {
-        Some((numbers, width)) => (numbers, width.parse::<usize>().ok()?),
+        // No wider than a name can be: each keystroke and each frame makes
+        // one for every entry, and [C:1000000000] would be gigabytes.
+        Some((numbers, width)) => (numbers, width.parse::<usize>().ok().filter(|&width| width <= MAX_NAME)?),
         None => (spec, 0),
     };
     let (start, step): (u64, u64) = match numbers.split_once('+') {
@@ -446,6 +451,10 @@ mod tests {
         assert_eq!(named("a.txt", 2, "[C10+5]"), "20");
         assert_eq!(named("a.txt", 4, "[C:3]_[N]"), "005_a");
         assert_eq!(named("a.txt", 1, "[C0+2:2]"), "02");
+        // Wider than a name can be is not a counter.
+        assert_eq!(named("a.txt", 0, "[C:255]").len(), 255);
+        assert_eq!(named("a.txt", 0, "[C:256]"), "[C:256]");
+        assert_eq!(named("a.txt", 0, "[C:99999999999]"), "[C:99999999999]");
         // What is not a token is kept as written.
         assert_eq!(named("a.txt", 0, "[N] [x] [N0] [C+] [unclosed"), "a [x] [N0] [C+] [unclosed");
     }
