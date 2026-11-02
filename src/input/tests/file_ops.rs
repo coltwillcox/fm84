@@ -701,6 +701,10 @@ fn user_menu_commands_get_every_name_whole() {
     // A command that names none runs anywhere.
     app_state.dialog = Some(menu("true"));
     run(&mut app_state, KeyCode::Enter);
+    // {} is the shell's, as find -exec has it, and stands for no file.
+    app_state.dialog = Some(menu(&format!("printf '%s' {{}} > '{}'", out.display())));
+    run(&mut app_state, KeyCode::Enter);
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "{}");
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

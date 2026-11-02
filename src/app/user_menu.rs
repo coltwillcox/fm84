@@ -66,8 +66,10 @@ impl AppState {
 }
 
 /// Which placeholders a command uses, to know what it needs before it runs.
+/// No `{}` among them: that is the shell's own, in `find -exec rm {} +`,
+/// where it standing for the file under the cursor would delete it.
 pub fn uses_entries(command: &str) -> (bool, bool) {
-    let file = ["{}", "{file}", "{name}"].iter().any(|placeholder| command.contains(placeholder));
+    let file = ["{file}", "{name}"].iter().any(|placeholder| command.contains(placeholder));
     (file, command.contains("{files}"))
 }
 
@@ -87,7 +89,6 @@ pub fn shell_command(command: &str, values: &MenuValues) -> std::process::Comman
         command
             .replace("{files}", &files.join(" "))
             .replace("{file}", "\"%FM84_FILE%\"")
-            .replace("{}", "\"%FM84_FILE%\"")
             .replace("{name}", "\"%FM84_NAME%\"")
             .replace("{dir}", "\"%FM84_DIR%\"")
             .replace("{other}", "\"%FM84_OTHER%\"")
@@ -96,7 +97,6 @@ pub fn shell_command(command: &str, values: &MenuValues) -> std::process::Comman
     let script = command
         .replace("{files}", "\"$@\"")
         .replace("{file}", "\"$FM84_FILE\"")
-        .replace("{}", "\"$FM84_FILE\"")
         .replace("{name}", "\"$FM84_NAME\"")
         .replace("{dir}", "\"$FM84_DIR\"")
         .replace("{other}", "\"$FM84_OTHER\"");
