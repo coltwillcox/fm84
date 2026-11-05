@@ -1,0 +1,1604 @@
+# fm84 magyarul.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, [other] for the rest - a noun after a
+# number stays singular, so the two are mostly alike. A msgctxt sets one use
+# of a word apart from the same word elsewhere. {name} is a place the
+# program fills, kept as it is, and never given a case ending: the
+# sentences are made so that it needs none. The letters to press - Y, N, A
+# and the like - stay as they are. Names are quoted „thus”.
+
+msgid  "{name}" has changed since it was opened
+msgstr „{name}” megváltozott a megnyitás óta
+
+msgid  "{name}" is already in {folder}
+msgstr „{name}” már létezik itt: {folder}
+
+msgid  "{name}" is no longer there
+msgstr „{name}” már nincs meg
+
+msgid  "{path}" is already there
+msgstr Már ott van: „{path}”
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Nagyítás {zoom}%
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- kijelölés/elengedés mintával, * fordít
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): csak olvasható
+
+msgid  12-hour
+msgstr 12 órás
+
+msgid  24-hour
+msgstr 24 órás
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Mind felülírása    S - Mind kihagyása    B - Mindig mindkettő marad
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr Hard link erre: {path}, ami nincs kimásolva
+
+msgid  A root directory cannot go to the trash
+msgstr Gyökérmappa nem kerülhet a lomtárba
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr Synthwave stílusú, kétpaneles fájlkezelő a terminálhoz
+
+msgid  About
+msgstr Névjegy
+
+msgid  Already exists: {name}
+msgstr Már létezik: {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Már létezik: {path} - F11-ben Felülírás vagy Mindkettő marad
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Már létezik: {path} - más név, vagy F11-ben Felülírás vagy Mindkettő marad
+
+msgid  Already there
+msgstr Már létezik
+
+msgid  Alt+* invert with directories
+msgstr Alt+* fordít mappákkal együtt
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Jogok, tulajdonos, idő
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Le minden meglátogatott mappa
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (vagy Ctrl+Shift+F5) link, Tab hard
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (vagy Ctrl+F7) fájlkeresés
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Ellenőrzőösszegek (Tab algoritmus); fájl ellenőrzése
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Bal/Jobb vissza/előre
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Felhasználói menü (E szerkeszti)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O megnyitás ezzel... (E kiterjesztésenként)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Tömörítés archívumba (Tab formátum)
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R keresésben vagy cserében: regex
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - A két mappa szinkronizálása
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Shift+Enter minden mappa mérete
+
+msgid  Appearance
+msgstr Megjelenés
+
+msgid  Archives are read-only
+msgstr Az archívumok csak olvashatók
+
+msgid  Ascending
+msgstr Növekvő
+
+msgid  Ask
+msgstr Kérdezzen
+
+msgid  Ask before opening over
+msgstr Kérdezzen e fölött
+
+msgid  Attributes
+msgstr Attribútum
+
+msgid  Attributes column
+msgstr Attribútum oszlop
+
+msgid  Automatic
+msgstr Automatikus
+
+msgid  Automatic ({language})
+msgstr Automatikus ({language})
+
+msgid  Background
+msgstr Háttér
+
+msgid  Bar
+msgstr Vonal
+
+msgid  Behaviour
+msgstr Viselkedés
+
+msgid  Binary
+msgstr Bináris
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Bináris fájl. Esc: vissza.
+
+msgid  Block
+msgstr Blokk
+
+msgid  Bookmarks
+msgstr Könyvjelzők
+
+msgid  Both panels show the same directory
+msgstr Mindkét panel ugyanazt a mappát mutatja
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Mindkét panel ugyanazt a mappát mutatja: nincs mit szinkronizálni
+
+msgid  Branches:
+msgstr Ágak:
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Készült: Rust, Ratatui és Crossterm
+
+msgid  Built-in
+msgstr Beépített
+
+msgid  C - Copy
+msgstr C - Másolás
+
+msgid  Cancelling
+msgstr Megszakítás
+
+msgid  Cannot calculate size: {e}
+msgstr A méret nem számítható: {e}
+
+msgid  Cannot change {what}
+msgstr Nem módosítható: {what}
+
+msgid  Cannot copy
+msgstr Nem másolható
+
+msgid  Cannot copy "{path}" into itself
+msgstr Nem másolható önmagába: „{path}”
+
+msgid  Cannot copy to {path}
+msgstr Nem másolható ide: {path}
+
+msgid  Cannot delete
+msgstr Nem törölhető
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr Nem szerkeszthető: {path}: nem UTF-8 szöveg. Az F3 megmutatja úgy, ahogy van.
+
+msgid  Cannot extract
+msgstr Nem bontható ki
+
+msgid  Cannot link {what}
+msgstr Nem linkelhető: {what}
+
+msgid  Cannot make room beside {path}
+msgstr Nem csinálható hely emellett: {path}
+
+msgid  Cannot make room to compare: {e}
+msgstr Nincs hely az összehasonlításhoz: {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Nincs hely a megnyitáshoz: {e}
+
+msgid  Cannot move
+msgstr Nem helyezhető át
+
+msgid  Cannot move to the trash: {why}
+msgstr Nem tehető a lomtárba: {why}
+
+msgid  Cannot move to trash
+msgstr Nem tehető a lomtárba
+
+msgid  Cannot open file: {e}
+msgstr A fájl nem nyitható meg: {e}
+
+msgid  Cannot open terminal: {e}
+msgstr A terminál nem nyitható meg: {e}
+
+msgid  Cannot open {path}: {e}
+msgstr Nem nyitható meg: {path}: {e}
+
+msgid  Cannot pack
+msgstr Nem tömöríthető
+
+msgid  Cannot pack into {path}
+msgstr Nem tömöríthető ide: {path}
+
+msgid  Cannot reach {target}
+msgstr Nem érhető el: {target}
+
+msgid  Cannot read
+msgstr Nem olvasható
+
+msgid  Cannot read file
+msgstr A fájl nem olvasható
+
+msgid  Cannot read {path}
+msgstr Nem olvasható: {path}
+
+msgid  Cannot read {path}: {e}
+msgstr Nem olvasható: {path}: {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Mappa nem cserélhető fájlra: {path}
+
+msgid  Cannot replace directory {path} with a link
+msgstr Mappa nem cserélhető linkre: {path}
+
+msgid  Cannot replace file {path} with a directory
+msgstr Fájl nem cserélhető mappára: {path}
+
+msgid  Cannot run git: {e}
+msgstr A git nem futtatható: {e}
+
+msgid  Cannot run {label}: {e}
+msgstr Nem futtatható: {label}: {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr A könyvjelzők nem menthetők: {e}
+
+msgid  Cannot save options: {e}
+msgstr A beállítások nem menthetők: {e}
+
+msgid  Cannot start {program}: {e}
+msgstr Nem indítható: {program}: {e}
+
+msgid  Cannot synchronize
+msgstr Nem szinkronizálható
+
+msgid  Cannot write {path}: {e}
+msgstr Nem írható: {path}: {e}
+
+msgid  Case
+msgstr Betűméret
+
+msgid  Case-sensitive sort
+msgstr Kis- és nagybetű megkülönböztetése
+
+msgid  Changed on disk
+msgstr Megváltozott a lemezen
+
+msgid  Checked against {file}
+msgstr Ellenőrzés ez alapján: {file}
+
+msgid  Checksumming
+msgstr Ellenőrzőösszegek számítása
+
+msgid  Checksums
+msgstr Ellenőrzőösszegek
+
+msgid  Choose another program
+msgstr Másik program választása
+
+msgid  Classic
+msgstr Klasszikus
+
+msgid  Click the git branch to switch it
+msgstr Kattintás a git ágra: váltás
+
+msgid  Clock
+msgstr Óra
+
+msgid  Compare
+msgstr Összehasonlítás
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Összehasonlítás...    Esc - Leállítás és bezárás
+
+msgid  Confirm copy and move
+msgstr Másolás és áthelyezés megerősítése
+
+msgid  Confirm delete
+msgstr Törlés megerősítése
+
+msgid  Containing
+msgstr Tartalom
+
+msgid  Containing is a regular expression
+msgstr A Tartalom reguláris kifejezés
+
+msgid  Copied name: {text}
+msgstr Név másolva: {text}
+
+msgid  Copied path: {text}
+msgstr Útvonal másolva: {text}
+
+msgid  Copied the report
+msgstr A jelentés másolva
+
+msgid  Copied: {text}
+msgstr Másolva: {text}
+
+msgid  Copy
+msgstr Másol
+
+msgid  Copy "{name}" to:
+msgstr Másolás: „{name}”, ide:
+
+msgid  Copy directory
+msgstr Mappa másolása
+
+msgid  Copy file
+msgstr Fájl másolása
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Előbb másold ki az archívumból: az ellenőrzőösszeg a lemezen lévő fájlokból készül
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Előbb másold ki az archívumból: amit tömörítesz, annak a lemezen kell lennie
+
+msgid  Copying
+msgstr Másolás
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Nem módosult: {count} / {total}. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Nem linkelődött: {count} / {total}. {first}
+
+msgid  Counting...
+msgstr Számolás...
+
+msgid  Create Directory
+msgstr Új mappa
+
+msgid  Create File
+msgstr Új fájl
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Minden fájl alatta, laposan
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Útvonalak/nevek másolása
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Könyvjelzők
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Keresés
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F keresés, F3/Shift+F3 következő/előző
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Rendezés név/kit./dátum/méret
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G ugrás sorra, Ctrl+R/F4 csere
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Ugrás útvonalra (vagy kattintás rá)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Bal/Jobb - Mappa abba a panelbe
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgUp/PgDn, Alt+1..9 váltás
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Mindkét panel újratöltése
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - A panel szűrése mintával
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Új/bezár fül
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U panelcsere, Alt+I ugyanaz a mappa ott
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z visszavonás, Ctrl+Y újra, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Visszavonás
+
+msgid  Cursor
+msgstr Kurzor
+
+msgid  Cursor blinks
+msgstr Villogó kurzor
+
+msgid  D - Delete permanently
+msgstr D - Végleges törlés
+
+msgid  Dashed
+msgstr Szaggatott
+
+msgid  Date format
+msgstr Dátumformátum
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Egy ekkora kép dekódolásához ennyi memória kell.
+
+msgid  Delete
+msgstr Töröl
+
+msgid  Delete "{name}" permanently?
+msgstr Végleges törlés: „{name}”?
+
+msgid  Delete to trash (F8)
+msgstr Törlés a lomtárba (F8)
+
+msgid  Delete: directory
+msgstr Törlés: mappa
+
+msgid  Delete: file
+msgstr Törlés: fájl
+
+msgid  Deleting
+msgstr Törlés
+
+msgid  Descending
+msgstr Csökkenő
+
+msgid  Deselect:
+msgstr Kijelölés megszüntetése:
+
+msgid  Destination already exists: {path}
+msgstr A cél már létezik: {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Eltér: bal oldalt {left}, jobb oldalt {right}
+
+msgid  Difference {at}/{count}
+msgstr Eltérés {at}/{count}
+
+msgid  Directories first
+msgstr Mappák elöl
+
+msgid  Directory "{name}"
+msgstr Mappa: „{name}”
+
+msgid  Directory History
+msgstr Mappaelőzmények
+
+msgid  Double
+msgstr Dupla
+
+msgid  Edit
+msgstr Szerk.
+
+msgid  Edit "{name}" ({size})?
+msgstr Szerkesztés: „{name}” ({size})?
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr Szerkesztés: „{name}” ({width}x{height}, {size})?
+
+msgid  Edit:
+msgstr Szerkesztés:
+
+msgid  Editor (F4)
+msgstr Szerkesztő (F4)
+
+msgid  Empty terminal command
+msgstr Üres terminálparancs
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Titkosított: az fm84 jelszó nélkül nem tudja olvasni
+
+msgid  Enter - Copy
+msgstr Enter - Másolás
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Enter - Létrehozás    Esc - Mégse
+
+msgid  Enter - Extract
+msgstr Enter - Kibontás
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Enter - Ugrás    F - Panelbe    Esc - Bezárás
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Enter - Ugrás    F - Panelbe    Esc - Leállítás és bezárás
+
+msgid  Enter - Hard link
+msgstr Enter - Hard link
+
+msgid  Enter - Move
+msgstr Enter - Áthelyezés
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Enter - Mappa megnyitása, vagy belépés archívumba
+
+msgid  Enter - Pack
+msgstr Enter - Tömörítés
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Enter - Mentés    Esc - Mégse    {} - mappa
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Enter - Mentés    Esc - Mégse    {} - fájl
+
+msgid  Enter - Symlink
+msgstr Enter - Szimbolikus link
+
+msgid  Enter - Write
+msgstr Enter - Írás
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Újra Enter a futtatáshoz, törlendő: {deleting}    Más billentyű - Még ne
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Enter/1-9 - Ugrás    A/Ins - Ez is    D/Del - Eltávolítás
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Enter/1-9 - Megnyitás    E - Társítások szerkesztése    Esc - Bezárás
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Enter/1-9 - Futtatás    E - Menü szerkesztése    Esc - Bezárás
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Enter/kattintás - Váltás    Esc - Bezárás
+
+msgid  Error
+msgstr Hiba
+
+msgid  Esc - Back to editing
+msgstr Esc - Vissza a szerkesztéshez
+
+msgid  Esc - Cancel
+msgstr Esc - Mégse
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Esc - Mégse    Újra F10 - Kilépés
+
+msgid  Esc - Close
+msgstr Esc - Bezárás
+
+msgid  Esc Exit
+msgstr Esc Kilépés
+
+msgid  Existing
+msgstr Meglévő
+
+msgid  Ext
+msgstr Kit.
+
+msgid  Ext column
+msgstr Kit. oszlop
+
+msgid  Extension
+msgstr Kiterjesztés
+
+msgid  Extract "{name}" to:
+msgstr Kibontás: „{name}”, ide:
+
+msgid  Extract archive
+msgstr Archívum kibontása
+
+msgid  Extracting
+msgstr Kibontás
+
+msgid  F Fit [Fill]
+msgstr F Igazít [Kitölt]
+
+msgid  F [Fit] Fill
+msgstr F [Igazít] Kitölt
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F igazít/kitölt, +/- nagyítás, W tördelés
+
+msgid  F on the results feeds them to the panel
+msgstr az F a találatokat a panelbe teszi
+
+msgid  F1 - This help
+msgstr F1 - Ez a súgó
+
+msgid  F10 - Quit
+msgstr F10 - Kilépés
+
+msgid  F10 again - Quit
+msgstr Újra F10 - Kilépés
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Beállítások (Alt+F1/F2 meghajtók)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Előnézet a másik panelben
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Mappa/fájl átnevezése
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Mentés
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Fájl megtekintése (X szöveg/hex/kép)
+
+msgid  F3/N Next
+msgstr F3/N Következő
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Fájl szerkesztése (Ctrl+S/F2 ment)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Másolás (a másik panelbe, vagy a beírt helyre)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 kimásol, Alt+F9 (vagy Ctrl+F9) mindet
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Áthelyezés (a másik panelbe, vagy a beírt helyre)
+
+msgid  F7 - Create directory
+msgstr F7 - Új mappa
+
+msgid  F8 - Move to trash
+msgstr F8 - Lomtárba
+
+msgid  F9 - Open terminal
+msgstr F9 - Terminál megnyitása
+
+msgid  File "{name}"
+msgstr Fájl: „{name}”
+
+msgid  Fill
+msgstr Kitöltés
+
+msgid  Filter:
+msgstr Szűrő:
+
+msgid  Find
+msgstr Keresés
+
+msgid  Find (regex, Alt+R for text):
+msgstr Keresés (regex, Alt+R: szöveg):
+
+msgid  Find files
+msgstr Fájlkeresés
+
+msgid  Find files cannot search inside an archive yet
+msgstr A fájlkeresés még nem keres archívumokban
+
+msgid  Find:
+msgstr Keresés:
+
+msgid  First letter
+msgstr Első betű nagy
+
+msgid  Fit
+msgstr Igazítás
+
+msgid  Git marks
+msgstr Git jelölések
+
+msgid  Go to line:
+msgstr Ugrás sorra:
+
+msgid  Gone
+msgstr Eltűnt
+
+msgid  Group
+msgstr Csoport
+
+msgid  Hard link "{name}" at:
+msgstr Hard link erre: „{name}”, itt:
+
+msgid  Hard link directory
+msgstr Hard link mappára
+
+msgid  Hard link file
+msgstr Hard link fájlra
+
+msgid  Heavy
+msgstr Vastag
+
+msgid  Help
+msgstr Súgó
+
+msgid  Help/About
+msgstr Súgó/Névjegy
+
+msgid  High contrast
+msgstr Nagy kontraszt
+
+msgid  Highlight files up to
+msgstr Kiemelés eddig
+
+msgid  Icons
+msgstr Ikonok
+
+msgid  Image backgrounds
+msgstr Képhátterek
+
+msgid  Images open as
+msgstr Képek megnyitása
+
+msgid  In
+msgstr Hely
+
+msgid  It got shorter while it was being packed
+msgstr Tömörítés közben rövidebb lett
+
+msgid  Keep both
+msgstr Mindkettő marad
+
+msgid  Keys
+msgstr Billentyűk
+
+msgid  Language
+msgstr Nyelv
+
+msgid  Large File
+msgstr Nagy fájl
+
+msgid  Large Picture
+msgstr Nagy kép
+
+msgid  Line numbers
+msgstr Sorszámok
+
+msgid  Line {at}/{count}
+msgstr Sor {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Sor {line}, osz. {column}
+
+msgid  Military
+msgstr Katonai
+
+msgid  Mkdir
+msgstr Új mappa
+
+msgid  Mode
+msgstr Jogok
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Jogok: 755 vagy u+x,go-w; tulajdonos és csoport névvel vagy számmal
+
+msgid  Modified
+msgstr Módosítva
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Módosítva: <7d, >1y, 1d..7d, 2026-10-01 vagy >2026-10-01, nem pedig: {text}
+
+msgid  Modified column
+msgstr Módosítva oszlop
+
+msgid  Move
+msgstr Áthelyez
+
+msgid  Move "{name}" to the trash?
+msgstr Lomtárba kerüljön: „{name}”?
+
+msgid  Move "{name}" to:
+msgstr Áthelyezés: „{name}”, ide:
+
+msgid  Move directory
+msgstr Mappa áthelyezése
+
+msgid  Move file
+msgstr Fájl áthelyezése
+
+msgid  Move to trash: directory
+msgstr Lomtárba: mappa
+
+msgid  Move to trash: file
+msgstr Lomtárba: fájl
+
+msgid  Moving
+msgstr Áthelyezés
+
+msgid  Moving to trash
+msgstr Lomtárba helyezés
+
+msgid  Name
+msgstr Név
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Név, mint a +-nál: *.jpg;*.png, vagy */ mappákhoz. A kisbetű mindkettőt megtalálja
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Archívumként nevezd el, ezek egyikével a végén: {endings}
+
+msgid  New
+msgstr Új
+
+msgid  New name
+msgstr Új név
+
+msgid  Next
+msgstr Következő
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Még nincs könyvjelző - az A megjegyzi a panel mappáját
+
+msgid  No branches yet: nothing has been committed
+msgstr Még nincsenek ágak: semmi sincs commitolva
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Még nincs parancs - az E hozzáadja, címke = parancs alakban, ide:
+
+msgid  No config directory
+msgstr Nincs beállításmappa
+
+msgid  No config directory to keep a menu in
+msgstr Nincs beállításmappa a menühöz
+
+msgid  No config directory to keep associations in
+msgstr Nincs beállításmappa a társításokhoz
+
+msgid  No such directory: {path}
+msgstr Nincs ilyen mappa: {path}
+
+msgid  No such file or directory: {path}
+msgstr Nincs ilyen fájl vagy mappa: {path}
+
+msgid  No such group: {text}
+msgstr Nincs ilyen csoport: {text}
+
+msgid  No such user: {text}
+msgstr Nincs ilyen felhasználó: {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Nem található terminálemulátor. Állítsd be a $TERMINAL változót.
+
+msgid  Not a line number: {text}
+msgstr Nem sorszám: {text}
+
+msgid  Not a mode: {text}
+msgstr Nem jogok: {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Nem jogok: {text} - 755, vagy u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Nem egyszerű fájlnév: {name}
+
+msgid  Not a regular expression: {why}
+msgstr Nem reguláris kifejezés: {why}
+
+msgid  Not a regular file
+msgstr Nem közönséges fájl
+
+msgid  Not a regular file: {path}
+msgstr Nem közönséges fájl: {path}
+
+msgid  Not a time here: {text}
+msgstr Ez az időpont itt nem létezik: {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Nem időpont: {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Nem archívum: {path}
+
+msgid  Not found: {term}
+msgstr Nincs találat: {term}
+
+msgid  Nothing chosen for {label}
+msgstr Nincs kiválasztva semmi ehhez: {label}
+
+msgid  Nothing found
+msgstr Nincs találat
+
+msgid  Nothing found to feed to the panel
+msgstr Nincs mit a panelbe tenni
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Semmi sem kisebb 0 bájtnál
+
+msgid  Nothing replaced
+msgstr Semmi sem lett cserélve
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Nincs mivel összehasonlítani: a másik panelben nincs ilyen nevű fájl, és a kurzora alatt sincs
+
+msgid  Nothing to synchronize
+msgstr Nincs mit szinkronizálni
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Nincs mit kiírni: egy ellenőrzőösszeg sem készült el
+
+msgid  Nothing visited matches
+msgstr Egy meglátogatott mappa sem illik
+
+msgid  Now
+msgstr Most
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Minden régebbi felülírása    Esc - Megszakítás
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Felülírás    R - Újratöltés, a módosítások elvesznek
+
+msgid  O - Save it again
+msgstr O - Mentés újra
+
+msgid  Off
+msgstr Ki
+
+msgid  Old name
+msgstr Régi név
+
+msgid  On
+msgstr Be
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr Az egyik panel mappája a másikon belül van: nincs mit szinkronizálni
+
+msgid  Only the first {count} files are listed
+msgstr Csak az első {count} fájl látszik
+
+msgid  Open {name} With
+msgstr Megnyitás ezzel: {name}
+
+msgid  Options
+msgstr Beáll.
+
+msgid  Overwrite
+msgstr Felülírás
+
+msgid  Owner
+msgstr Tulajdonos
+
+msgid  Pack "{name}" into:
+msgstr Tömörítés: „{name}”, ide:
+
+msgid  Pack directory
+msgstr Mappa tömörítése
+
+msgid  Pack file
+msgstr Fájl tömörítése
+
+msgid  Packing
+msgstr Tömörítés
+
+msgid  Panels
+msgstr Panelek
+
+msgid  Plain
+msgstr Egyszerű
+
+msgid  Plain Text
+msgstr Egyszerű szöveg
+
+msgid  Preview
+msgstr Előnézet
+
+msgid  Preview on startup
+msgstr Előnézet induláskor
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Állj a kurzorral egy fájlra az összehasonlításhoz, vagy jelölj ki kettőt
+
+msgid  Put the cursor on an archive to extract it
+msgstr Állj a kurzorral egy archívumra a kibontáshoz
+
+msgid  Quit
+msgstr Kilépés
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Újra    S - Kihagyás    A - Mind kihagyása    Esc - Megszakítás
+
+msgid  Read pictures ahead
+msgstr Képek előolvasása
+
+msgid  Reading a file this large may take a while.
+msgstr Egy ekkora fájl beolvasása eltarthat egy ideig.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr Olvasás: {dir}…  Esc: leállítás
+
+msgid  Refuse
+msgstr Elutasítás
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Relatív
+
+msgid  Released under the {license} License
+msgstr Licenc: {license}
+
+msgid  Remember directories
+msgstr Mappák megjegyzése
+
+msgid  Rename
+msgstr Átnevez
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr Átnevezve {done} / {total}, aztán: {e}
+
+msgid  Replace
+msgstr Csere
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr Csere: „{find}” → „{with}”?   Y - Igen   N - Nem   A - Mind   Esc - Állj
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Csere (regex, Alt+R: szöveg):
+
+msgid  Replace:
+msgstr Csere:
+
+msgid  Row {at}/{count}
+msgstr Sor {at}/{count}
+
+msgid  Save
+msgstr Mentés
+
+msgid  Save changes before closing?
+msgstr Mentsük a módosításokat bezárás előtt?
+
+msgid  Scroll bars
+msgstr Görgetősávok
+
+msgid  Search:
+msgstr Keresés:
+
+msgid  Select:
+msgstr Kijelölés:
+
+msgid  Shade
+msgstr Árnyalt
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Shift+Enter (vagy Ctrl+O) megnyitás, ahogy a rendszer
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Shift+F10 kilépés, a cd84 helyben marad
+
+msgid  Shift+F2 compare directories
+msgstr Shift+F2 mappák összehasonlítása
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Shift+F3 (vagy =) két fájl összehasonlítása
+
+msgid  Shift+F3/P Previous
+msgstr Shift+F3/P Előző
+
+msgid  Shift+F4 - Create file
+msgstr Shift+F4 - Új fájl
+
+msgid  Shift+F8 delete permanently
+msgstr Shift+F8 végleges törlés
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Shift+Fel/Le - Mozgatás    Esc - Bezárás
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Shift+nyilak kijelölnek, Ctrl+A mindent
+
+msgid  Show hidden files
+msgstr Rejtett fájlok mutatása
+
+msgid  Size
+msgstr Méret
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Méret: >10M, <1K vagy 1M..10M, nem pedig: {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Méret: >10M, <1K vagy 1M..10M; Módosítva: <7d, >1y, 1d..7d, 2026-10-01 vagy >2026-10-01
+
+msgid  Size column
+msgstr Méret oszlop
+
+msgid  Size units
+msgstr Méretegység
+
+msgid  Sort by
+msgstr Rendezés
+
+msgid  Sort direction
+msgstr Rendezés iránya
+
+msgid  Space - Select/deselect file
+msgstr Szóköz - Fájl kijelölése/elengedése
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Az ágváltás váratlanul leállt: {branch}
+
+msgid  Symbolic links are not supported here
+msgstr A szimbolikus linkek itt nem támogatottak
+
+msgid  Symlink "{name}" at:
+msgstr Szimbolikus link erre: „{name}”, itt:
+
+msgid  Symlink directory
+msgstr Szimbolikus link mappára
+
+msgid  Symlink file
+msgstr Szimbolikus link fájlra
+
+msgid  Synchronize
+msgstr Szinkronizálás
+
+msgid  Synchronizing
+msgstr Szinkronizálás
+
+msgid  System default
+msgstr Rendszer alapértelmezése
+
+msgid  Tab - Algorithm
+msgstr Tab - Algoritmus
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Mező   ←/→ - Betűméret   Enter - Átnevezés   Esc - Mégse
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Mező  Szóköz - Regex  Enter - Keresés  Esc - Mégse
+
+msgid  Tab - Format
+msgstr Tab - Formátum
+
+msgid  Tab - Hard link
+msgstr Tab - Hard link
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Következő mező    Enter - Alkalmaz    Esc - Mégse
+
+msgid  Tab - Symlink
+msgstr Tab - Szimbolikus link
+
+msgid  Tab completes a name
+msgstr Tab kiegészíti a nevet
+
+msgid  Tab width
+msgstr Tabulátor szélesség
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab behúzás, Ctrl+/ megjegyzés
+
+msgid  Terminal
+msgstr Terminál
+
+msgid  Terminal (F9)
+msgstr Terminál (F9)
+
+msgid  Terminal too small
+msgstr Túl kicsi a terminál
+
+msgid  The archive ends before it
+msgstr Az archívum előbb véget ér
+
+msgid  The directories hold the same files
+msgstr A mappákban ugyanazok a fájlok vannak
+
+msgid  The files are identical
+msgstr A fájlok azonosak
+
+msgid  The files differ from byte {at}
+msgstr A fájlok eltérnek a(z) {at}. bájttól
+
+msgid  The files differ from byte {at}, and in size
+msgstr A fájlok eltérnek a(z) {at}. bájttól, és méretben is
+
+msgid  The files differ only in line endings
+msgstr A fájlok csak a sorvégekben térnek el
+
+msgid  Theme
+msgstr Téma
+
+msgid  This cannot be undone
+msgstr Ez nem vonható vissza
+
+msgid  Title Case
+msgstr Minden Szó Nagy
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr Túl nagy az összehasonlításhoz: {path} ({size}; a határ F11-ben állítható)
+
+msgid  Transfer stopped unexpectedly
+msgstr Az átvitel váratlanul leállt
+
+msgid  Trash
+msgstr Lomtár
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Gépelj a szűkítéshez    Fel/Le - Választás    Enter - Ugrás    Esc - Bezárás
+
+msgid  Type to search, Esc to clear
+msgstr Gépelj a kereséshez, Esc törli
+
+msgid  UPPER CASE
+msgstr NAGYBETŰS
+
+msgid  Unchanged
+msgstr Változatlan
+
+msgid  Underline
+msgstr Aláhúzás
+
+msgid  Unsaved Changes
+msgstr Mentetlen módosítások
+
+msgid  User Menu
+msgstr Felhasználói menü
+
+msgid  View
+msgstr Nézet
+
+msgid  View "{name}" ({size})?
+msgstr Megtekintés: „{name}” ({size})?
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr Megtekintés: „{name}” ({width}x{height}, {size})?
+
+msgid  View:
+msgstr Nézet:
+
+msgid  Viewer and editor
+msgstr Megjelenítő és szerkesztő
+
+msgid  W Wrap
+msgstr W Tördelés
+
+msgid  W [Wrap]
+msgstr W [Tördelés]
+
+msgid  When destination exists
+msgstr Ha a cél létezik
+
+msgid  When opened
+msgstr Megnyitáskor
+
+msgid  With:
+msgstr Erre:
+
+msgid  Wrapped to the bottom
+msgstr Folytatás a végéről
+
+msgid  Wrapped to the top
+msgstr Folytatás az elejéről
+
+msgid  Written: {name}
+msgstr Kiírva: {name}
+
+msgid  X Image Text [Hex]
+msgstr X Kép Szöveg [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Kép [Szöveg] Hex
+
+msgid  X Text [Hex]
+msgstr X Szöveg [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Kép] Szöveg Hex
+
+msgid  X [Text] Hex
+msgstr X [Szöveg] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Felülírás    N - Kihagyás    K - Mindkettő marad
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Mentés    N - Elvetés    Esc - Mégse
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Enter - Igen    N / Esc - Nem
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] 2-5. betű   [C10+5:3] 10-től, ötösével, 3 jegy
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] név   [E] kiterjesztés   [C] számláló
+
+msgid  a directory cannot be hard linked
+msgstr mappára nem lehet hard linket tenni
+
+msgid  already exists
+msgstr már létezik
+
+msgid  by name, text, regex, size, date
+msgstr név, szöveg, regex, méret, dátum szerint
+
+msgid  del
+msgstr tör
+
+msgid  filter: {pattern}
+msgstr szűrő: {pattern}
+
+msgid  flat
+msgstr lapos
+
+msgid  found
+msgstr találatok
+
+msgid  git did not answer
+msgstr a git nem válaszolt
+
+msgid  given twice
+msgstr kétszer szerepel
+
+msgid  just now
+msgstr épp most
+
+msgid  lower case
+msgstr kisbetűs
+
+msgid  name not readable as text
+msgstr a név nem olvasható szövegként
+
+msgid  newer
+msgstr újabb
+
+msgid  not a plain name
+msgstr nem egyszerű név
+
+msgid  not readable as an archive ({e})
+msgstr archívumként nem olvasható ({e})
+
+msgid  not there
+msgstr nincs meg
+
+msgid  terminal
+msgstr terminál
+
+msgid  to be replaced by "{name}"
+msgstr helyette ez jönne: „{name}”
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr kijelöléssel: mind [N] [E] [C] szerint
+
+msgid  {count} FAILED
+msgstr hibás: {count}
+
+msgid  {count} OK
+msgstr rendben: {count}
+
+msgid  {count} could not be read
+msgstr olvashatatlan: {count}
+
+msgid  {count} h ago
+msgstr {count} órája
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr {count} elemnek mappa kell, és ez nem mappa: {path}
+
+msgid  {count} min ago
+msgstr {count} perce
+
+msgid  {count} missing
+msgstr hiányzik: {count}
+
+msgid  {count} mo ago
+msgstr {count} hónapja
+
+msgid  {count} yr ago
+msgstr {count} éve
+
+msgid  {deleting} to delete
+msgstr törlendő: {deleting}
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} / {total}, {rate}/s
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title}: megszakítva ennyi után: {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr Ezt a nevet ({name}) a {format} formátum nem tárolhatja: nem UTF-8
+
+msgid  {path} already exists
+msgstr Már létezik: {path}
+
+msgid  {path} could not be read after all
+msgstr Mégsem olvasható: {path}
+
+msgid  {path} is a directory
+msgstr Ez egy mappa: {path}
+
+msgid  {program} exited with {status}
+msgstr Kilépett: {program}, állapot: {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Mozgás    Enter/←→ - Módosítás    Esc - Bezárás
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Másol  Del Töröl  Szóköz Hagy  > < Tükröz  R Visszaáll  Enter Futtat  Esc Bezár
+
+msgctxt job
+msgid   Checksum
+msgstr  Ellenőrzőösszeg
+
+msgctxt job
+msgid   Copy
+msgstr  Másolás
+
+msgctxt job
+msgid   Delete
+msgstr  Törlés
+
+msgctxt job
+msgid   Extract
+msgstr  Kibontás
+
+msgctxt job
+msgid   Move
+msgstr  Áthelyezés
+
+msgctxt job
+msgid   Move to trash
+msgstr  Lomtárba helyezés
+
+msgctxt job
+msgid   Pack
+msgstr  Tömörítés
+
+msgctxt job
+msgid   Synchronize
+msgstr  Szinkronizálás
+
+msgid  Copied {count} name
+msgstr[one]    {count} név másolva
+msgstr[other]  {count} név másolva
+
+msgid  Copied {count} path
+msgstr[one]    {count} útvonal másolva
+msgstr[other]  {count} útvonal másolva
+
+msgid  Copy {count} item
+msgstr[one]    {count} elem másolása
+msgstr[other]  {count} elem másolása
+
+msgid  Copy {count} item to: {names}
+msgstr[one]    {count} elem ({names}) másolása ide:
+msgstr[other]  {count} elem ({names}) másolása ide:
+
+msgid  Delete {count} item permanently?
+msgstr[one]    Végleges törlés: {count} elem?
+msgstr[other]  Végleges törlés: {count} elem?
+
+msgid  Delete: {count} item
+msgstr[one]    Törlés: {count} elem
+msgstr[other]  Törlés: {count} elem
+
+msgid  Hard link {count} item
+msgstr[one]    Hard link {count} elemre
+msgstr[other]  Hard link {count} elemre
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]    Hard link {count} elemre ({names}), itt:
+msgstr[other]  Hard link {count} elemre ({names}), itt:
+
+msgid  Move to trash: {count} item
+msgstr[one]    Lomtárba: {count} elem
+msgstr[other]  Lomtárba: {count} elem
+
+msgid  Move {count} item
+msgstr[one]    {count} elem áthelyezése
+msgstr[other]  {count} elem áthelyezése
+
+msgid  Move {count} item to the trash?
+msgstr[one]    Lomtárba kerüljön {count} elem?
+msgstr[other]  Lomtárba kerüljön {count} elem?
+
+msgid  Move {count} item to: {names}
+msgstr[one]    {count} elem ({names}) áthelyezése ide:
+msgstr[other]  {count} elem ({names}) áthelyezése ide:
+
+msgid  Pack {count} item
+msgstr[one]    {count} elem tömörítése
+msgstr[other]  {count} elem tömörítése
+
+msgid  Pack {count} item into: {names}
+msgstr[one]    {count} elem ({names}) tömörítése ide:
+msgstr[other]  {count} elem ({names}) tömörítése ide:
+
+msgid  Rename {count} Entry
+msgstr[one]    {count} elem átnevezése
+msgstr[other]  {count} elem átnevezése
+
+msgid  Replaced {count}
+msgstr[one]    {count} csere
+msgstr[other]  {count} csere
+
+msgid  Symlink {count} item
+msgstr[one]    Szimbolikus link {count} elemre
+msgstr[other]  Szimbolikus link {count} elemre
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]    Szimbolikus link {count} elemre ({names}), itt:
+msgstr[other]  Szimbolikus link {count} elemre ({names}), itt:
+
+msgid  {count} day ago
+msgstr[one]    {count} napja
+msgstr[other]  {count} napja
+
+msgid  {count} difference
+msgstr[one]    {count} eltérés
+msgstr[other]  {count} eltérés
+
+msgid  {count} directory could not be read
+msgstr[one]    {count} mappa olvashatatlan
+msgstr[other]  {count} mappa olvashatatlan
+
+msgid  {count} file
+msgstr[one]    {count} fájl
+msgstr[other]  {count} fájl
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]    {count} fájl, olvashatatlan: {failed}
+msgstr[other]  {count} fájl, olvashatatlan: {failed}
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]    {count} elem - a változatlan vagy üres mező nem módosít semmit
+msgstr[other]  {count} elem - a változatlan vagy üres mező nem módosít semmit
+
+msgid  {count} line
+msgstr[one]    {count} sor
+msgstr[other]  {count} sor
+
+msgid  {count} line not understood
+msgstr[one]    {count} sor értelmezhetetlen
+msgstr[other]  {count} sor értelmezhetetlen
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]    {count} új név nem lehetséges: {why} - lásd a táblázatot
+msgstr[other]  {count} új név nem lehetséges: {why} - lásd a táblázatot
+
+msgid  {done} of {total} entry
+msgstr[one]    {done} / {total} elem
+msgstr[other]  {done} / {total} elem
+
+msgid  {done} of {total} item
+msgstr[one]    {done} / {total} elem
+msgstr[other]  {done} / {total} elem
+
+msgid  {found} differs
+msgstr[one]    {found} eltér
+msgstr[other]  {found} eltér
+
+msgid  {found} differs, comparing
+msgstr[one]    {found} eltér, összehasonlítás
+msgstr[other]  {found} eltér, összehasonlítás
+
+msgid  {found} found
+msgstr[one]    {found} találat
+msgstr[other]  {found} találat
+
+msgid  {found} found, searching
+msgstr[one]    {found} találat, keresés
+msgstr[other]  {found} találat, keresés
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]    {job_title}: megszakítva {done} elem után
+msgstr[other]  {job_title}: megszakítva {done} elem után
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]    {job_title}: megszakítva {done} elem után
+msgstr[other]  {job_title}: megszakítva {done} elem után
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]    {job_title}: kész, {count} elem kihagyva
+msgstr[other]  {job_title}: kész, {count} elem kihagyva
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]    {problems} elem így nem nevezhető át    Esc - Mégse
+msgstr[other]  {problems} elem így nem nevezhető át    Esc - Mégse
+
+msgid  {skipped} left as it is
+msgstr[one]    {skipped} marad, ahogy van
+msgstr[other]  {skipped} marad, ahogy van
