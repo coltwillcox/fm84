@@ -848,3 +848,45 @@ fn git_marks_sit_at_the_end_of_the_name() {
     assert!(!marked);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// In Serbian, longer than English: the headings take the room they need,
+/// arrow and all, and the F-key labels, the options and the Find files
+/// form are drawn whole.
+#[test]
+fn another_language_fits_where_english_did() {
+    crate::i18n::set_language(crate::i18n::Language::Serbian);
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.options.sort_key = SortKey::Size;
+    let screen = |app_state: &mut AppState, width: u16, height: u16| {
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer().clone();
+        (0..height).map(|y| (0..width).map(|x| buffer[(x, y)].symbol().to_string()).collect::<String>()).collect::<Vec<_>>()
+    };
+
+    let rows = screen(&mut app_state, 160, 30);
+    let headings = rows.iter().find(|row| row.contains("Ime")).expect("no headings");
+    for heading in ["Ekst", "Veličina ↑", "Izmenjeno", "Atributi"] {
+        assert!(headings.contains(heading), "{heading} cut in: {headings}");
+    }
+    let keys = rows.iter().rev().find(|row| row.contains("F1 ")).expect("no F-key bar");
+    for label in ["F1 Pomoć", "F5 Kopiraj", "F8 Korpa", "F10 Izlaz", "F12 Prikaz"] {
+        assert!(keys.contains(label), "{label} not whole in: {keys}");
+    }
+
+    app_state.dialog = Some(Dialog::Options { editing: None });
+    let rows = screen(&mut app_state, 100, 60).join("\n");
+    assert!(rows.contains("Prikaži skrivene datoteke") && rows.contains("Jezik") && rows.contains("Izgled"), "{rows}");
+
+    app_state.dialog = Some(Dialog::FindFiles(Box::new(crate::app::FindFiles::Asking(crate::app::FindForm::default()))));
+    let rows = screen(&mut app_state, 100, 30);
+    // The labels in one column, as wide as the widest of them.
+    let form = rows.iter().position(|row| row.contains("Sadrži")).expect("no form") - 1;
+    let at = |label: &str| rows[form..].iter().find_map(|row| row.find(label).map(|byte| row[..byte].chars().count())).unwrap_or_else(|| panic!("{label} not drawn"));
+    let column = at("Ime ");
+    for label in ["Sadrži", "Veličina", "Izmenjeno", "Regex"] {
+        assert_eq!(at(label), column, "{label} out of line");
+    }
+    crate::i18n::set_language(crate::i18n::Language::English);
+}

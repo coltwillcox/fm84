@@ -149,13 +149,20 @@ pub(crate) struct ParseError {
 /// msgstr[one]   Preimenovan {done} od {total}
 /// msgstr[few]   Preimenovana {done} od {total}
 /// msgstr[other] Preimenovano {done} od {total}
+///
+/// msgctxt job
+/// msgid   Copy
+/// msgstr  Kopiranje
 /// ```
 ///
 /// Each text runs to the end of its line, spaces around it trimmed; `\n`
-/// is a line break in it and `\\` a backslash.
+/// is a line break in it and `\\` a backslash. A `msgctxt` before a
+/// `msgid` sets the one word apart from the same word elsewhere, as `tc!`
+/// asks for it.
 pub(crate) fn parse(text: &str) -> Result<Catalog, ParseError> {
     let mut catalog = Catalog::default();
     let mut id: Option<String> = None;
+    let mut context: Option<String> = None;
     let mut translated = false;
     let error = |line: usize, message: &str| ParseError { line: line + 1, message: message.to_string() };
     for (number, line) in text.lines().enumerate() {
@@ -165,6 +172,17 @@ pub(crate) fn parse(text: &str) -> Result<Catalog, ParseError> {
         }
         let (keyword, rest) = line.split_once(char::is_whitespace).unwrap_or((line, ""));
         let rest = unescape(rest.trim());
+        if keyword == "msgctxt" {
+            if id.is_some() && !translated {
+                return Err(error(number, "a msgctxt after a msgid with no msgstr"));
+            }
+            if rest.is_empty() {
+                return Err(error(number, "an empty msgctxt"));
+            }
+            context = Some(rest);
+            id = None;
+            continue;
+        }
         if keyword == "msgid" {
             if id.is_some() && !translated {
                 return Err(error(number, "a msgid with no msgstr before it"));
@@ -172,9 +190,15 @@ pub(crate) fn parse(text: &str) -> Result<Catalog, ParseError> {
             if rest.is_empty() {
                 return Err(error(number, "an empty msgid"));
             }
-            id = Some(rest);
+            id = Some(match context.take() {
+                Some(context) => keyed(&context, &rest),
+                None => rest,
+            });
             translated = false;
             continue;
+        }
+        if context.is_some() {
+            return Err(error(number, "a msgctxt with no msgid after it"));
         }
         let Some(current) = id.clone() else {
             return Err(error(number, "a msgstr with no msgid before it"));
@@ -205,6 +229,11 @@ pub(crate) fn parse(text: &str) -> Result<Catalog, ParseError> {
         });
     }
     Ok(catalog)
+}
+
+/// How a word in a context is kept: the two joined as gettext joins them.
+pub(crate) fn keyed(context: &str, english: &str) -> String {
+    format!("{context}\u{4}{english}")
 }
 
 fn unescape(text: &str) -> String {
@@ -300,6 +329,16 @@ pub fn tr(english: &'static str) -> &'static str {
     catalog(language).and_then(|catalog| catalog.plain.get(english)).map_or(english, String::as_str)
 }
 
+/// `english` as it is meant in `context` - the same word can be two in
+/// another language - or as it is.
+pub fn tr_context(context: &'static str, english: &'static str) -> &'static str {
+    let language = language();
+    if language == Language::English {
+        return english;
+    }
+    catalog(language).and_then(|catalog| catalog.plain.get(&keyed(context, english))).map_or(english, String::as_str)
+}
+
 /// The form of `one` - the English with a count of one, which is its key -
 /// for `count`, or English's own when the language shown has none.
 pub fn tr_count(one: &'static str, other: &'static str, count: u64) -> &'static str {
@@ -356,6 +395,15 @@ macro_rules! t {
     };
     ($text:literal, $($name:ident $(= $value:expr)?),+ $(,)?) => {
         $crate::i18n::fill($crate::i18n::tr($text), &[$((stringify!($name), &t!(@value $name $(= $value)?) as &dyn std::fmt::Display)),+])
+    };
+}
+
+/// A word that another language says differently in different places:
+/// `tc!("job", "Copy")` is the name of a job, where the F5 label is
+/// `t!("Copy")`.
+macro_rules! tc {
+    ($context:literal, $text:literal) => {
+        $crate::i18n::tr_context($context, $text)
     };
 }
 

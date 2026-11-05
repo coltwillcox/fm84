@@ -95,14 +95,14 @@ impl TransferKind {
     /// The word the popup and the cancelled message use.
     pub fn title(self) -> &'static str {
         match self {
-            TransferKind::Copy => t!("Copy"),
-            TransferKind::Move => t!("Move"),
-            TransferKind::Delete => t!("Delete"),
-            TransferKind::Trash => t!("Move to trash"),
-            TransferKind::Extract => t!("Extract"),
-            TransferKind::Pack => t!("Pack"),
-            TransferKind::Checksum => t!("Checksum"),
-            TransferKind::Sync => t!("Synchronize"),
+            TransferKind::Copy => tc!("job", "Copy"),
+            TransferKind::Move => tc!("job", "Move"),
+            TransferKind::Delete => tc!("job", "Delete"),
+            TransferKind::Trash => tc!("job", "Move to trash"),
+            TransferKind::Extract => tc!("job", "Extract"),
+            TransferKind::Pack => tc!("job", "Pack"),
+            TransferKind::Checksum => tc!("job", "Checksum"),
+            TransferKind::Sync => tc!("job", "Synchronize"),
         }
     }
 }

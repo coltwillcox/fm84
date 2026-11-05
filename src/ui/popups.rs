@@ -427,7 +427,7 @@ pub(super) fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
 /// Alt+F7: where the search starts, the fields, and what goes in them.
 pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, start: &Path, form: &crate::app::FindForm) {
     let popup_area = popup_rect(45, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Find files ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Find files")), style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 

@@ -37,6 +37,10 @@ fn a_catalog_reads_and_says_what_is_wrong_with_one_that_does_not() {
     assert_eq!(catalog.plain["Open {name}"], "Otvori {name}");
     assert_eq!(catalog.plain["Two\nlines"], "Dva\nreda");
     assert_eq!(catalog.forms[&("{count} file".to_string(), Form::Few)], "{count} datoteke");
+    let catalog = parse("msgid Copy\nmsgstr Kopiraj\nmsgctxt job\nmsgid Copy\nmsgstr Kopiranje\n").unwrap();
+    assert_eq!(catalog.plain["Copy"], "Kopiraj");
+    assert_eq!(catalog.plain[&keyed("job", "Copy")], "Kopiranje");
+    assert_eq!(parse("msgctxt job\nmsgstr Kopiranje").err().map(|error| error.line), Some(2));
     for (wrong, line) in [
         ("msgstr Alone", 1),
         ("msgid One\nmsgid Two\nmsgstr Dva", 2),
@@ -106,8 +110,9 @@ fn sentences_in(text: &str, file: &str) -> Vec<Sentence> {
     let bytes = text.as_bytes();
     for (start, _) in text.match_indices("!(") {
         let counted = start >= 2 && &text[start - 2..start] == "tn";
-        let name_start = if counted { start - 2 } else { start.saturating_sub(1) };
-        if !(counted || (start >= 1 && &text[start - 1..start] == "t")) {
+        let contextual = start >= 2 && &text[start - 2..start] == "tc";
+        let name_start = if counted || contextual { start - 2 } else { start.saturating_sub(1) };
+        if !(counted || contextual || (start >= 1 && &text[start - 1..start] == "t")) {
             continue;
         }
         if name_start > 0 && (bytes[name_start - 1].is_ascii_alphanumeric() || bytes[name_start - 1] == b'_') {
@@ -126,6 +131,16 @@ fn sentences_in(text: &str, file: &str) -> Vec<Sentence> {
         let Some((english, after)) = literal(rest) else {
             panic!("{at}: t! takes a string literal first");
         };
+        if contextual {
+            let after = after.trim_start().strip_prefix(',').unwrap_or_else(|| panic!("{at}: tc! takes two literals")).trim_start();
+            let text = literal(after).unwrap_or_else(|| panic!("{at}: tc! takes two literals")).0;
+            found.push(Sentence {
+                english: keyed(&english, &text),
+                other: None,
+                at,
+            });
+            continue;
+        }
         let other = if counted {
             let after = after.trim_start().strip_prefix(',').unwrap_or_else(|| panic!("{at}: tn! takes two literals")).trim_start();
             Some(literal(after).unwrap_or_else(|| panic!("{at}: tn! takes two literals")).0)
@@ -203,14 +218,24 @@ fn places(text: &str) -> BTreeSet<String> {
 /// The languages that have words for everything, and are to keep it so:
 /// one of these missing a sentence fails the test. Any other shipped one
 /// shows what it lacks in English.
-const COMPLETE: &[Language] = &[];
+const COMPLETE: &[Language] = &[Language::Serbian];
 
 #[test]
 fn the_scan_finds_each_kind_of_sentence() {
-    let code = "let a = t!(\"Plain\");\nprint!(\"not one\");\nlet b = t!(\"With {name}\", name);\nlet c = tn!(items.len(), \"{count} file\", \"{count} files\", count);\nlet d = t!(\"Carried \\\n        on\");\nlet e = t!(\"A \\\"quote\\\" \\u{2192}\");\n";
+    let code = "let a = t!(\"Plain\");\nprint!(\"not one\");\nlet b = t!(\"With {name}\", name);\nlet c = tn!(items.len(), \"{count} file\", \"{count} files\", count);\nlet d = t!(\"Carried \\\n        on\");\nlet e = t!(\"A \\\"quote\\\" \\u{2192}\");\nlet f = tc!(\"job\", \"Copy\");\n";
     let found = sentences_in(code, "x.rs");
     let english: Vec<(&str, Option<&str>)> = found.iter().map(|sentence| (sentence.english.as_str(), sentence.other.as_deref())).collect();
-    assert_eq!(english, [("Plain", None), ("With {name}", None), ("{count} file", Some("{count} files")), ("Carried on", None), ("A \"quote\" \u{2192}", None)]);
+    assert_eq!(
+        english,
+        [
+            ("Plain", None),
+            ("With {name}", None),
+            ("{count} file", Some("{count} files")),
+            ("Carried on", None),
+            ("A \"quote\" \u{2192}", None),
+            ("job\u{4}Copy", None)
+        ]
+    );
     assert_eq!(found[2].at, "x.rs:4");
 }
 
