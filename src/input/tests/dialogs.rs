@@ -222,6 +222,91 @@ fn find_files_finds_and_goes_there() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// The form's other rows - a regular expression, a size, a time - and the
+/// results fed to the panel, to work on together.
+#[test]
+fn find_files_filters_and_feeds_the_panel() {
+    let dir = std::env::temp_dir().join(format!("fm84-find-feed-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("src").join("deep")).unwrap();
+    std::fs::write(dir.join("src").join("main.rs"), "fn main() {}\n").unwrap();
+    std::fs::write(dir.join("src").join("deep").join("lib.rs"), "pub fn run() {}\n").unwrap();
+    std::fs::write(dir.join("src").join("big.rs"), vec![b'x'; 4096]).unwrap();
+    std::fs::write(dir.join("notes.txt"), "fn in prose\n").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.clone(), None);
+    let alt_f7 = KeyEvent::new(KeyCode::F(7), KeyModifiers::ALT);
+    let form = |app_state: &mut AppState, rows: [&str; 4], regex: bool| {
+        handle_key(app_state, alt_f7);
+        for (row, text) in rows.iter().enumerate() {
+            app_state.dialog_input().unwrap().set(text.to_string());
+            press(app_state, KeyCode::Tab);
+            assert!(row < 3 || app_state.dialog_input().is_none(), "the switch is not typed into");
+        }
+        // On the regex row now: Space turns it on.
+        if regex {
+            press(app_state, KeyCode::Char(' '));
+        }
+        press(app_state, KeyCode::Enter);
+    };
+    let results = |app_state: &mut AppState| {
+        let started = std::time::Instant::now();
+        loop {
+            app_state.poll_find_files();
+            if let Some(Dialog::FindFiles(find)) = &app_state.dialog
+                && let FindFiles::Found(search) = find.as_ref()
+                && search.done
+            {
+                break search.results.iter().map(|(path, _)| path.strip_prefix(&dir).unwrap().to_string_lossy().into_owned()).collect::<Vec<_>>();
+            }
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "the search never finished");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+    };
+    let sep = std::path::MAIN_SEPARATOR;
+
+    // A regular expression, with a word boundary.
+    form(&mut app_state, ["*.rs", r"^(pub )?fn \w+\(", "", ""], true);
+    assert_eq!(results(&mut app_state), [format!("src{sep}deep{sep}lib.rs"), format!("src{sep}main.rs")]);
+    press(&mut app_state, KeyCode::Esc);
+
+    // A size, which leaves the small ones out.
+    form(&mut app_state, ["*", "", ">1K", ""], false);
+    assert_eq!(results(&mut app_state), [format!("src{sep}big.rs")]);
+    press(&mut app_state, KeyCode::Esc);
+
+    // What cannot be read is said so, and the form stays to put it right.
+    form(&mut app_state, ["*", "", "big", ""], false);
+    assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Size as")), "{:?}", app_state.error);
+    assert!(matches!(&app_state.dialog, Some(Dialog::FindFiles(find)) if matches!(**find, FindFiles::Asking(_))));
+    app_state.error = None;
+    press(&mut app_state, KeyCode::Esc);
+
+    // Modified in the last day: every file, fed to the panel.
+    form(&mut app_state, ["*.rs", "", "", "<1d"], false);
+    assert_eq!(results(&mut app_state).len(), 3);
+    press(&mut app_state, KeyCode::Char('f'));
+    assert!(app_state.dialog.is_none());
+    assert!(app_state.flat_left.as_ref().is_some_and(|flat| flat.dir == dir && flat.feed.is_some()));
+    let mut names: Vec<String> = app_state.children_left.iter().filter(|item| !item.is_parent()).map(|item| item.name_full.clone()).collect();
+    names.sort();
+    assert_eq!(names, [format!("src{sep}big.rs"), format!("src{sep}deep{sep}lib.rs"), format!("src{sep}main.rs")]);
+
+    // One deleted since is gone from the list at the reread.
+    std::fs::remove_file(dir.join("src").join("big.rs")).unwrap();
+    app_state.reload_panel(true, None);
+    assert_eq!(app_state.children_left.iter().filter(|item| !item.is_parent()).count(), 2);
+    assert!(app_state.flat_left.as_ref().is_some_and(|flat| flat.feed.is_some()), "a reread keeps it");
+
+    // Ctrl+B goes back to the directory as it is.
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
+    assert!(app_state.flat_left.is_none());
+    assert!(app_state.children_left.iter().any(|item| item.name_full == "notes.txt"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// Shift+F10 quits like F10 but says to leave the shell where it was, and
 /// the last F10 decides: one with Shift, then a job's plain second F10, is a
 /// normal quit.

@@ -47,7 +47,9 @@ mod text_input;
 mod user_menu;
 mod viewing;
 
-pub use self::{archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, tabs::*, text_input::*, user_menu::*, viewing::*};
+pub use self::{
+    archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, tabs::*, text_input::*, user_menu::*, viewing::*,
+};
 
 /// What the prompt in the status bar is asking for: in the viewer or the
 /// editor, something to find or a line to go to; in a panel, a pattern to
@@ -216,8 +218,8 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     /// Ctrl+B: the directory each panel lists every file under, if any.
-    pub flat_left: Option<PathBuf>,
-    pub flat_right: Option<PathBuf>,
+    pub flat_left: Option<Flat>,
+    pub flat_right: Option<Flat>,
     /// What git says of each panel's entries.
     pub git_left: PanelGit,
     pub git_right: PanelGit,
@@ -235,7 +237,7 @@ pub struct AppState {
     pub select_pattern: String,
     /// What Find files last looked for - the name pattern and the text -
     /// offered again the next time.
-    pub find_files_last: (String, String),
+    pub find_files_last: FindForm,
     /// How many results the Find files list showed when it was last drawn,
     /// which is how far PageUp and PageDown go.
     pub find_files_page: usize,
@@ -461,7 +463,7 @@ impl AppState {
             diff_viewport_height: 0,
             diff_viewport_width: 0,
             select_pattern: "*".to_string(),
-            find_files_last: ("*".to_string(), String::new()),
+            find_files_last: FindForm::default(),
             find_files_page: 10,
             find_term: String::new(),
             replace_with: String::new(),
@@ -542,7 +544,7 @@ impl AppState {
             Dialog::Attributes(form) => form.fields.get_mut(form.focus).map(|field| &mut field.input),
             Dialog::MultiRename(rename) => rename.fields.get_mut(rename.focus),
             Dialog::FindFiles(find) => match find.as_mut() {
-                FindFiles::Asking { name, containing, on_containing } => Some(if *on_containing { containing } else { name }),
+                FindFiles::Asking(form) => form.fields.get_mut(form.focus),
                 FindFiles::Found(_) => None,
             },
             _ => None,

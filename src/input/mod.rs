@@ -498,17 +498,24 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         },
         // Find files: first what to look for, then what was found. Esc closes
         // either, which stops a search still running.
-        Some(Dialog::FindFiles(_)) if finding == Some(true) => match code {
-            KeyCode::Esc => app_state.dialog = None,
-            KeyCode::Enter => app_state.start_find_files(),
-            KeyCode::Tab | KeyCode::BackTab | KeyCode::Up | KeyCode::Down => app_state.find_files_switch_field(),
-            _ => edit_text(app_state, code),
-        },
+        Some(Dialog::FindFiles(find)) if finding == Some(true) => {
+            let on_regex = matches!(find.as_ref(), FindFiles::Asking(form) if form.focus == crate::app::FIND_REGEX_ROW);
+            match code {
+                KeyCode::Esc => app_state.dialog = None,
+                KeyCode::Enter => app_state.start_find_files(),
+                KeyCode::Tab | KeyCode::Down => app_state.find_files_switch_field(true),
+                KeyCode::BackTab | KeyCode::Up => app_state.find_files_switch_field(false),
+                KeyCode::Char(' ') | KeyCode::Left | KeyCode::Right if on_regex => app_state.find_files_toggle_regex(),
+                _ if on_regex => {}
+                _ => edit_text(app_state, code),
+            }
+        }
         Some(Dialog::FindFiles(_)) => {
             let page = app_state.find_files_page.max(1) as isize;
             match code {
                 KeyCode::Esc => app_state.dialog = None,
                 KeyCode::Enter => app_state.find_files_go(),
+                KeyCode::Char('f') | KeyCode::Char('F') => app_state.feed_find_files(),
                 KeyCode::Up => app_state.find_files_move(-1),
                 KeyCode::Down => app_state.find_files_move(1),
                 KeyCode::PageUp => app_state.find_files_move(-page),

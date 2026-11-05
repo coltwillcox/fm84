@@ -482,7 +482,7 @@ fn ctrl_b_lists_every_file_below() {
     let sep = std::path::MAIN_SEPARATOR;
 
     ctrl_b(&mut app_state);
-    assert_eq!(app_state.flat_left.as_ref(), Some(&dir));
+    assert_eq!(app_state.flat_left.as_ref().map(|flat| &flat.dir), Some(&dir));
     assert_eq!(names(&app_state), ["..".to_string(), "a.txt".to_string(), format!("sub{sep}b.bin"), format!("sub{sep}deep{sep}c.txt")]);
     let deep = app_state.children_left.iter().find(|item| item.name_full.ends_with("c.txt")).unwrap();
     assert_eq!((deep.name.as_str(), deep.extension.as_str()), (format!("sub{sep}deep{sep}c").as_str(), "txt"));

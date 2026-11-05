@@ -253,9 +253,9 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
             Some(Dialog::DiskChanged { opened, now, .. }) => render_disk_changed_popup(f, area, app_state, *opened, *now),
             Some(Dialog::FindFiles(find)) => match find.as_ref() {
-                FindFiles::Asking { name, containing, on_containing } => {
+                FindFiles::Asking(form) => {
                     let start = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
-                    render_find_files_form(f, area, start, name, containing, *on_containing);
+                    render_find_files_form(f, area, start, form);
                 }
                 FindFiles::Found(search) => find_files_page = Some(render_find_files_results(f, area, search)),
             },

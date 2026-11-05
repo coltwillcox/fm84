@@ -43,7 +43,7 @@ pub struct PendingListing {
     pub(super) _stop: StopOnDrop,
     /// Ctrl+B as it was before this listing was asked for by it, to put
     /// back if the listing never comes.
-    pub(super) restore_flat: Option<Option<PathBuf>>,
+    pub(super) restore_flat: Option<Option<Flat>>,
 }
 
 /// Set as it goes. A listing dropped unused - Esc, or another in its place -
@@ -94,11 +94,19 @@ pub(super) struct Listed {
     pub(super) truncated: bool,
 }
 
+/// How a flat panel is listed: Ctrl+B's walk, which `cancel` stops, or
+/// what Find files fed it, by their paths from the directory.
+pub(super) enum FlatRead<'a> {
+    Walk(&'a AtomicBool),
+    Feed(&'a [(PathBuf, bool)]),
+}
+
 /// Everything a panel needs from the disk, read on the listing thread.
 /// `flat`, for a panel under Ctrl+B, has every file under `dir` listed, and
-/// stops the walk once set - but only for `dir` itself: one climbed out of
-/// to a parent is listed as any directory is.
-pub(super) fn read_listing(dir: &Path, options: &Options, flat: Option<&AtomicBool>) -> Listed {
+/// stops the walk once set - or, with what Find files fed the panel, those
+/// entries alone - but only for `dir` itself: one climbed out of to a parent
+/// is listed as any directory is.
+pub(super) fn read_listing(dir: &Path, options: &Options, flat: Option<FlatRead<'_>>) -> Listed {
     // Ahead of climbing to a directory that is there, which would climb
     // straight out of an archive.
     if let Some(located) = crate::archive::locate(dir) {
@@ -118,7 +126,8 @@ pub(super) fn read_listing(dir: &Path, options: &Options, flat: Option<&AtomicBo
     let stamp = std::fs::metadata(&found).and_then(|metadata| metadata.modified()).ok();
     let mut truncated = false;
     let items = match flat.filter(|_| found == dir) {
-        Some(cancel) => crate::fs_ops::load_flat_rows(&found, options, cancel).map(|(items, cut)| {
+        Some(FlatRead::Feed(feed)) => Ok(crate::fs_ops::load_feed_rows(&found, feed, options)),
+        Some(FlatRead::Walk(cancel)) => crate::fs_ops::load_flat_rows(&found, options, cancel).map(|(items, cut)| {
             truncated = cut;
             items
         }),
@@ -282,11 +291,16 @@ impl AppState {
     pub(super) fn request_listing(&mut self, is_left: bool, dir: PathBuf, navigate: bool, select: Option<OsString>, tab: Option<TabSwitch>, travel: Travel) -> Option<bool> {
         let (sender, answer) = mpsc::channel();
         let (worker_dir, options) = (dir.clone(), self.options.clone());
-        let flat = self.flat(is_left).is_some_and(|flat| *flat == dir);
+        // Flat only for the directory it belongs to, and fed or walked.
+        let flat = self.flat(is_left).filter(|flat| flat.dir == dir).map(|flat| flat.feed.clone());
         let cancel = Arc::new(AtomicBool::new(false));
         let worker_cancel = Arc::clone(&cancel);
         std::thread::spawn(move || {
-            let _ = sender.send(read_listing(&worker_dir, &options, flat.then_some(&*worker_cancel)));
+            let flat = flat.as_ref().map(|feed| match feed {
+                Some(feed) => FlatRead::Feed(feed),
+                None => FlatRead::Walk(&worker_cancel),
+            });
+            let _ = sender.send(read_listing(&worker_dir, &options, flat));
         });
         let pending = PendingListing {
             dir,
@@ -384,7 +398,7 @@ impl AppState {
         }
         let leaving = self.panel_as_tab(is_left);
         // Flat for the directory Ctrl+B was pressed in, and no other.
-        if self.flat(is_left).is_some_and(|flat| *flat != found) {
+        if self.flat(is_left).is_some_and(|flat| flat.dir != found) {
             *self.flat_mut(is_left) = None;
         }
 

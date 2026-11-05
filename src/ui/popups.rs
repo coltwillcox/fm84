@@ -401,8 +401,8 @@ pub(super) fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
     popup_body(f, popup_area, lines);
 }
 
-/// Alt+F7: where the search starts, the two fields, and what goes in them.
-pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, start: &Path, name: &TextInput, containing: &TextInput, on_containing: bool) {
+/// Alt+F7: where the search starts, the fields, and what goes in them.
+pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, start: &Path, form: &crate::app::FindForm) {
     let popup_area = popup_rect(45, area);
     let popup_block = Block::default().title(Line::from(Span::styled(" Find files ", style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
@@ -437,10 +437,20 @@ pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, sta
                 format!("{:<LABEL$}{:<room$}", "In", tail_of(&start.to_string_lossy(), width.saturating_sub(LABEL)), room = width.saturating_sub(LABEL)),
                 style_file(),
             )),
-            field("Name", name, !on_containing),
-            field("Containing", containing, on_containing),
+            field(crate::app::FIND_FIELDS[0], &form.fields[0], form.focus == 0),
+            field(crate::app::FIND_FIELDS[1], &form.fields[1], form.focus == 1),
+            field(crate::app::FIND_FIELDS[2], &form.fields[2], form.focus == 2),
+            field(crate::app::FIND_FIELDS[3], &form.fields[3], form.focus == 3),
+            {
+                let focused = form.focus == crate::app::FIND_REGEX_ROW;
+                let check = format!("[{}] Containing is a regular expression", if form.regex { "x" } else { " " });
+                let room = width.saturating_sub(LABEL);
+                let check = format!("{:<room$}", tail_of(&check, room));
+                Line::from(vec![Span::styled(format!("{:<LABEL$}", "Regex"), style_columns()), Span::styled(check, if focused { style_input() } else { style_file() })])
+            },
             Line::from(Span::styled("Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case", style_columns())),
-            Line::from(Span::styled("Tab - Next field    Enter - Find    Esc - Cancel", style_columns())),
+            Line::from(Span::styled("Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01", style_columns())),
+            Line::from(Span::styled("Tab - Field  Space - Regex  Enter - Find  Esc - Cancel", style_columns())),
         ],
     );
 }
@@ -499,7 +509,11 @@ pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, 
     while lines.len() < rows + 2 {
         lines.push(Line::from(""));
     }
-    let hint = if search.done { "Enter - Go to    Esc - Close" } else { "Enter - Go to    Esc - Stop and close" };
+    let hint = if search.done {
+        "Enter - Go to    F - Feed to panel    Esc - Close"
+    } else {
+        "Enter - Go to    F - Feed to panel    Esc - Stop and close"
+    };
     lines.push(Line::from(Span::styled(hint, style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
     rows

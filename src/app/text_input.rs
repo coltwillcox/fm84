@@ -4,6 +4,7 @@
 use super::*;
 
 /// Reusable single-line text input with cursor.
+#[derive(Clone)]
 pub struct TextInput {
     pub text: String,
     pub cursor: usize,

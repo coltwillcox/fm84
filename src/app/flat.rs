@@ -3,12 +3,23 @@
 
 use super::*;
 
+/// A panel listing more than one directory's entries, for the directory it
+/// belongs to: under Ctrl+B every file below it, or what Find files found
+/// there, fed to the panel.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Flat {
+    pub dir: PathBuf,
+    /// What Find files fed it, by their paths from `dir`, and whether each
+    /// is a directory. None for Ctrl+B's walk.
+    pub feed: Option<Arc<Vec<(PathBuf, bool)>>>,
+}
+
 impl AppState {
-    pub fn flat(&self, is_left: bool) -> Option<&PathBuf> {
+    pub fn flat(&self, is_left: bool) -> Option<&Flat> {
         if is_left { self.flat_left.as_ref() } else { self.flat_right.as_ref() }
     }
 
-    pub(super) fn flat_mut(&mut self, is_left: bool) -> &mut Option<PathBuf> {
+    pub(super) fn flat_mut(&mut self, is_left: bool) -> &mut Option<Flat> {
         if is_left { &mut self.flat_left } else { &mut self.flat_right }
     }
 
@@ -24,7 +35,7 @@ impl AppState {
         let landing = match self.flat_mut(is_left).take() {
             Some(_) => cursor.and_then(|name| Path::new(&name).components().next().map(|first| first.as_os_str().to_os_string())),
             None => {
-                *self.flat_mut(is_left) = Some(self.panel_dir(is_left));
+                *self.flat_mut(is_left) = Some(Flat { dir: self.panel_dir(is_left), feed: None });
                 cursor
             }
         };

@@ -391,10 +391,13 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
     // How the panel is narrowed or widened: Ctrl+B's flat list, Ctrl+S's
     // pattern - kept short, as a long one would push the path off the line.
     let filter_label = |is_left: bool| {
-        let parts: Vec<String> = [app_state.flat(is_left).map(|_| "flat".to_string()), app_state.filter(is_left).map(|filter| format!("filter: {}", tail_of(&filter.text, 24)))]
-            .into_iter()
-            .flatten()
-            .collect();
+        let parts: Vec<String> = [
+            app_state.flat(is_left).map(|flat| if flat.feed.is_some() { "found" } else { "flat" }.to_string()),
+            app_state.filter(is_left).map(|filter| format!("filter: {}", tail_of(&filter.text, 24))),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
         (!parts.is_empty()).then(|| format!(" {} ", parts.join(", ")))
     };
     let sides = [

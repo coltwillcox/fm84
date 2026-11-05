@@ -200,6 +200,33 @@ pub fn load_flat_rows(path: &Path, options: &Options, cancel: &AtomicBool) -> Re
     Ok((children, truncated))
 }
 
+/// What Find files fed a panel: each entry at its path from `dir`, read
+/// afresh, so one deleted or moved since is gone from the list and a size
+/// that changed shows as it is now. Sorted as F11 says, `..` first.
+pub fn load_feed_rows(dir: &Path, feed: &[(PathBuf, bool)], options: &Options) -> Vec<Item> {
+    let mut children = Vec::new();
+    if dir.parent().is_some() {
+        children.push(parent_row());
+    }
+    for (relative, _) in feed.iter().take(crate::constants::FLAT_MAX) {
+        let path = dir.join(relative);
+        let Ok(own) = fs::symlink_metadata(&path) else { continue };
+        let is_symlink = own.file_type().is_symlink();
+        let metadata = if is_symlink { fs::metadata(&path).unwrap_or(own) } else { own };
+        // A link to a directory is as Find files found it: an entry of its own.
+        let is_dir = metadata.is_dir() && !is_symlink;
+        let attributes = format_attributes(&metadata, is_dir, is_symlink);
+        let mut item = row(relative.clone().into_os_string(), is_dir, is_symlink, metadata.len(), metadata.modified().ok(), attributes);
+        if !is_dir && let Some(parent) = relative.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+            item.name = format!("{}{}{}", parent.to_string_lossy(), std::path::MAIN_SEPARATOR, item.name);
+        }
+        children.push(item);
+    }
+    let sort_start = usize::from(dir.parent().is_some());
+    children[sort_start..].sort_by(|a, b| compare_rows(a, b, options));
+    children
+}
+
 /// Ctrl+B inside an archive: every file under `inner`, from the index.
 pub fn archive_flat_rows(index: &crate::archive::Index, inner: &Path, options: &Options) -> Vec<Item> {
     use crate::archive::EntryKind;
