@@ -24,6 +24,9 @@ fn serbian_counts_take_one_few_or_other() {
         [1, 2, 3, 4, 5, 11, 12, 101, 102, 103, 111].map(slovenian),
         [Form::One, Form::Two, Form::Few, Form::Few, Form::Other, Form::Other, Form::Other, Form::One, Form::Two, Form::Few, Form::Other]
     );
+    // Macedonian: ending in 1, but not in 11.
+    let macedonian = |count| Language::Macedonian.plural(count);
+    assert_eq!([1, 2, 11, 21, 101, 111].map(macedonian), [Form::One, Form::Other, Form::Other, Form::One, Form::One, Form::Other]);
     // French counts nothing as one.
     assert_eq!(Language::French.plural(0), Form::One);
     assert_eq!(Language::French.plural(1), Form::One);
@@ -49,6 +52,7 @@ fn a_locale_names_its_language() {
     assert_eq!(Language::from_locale("fr_CA"), Some(Language::French));
     assert_eq!(Language::from_locale("sl_SI.UTF-8"), Some(Language::Slovenian));
     assert_eq!(Language::from_locale("hr_HR.UTF-8"), Some(Language::Croatian));
+    assert_eq!(Language::from_locale("mk_MK.UTF-8"), Some(Language::Macedonian));
     assert_eq!(Language::from_locale("ja_JP.UTF-8"), None);
     for language in Language::ALL {
         assert_eq!(Language::from_key(language.key()), Some(language));
@@ -253,6 +257,7 @@ const COMPLETE: &[Language] = &[
     Language::French,
     Language::Slovenian,
     Language::Croatian,
+    Language::Macedonian,
 ];
 
 #[test]

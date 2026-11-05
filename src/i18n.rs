@@ -27,11 +27,12 @@ pub enum Language {
     French,
     Slovenian,
     Croatian,
+    Macedonian,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 10] = [
+    pub const ALL: [Language; 11] = [
         Language::English,
         Language::Serbian,
         Language::Turkish,
@@ -42,6 +43,7 @@ impl Language {
         Language::French,
         Language::Slovenian,
         Language::Croatian,
+        Language::Macedonian,
     ];
 
     /// How the config file names it.
@@ -57,6 +59,7 @@ impl Language {
             Language::French => "fr",
             Language::Slovenian => "sl",
             Language::Croatian => "hr",
+            Language::Macedonian => "mk",
         }
     }
 
@@ -74,6 +77,7 @@ impl Language {
             Language::French => "Français",
             Language::Slovenian => "Slovenščina",
             Language::Croatian => "Hrvatski",
+            Language::Macedonian => "Македонски",
         }
     }
 
@@ -95,6 +99,7 @@ impl Language {
             Language::French => Some(include_str!("../lang/fr.lang")),
             Language::Slovenian => Some(include_str!("../lang/sl.lang")),
             Language::Croatian => Some(include_str!("../lang/hr.lang")),
+            Language::Macedonian => Some(include_str!("../lang/mk.lang")),
         }
     }
 
@@ -126,6 +131,14 @@ impl Language {
                 3 | 4 => Form::Few,
                 _ => Form::Other,
             },
+            // Ending in 1 but not in 11 one - 1, 21, 101 - the rest other.
+            Language::Macedonian => {
+                if count % 10 == 1 && count % 100 != 11 {
+                    Form::One
+                } else {
+                    Form::Other
+                }
+            }
             // 1, 21, 101 one; 2-4, 22-24 few; the rest, and 11-14, other.
             Language::Serbian | Language::Croatian => match (count % 10, count % 100) {
                 (1, tens) if tens != 11 => Form::One,
@@ -152,6 +165,7 @@ impl Language {
             "fr" => Some(Language::French),
             "sl" => Some(Language::Slovenian),
             "hr" => Some(Language::Croatian),
+            "mk" => Some(Language::Macedonian),
             _ => None,
         }
     }
