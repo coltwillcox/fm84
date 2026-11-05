@@ -18,17 +18,19 @@ pub enum Language {
     English,
     /// In the Latin alphabet.
     Serbian,
+    Turkish,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 2] = [Language::English, Language::Serbian];
+    pub const ALL: [Language; 3] = [Language::English, Language::Serbian, Language::Turkish];
 
     /// How the config file names it.
     pub fn key(self) -> &'static str {
         match self {
             Language::English => "en",
             Language::Serbian => "sr",
+            Language::Turkish => "tr",
         }
     }
 
@@ -38,6 +40,7 @@ impl Language {
         match self {
             Language::English => "English",
             Language::Serbian => "Srpski (latinica)",
+            Language::Turkish => "Türkçe",
         }
     }
 
@@ -51,13 +54,16 @@ impl Language {
         match self {
             Language::English => None,
             Language::Serbian => Some(include_str!("../lang/sr.lang")),
+            Language::Turkish => Some(include_str!("../lang/tr.lang")),
         }
     }
 
     /// Which form a count takes, by the language's own rule.
     pub fn plural(self, count: u64) -> Form {
         match self {
-            Language::English => {
+            // A noun after a number stays as it is in Turkish - "5 dosya" -
+            // but a sentence can still say one apart from the rest.
+            Language::English | Language::Turkish => {
                 if count == 1 {
                     Form::One
                 } else {
@@ -80,6 +86,7 @@ impl Language {
         match code.as_str() {
             "c" | "posix" | "en" => Some(Language::English),
             "sr" => Some(Language::Serbian),
+            "tr" => Some(Language::Turkish),
             _ => None,
         }
     }

@@ -16,6 +16,8 @@ fn serbian_counts_take_one_few_or_other() {
     }
     assert_eq!(Language::English.plural(1), Form::One);
     assert_eq!(Language::English.plural(0), Form::Other);
+    assert_eq!(Language::Turkish.plural(1), Form::One);
+    assert_eq!(Language::Turkish.plural(21), Form::Other);
 }
 
 #[test]
@@ -25,6 +27,7 @@ fn a_locale_names_its_language() {
     assert_eq!(Language::from_locale("en-GB"), Some(Language::English));
     assert_eq!(Language::from_locale("C.UTF-8"), Some(Language::English));
     assert_eq!(Language::from_locale("POSIX"), Some(Language::English));
+    assert_eq!(Language::from_locale("tr_TR.UTF-8"), Some(Language::Turkish));
     assert_eq!(Language::from_locale("de_DE.UTF-8"), None);
     for language in Language::ALL {
         assert_eq!(Language::from_key(language.key()), Some(language));
@@ -218,7 +221,7 @@ fn places(text: &str) -> BTreeSet<String> {
 /// The languages that have words for everything, and are to keep it so:
 /// one of these missing a sentence fails the test. Any other shipped one
 /// shows what it lacks in English.
-const COMPLETE: &[Language] = &[Language::Serbian];
+const COMPLETE: &[Language] = &[Language::Serbian, Language::Turkish];
 
 #[test]
 fn the_scan_finds_each_kind_of_sentence() {
@@ -270,7 +273,7 @@ fn every_catalog_is_whole_and_up_to_date() {
         };
         let whole = COMPLETE.contains(&language);
         let forms: &[Form] = match language {
-            Language::English => &[Form::One, Form::Other],
+            Language::English | Language::Turkish => &[Form::One, Form::Other],
             Language::Serbian => &[Form::One, Form::Few, Form::Other],
         };
         for sentence in &sentences {
