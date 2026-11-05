@@ -34,11 +34,13 @@ pub enum Language {
     Polish,
     Swedish,
     Spanish,
+    /// As Brazil writes it.
+    Portuguese,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 17] = [
+    pub const ALL: [Language; 18] = [
         Language::English,
         Language::Serbian,
         Language::Turkish,
@@ -56,6 +58,7 @@ impl Language {
         Language::Polish,
         Language::Swedish,
         Language::Spanish,
+        Language::Portuguese,
     ];
 
     /// How the config file names it.
@@ -78,6 +81,7 @@ impl Language {
             Language::Polish => "pl",
             Language::Swedish => "sv",
             Language::Spanish => "es",
+            Language::Portuguese => "pt",
         }
     }
 
@@ -102,6 +106,7 @@ impl Language {
             Language::Polish => "Polski",
             Language::Swedish => "Svenska",
             Language::Spanish => "Español",
+            Language::Portuguese => "Português (Brasil)",
         }
     }
 
@@ -130,6 +135,7 @@ impl Language {
             Language::Polish => Some(include_str!("../lang/pl.lang")),
             Language::Swedish => Some(include_str!("../lang/sv.lang")),
             Language::Spanish => Some(include_str!("../lang/es.lang")),
+            Language::Portuguese => Some(include_str!("../lang/pt.lang")),
         }
     }
 
@@ -146,7 +152,7 @@ impl Language {
                 }
             }
             // Nothing is one too: "0 fichier", as "1 fichier".
-            Language::French => {
+            Language::French | Language::Portuguese => {
                 if count <= 1 {
                     Form::One
                 } else {
@@ -215,6 +221,7 @@ impl Language {
             "pl" => Some(Language::Polish),
             "sv" => Some(Language::Swedish),
             "es" => Some(Language::Spanish),
+            "pt" => Some(Language::Portuguese),
             _ => None,
         }
     }
