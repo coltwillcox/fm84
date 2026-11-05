@@ -30,11 +30,12 @@ pub enum Language {
     Macedonian,
     Hungarian,
     Slovak,
+    Czech,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 13] = [
+    pub const ALL: [Language; 14] = [
         Language::English,
         Language::Serbian,
         Language::Turkish,
@@ -48,6 +49,7 @@ impl Language {
         Language::Macedonian,
         Language::Hungarian,
         Language::Slovak,
+        Language::Czech,
     ];
 
     /// How the config file names it.
@@ -66,6 +68,7 @@ impl Language {
             Language::Macedonian => "mk",
             Language::Hungarian => "hu",
             Language::Slovak => "sk",
+            Language::Czech => "cs",
         }
     }
 
@@ -86,6 +89,7 @@ impl Language {
             Language::Macedonian => "Македонски",
             Language::Hungarian => "Magyar",
             Language::Slovak => "Slovenčina",
+            Language::Czech => "Čeština",
         }
     }
 
@@ -110,6 +114,7 @@ impl Language {
             Language::Macedonian => Some(include_str!("../lang/mk.lang")),
             Language::Hungarian => Some(include_str!("../lang/hu.lang")),
             Language::Slovak => Some(include_str!("../lang/sk.lang")),
+            Language::Czech => Some(include_str!("../lang/cs.lang")),
         }
     }
 
@@ -150,7 +155,7 @@ impl Language {
                 }
             }
             // 1 one; 2, 3 and 4 few; everything else, 21 too, other.
-            Language::Slovak => match count {
+            Language::Slovak | Language::Czech => match count {
                 1 => Form::One,
                 2..=4 => Form::Few,
                 _ => Form::Other,
@@ -184,6 +189,7 @@ impl Language {
             "mk" => Some(Language::Macedonian),
             "hu" => Some(Language::Hungarian),
             "sk" => Some(Language::Slovak),
+            "cs" => Some(Language::Czech),
             _ => None,
         }
     }
