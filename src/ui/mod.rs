@@ -243,6 +243,12 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
                     render_checksums_popup(f, area, view);
                 }
             }
+            Some(Dialog::Sync(_)) => {
+                let date_format = app_state.options.date_format;
+                if let Some(Dialog::Sync(plan)) = &mut app_state.dialog {
+                    render_sync_popup(f, area, plan, date_format);
+                }
+            }
             Some(Dialog::MultiRename(_)) => {
                 if let Some(Dialog::MultiRename(rename)) = &mut app_state.dialog {
                     render_multi_rename_popup(f, area, rename);

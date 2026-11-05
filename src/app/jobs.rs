@@ -87,6 +87,8 @@ pub enum TransferKind {
     Pack,
     /// Working out checksums, or checking them.
     Checksum,
+    /// Alt+S's plan: copies either way, and deletes.
+    Sync,
 }
 
 impl TransferKind {
@@ -100,6 +102,7 @@ impl TransferKind {
             TransferKind::Extract => "Extract",
             TransferKind::Pack => "Pack",
             TransferKind::Checksum => "Checksum",
+            TransferKind::Sync => "Synchronize",
         }
     }
 }
@@ -471,7 +474,39 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, mut progres
     progress.finish(Ok(Transfer::Done));
 }
 
+/// The worker thread behind Alt+S: each copy and delete of the plan in its
+/// order, a copy writing over what is in the way - the plan said which way
+/// it goes. Counted in the bytes the copies move.
+fn run_sync_steps(steps: Vec<crate::app::SyncStep>, to_trash: bool, mut progress: JobProgress<'_>) {
+    use crate::app::SyncStep;
+    let copies: Vec<(PathBuf, PathBuf, bool)> = steps
+        .iter()
+        .filter_map(|step| match step {
+            SyncStep::Copy(from, to, is_dir) => Some((from.clone(), to.clone(), *is_dir)),
+            SyncStep::Delete(..) => None,
+        })
+        .collect();
+    let _ = progress.updates.send(JobUpdate::Total(measure(&copies)));
+    for step in steps {
+        let outcome = match step {
+            SyncStep::Copy(from, to, is_dir) => copy_path(from, to, is_dir, &mut progress),
+            SyncStep::Delete(path, is_dir) if to_trash => crate::fs_ops::trash_path(path, is_dir, &mut progress),
+            SyncStep::Delete(path, is_dir) => delete_path(path, is_dir, &mut progress),
+        };
+        match outcome {
+            Ok(Transfer::Done) => {}
+            outcome => return progress.finish(outcome),
+        }
+    }
+    progress.finish(Ok(Transfer::Done));
+}
+
 impl AppState {
+    /// Alt+S's plan, run.
+    pub fn start_sync(&mut self, steps: Vec<crate::app::SyncStep>, to_trash: bool) {
+        self.start_job(TransferKind::Sync, Clashes::ReplaceAll, move |progress| run_sync_steps(steps, to_trash, progress));
+    }
+
     /// Hand a long job to a worker thread and start following it.
     fn start_job<F>(&mut self, kind: TransferKind, clashes: Clashes, work: F)
     where

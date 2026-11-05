@@ -17,6 +17,7 @@ mod options;
 mod scroll_bar;
 mod search;
 mod strip;
+mod sync;
 mod ui;
 mod utils;
 mod viewer;
@@ -234,6 +235,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.poll_transfer();
         app_state.poll_branch_switch();
         app_state.poll_find_files();
+        app_state.poll_sync();
         app_state.poll_dir_sizes();
         app_state.poll_git_marks();
         app_state.image_cache.collect();

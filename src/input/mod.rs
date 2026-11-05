@@ -142,6 +142,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'm' {
             app_state.open_user_menu();
         }
+        // Alt+S, synchronize the panels' directories.
+        if in_panel && c == 's' {
+            app_state.open_sync();
+        }
         // Alt+O, the programs the entry under the cursor can be opened with.
         if in_panel && c == 'o' {
             open_cursor_with(app_state);
@@ -442,6 +446,28 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             }
             _ => {}
         },
+        Some(Dialog::Sync(plan)) => {
+            use crate::app::SyncAction;
+            let page = plan.room.max(1) as isize;
+            match code {
+                KeyCode::Esc => app_state.dialog = None,
+                KeyCode::Enter => app_state.run_sync(),
+                KeyCode::Up => app_state.sync_move(-1),
+                KeyCode::Down => app_state.sync_move(1),
+                KeyCode::PageUp => app_state.sync_move(-page),
+                KeyCode::PageDown => app_state.sync_move(page),
+                KeyCode::Home => app_state.sync_move(isize::MIN),
+                KeyCode::End => app_state.sync_move(isize::MAX),
+                KeyCode::Right => app_state.sync_set(SyncAction::ToRight),
+                KeyCode::Left => app_state.sync_set(SyncAction::ToLeft),
+                KeyCode::Delete | KeyCode::Char('d') | KeyCode::Char('D') => app_state.sync_set(SyncAction::DeleteLeft),
+                KeyCode::Char(' ') | KeyCode::Char('=') => app_state.sync_set(SyncAction::Skip),
+                KeyCode::Char('>') => app_state.sync_mirror(Some(true)),
+                KeyCode::Char('<') => app_state.sync_mirror(Some(false)),
+                KeyCode::Char('r') | KeyCode::Char('R') => app_state.sync_mirror(None),
+                _ => {}
+            }
+        }
         Some(Dialog::OpenWith(_)) => match code {
             KeyCode::Esc => app_state.dialog = None,
             KeyCode::Enter => app_state.open_with_chosen(),

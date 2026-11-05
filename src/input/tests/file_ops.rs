@@ -882,3 +882,125 @@ fn f2_on_a_selection_renames_every_name_by_a_pattern() {
     assert!(matches!(app_state.dialog, Some(Dialog::Rename(_))));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+S compares the panels all the way down, offers each difference the
+/// way its newer side says, takes changes to the plan, and runs it as one
+/// job - asking a second Enter before it deletes.
+#[test]
+fn alt_s_synchronizes_the_panels() {
+    use crate::app::SyncAction;
+    use std::time::{Duration, SystemTime};
+    let root = std::env::temp_dir().join(format!("fm84-sync-keys-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    let (left, right) = (root.join("left"), root.join("right"));
+    let write = |path: std::path::PathBuf, body: &str, age: u64| {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, body).unwrap();
+        std::fs::File::options().write(true).open(&path).unwrap().set_modified(SystemTime::now() - Duration::from_secs(age)).unwrap();
+    };
+    write(left.join("a.txt"), "new left", 10);
+    write(right.join("a.txt"), "old right", 1000);
+    write(left.join("sub/b.txt"), "old left", 1000);
+    write(right.join("sub/b.txt"), "new right", 10);
+    write(left.join("only-left/c.txt"), "c", 10);
+    write(right.join("only-right.txt"), "r", 10);
+    write(right.join("stray.txt"), "s", 10);
+    write(left.join("same-age.txt"), "four", 50);
+    write(right.join("same-age.txt"), "three", 50);
+
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options {
+        delete_to_trash: false,
+        confirm_delete: true,
+        ..crate::options::Options::default()
+    };
+    app_state.open_dir(false, right.clone(), None);
+    app_state.is_left_active = true;
+    app_state.open_dir(true, left.clone(), None);
+    let alt_s = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('s'), KeyModifiers::ALT));
+    let wait = |app_state: &mut AppState| {
+        let started = std::time::Instant::now();
+        while !matches!(&app_state.dialog, Some(Dialog::Sync(plan)) if plan.done) {
+            app_state.poll_sync();
+            assert!(started.elapsed() < Duration::from_secs(10), "the compare never finished");
+            std::thread::sleep(Duration::from_millis(5));
+        }
+    };
+    let plan = |app_state: &AppState| -> Vec<(String, SyncAction)> {
+        let Some(Dialog::Sync(plan)) = &app_state.dialog else { panic!("no plan") };
+        plan.entries.iter().map(|entry| (entry.difference.path.to_string_lossy().replace('\\', "/"), entry.action)).collect()
+    };
+
+    alt_s(&mut app_state);
+    wait(&mut app_state);
+    use SyncAction::*;
+    assert_eq!(
+        plan(&app_state),
+        [
+            ("a.txt".to_string(), ToRight),
+            ("only-left".into(), ToRight),
+            ("only-right.txt".into(), ToLeft),
+            ("same-age.txt".into(), Skip),
+            ("stray.txt".into(), ToLeft),
+            ("sub/b.txt".into(), ToLeft)
+        ]
+    );
+
+    // On same-age.txt: ← takes the right one; on stray.txt, Delete deletes
+    // it from the right, the side that has it; a file cannot be deleted
+    // from both sides at once, so a.txt stays as it was.
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Left);
+    press(&mut app_state, KeyCode::Delete);
+    press(&mut app_state, KeyCode::Home);
+    press(&mut app_state, KeyCode::Delete);
+    let actions: Vec<SyncAction> = plan(&app_state).into_iter().map(|(_, action)| action).collect();
+    assert_eq!(actions, [ToRight, ToRight, ToLeft, ToLeft, DeleteRight, ToLeft]);
+
+    // > mirrors the left onto the right, R puts the plan back.
+    press(&mut app_state, KeyCode::Char('>'));
+    let actions: Vec<SyncAction> = plan(&app_state).into_iter().map(|(_, action)| action).collect();
+    assert_eq!(actions, [ToRight, ToRight, DeleteRight, ToRight, DeleteRight, ToRight]);
+    press(&mut app_state, KeyCode::Char('r'));
+    assert_eq!(plan(&app_state)[3].1, Skip);
+    press(&mut app_state, KeyCode::End);
+    press(&mut app_state, KeyCode::Up);
+    press(&mut app_state, KeyCode::Delete);
+
+    // A plan that deletes asks again; another key takes the first back.
+    press(&mut app_state, KeyCode::Enter);
+    assert!(matches!(&app_state.dialog, Some(Dialog::Sync(plan)) if plan.armed));
+    press(&mut app_state, KeyCode::Up);
+    assert!(matches!(&app_state.dialog, Some(Dialog::Sync(plan)) if !plan.armed));
+    press(&mut app_state, KeyCode::Enter);
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.dialog.is_none());
+    let started = std::time::Instant::now();
+    while app_state.job.is_some() {
+        app_state.poll_transfer();
+        assert!(started.elapsed() < Duration::from_secs(10), "the job never finished");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert!(app_state.error.is_none(), "{:?}", app_state.error);
+    let read = |path: std::path::PathBuf| std::fs::read_to_string(path).ok();
+    assert_eq!(read(right.join("a.txt")).as_deref(), Some("new left"));
+    assert_eq!(read(left.join("sub/b.txt")).as_deref(), Some("new right"));
+    assert_eq!(read(right.join("only-left/c.txt")).as_deref(), Some("c"));
+    assert_eq!(read(left.join("only-right.txt")).as_deref(), Some("r"));
+    assert!(read(right.join("stray.txt")).is_none() && read(left.join("stray.txt")).is_none());
+    assert_eq!((read(left.join("same-age.txt")).as_deref(), read(right.join("same-age.txt")).as_deref()), (Some("four"), Some("three")));
+
+    // Compared again: only the one left as it was still differs.
+    alt_s(&mut app_state);
+    wait(&mut app_state);
+    assert_eq!(plan(&app_state), [("same-age.txt".to_string(), Skip)]);
+    press(&mut app_state, KeyCode::Esc);
+
+    // Not with one directory inside the other.
+    app_state.open_dir(false, left.join("sub"), None);
+    alt_s(&mut app_state);
+    assert!(app_state.dialog.is_none() && app_state.error.as_deref().is_some_and(|error| error.contains("inside")));
+    std::fs::remove_dir_all(&root).unwrap();
+}

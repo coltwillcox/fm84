@@ -275,6 +275,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
             TransferKind::Extract => " Extracting ".to_string(),
             TransferKind::Pack => " Packing ".to_string(),
             TransferKind::Checksum => " Checksumming ".to_string(),
+            TransferKind::Sync => " Synchronizing ".to_string(),
         }
     };
     let popup_area = popup_rect(30, area);
@@ -340,6 +341,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Extract => " Cannot extract ",
         TransferKind::Pack => " Cannot pack ",
         TransferKind::Checksum => " Cannot read ",
+        TransferKind::Sync => " Cannot synchronize ",
     };
     let popup_area = popup_rect(30, area);
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
@@ -774,6 +776,119 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
         Line::from(Span::styled(cut_to(&format!("{problems} cannot be renamed as it stands    Esc - Cancel"), width), Style::new().fg(palette().selected_marker))).centered()
     } else {
         Line::from(Span::styled(cut_to("Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel", width), style_columns())).centered()
+    };
+    lines.push(keys);
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+/// Alt+S: the plan. Each entry that differs by its path from both
+/// directories, what each side has of it - its size and age - and between
+/// them what is to happen: copied one way or the other, deleted from the
+/// side that has it, or left. The newer side of two files is the brighter.
+pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &mut crate::app::SyncPlan, date_format: crate::options::DateFormat) {
+    use crate::app::SyncAction;
+    // As wide as the panels: a path and both sides' sizes and ages to fit.
+    let panels = screen_layout(area)[2];
+    let popup_area = centered(panels, (panels.width as usize).saturating_sub(4).max(1), popup_rect(80, area).height as usize);
+    let popup_block = Block::default().title(Line::from(Span::styled(" Synchronize ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    let half = width.saturating_sub(5) / 2;
+    let mut lines = vec![Line::from(vec![
+        Span::styled(format!("{:<half$}", tail_of(&plan.left.to_string_lossy(), half)), style_dir()),
+        Span::styled("     ", style_columns()),
+        Span::styled(tail_of(&plan.right.to_string_lossy(), half), style_dir()),
+    ])];
+    let found = plan.entries.len();
+    let mut status = match &plan.looking_in {
+        Some(dir) => {
+            let said = format!("{found} differ, comparing ");
+            let dir = if dir.as_os_str().is_empty() { ".".to_string() } else { dir.to_string_lossy().into_owned() };
+            format!("{said}{}", tail_of(&dir, width.saturating_sub(display_width(&said))))
+        }
+        None if found == 0 => "The directories hold the same files".to_string(),
+        None => format!("{found} differ"),
+    };
+    match plan.unreadable {
+        0 => {}
+        1 => status.push_str(" - 1 directory could not be read"),
+        many => status.push_str(&format!(" - {many} directories could not be read")),
+    }
+    lines.push(Line::from(Span::styled(status, style_title())));
+    lines.push(Line::from(""));
+
+    // Each side: its size and age, in the panels' date format.
+    let now = std::time::SystemTime::now();
+    // The ages go when the path would be left too little room.
+    let dated = width >= 2 * (9 + 1 + 16) + 7 + 16;
+    let side_width = if dated { 9 + 1 + 16 } else { 9 };
+    let path_width = width.saturating_sub(2 * side_width + 7);
+    let side = |side: Option<crate::sync::Side>| match side {
+        None => format!("{:side_width$}", ""),
+        Some(side) => {
+            let size = if side.is_dir { "<DIR>".to_string() } else { crate::utils::format_size(side.size) };
+            if !dated {
+                return format!("{:>9}", cut_to(&size, 9));
+            }
+            let date = side.modified.map(|time| crate::utils::format_modified(time, date_format, now)).unwrap_or_default();
+            format!("{:>9} {:<16}", cut_to(&size, 9), cut_to(&date, 16))
+        }
+    };
+    let rows = (inner.height as usize).saturating_sub(lines.len() + 3);
+    plan.room = rows.max(1);
+    plan.scroll = plan.scroll.min(plan.entries.len().saturating_sub(plan.room)).min(plan.cursor);
+    if rows > 0 && plan.cursor >= plan.scroll + rows {
+        plan.scroll = plan.cursor + 1 - rows;
+    }
+    for (index, entry) in plan.entries.iter().enumerate().skip(plan.scroll).take(rows) {
+        let difference = &entry.difference;
+        let mut path = difference.path.to_string_lossy().into_owned();
+        if entry.is_dir() {
+            path.push(std::path::MAIN_SEPARATOR);
+        }
+        let path = tail_of(&printable_name(&path), path_width);
+        let (arrow, arrow_style) = match entry.action {
+            SyncAction::ToRight => ("  ──▶  ", style_dir()),
+            SyncAction::ToLeft => ("  ◀──  ", style_dir()),
+            SyncAction::DeleteLeft => (" ✗ del ", Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD)),
+            SyncAction::DeleteRight => (" del ✗ ", Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD)),
+            SyncAction::Skip if difference.left.is_some() && difference.right.is_some() => ("   ≠   ", style_columns()),
+            SyncAction::Skip => ("       ", style_columns()),
+        };
+        let newer = difference.left_newer();
+        let side_style = |is_newer: bool| if is_newer { style_file() } else { style_columns() };
+        let mut spans = vec![
+            Span::styled(format!("{path:<path_width$}"), style_dir()),
+            Span::styled(side(difference.left), side_style(newer != Some(false))),
+            Span::styled(arrow, arrow_style),
+            Span::styled(side(difference.right), side_style(newer != Some(true))),
+        ];
+        if index == plan.cursor {
+            for span in &mut spans {
+                span.style = span.style.bg(palette().selected_background);
+            }
+        }
+        lines.push(Line::from(spans));
+    }
+    while lines.len() < (inner.height as usize).saturating_sub(2) {
+        lines.push(Line::from(""));
+    }
+    let [right, left, deleting, skipped] = plan.counts();
+    let tally = format!("{right} ──▶    {left} ◀──    {deleting} to delete    {skipped} left as they are");
+    lines.push(Line::from(Span::styled(cut_to(&tally, width), style_title())).centered());
+    let keys = if plan.armed {
+        Line::from(Span::styled(
+            cut_to(&format!("Enter again to run, deleting {deleting}    Any other key - Not yet"), width),
+            Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD),
+        ))
+        .centered()
+    } else if !plan.done {
+        Line::from(Span::styled(cut_to("Comparing...    Esc - Stop and close", width), style_columns())).centered()
+    } else {
+        Line::from(Span::styled(cut_to("→ ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close", width), style_columns())).centered()
     };
     lines.push(keys);
     f.render_widget(Paragraph::new(lines), inner);

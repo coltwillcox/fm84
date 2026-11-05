@@ -40,6 +40,7 @@ mod open_with;
 mod preview;
 mod selection;
 mod settings;
+mod sync;
 mod tabs;
 #[cfg(test)]
 mod tests;
@@ -48,7 +49,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, tabs::*, text_input::*, user_menu::*, viewing::*,
+    archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, user_menu::*,
+    viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -155,6 +157,9 @@ pub enum Dialog {
     UserMenu(Box<UserMenu>),
     /// F2 with a selection: every name selected changed by one pattern.
     MultiRename(Box<MultiRename>),
+    /// Alt+S: the panels' directories compared all the way down, and the
+    /// plan of what to copy which way and what to delete.
+    Sync(Box<SyncPlan>),
     /// Alt+O: the programs the entry under the cursor can be opened with.
     OpenWith(Box<OpenWith>),
     /// A click on a panel's git branch: the repository's branches, to change
