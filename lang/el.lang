@@ -1,0 +1,1603 @@
+# fm84 στα ελληνικά.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, [other] for the rest. A msgctxt sets
+# one use of a word apart from the same word elsewhere. {name} is a place
+# the program fills, kept as it is. The letters to press - Y, N, A and the
+# like - stay as they are, and so do the names of the keys, which Greek
+# keyboards print in Latin. A question ends in the Greek question mark, ;
+
+msgid  "{name}" has changed since it was opened
+msgstr Το "{name}" άλλαξε από τότε που άνοιξε
+
+msgid  "{name}" is already in {folder}
+msgstr Το "{name}" υπάρχει ήδη στο {folder}
+
+msgid  "{name}" is no longer there
+msgstr Το "{name}" δεν υπάρχει πια
+
+msgid  "{path}" is already there
+msgstr Το "{path}" είναι ήδη εκεί
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Μεγέθυνση {zoom}%
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- επιλογή/αποεπιλογή με μοτίβο, * αντιστροφή
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): μόνο ανάγνωση
+
+msgid  12-hour
+msgstr 12ωρο
+
+msgid  24-hour
+msgstr 24ωρο
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Αντικατάσταση όλων    S - Παράλειψη όλων    B - Κράτα και τα δύο για όλα
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr Σκληρός σύνδεσμος στο {path}, που δεν αντιγράφεται έξω
+
+msgid  A root directory cannot go to the trash
+msgstr Ένας ριζικός φάκελος δεν πάει στον κάδο
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr Διαχειριστής αρχείων synthwave δύο πάνελ, για το τερματικό
+
+msgid  About
+msgstr Σχετικά
+
+msgid  Already exists: {name}
+msgstr Υπάρχει ήδη: {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Υπάρχει ήδη: {path} - Αντικατάσταση ή Κράτα και τα δύο στο F11
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Υπάρχει ήδη: {path} - άλλο όνομα, ή Αντικατάσταση ή Κράτα και τα δύο στο F11
+
+msgid  Already there
+msgstr Υπάρχει ήδη
+
+msgid  Alt+* invert with directories
+msgstr Alt+* αντιστροφή μαζί με φακέλους
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Δικαιώματα, κάτοχος, ώρα
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Κάτω όλοι οι φάκελοι που επισκεφθήκατε
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (ή Ctrl+Shift+F5) σύνδεσμος, Tab σκληρός
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (ή Ctrl+F7) εύρεση αρχείων
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Αθροίσματα ελέγχου (Tab αλγόριθμος)· έλεγχος αρχείου
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Αριστερά/Δεξιά πίσω/μπροστά
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Μενού χρήστη (το E το επεξεργάζεται)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O άνοιγμα με... (E ανά επέκταση)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Συμπίεση σε αρχειοθήκη (Tab μορφή)
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R σε Εύρεση ή Αντικατάσταση: regex
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - Συγχρονισμός των δύο φακέλων
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Shift+Enter μέγεθος όλων των φακέλων
+
+msgid  Appearance
+msgstr Εμφάνιση
+
+msgid  Archives are read-only
+msgstr Οι αρχειοθήκες είναι μόνο για ανάγνωση
+
+msgid  Ascending
+msgstr Αύξουσα
+
+msgid  Ask
+msgstr Ερώτηση
+
+msgid  Ask before opening over
+msgstr Ερώτηση πριν το άνοιγμα πάνω από
+
+msgid  Attributes
+msgstr Ιδιότητες
+
+msgid  Attributes column
+msgstr Στήλη Ιδιότητες
+
+msgid  Automatic
+msgstr Αυτόματο
+
+msgid  Automatic ({language})
+msgstr Αυτόματο ({language})
+
+msgid  Background
+msgstr Φόντο
+
+msgid  Bar
+msgstr Γραμμή
+
+msgid  Behaviour
+msgstr Συμπεριφορά
+
+msgid  Binary
+msgstr Δυαδικό
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Δυαδικό αρχείο. Πατήστε Esc για επιστροφή.
+
+msgid  Block
+msgstr Μπλοκ
+
+msgid  Bookmarks
+msgstr Σελιδοδείκτες
+
+msgid  Both panels show the same directory
+msgstr Και τα δύο πάνελ δείχνουν τον ίδιο φάκελο
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Και τα δύο πάνελ δείχνουν τον ίδιο φάκελο: τίποτα για συγχρονισμό
+
+msgid  Branches:
+msgstr Κλάδοι:
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Φτιαγμένο με Rust, Ratatui και Crossterm
+
+msgid  Built-in
+msgstr Ενσωματωμένος
+
+msgid  C - Copy
+msgstr C - Αντιγραφή
+
+msgid  Cancelling
+msgstr Ακύρωση
+
+msgid  Cannot calculate size: {e}
+msgstr Αδύνατος ο υπολογισμός μεγέθους: {e}
+
+msgid  Cannot change {what}
+msgstr Αδύνατη η αλλαγή: {what}
+
+msgid  Cannot copy
+msgstr Αδύνατη η αντιγραφή
+
+msgid  Cannot copy "{path}" into itself
+msgstr Το "{path}" δεν αντιγράφεται μέσα στον εαυτό του
+
+msgid  Cannot copy to {path}
+msgstr Αδύνατη η αντιγραφή σε {path}
+
+msgid  Cannot delete
+msgstr Αδύνατη η διαγραφή
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr Αδύνατη η επεξεργασία του {path}: δεν είναι κείμενο UTF-8. Το F3 το δείχνει όπως είναι.
+
+msgid  Cannot extract
+msgstr Αδύνατη η αποσυμπίεση
+
+msgid  Cannot link {what}
+msgstr Αδύνατη η σύνδεση: {what}
+
+msgid  Cannot make room beside {path}
+msgstr Δεν γίνεται χώρος δίπλα στο {path}
+
+msgid  Cannot make room to compare: {e}
+msgstr Δεν γίνεται χώρος για σύγκριση: {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Δεν γίνεται χώρος για άνοιγμα: {e}
+
+msgid  Cannot move
+msgstr Αδύνατη η μετακίνηση
+
+msgid  Cannot move to the trash: {why}
+msgstr Αδύνατη η μετακίνηση στον κάδο: {why}
+
+msgid  Cannot move to trash
+msgstr Αδύνατη η μετακίνηση στον κάδο
+
+msgid  Cannot open file: {e}
+msgstr Αδύνατο το άνοιγμα του αρχείου: {e}
+
+msgid  Cannot open terminal: {e}
+msgstr Αδύνατο το άνοιγμα τερματικού: {e}
+
+msgid  Cannot open {path}: {e}
+msgstr Αδύνατο το άνοιγμα του {path}: {e}
+
+msgid  Cannot pack
+msgstr Αδύνατη η συμπίεση
+
+msgid  Cannot pack into {path}
+msgstr Αδύνατη η συμπίεση σε {path}
+
+msgid  Cannot reach {target}
+msgstr Απρόσιτο: {target}
+
+msgid  Cannot read
+msgstr Αδύνατη η ανάγνωση
+
+msgid  Cannot read file
+msgstr Αδύνατη η ανάγνωση του αρχείου
+
+msgid  Cannot read {path}
+msgstr Αδύνατη η ανάγνωση του {path}
+
+msgid  Cannot read {path}: {e}
+msgstr Αδύνατη η ανάγνωση του {path}: {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Ο φάκελος {path} δεν αντικαθίσταται με αρχείο
+
+msgid  Cannot replace directory {path} with a link
+msgstr Ο φάκελος {path} δεν αντικαθίσταται με σύνδεσμο
+
+msgid  Cannot replace file {path} with a directory
+msgstr Το αρχείο {path} δεν αντικαθίσταται με φάκελο
+
+msgid  Cannot run git: {e}
+msgstr Αδύνατη η εκτέλεση του git: {e}
+
+msgid  Cannot run {label}: {e}
+msgstr Αδύνατη η εκτέλεση του {label}: {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr Αδύνατη η αποθήκευση σελιδοδεικτών: {e}
+
+msgid  Cannot save options: {e}
+msgstr Αδύνατη η αποθήκευση ρυθμίσεων: {e}
+
+msgid  Cannot start {program}: {e}
+msgstr Αδύνατη η εκκίνηση του {program}: {e}
+
+msgid  Cannot synchronize
+msgstr Αδύνατος ο συγχρονισμός
+
+msgid  Cannot write {path}: {e}
+msgstr Αδύνατη η εγγραφή του {path}: {e}
+
+msgid  Case
+msgstr Πεζά/κεφ.
+
+msgid  Case-sensitive sort
+msgstr Διάκριση πεζών/κεφαλαίων
+
+msgid  Changed on disk
+msgstr Άλλαξε στον δίσκο
+
+msgid  Checked against {file}
+msgstr Έλεγχος έναντι του {file}
+
+msgid  Checksumming
+msgstr Υπολογισμός αθροισμάτων ελέγχου
+
+msgid  Checksums
+msgstr Αθροίσματα ελέγχου
+
+msgid  Choose another program
+msgstr Επιλογή άλλου προγράμματος
+
+msgid  Classic
+msgstr Κλασικός
+
+msgid  Click the git branch to switch it
+msgstr Κλικ στον κλάδο git για αλλαγή
+
+msgid  Clock
+msgstr Ρολόι
+
+msgid  Compare
+msgstr Σύγκριση
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Σύγκριση...    Esc - Διακοπή και κλείσιμο
+
+msgid  Confirm copy and move
+msgstr Επιβεβαίωση αντιγραφής και μετακίνησης
+
+msgid  Confirm delete
+msgstr Επιβεβαίωση διαγραφής
+
+msgid  Containing
+msgstr Περιέχει
+
+msgid  Containing is a regular expression
+msgstr Το Περιέχει είναι κανονική έκφραση
+
+msgid  Copied name: {text}
+msgstr Αντιγράφηκε το όνομα: {text}
+
+msgid  Copied path: {text}
+msgstr Αντιγράφηκε η διαδρομή: {text}
+
+msgid  Copied the report
+msgstr Η αναφορά αντιγράφηκε
+
+msgid  Copied: {text}
+msgstr Αντιγράφηκε: {text}
+
+msgid  Copy
+msgstr Αντιγρ.
+
+msgid  Copy "{name}" to:
+msgstr Αντιγραφή του "{name}" σε:
+
+msgid  Copy directory
+msgstr Αντιγραφή φακέλου
+
+msgid  Copy file
+msgstr Αντιγραφή αρχείου
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Αντιγράψτε το πρώτα έξω από την αρχειοθήκη: τα αθροίσματα ελέγχου υπολογίζονται για αρχεία στον δίσκο
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Αντιγράψτε το πρώτα έξω από την αρχειοθήκη: ό,τι συμπιέζεται πρέπει να είναι στον δίσκο
+
+msgid  Copying
+msgstr Αντιγραφή
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Δεν άλλαξαν {count} από {total}. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Δεν συνδέθηκαν {count} από {total}. {first}
+
+msgid  Counting...
+msgstr Καταμέτρηση...
+
+msgid  Create Directory
+msgstr Νέος φάκελος
+
+msgid  Create File
+msgstr Νέο αρχείο
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Όλα τα αρχεία από κάτω, επίπεδα
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Αντιγραφή διαδρομών/ονομάτων
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Σελιδοδείκτες
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Εύρεση
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F εύρεση, F3/Shift+F3 επόμενο/προηγούμενο
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Ταξινόμηση όνομα/επέκ./ημερ./μέγεθος
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G μετάβαση σε γραμμή, Ctrl+R/F4 αντικατάσταση
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Μετάβαση σε διαδρομή (ή κλικ πάνω της)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Αριστερά/Δεξιά - Φάκελος σε εκείνο το πάνελ
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgUp/PgDn, Alt+1..9 εναλλαγή
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Επαναφόρτωση και των δύο πάνελ
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - Φιλτράρισμα πάνελ με μοτίβο
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Νέα/κλείσιμο καρτέλας
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U εναλλαγή πάνελ, Alt+I ίδιος φάκελος εκεί
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z αναίρεση, Ctrl+Y επανάληψη, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Αναίρεση
+
+msgid  Cursor
+msgstr Δρομέας
+
+msgid  Cursor blinks
+msgstr Ο δρομέας αναβοσβήνει
+
+msgid  D - Delete permanently
+msgstr D - Οριστική διαγραφή
+
+msgid  Dashed
+msgstr Διακεκομμένη
+
+msgid  Date format
+msgstr Μορφή ημερομηνίας
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Η αποκωδικοποίηση τόσο μεγάλης εικόνας θέλει τόση μνήμη.
+
+msgid  Delete
+msgstr Διαγραφή
+
+msgid  Delete "{name}" permanently?
+msgstr Οριστική διαγραφή του "{name}";
+
+msgid  Delete to trash (F8)
+msgstr Διαγραφή στον κάδο (F8)
+
+msgid  Delete: directory
+msgstr Διαγραφή: φάκελος
+
+msgid  Delete: file
+msgstr Διαγραφή: αρχείο
+
+msgid  Deleting
+msgstr Διαγραφή
+
+msgid  Descending
+msgstr Φθίνουσα
+
+msgid  Deselect:
+msgstr Αποεπιλογή:
+
+msgid  Destination already exists: {path}
+msgstr Ο προορισμός υπάρχει ήδη: {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Διαφέρουν: {left} αριστερά, {right} δεξιά
+
+msgid  Difference {at}/{count}
+msgstr Διαφορά {at}/{count}
+
+msgid  Directories first
+msgstr Πρώτα οι φάκελοι
+
+msgid  Directory "{name}"
+msgstr Φάκελος "{name}"
+
+msgid  Directory History
+msgstr Ιστορικό φακέλων
+
+msgid  Double
+msgstr Διπλή
+
+msgid  Edit
+msgstr Επεξεργ.
+
+msgid  Edit "{name}" ({size})?
+msgstr Επεξεργασία του "{name}" ({size});
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr Επεξεργασία του "{name}" ({width}x{height}, {size});
+
+msgid  Edit:
+msgstr Επεξεργασία:
+
+msgid  Editor (F4)
+msgstr Επεξεργαστής (F4)
+
+msgid  Empty terminal command
+msgstr Κενή εντολή τερματικού
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Κρυπτογραφημένο: το fm84 δεν το διαβάζει χωρίς τον κωδικό
+
+msgid  Enter - Copy
+msgstr Enter - Αντιγραφή
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Enter - Δημιουργία    Esc - Άκυρο
+
+msgid  Enter - Extract
+msgstr Enter - Αποσυμπίεση
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Enter - Μετάβαση    F - Στο πάνελ    Esc - Κλείσιμο
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Enter - Μετάβαση    F - Στο πάνελ    Esc - Διακοπή και κλείσιμο
+
+msgid  Enter - Hard link
+msgstr Enter - Σκληρός σύνδεσμος
+
+msgid  Enter - Move
+msgstr Enter - Μετακίνηση
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Enter - Άνοιγμα φακέλου, ή είσοδος σε αρχειοθήκη
+
+msgid  Enter - Pack
+msgstr Enter - Συμπίεση
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Enter - Αποθήκευση    Esc - Άκυρο    {} - φάκελος
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Enter - Αποθήκευση    Esc - Άκυρο    {} - αρχείο
+
+msgid  Enter - Symlink
+msgstr Enter - Συμβολικός σύνδεσμος
+
+msgid  Enter - Write
+msgstr Enter - Εγγραφή
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Ξανά Enter για εκτέλεση, διαγράφονται {deleting}    Άλλο πλήκτρο - Όχι ακόμα
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Enter/1-9 - Μετάβαση    A/Ins - Προσθήκη εδώ    D/Del - Αφαίρεση
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Enter/1-9 - Άνοιγμα    E - Επεξεργασία συσχετίσεων    Esc - Κλείσιμο
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Enter/1-9 - Εκτέλεση    E - Επεξεργασία μενού    Esc - Κλείσιμο
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Enter/Κλικ - Αλλαγή    Esc - Κλείσιμο
+
+msgid  Error
+msgstr Σφάλμα
+
+msgid  Esc - Back to editing
+msgstr Esc - Πίσω στην επεξεργασία
+
+msgid  Esc - Cancel
+msgstr Esc - Άκυρο
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Esc - Άκυρο    Ξανά F10 - Έξοδος
+
+msgid  Esc - Close
+msgstr Esc - Κλείσιμο
+
+msgid  Esc Exit
+msgstr Esc Έξοδος
+
+msgid  Existing
+msgstr Υπάρχον
+
+msgid  Ext
+msgstr Επέκ.
+
+msgid  Ext column
+msgstr Στήλη Επέκ.
+
+msgid  Extension
+msgstr Επέκταση
+
+msgid  Extract "{name}" to:
+msgstr Αποσυμπίεση του "{name}" σε:
+
+msgid  Extract archive
+msgstr Αποσυμπίεση αρχειοθήκης
+
+msgid  Extracting
+msgstr Αποσυμπίεση
+
+msgid  F Fit [Fill]
+msgstr F Προσαρμογή [Γέμισμα]
+
+msgid  F [Fit] Fill
+msgstr F [Προσαρμογή] Γέμισμα
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F προσαρμογή/γέμισμα, +/- μεγέθυνση, W αναδίπλωση
+
+msgid  F on the results feeds them to the panel
+msgstr το F στα αποτελέσματα τα φέρνει στο πάνελ
+
+msgid  F1 - This help
+msgstr F1 - Αυτή η βοήθεια
+
+msgid  F10 - Quit
+msgstr F10 - Έξοδος
+
+msgid  F10 again - Quit
+msgstr Ξανά F10 - Έξοδος
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Ρυθμίσεις (Alt+F1/F2 μονάδες)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Προεπισκόπηση στο άλλο πάνελ
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Μετονομασία φακέλου/αρχείου
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Αποθήκευση
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Προβολή αρχείου (X κείμενο/hex/εικόνα)
+
+msgid  F3/N Next
+msgstr F3/N Επόμενη
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Επεξεργασία αρχείου (Ctrl+S/F2 αποθήκευση)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Αντιγραφή (στο άλλο πάνελ, ή όπου γραφτεί)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 αντιγράφει έξω, Alt+F9 (ή Ctrl+F9) τα πάντα
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Μετακίνηση (στο άλλο πάνελ, ή όπου γραφτεί)
+
+msgid  F7 - Create directory
+msgstr F7 - Νέος φάκελος
+
+msgid  F8 - Move to trash
+msgstr F8 - Μετακίνηση στον κάδο
+
+msgid  F9 - Open terminal
+msgstr F9 - Άνοιγμα τερματικού
+
+msgid  File "{name}"
+msgstr Αρχείο "{name}"
+
+msgid  Fill
+msgstr Γέμισμα
+
+msgid  Filter:
+msgstr Φίλτρο:
+
+msgid  Find
+msgstr Εύρεση
+
+msgid  Find (regex, Alt+R for text):
+msgstr Εύρεση (regex, Alt+R για κείμενο):
+
+msgid  Find files
+msgstr Εύρεση αρχείων
+
+msgid  Find files cannot search inside an archive yet
+msgstr Η εύρεση αρχείων δεν ψάχνει ακόμα μέσα σε αρχειοθήκη
+
+msgid  Find:
+msgstr Εύρεση:
+
+msgid  First letter
+msgstr Πρώτο γράμμα κεφαλαίο
+
+msgid  Fit
+msgstr Προσαρμογή
+
+msgid  Git marks
+msgstr Σημάδια git
+
+msgid  Go to line:
+msgstr Μετάβαση στη γραμμή:
+
+msgid  Gone
+msgstr Χάθηκε
+
+msgid  Group
+msgstr Ομάδα
+
+msgid  Hard link "{name}" at:
+msgstr Σκληρός σύνδεσμος στο "{name}" σε:
+
+msgid  Hard link directory
+msgstr Σκληρός σύνδεσμος σε φάκελο
+
+msgid  Hard link file
+msgstr Σκληρός σύνδεσμος σε αρχείο
+
+msgid  Heavy
+msgstr Παχιά
+
+msgid  Help
+msgstr Βοήθεια
+
+msgid  Help/About
+msgstr Βοήθεια/Σχετικά
+
+msgid  High contrast
+msgstr Υψηλή αντίθεση
+
+msgid  Highlight files up to
+msgstr Επισήμανση αρχείων έως
+
+msgid  Icons
+msgstr Εικονίδια
+
+msgid  Image backgrounds
+msgstr Φόντο εικόνων
+
+msgid  Images open as
+msgstr Οι εικόνες ανοίγουν με
+
+msgid  In
+msgstr Σε
+
+msgid  It got shorter while it was being packed
+msgstr Μίκρυνε όσο συμπιεζόταν
+
+msgid  Keep both
+msgstr Κράτα και τα δύο
+
+msgid  Keys
+msgstr Πλήκτρα
+
+msgid  Language
+msgstr Γλώσσα
+
+msgid  Large File
+msgstr Μεγάλο αρχείο
+
+msgid  Large Picture
+msgstr Μεγάλη εικόνα
+
+msgid  Line numbers
+msgstr Αριθμοί γραμμών
+
+msgid  Line {at}/{count}
+msgstr Γραμμή {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Γρ {line}, Στ {column}
+
+msgid  Military
+msgstr Στρατιωτικό
+
+msgid  Mkdir
+msgstr Νέος φάκ.
+
+msgid  Mode
+msgstr Δικαιώματα
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Δικαιώματα όπως 755 ή u+x,go-w· κάτοχος και ομάδα με όνομα ή αριθμό
+
+msgid  Modified
+msgstr Τροποποίηση
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Τροποποίηση όπως <7d, >1y, 1d..7d, 2026-10-01 ή >2026-10-01, όχι {text}
+
+msgid  Modified column
+msgstr Στήλη Τροποποίηση
+
+msgid  Move
+msgstr Μετακ.
+
+msgid  Move "{name}" to the trash?
+msgstr Μετακίνηση του "{name}" στον κάδο;
+
+msgid  Move "{name}" to:
+msgstr Μετακίνηση του "{name}" σε:
+
+msgid  Move directory
+msgstr Μετακίνηση φακέλου
+
+msgid  Move file
+msgstr Μετακίνηση αρχείου
+
+msgid  Move to trash: directory
+msgstr Στον κάδο: φάκελος
+
+msgid  Move to trash: file
+msgstr Στον κάδο: αρχείο
+
+msgid  Moving
+msgstr Μετακίνηση
+
+msgid  Moving to trash
+msgstr Μετακίνηση στον κάδο
+
+msgid  Name
+msgstr Όνομα
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Όνομα όπως στο +: *.jpg;*.png, ή */ για φακέλους. Τα πεζά βρίσκουν πεζά και κεφαλαία
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Δώστε όνομα αρχειοθήκης, με κατάληξη {endings}
+
+msgid  New
+msgstr Νέο
+
+msgid  New name
+msgstr Νέο όνομα
+
+msgid  Next
+msgstr Επόμενο
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Δεν υπάρχουν σελιδοδείκτες - το A κρατά τον φάκελο του πάνελ
+
+msgid  No branches yet: nothing has been committed
+msgstr Δεν υπάρχουν κλάδοι: δεν έχει γίνει commit
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Δεν υπάρχουν εντολές - το E τις προσθέτει, ως ετικέτα = εντολή, στο
+
+msgid  No config directory
+msgstr Δεν υπάρχει φάκελος ρυθμίσεων
+
+msgid  No config directory to keep a menu in
+msgstr Δεν υπάρχει φάκελος ρυθμίσεων για μενού
+
+msgid  No config directory to keep associations in
+msgstr Δεν υπάρχει φάκελος ρυθμίσεων για τις συσχετίσεις
+
+msgid  No such directory: {path}
+msgstr Δεν υπάρχει ο φάκελος: {path}
+
+msgid  No such file or directory: {path}
+msgstr Δεν υπάρχει το αρχείο ή ο φάκελος: {path}
+
+msgid  No such group: {text}
+msgstr Δεν υπάρχει η ομάδα: {text}
+
+msgid  No such user: {text}
+msgstr Δεν υπάρχει ο χρήστης: {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Δεν βρέθηκε εξομοιωτής τερματικού. Ορίστε το $TERMINAL.
+
+msgid  Not a line number: {text}
+msgstr Όχι αριθμός γραμμής: {text}
+
+msgid  Not a mode: {text}
+msgstr Όχι δικαιώματα: {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Όχι δικαιώματα: {text} - 755, ή u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Όχι απλό όνομα αρχείου: {name}
+
+msgid  Not a regular expression: {why}
+msgstr Όχι κανονική έκφραση: {why}
+
+msgid  Not a regular file
+msgstr Όχι κανονικό αρχείο
+
+msgid  Not a regular file: {path}
+msgstr Όχι κανονικό αρχείο: {path}
+
+msgid  Not a time here: {text}
+msgstr Αυτή η ώρα δεν υπάρχει εδώ: {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Όχι ώρα: {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Όχι αρχειοθήκη: {path}
+
+msgid  Not found: {term}
+msgstr Δεν βρέθηκε: {term}
+
+msgid  Nothing chosen for {label}
+msgstr Δεν επιλέχθηκε τίποτα για {label}
+
+msgid  Nothing found
+msgstr Δεν βρέθηκε τίποτα
+
+msgid  Nothing found to feed to the panel
+msgstr Δεν βρέθηκε τίποτα για το πάνελ
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Τίποτα δεν είναι μικρότερο από 0 byte
+
+msgid  Nothing replaced
+msgstr Δεν αντικαταστάθηκε τίποτα
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Τίποτα για σύγκριση: το άλλο πάνελ δεν έχει αρχείο με αυτό το όνομα, ούτε κάποιο κάτω από τον δρομέα
+
+msgid  Nothing to synchronize
+msgstr Τίποτα για συγχρονισμό
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Τίποτα για εγγραφή: δεν υπολογίστηκε κανένα άθροισμα ελέγχου
+
+msgid  Nothing visited matches
+msgstr Κανένας φάκελος που επισκεφθήκατε δεν ταιριάζει
+
+msgid  Now
+msgstr Τώρα
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Αντικατάσταση όλων των παλαιότερων    Esc - Ματαίωση
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Αντικατάσταση    R - Επαναφόρτωση, χάνονται οι αλλαγές
+
+msgid  O - Save it again
+msgstr O - Αποθήκευση ξανά
+
+msgid  Off
+msgstr Όχι
+
+msgid  Old name
+msgstr Παλιό όνομα
+
+msgid  On
+msgstr Ναι
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr Ο φάκελος του ενός πάνελ είναι μέσα στου άλλου: τίποτα για συγχρονισμό
+
+msgid  Only the first {count} files are listed
+msgstr Εμφανίζονται μόνο τα πρώτα {count} αρχεία
+
+msgid  Open {name} With
+msgstr Άνοιγμα του {name} με
+
+msgid  Options
+msgstr Ρυθμίσεις
+
+msgid  Overwrite
+msgstr Αντικατάσταση
+
+msgid  Owner
+msgstr Κάτοχος
+
+msgid  Pack "{name}" into:
+msgstr Συμπίεση του "{name}" σε:
+
+msgid  Pack directory
+msgstr Συμπίεση φακέλου
+
+msgid  Pack file
+msgstr Συμπίεση αρχείου
+
+msgid  Packing
+msgstr Συμπίεση
+
+msgid  Panels
+msgstr Πάνελ
+
+msgid  Plain
+msgstr Απλά
+
+msgid  Plain Text
+msgstr Απλό κείμενο
+
+msgid  Preview
+msgstr Προεπισκ.
+
+msgid  Preview on startup
+msgstr Προεπισκόπηση στην εκκίνηση
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Βάλτε τον δρομέα σε αρχείο για σύγκριση, ή επιλέξτε δύο
+
+msgid  Put the cursor on an archive to extract it
+msgstr Βάλτε τον δρομέα σε αρχειοθήκη για αποσυμπίεση
+
+msgid  Quit
+msgstr Έξοδος
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Ξανά    S - Παράλειψη    A - Παράλειψη όλων    Esc - Ματαίωση
+
+msgid  Read pictures ahead
+msgstr Ανάγνωση εικόνων εκ των προτέρων
+
+msgid  Reading a file this large may take a while.
+msgstr Η ανάγνωση τόσο μεγάλου αρχείου ίσως αργήσει.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr Ανάγνωση {dir}…  Esc για διακοπή
+
+msgid  Refuse
+msgstr Άρνηση
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Σχετική
+
+msgid  Released under the {license} License
+msgstr Κυκλοφορεί με την άδεια {license}
+
+msgid  Remember directories
+msgstr Απομνημόνευση φακέλων
+
+msgid  Rename
+msgstr Μετονομ.
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr Μετονομάστηκαν {done} από {total}, μετά: {e}
+
+msgid  Replace
+msgstr Αντικατ.
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr Αντικατάσταση του "{find}" με "{with}";   Y - Ναι   N - Όχι   A - Όλα   Esc - Τέλος
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Αντικατάσταση (regex, Alt+R για κείμενο):
+
+msgid  Replace:
+msgstr Αντικατάσταση:
+
+msgid  Row {at}/{count}
+msgstr Γραμμή {at}/{count}
+
+msgid  Save
+msgstr Αποθήκ.
+
+msgid  Save changes before closing?
+msgstr Αποθήκευση αλλαγών πριν το κλείσιμο;
+
+msgid  Scroll bars
+msgstr Γραμμές κύλισης
+
+msgid  Search:
+msgstr Αναζήτηση:
+
+msgid  Select:
+msgstr Επιλογή:
+
+msgid  Shade
+msgstr Σκίαση
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Shift+Enter (ή Ctrl+O) άνοιγμα όπως το σύστημα
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Shift+F10 έξοδος, το cd84 μένει όπου ήταν
+
+msgid  Shift+F2 compare directories
+msgstr Shift+F2 σύγκριση φακέλων
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Shift+F3 (ή =) σύγκριση δύο αρχείων
+
+msgid  Shift+F3/P Previous
+msgstr Shift+F3/P Προηγούμενη
+
+msgid  Shift+F4 - Create file
+msgstr Shift+F4 - Νέο αρχείο
+
+msgid  Shift+F8 delete permanently
+msgstr Shift+F8 οριστική διαγραφή
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Shift+Πάνω/Κάτω - Μετακίνηση    Esc - Κλείσιμο
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Shift+βέλη επιλογή, Ctrl+A όλα
+
+msgid  Show hidden files
+msgstr Εμφάνιση κρυφών αρχείων
+
+msgid  Size
+msgstr Μέγεθος
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Μέγεθος όπως >10M, <1K ή 1M..10M, όχι {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Μέγεθος όπως >10M, <1K ή 1M..10M· Τροποποίηση όπως <7d, >1y, 1d..7d, 2026-10-01 ή >2026-10-01
+
+msgid  Size column
+msgstr Στήλη Μέγεθος
+
+msgid  Size units
+msgstr Μονάδες μεγέθους
+
+msgid  Sort by
+msgstr Ταξινόμηση κατά
+
+msgid  Sort direction
+msgstr Κατεύθυνση ταξινόμησης
+
+msgid  Space - Select/deselect file
+msgstr Space - Επιλογή/αποεπιλογή αρχείου
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Η αλλαγή στον {branch} σταμάτησε απρόσμενα
+
+msgid  Symbolic links are not supported here
+msgstr Οι συμβολικοί σύνδεσμοι δεν υποστηρίζονται εδώ
+
+msgid  Symlink "{name}" at:
+msgstr Συμβολικός σύνδεσμος στο "{name}" σε:
+
+msgid  Symlink directory
+msgstr Συμβολικός σύνδεσμος σε φάκελο
+
+msgid  Symlink file
+msgstr Συμβολικός σύνδεσμος σε αρχείο
+
+msgid  Synchronize
+msgstr Συγχρονισμός
+
+msgid  Synchronizing
+msgstr Συγχρονισμός
+
+msgid  System default
+msgstr Προεπιλογή συστήματος
+
+msgid  Tab - Algorithm
+msgstr Tab - Αλγόριθμος
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Πεδίο   ←/→ - Πεζά/κεφ.   Enter - Μετονομασία   Esc - Άκυρο
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Πεδίο  Space - Regex  Enter - Εύρεση  Esc - Άκυρο
+
+msgid  Tab - Format
+msgstr Tab - Μορφή
+
+msgid  Tab - Hard link
+msgstr Tab - Σκληρός σύνδεσμος
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Επόμενο πεδίο    Enter - Εφαρμογή    Esc - Άκυρο
+
+msgid  Tab - Symlink
+msgstr Tab - Συμβολικός σύνδεσμος
+
+msgid  Tab completes a name
+msgstr Tab συμπληρώνει ένα όνομα
+
+msgid  Tab width
+msgstr Πλάτος tab
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab εσοχή, Ctrl+/ σχόλιο
+
+msgid  Terminal
+msgstr Τερματικό
+
+msgid  Terminal (F9)
+msgstr Τερματικό (F9)
+
+msgid  Terminal too small
+msgstr Πολύ μικρό τερματικό
+
+msgid  The archive ends before it
+msgstr Η αρχειοθήκη τελειώνει πριν από αυτό
+
+msgid  The directories hold the same files
+msgstr Οι φάκελοι έχουν τα ίδια αρχεία
+
+msgid  The files are identical
+msgstr Τα αρχεία είναι ίδια
+
+msgid  The files differ from byte {at}
+msgstr Τα αρχεία διαφέρουν από το byte {at}
+
+msgid  The files differ from byte {at}, and in size
+msgstr Τα αρχεία διαφέρουν από το byte {at}, και στο μέγεθος
+
+msgid  The files differ only in line endings
+msgstr Τα αρχεία διαφέρουν μόνο στα τέλη γραμμών
+
+msgid  Theme
+msgstr Θέμα
+
+msgid  This cannot be undone
+msgstr Αυτό δεν αναιρείται
+
+msgid  Title Case
+msgstr Κάθε Λέξη Κεφαλαία
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr Πολύ μεγάλο για σύγκριση: {path} ({size}· το όριο ορίζεται στο F11)
+
+msgid  Transfer stopped unexpectedly
+msgstr Η μεταφορά σταμάτησε απρόσμενα
+
+msgid  Trash
+msgstr Κάδος
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Πληκτρολογήστε για περιορισμό    Πάνω/Κάτω - Επιλογή    Enter - Μετάβαση    Esc - Κλείσιμο
+
+msgid  Type to search, Esc to clear
+msgstr Πληκτρολογήστε για αναζήτηση, Esc για καθαρισμό
+
+msgid  UPPER CASE
+msgstr ΚΕΦΑΛΑΙΑ
+
+msgid  Unchanged
+msgstr Χωρίς αλλαγή
+
+msgid  Underline
+msgstr Υπογράμμιση
+
+msgid  Unsaved Changes
+msgstr Μη αποθηκευμένες αλλαγές
+
+msgid  User Menu
+msgstr Μενού χρήστη
+
+msgid  View
+msgstr Προβολή
+
+msgid  View "{name}" ({size})?
+msgstr Προβολή του "{name}" ({size});
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr Προβολή του "{name}" ({width}x{height}, {size});
+
+msgid  View:
+msgstr Προβολή:
+
+msgid  Viewer and editor
+msgstr Προβολή και επεξεργασία
+
+msgid  W Wrap
+msgstr W Αναδίπλωση
+
+msgid  W [Wrap]
+msgstr W [Αναδίπλωση]
+
+msgid  When destination exists
+msgstr Όταν ο προορισμός υπάρχει
+
+msgid  When opened
+msgstr Στο άνοιγμα
+
+msgid  With:
+msgstr Με:
+
+msgid  Wrapped to the bottom
+msgstr Συνέχεια από το τέλος
+
+msgid  Wrapped to the top
+msgstr Συνέχεια από την αρχή
+
+msgid  Written: {name}
+msgstr Γράφτηκε: {name}
+
+msgid  X Image Text [Hex]
+msgstr X Εικόνα Κείμενο [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Εικόνα [Κείμενο] Hex
+
+msgid  X Text [Hex]
+msgstr X Κείμενο [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Εικόνα] Κείμενο Hex
+
+msgid  X [Text] Hex
+msgstr X [Κείμενο] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Αντικατάσταση    N - Παράλειψη    K - Κράτα και τα δύο
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Αποθήκευση    N - Απόρριψη    Esc - Άκυρο
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Enter - Ναι    N / Esc - Όχι
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] γράμματα 2 έως 5   [C10+5:3] από 10, ανά 5, 3 ψηφία
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] όνομα   [E] επέκταση   [C] μετρητής
+
+msgid  a directory cannot be hard linked
+msgstr ένας φάκελος δεν παίρνει σκληρό σύνδεσμο
+
+msgid  already exists
+msgstr υπάρχει ήδη
+
+msgid  by name, text, regex, size, date
+msgstr κατά όνομα, κείμενο, regex, μέγεθος, ημερομηνία
+
+msgid  del
+msgstr διγ
+
+msgid  filter: {pattern}
+msgstr φίλτρο: {pattern}
+
+msgid  flat
+msgstr επίπεδη
+
+msgid  found
+msgstr ευρήματα
+
+msgid  git did not answer
+msgstr το git δεν απάντησε
+
+msgid  given twice
+msgstr δόθηκε δύο φορές
+
+msgid  just now
+msgstr μόλις τώρα
+
+msgid  lower case
+msgstr πεζά
+
+msgid  name not readable as text
+msgstr το όνομα δεν διαβάζεται ως κείμενο
+
+msgid  newer
+msgstr νεότερο
+
+msgid  not a plain name
+msgstr όχι απλό όνομα
+
+msgid  not readable as an archive ({e})
+msgstr δεν διαβάζεται ως αρχειοθήκη ({e})
+
+msgid  not there
+msgstr δεν υπάρχει
+
+msgid  terminal
+msgstr τερματικό
+
+msgid  to be replaced by "{name}"
+msgstr θα αντικατασταθεί από το "{name}"
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr με επιλογή: όλα με [N] [E] [C]
+
+msgid  {count} FAILED
+msgstr λάθη: {count}
+
+msgid  {count} OK
+msgstr {count} εντάξει
+
+msgid  {count} could not be read
+msgstr μη αναγνώσιμα: {count}
+
+msgid  {count} h ago
+msgstr πριν {count} ώρ.
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr {count} στοιχεία θέλουν φάκελο προορισμού, και το {path} δεν είναι φάκελος
+
+msgid  {count} min ago
+msgstr πριν {count} λεπ.
+
+msgid  {count} missing
+msgstr λείπουν: {count}
+
+msgid  {count} mo ago
+msgstr πριν {count} μήν.
+
+msgid  {count} yr ago
+msgstr πριν {count} έτη
+
+msgid  {deleting} to delete
+msgstr για διαγραφή: {deleting}
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} από {total}, {rate}/s
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title}: ακυρώθηκε μετά από {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr Το {name} δεν είναι όνομα που χωρά σε {format}: δεν είναι UTF-8
+
+msgid  {path} already exists
+msgstr Το {path} υπάρχει ήδη
+
+msgid  {path} could not be read after all
+msgstr Το {path} τελικά δεν διαβάστηκε
+
+msgid  {path} is a directory
+msgstr Το {path} είναι φάκελος
+
+msgid  {program} exited with {status}
+msgstr Το {program} τερμάτισε με {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Μετακίνηση    Enter/←→ - Αλλαγή    Esc - Κλείσιμο
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Αντιγραφή  Del Διαγραφή  Space Άφησε  > < Καθρέφτισμα  R Επαναφορά  Enter Εκτέλεση  Esc Κλείσιμο
+
+msgctxt job
+msgid   Checksum
+msgstr  Άθροισμα ελέγχου
+
+msgctxt job
+msgid   Copy
+msgstr  Αντιγραφή
+
+msgctxt job
+msgid   Delete
+msgstr  Διαγραφή
+
+msgctxt job
+msgid   Extract
+msgstr  Αποσυμπίεση
+
+msgctxt job
+msgid   Move
+msgstr  Μετακίνηση
+
+msgctxt job
+msgid   Move to trash
+msgstr  Μετακίνηση στον κάδο
+
+msgctxt job
+msgid   Pack
+msgstr  Συμπίεση
+
+msgctxt job
+msgid   Synchronize
+msgstr  Συγχρονισμός
+
+msgid  Copied {count} name
+msgstr[one]   Αντιγράφηκε {count} όνομα
+msgstr[other] Αντιγράφηκαν {count} ονόματα
+
+msgid  Copied {count} path
+msgstr[one]   Αντιγράφηκε {count} διαδρομή
+msgstr[other] Αντιγράφηκαν {count} διαδρομές
+
+msgid  Copy {count} item
+msgstr[one]   Αντιγραφή {count} στοιχείου
+msgstr[other] Αντιγραφή {count} στοιχείων
+
+msgid  Copy {count} item to: {names}
+msgstr[one]   Αντιγραφή {count} στοιχείου ({names}) σε:
+msgstr[other] Αντιγραφή {count} στοιχείων ({names}) σε:
+
+msgid  Delete {count} item permanently?
+msgstr[one]   Οριστική διαγραφή {count} στοιχείου;
+msgstr[other] Οριστική διαγραφή {count} στοιχείων;
+
+msgid  Delete: {count} item
+msgstr[one]   Διαγραφή: {count} στοιχείο
+msgstr[other] Διαγραφή: {count} στοιχεία
+
+msgid  Hard link {count} item
+msgstr[one]   Σκληρός σύνδεσμος σε {count} στοιχείο
+msgstr[other] Σκληροί σύνδεσμοι σε {count} στοιχεία
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]   Σκληρός σύνδεσμος σε {count} στοιχείο ({names}) σε:
+msgstr[other] Σκληροί σύνδεσμοι σε {count} στοιχεία ({names}) σε:
+
+msgid  Move to trash: {count} item
+msgstr[one]   Στον κάδο: {count} στοιχείο
+msgstr[other] Στον κάδο: {count} στοιχεία
+
+msgid  Move {count} item
+msgstr[one]   Μετακίνηση {count} στοιχείου
+msgstr[other] Μετακίνηση {count} στοιχείων
+
+msgid  Move {count} item to the trash?
+msgstr[one]   Μετακίνηση {count} στοιχείου στον κάδο;
+msgstr[other] Μετακίνηση {count} στοιχείων στον κάδο;
+
+msgid  Move {count} item to: {names}
+msgstr[one]   Μετακίνηση {count} στοιχείου ({names}) σε:
+msgstr[other] Μετακίνηση {count} στοιχείων ({names}) σε:
+
+msgid  Pack {count} item
+msgstr[one]   Συμπίεση {count} στοιχείου
+msgstr[other] Συμπίεση {count} στοιχείων
+
+msgid  Pack {count} item into: {names}
+msgstr[one]   Συμπίεση {count} στοιχείου ({names}) σε:
+msgstr[other] Συμπίεση {count} στοιχείων ({names}) σε:
+
+msgid  Rename {count} Entry
+msgstr[one]   Μετονομασία {count} στοιχείου
+msgstr[other] Μετονομασία {count} στοιχείων
+
+msgid  Replaced {count}
+msgstr[one]   Αντικαταστάθηκε {count} εμφάνιση
+msgstr[other] Αντικαταστάθηκαν {count} εμφανίσεις
+
+msgid  Symlink {count} item
+msgstr[one]   Συμβολικός σύνδεσμος σε {count} στοιχείο
+msgstr[other] Συμβολικοί σύνδεσμοι σε {count} στοιχεία
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]   Συμβολικός σύνδεσμος σε {count} στοιχείο ({names}) σε:
+msgstr[other] Συμβολικοί σύνδεσμοι σε {count} στοιχεία ({names}) σε:
+
+msgid  {count} day ago
+msgstr[one]   πριν {count} ημέρα
+msgstr[other] πριν {count} ημέρες
+
+msgid  {count} difference
+msgstr[one]   {count} διαφορά
+msgstr[other] {count} διαφορές
+
+msgid  {count} directory could not be read
+msgstr[one]   {count} φάκελος δεν διαβάστηκε
+msgstr[other] {count} φάκελοι δεν διαβάστηκαν
+
+msgid  {count} file
+msgstr[one]   {count} αρχείο
+msgstr[other] {count} αρχεία
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]   {count} αρχείο, μη αναγνώσιμα: {failed}
+msgstr[other] {count} αρχεία, μη αναγνώσιμα: {failed}
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]   {count} στοιχείο - ένα πεδίο όπως είναι, ή κενό, δεν αλλάζει τίποτα
+msgstr[other] {count} στοιχεία - ένα πεδίο όπως είναι, ή κενό, δεν αλλάζει τίποτα
+
+msgid  {count} line
+msgstr[one]   {count} γραμμή
+msgstr[other] {count} γραμμές
+
+msgid  {count} line not understood
+msgstr[one]   {count} γραμμή δεν κατανοήθηκε
+msgstr[other] {count} γραμμές δεν κατανοήθηκαν
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]   {count} από τα νέα ονόματα δεν γίνεται: {why} - δείτε τον πίνακα
+msgstr[other] {count} από τα νέα ονόματα δεν γίνονται: {why} - δείτε τον πίνακα
+
+msgid  {done} of {total} entry
+msgstr[one]   {done} από {total} στοιχείο
+msgstr[other] {done} από {total} στοιχεία
+
+msgid  {done} of {total} item
+msgstr[one]   {done} από {total} στοιχείο
+msgstr[other] {done} από {total} στοιχεία
+
+msgid  {found} differs
+msgstr[one]   {found} διαφέρει
+msgstr[other] {found} διαφέρουν
+
+msgid  {found} differs, comparing
+msgstr[one]   {found} διαφέρει, σύγκριση
+msgstr[other] {found} διαφέρουν, σύγκριση
+
+msgid  {found} found
+msgstr[one]   βρέθηκε {found}
+msgstr[other] βρέθηκαν {found}
+
+msgid  {found} found, searching
+msgstr[one]   βρέθηκε {found}, αναζήτηση
+msgstr[other] βρέθηκαν {found}, αναζήτηση
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]   {job_title}: ακυρώθηκε μετά από {done} στοιχείο
+msgstr[other] {job_title}: ακυρώθηκε μετά από {done} στοιχεία
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]   {job_title}: ακυρώθηκε μετά από {done} στοιχείο
+msgstr[other] {job_title}: ακυρώθηκε μετά από {done} στοιχεία
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]   {job_title}: τέλος, παραλείφθηκε {count} στοιχείο
+msgstr[other] {job_title}: τέλος, παραλείφθηκαν {count} στοιχεία
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]   {problems} δεν μετονομάζεται έτσι    Esc - Άκυρο
+msgstr[other] {problems} δεν μετονομάζονται έτσι    Esc - Άκυρο
+
+msgid  {skipped} left as it is
+msgstr[one]   {skipped} μένει όπως είναι
+msgstr[other] {skipped} μένουν όπως είναι
