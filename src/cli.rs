@@ -193,7 +193,9 @@ Config: {config}
 Beside it: session, bookmarks, menu (Alt+M's commands) and open (the
 programs files open with, by extension).
 The language follows LANGUAGE, LC_ALL, LC_MESSAGES and LANG, unless F11's
-Language picks one: English, or Serbian (sr) in the Latin alphabet.
+Language picks one: English, Serbian (sr, Latin), Turkish (tr), Norwegian
+Bokmål (nb), German (de), Italian (it), Greek (el), French (fr) or
+Slovenian (sl).
 Press F1 inside for the keys.",
         version = version()
     )

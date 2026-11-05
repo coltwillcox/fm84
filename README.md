@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.42.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.43.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -253,7 +253,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 👁️ **Preview on startup** - start with F12's preview open
 
 **Appearance**
-- 🌐 **Language** - **Automatic**, which follows `LANGUAGE`, `LC_ALL`, `LC_MESSAGES` and `LANG` (on Windows, mostly English), or one chosen: **English** or **Srpski (latinica)**, each named in its own words. Every word fm84 shows changes at once; the keys stay the keys, so `Y`, `N` and `A` answer whatever the words beside them say. The translations are built into fm84 itself, nothing to install beside it
+- 🌐 **Language** - **Automatic**, which follows `LANGUAGE`, `LC_ALL`, `LC_MESSAGES` and `LANG` (on Windows, mostly English), or one chosen, each named in its own words: **English**, **Srpski (latinica)**, **Türkçe**, **Norsk bokmål**, **Deutsch**, **Italiano**, **Ελληνικά**, **Français** or **Slovenščina** - `sr`, `tr`, `nb` (or `no`), `de`, `it`, `el`, `fr` and `sl` in a locale. Every word fm84 shows changes at once, counts in the forms each language gives them - French counts nothing as one, Slovenian has a form for two. The names of keys are written as each language's keyboards print them (Strg in German, Entrée in French); the keys themselves stay the keys, so `Y`, `N` and `A` answer whatever the words beside them say. The translations are built into fm84 itself, nothing to install beside it
 - 🎨 **Theme** - switched on the spot, 17 of them:
   - fm84's own: **Synthwave**, **Outrun**, **Vaporwave**, **High contrast**, **Military**, **Picard**
   - dark: **Dracula**, **Monokai**, **Nord**, **Gruvbox Dark**, **Solarized Dark**, **Tokyo Night**, **Catppuccin Mocha**
@@ -423,7 +423,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.42.0
+fm84 --version          # fm84 0.43.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -523,5 +523,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.42.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.43.0 ▄▀▄▀▄▀</code>
 </p>

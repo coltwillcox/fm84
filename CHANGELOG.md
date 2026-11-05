@@ -6,6 +6,13 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.43.0] - 2026-11-06
+
+### ✨ Added
+- 🌐 **Seven more languages** - **Türkçe**, **Norsk bokmål**, **Deutsch**, **Italiano**, **Ελληνικά**, **Français** and **Slovenščina**, beside English and Srpski, every word of each built in. F11's Language picks one, or Automatic finds it in `LANGUAGE`, `LC_ALL`, `LC_MESSAGES` or `LANG` - `tr`, `nb` (and the older `no`), `de`, `it`, `el`, `fr` and `sl`. Counts take each language's own forms: French counts nothing as one, and Slovenian has a form for two of a thing, as in "2 datoteki". Each writes the keys as its keyboards print them - Strg and Umschalt in German, Maj and Entrée in French, Maiusc and Invio in Italian - and its own quotes and question marks: « » and a space before `?` in French, » « in Slovenian, `;` in Greek. The letters to press stay the same in all of them
+
+---
+
 ## [0.42.0] - 2026-11-05
 
 ### ✨ Added
