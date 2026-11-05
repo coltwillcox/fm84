@@ -1,0 +1,1602 @@
+# fm84 på norsk bokmål.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, [other] for the rest. A msgctxt sets
+# one use of a word apart from the same word elsewhere. {name} is a place
+# the program fills, kept as it is. The keys to press - Y, N, A and the like
+# - stay as they are.
+
+msgid  "{name}" has changed since it was opened
+msgstr "{name}" er endret siden den ble åpnet
+
+msgid  "{name}" is already in {folder}
+msgstr "{name}" finnes allerede i {folder}
+
+msgid  "{name}" is no longer there
+msgstr "{name}" finnes ikke lenger
+
+msgid  "{path}" is already there
+msgstr "{path}" er der allerede
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Zoom {zoom} %
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- velg/fjern etter mønster, * snu
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): skrivebeskyttet
+
+msgid  12-hour
+msgstr 12-timers
+
+msgid  24-hour
+msgstr 24-timers
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Overskriv alle    S - Hopp over alle    B - Behold begge for alle
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr En hard lenke til {path}, som ikke kopieres ut
+
+msgid  A root directory cannot go to the trash
+msgstr En rotmappe kan ikke legges i papirkurven
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr En synthwave-filbehandler med to paneler, for terminalen
+
+msgid  About
+msgstr Om
+
+msgid  Already exists: {name}
+msgstr Finnes allerede: {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Finnes allerede: {path} - Overskriv eller Behold begge i F11
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Finnes allerede: {path} - et annet navn, eller Overskriv eller Behold begge i F11
+
+msgid  Already there
+msgstr Finnes allerede
+
+msgid  Alt+* invert with directories
+msgstr Alt+* snu med mapper
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Rettigheter, eier, tid
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Ned alle besøkte mapper
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (eller Ctrl+Shift+F5) lenke, Tab hard
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (eller Ctrl+F7) finn filer
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Sjekksummer (Tab algoritme); kontroller en fil
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Venstre/Høyre tilbake/fram
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Brukermeny (E redigerer den)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O åpne med... (E per filtype)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Pakk i et arkiv (Tab format)
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R i Finn eller Erstatt: regex
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - Synkroniser de to mappene
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Shift+Enter størrelse på alle mapper
+
+msgid  Appearance
+msgstr Utseende
+
+msgid  Archives are read-only
+msgstr Arkiver er skrivebeskyttet
+
+msgid  Ascending
+msgstr Stigende
+
+msgid  Ask
+msgstr Spør
+
+msgid  Ask before opening over
+msgstr Spør før åpning over
+
+msgid  Attributes
+msgstr Attributter
+
+msgid  Attributes column
+msgstr Kolonne Attributter
+
+msgid  Automatic
+msgstr Automatisk
+
+msgid  Automatic ({language})
+msgstr Automatisk ({language})
+
+msgid  Background
+msgstr Bakgrunn
+
+msgid  Bar
+msgstr Strek
+
+msgid  Behaviour
+msgstr Oppførsel
+
+msgid  Binary
+msgstr Binær
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Binærfil. Trykk Esc for å gå tilbake.
+
+msgid  Block
+msgstr Blokk
+
+msgid  Bookmarks
+msgstr Bokmerker
+
+msgid  Both panels show the same directory
+msgstr Begge panelene viser samme mappe
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Begge panelene viser samme mappe: ingenting å synkronisere
+
+msgid  Branches:
+msgstr Grener:
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Laget med Rust, Ratatui og Crossterm
+
+msgid  Built-in
+msgstr Innebygd
+
+msgid  C - Copy
+msgstr C - Kopier
+
+msgid  Cancelling
+msgstr Avbryter
+
+msgid  Cannot calculate size: {e}
+msgstr Kan ikke beregne størrelse: {e}
+
+msgid  Cannot change {what}
+msgstr Kan ikke endre {what}
+
+msgid  Cannot copy
+msgstr Kan ikke kopiere
+
+msgid  Cannot copy "{path}" into itself
+msgstr Kan ikke kopiere "{path}" inn i seg selv
+
+msgid  Cannot copy to {path}
+msgstr Kan ikke kopiere til {path}
+
+msgid  Cannot delete
+msgstr Kan ikke slette
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr Kan ikke redigere {path}: det er ikke UTF-8-tekst. F3 viser den som den er.
+
+msgid  Cannot extract
+msgstr Kan ikke pakke ut
+
+msgid  Cannot link {what}
+msgstr Kan ikke lenke {what}
+
+msgid  Cannot make room beside {path}
+msgstr Kan ikke lage plass ved siden av {path}
+
+msgid  Cannot make room to compare: {e}
+msgstr Kan ikke lage plass for å sammenligne: {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Kan ikke lage plass for å åpne det: {e}
+
+msgid  Cannot move
+msgstr Kan ikke flytte
+
+msgid  Cannot move to the trash: {why}
+msgstr Kan ikke flytte til papirkurven: {why}
+
+msgid  Cannot move to trash
+msgstr Kan ikke flytte til papirkurven
+
+msgid  Cannot open file: {e}
+msgstr Kan ikke åpne filen: {e}
+
+msgid  Cannot open terminal: {e}
+msgstr Kan ikke åpne terminal: {e}
+
+msgid  Cannot open {path}: {e}
+msgstr Kan ikke åpne {path}: {e}
+
+msgid  Cannot pack
+msgstr Kan ikke pakke
+
+msgid  Cannot pack into {path}
+msgstr Kan ikke pakke i {path}
+
+msgid  Cannot reach {target}
+msgstr Får ikke tilgang til {target}
+
+msgid  Cannot read
+msgstr Kan ikke lese
+
+msgid  Cannot read file
+msgstr Kan ikke lese filen
+
+msgid  Cannot read {path}
+msgstr Kan ikke lese {path}
+
+msgid  Cannot read {path}: {e}
+msgstr Kan ikke lese {path}: {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Kan ikke erstatte mappen {path} med en fil
+
+msgid  Cannot replace directory {path} with a link
+msgstr Kan ikke erstatte mappen {path} med en lenke
+
+msgid  Cannot replace file {path} with a directory
+msgstr Kan ikke erstatte filen {path} med en mappe
+
+msgid  Cannot run git: {e}
+msgstr Kan ikke kjøre git: {e}
+
+msgid  Cannot run {label}: {e}
+msgstr Kan ikke kjøre {label}: {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr Kan ikke lagre bokmerkene: {e}
+
+msgid  Cannot save options: {e}
+msgstr Kan ikke lagre valgene: {e}
+
+msgid  Cannot start {program}: {e}
+msgstr Kan ikke starte {program}: {e}
+
+msgid  Cannot synchronize
+msgstr Kan ikke synkronisere
+
+msgid  Cannot write {path}: {e}
+msgstr Kan ikke skrive {path}: {e}
+
+msgid  Case
+msgstr Bokstaver
+
+msgid  Case-sensitive sort
+msgstr Skill store og små bokstaver
+
+msgid  Changed on disk
+msgstr Endret på disken
+
+msgid  Checked against {file}
+msgstr Kontrollert mot {file}
+
+msgid  Checksumming
+msgstr Beregner sjekksummer
+
+msgid  Checksums
+msgstr Sjekksummer
+
+msgid  Choose another program
+msgstr Velg et annet program
+
+msgid  Classic
+msgstr Klassisk
+
+msgid  Click the git branch to switch it
+msgstr Klikk på git-grenen for å bytte
+
+msgid  Clock
+msgstr Klokke
+
+msgid  Compare
+msgstr Sammenlign
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Sammenligner...    Esc - Stopp og lukk
+
+msgid  Confirm copy and move
+msgstr Bekreft kopiering og flytting
+
+msgid  Confirm delete
+msgstr Bekreft sletting
+
+msgid  Containing
+msgstr Inneholder
+
+msgid  Containing is a regular expression
+msgstr Inneholder er et regulært uttrykk
+
+msgid  Copied name: {text}
+msgstr Kopierte navn: {text}
+
+msgid  Copied path: {text}
+msgstr Kopierte sti: {text}
+
+msgid  Copied the report
+msgstr Rapporten er kopiert
+
+msgid  Copied: {text}
+msgstr Kopiert: {text}
+
+msgid  Copy
+msgstr Kopier
+
+msgid  Copy "{name}" to:
+msgstr Kopier "{name}" til:
+
+msgid  Copy directory
+msgstr Kopier mappe
+
+msgid  Copy file
+msgstr Kopier fil
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Kopier det ut av arkivet først: sjekksummer beregnes for filer på disken
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Kopier det ut av arkivet først: det som pakkes, må ligge på disken
+
+msgid  Copying
+msgstr Kopierer
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Kunne ikke endre {count} av {total}. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Kunne ikke lenke {count} av {total}. {first}
+
+msgid  Counting...
+msgstr Teller...
+
+msgid  Create Directory
+msgstr Ny mappe
+
+msgid  Create File
+msgstr Ny fil
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Alle filer under, flatt
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Kopier stier/navn
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Bokmerker
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Finn
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F finn, F3/Shift+F3 neste/forrige
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Sorter navn/type/dato/størrelse
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G gå til linje, Ctrl+R/F4 erstatt
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Gå til sti (eller klikk på den)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Venstre/Høyre - Mappe til det panelet
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgUp/PgDn, Alt+1..9 bytter
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Last inn begge panelene på nytt
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - Filtrer panelet etter mønster
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Ny/lukk fane
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U bytt paneler, Alt+I samme mappe der
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z angre, Ctrl+Y gjør om, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Angre
+
+msgid  Cursor
+msgstr Markør
+
+msgid  Cursor blinks
+msgstr Markøren blinker
+
+msgid  D - Delete permanently
+msgstr D - Slett for godt
+
+msgid  Dashed
+msgstr Stiplet
+
+msgid  Date format
+msgstr Datoformat
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Å dekode et så stort bilde krever så mye minne.
+
+msgid  Delete
+msgstr Slett
+
+msgid  Delete "{name}" permanently?
+msgstr Slette "{name}" for godt?
+
+msgid  Delete to trash (F8)
+msgstr Slett til papirkurven (F8)
+
+msgid  Delete: directory
+msgstr Slett: mappe
+
+msgid  Delete: file
+msgstr Slett: fil
+
+msgid  Deleting
+msgstr Sletter
+
+msgid  Descending
+msgstr Synkende
+
+msgid  Deselect:
+msgstr Fjern valg:
+
+msgid  Destination already exists: {path}
+msgstr Målet finnes allerede: {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Ulike: {left} til venstre, {right} til høyre
+
+msgid  Difference {at}/{count}
+msgstr Forskjell {at}/{count}
+
+msgid  Directories first
+msgstr Mapper først
+
+msgid  Directory "{name}"
+msgstr Mappe "{name}"
+
+msgid  Directory History
+msgstr Mappehistorikk
+
+msgid  Double
+msgstr Dobbel
+
+msgid  Edit
+msgstr Rediger
+
+msgid  Edit "{name}" ({size})?
+msgstr Redigere "{name}" ({size})?
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr Redigere "{name}" ({width}x{height}, {size})?
+
+msgid  Edit:
+msgstr Rediger:
+
+msgid  Editor (F4)
+msgstr Redigeringsprogram (F4)
+
+msgid  Empty terminal command
+msgstr Tom terminalkommando
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Kryptert: fm84 kan ikke lese det uten passordet
+
+msgid  Enter - Copy
+msgstr Enter - Kopier
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Enter - Opprett    Esc - Avbryt
+
+msgid  Enter - Extract
+msgstr Enter - Pakk ut
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Enter - Gå til    F - Til panelet    Esc - Lukk
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Enter - Gå til    F - Til panelet    Esc - Stopp og lukk
+
+msgid  Enter - Hard link
+msgstr Enter - Hard lenke
+
+msgid  Enter - Move
+msgstr Enter - Flytt
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Enter - Åpne mappe, eller gå inn i et arkiv
+
+msgid  Enter - Pack
+msgstr Enter - Pakk
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Enter - Lagre    Esc - Avbryt    {} - mappe
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Enter - Lagre    Esc - Avbryt    {} - fil
+
+msgid  Enter - Symlink
+msgstr Enter - Symbolsk lenke
+
+msgid  Enter - Write
+msgstr Enter - Skriv
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Enter igjen for å kjøre, {deleting} slettes    Enhver annen tast - Ikke ennå
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Enter/1-9 - Gå    A/Ins - Legg til denne    D/Del - Fjern
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Enter/1-9 - Åpne    E - Rediger tilknytninger    Esc - Lukk
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Enter/1-9 - Kjør    E - Rediger menyen    Esc - Lukk
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Enter/klikk - Bytt    Esc - Lukk
+
+msgid  Error
+msgstr Feil
+
+msgid  Esc - Back to editing
+msgstr Esc - Tilbake til redigering
+
+msgid  Esc - Cancel
+msgstr Esc - Avbryt
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Esc - Avbryt    F10 igjen - Avslutt
+
+msgid  Esc - Close
+msgstr Esc - Lukk
+
+msgid  Esc Exit
+msgstr Esc Lukk
+
+msgid  Existing
+msgstr Eksisterende
+
+msgid  Ext
+msgstr Type
+
+msgid  Ext column
+msgstr Kolonne Type
+
+msgid  Extension
+msgstr Filtype
+
+msgid  Extract "{name}" to:
+msgstr Pakk ut "{name}" til:
+
+msgid  Extract archive
+msgstr Pakk ut arkiv
+
+msgid  Extracting
+msgstr Pakker ut
+
+msgid  F Fit [Fill]
+msgstr F Tilpass [Fyll]
+
+msgid  F [Fit] Fill
+msgstr F [Tilpass] Fyll
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F tilpass/fyll, +/- zoom, W bryt
+
+msgid  F on the results feeds them to the panel
+msgstr F i resultatene legger dem i panelet
+
+msgid  F1 - This help
+msgstr F1 - Denne hjelpen
+
+msgid  F10 - Quit
+msgstr F10 - Avslutt
+
+msgid  F10 again - Quit
+msgstr F10 igjen - Avslutt
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Valg (Alt+F1/F2 stasjoner)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Forhåndsvis i det andre panelet
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Gi mappe/fil nytt navn
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Lagre
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Vis fil (X tekst/hex/bilde)
+
+msgid  F3/N Next
+msgstr F3/N Neste
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Rediger fil (Ctrl+S/F2 lagrer)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Kopier (til det andre panelet, eller dit som skrives)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 kopierer ut, Alt+F9 (eller Ctrl+F9) alt
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Flytt (til det andre panelet, eller dit som skrives)
+
+msgid  F7 - Create directory
+msgstr F7 - Ny mappe
+
+msgid  F8 - Move to trash
+msgstr F8 - Flytt til papirkurven
+
+msgid  F9 - Open terminal
+msgstr F9 - Åpne terminal
+
+msgid  File "{name}"
+msgstr Fil "{name}"
+
+msgid  Fill
+msgstr Fyll
+
+msgid  Filter:
+msgstr Filter:
+
+msgid  Find
+msgstr Finn
+
+msgid  Find (regex, Alt+R for text):
+msgstr Finn (regex, Alt+R for tekst):
+
+msgid  Find files
+msgstr Finn filer
+
+msgid  Find files cannot search inside an archive yet
+msgstr Finn filer kan ikke søke inni et arkiv ennå
+
+msgid  Find:
+msgstr Finn:
+
+msgid  First letter
+msgstr Stor forbokstav
+
+msgid  Fit
+msgstr Tilpass
+
+msgid  Git marks
+msgstr Git-merker
+
+msgid  Go to line:
+msgstr Gå til linje:
+
+msgid  Gone
+msgstr Borte
+
+msgid  Group
+msgstr Gruppe
+
+msgid  Hard link "{name}" at:
+msgstr Hard lenke til "{name}" i:
+
+msgid  Hard link directory
+msgstr Hard lenke til mappe
+
+msgid  Hard link file
+msgstr Hard lenke til fil
+
+msgid  Heavy
+msgstr Tykk
+
+msgid  Help
+msgstr Hjelp
+
+msgid  Help/About
+msgstr Hjelp/Om
+
+msgid  High contrast
+msgstr Høy kontrast
+
+msgid  Highlight files up to
+msgstr Fremhev filer opptil
+
+msgid  Icons
+msgstr Ikoner
+
+msgid  Image backgrounds
+msgstr Bildebakgrunner
+
+msgid  Images open as
+msgstr Bilder åpnes som
+
+msgid  In
+msgstr I
+
+msgid  It got shorter while it was being packed
+msgstr Den ble kortere mens den ble pakket
+
+msgid  Keep both
+msgstr Behold begge
+
+msgid  Keys
+msgstr Taster
+
+msgid  Language
+msgstr Språk
+
+msgid  Large File
+msgstr Stor fil
+
+msgid  Large Picture
+msgstr Stort bilde
+
+msgid  Line numbers
+msgstr Linjenumre
+
+msgid  Line {at}/{count}
+msgstr Linje {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Lj {line}, kol {column}
+
+msgid  Military
+msgstr Militær
+
+msgid  Mkdir
+msgstr Ny mappe
+
+msgid  Mode
+msgstr Rettigheter
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Rettigheter som 755 eller u+x,go-w; eier og gruppe med navn eller nummer
+
+msgid  Modified
+msgstr Endret
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Endret som <7d, >1y, 1d..7d, 2026-10-01 eller >2026-10-01, ikke {text}
+
+msgid  Modified column
+msgstr Kolonne Endret
+
+msgid  Move
+msgstr Flytt
+
+msgid  Move "{name}" to the trash?
+msgstr Flytte "{name}" til papirkurven?
+
+msgid  Move "{name}" to:
+msgstr Flytt "{name}" til:
+
+msgid  Move directory
+msgstr Flytt mappe
+
+msgid  Move file
+msgstr Flytt fil
+
+msgid  Move to trash: directory
+msgstr Til papirkurven: mappe
+
+msgid  Move to trash: file
+msgstr Til papirkurven: fil
+
+msgid  Moving
+msgstr Flytter
+
+msgid  Moving to trash
+msgstr Flytter til papirkurven
+
+msgid  Name
+msgstr Navn
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Navn som for +: *.jpg;*.png, eller */ for mapper. Små bokstaver finner både små og store
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Gi det navn som et arkiv, med endelsen {endings}
+
+msgid  New
+msgstr Ny
+
+msgid  New name
+msgstr Nytt navn
+
+msgid  Next
+msgstr Neste
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Ingen bokmerker ennå - A tar vare på panelets mappe
+
+msgid  No branches yet: nothing has been committed
+msgstr Ingen grener ennå: ingenting er committet
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Ingen kommandoer ennå - E legger dem til, som navn = kommando, i
+
+msgid  No config directory
+msgstr Ingen konfigurasjonsmappe
+
+msgid  No config directory to keep a menu in
+msgstr Ingen konfigurasjonsmappe å lagre en meny i
+
+msgid  No config directory to keep associations in
+msgstr Ingen konfigurasjonsmappe å lagre tilknytningene i
+
+msgid  No such directory: {path}
+msgstr Mappen finnes ikke: {path}
+
+msgid  No such file or directory: {path}
+msgstr Filen eller mappen finnes ikke: {path}
+
+msgid  No such group: {text}
+msgstr Gruppen finnes ikke: {text}
+
+msgid  No such user: {text}
+msgstr Brukeren finnes ikke: {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Fant ingen terminalemulator. Sett $TERMINAL.
+
+msgid  Not a line number: {text}
+msgstr Ikke et linjenummer: {text}
+
+msgid  Not a mode: {text}
+msgstr Ikke rettigheter: {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Ikke rettigheter: {text} - 755, eller u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Ikke et vanlig filnavn: {name}
+
+msgid  Not a regular expression: {why}
+msgstr Ikke et regulært uttrykk: {why}
+
+msgid  Not a regular file
+msgstr Ikke en vanlig fil
+
+msgid  Not a regular file: {path}
+msgstr Ikke en vanlig fil: {path}
+
+msgid  Not a time here: {text}
+msgstr Ikke et tidspunkt her: {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Ikke et tidspunkt: {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Ikke et arkiv: {path}
+
+msgid  Not found: {term}
+msgstr Ikke funnet: {term}
+
+msgid  Nothing chosen for {label}
+msgstr Ingenting valgt for {label}
+
+msgid  Nothing found
+msgstr Ingenting funnet
+
+msgid  Nothing found to feed to the panel
+msgstr Ingenting funnet å legge i panelet
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Ingenting er mindre enn 0 byte
+
+msgid  Nothing replaced
+msgstr Ingenting erstattet
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Ingenting å sammenligne med: det andre panelet har ingen fil med det navnet, og ingen under markøren
+
+msgid  Nothing to synchronize
+msgstr Ingenting å synkronisere
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Ingenting å skrive: ingen sjekksum kunne beregnes
+
+msgid  Nothing visited matches
+msgstr Ingen besøkte treff
+
+msgid  Now
+msgstr Nå
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Overskriv alle eldre    Esc - Avbryt
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Overskriv    R - Last inn på nytt, endringene går tapt
+
+msgid  O - Save it again
+msgstr O - Lagre på nytt
+
+msgid  Off
+msgstr Av
+
+msgid  Old name
+msgstr Gammelt navn
+
+msgid  On
+msgstr På
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr Det ene panelets mappe ligger inni det andres: ingenting å synkronisere
+
+msgid  Only the first {count} files are listed
+msgstr Bare de første {count} filene vises
+
+msgid  Open {name} With
+msgstr Åpne {name} med
+
+msgid  Options
+msgstr Valg
+
+msgid  Overwrite
+msgstr Overskriv
+
+msgid  Owner
+msgstr Eier
+
+msgid  Pack "{name}" into:
+msgstr Pakk "{name}" i:
+
+msgid  Pack directory
+msgstr Pakk mappe
+
+msgid  Pack file
+msgstr Pakk fil
+
+msgid  Packing
+msgstr Pakker
+
+msgid  Panels
+msgstr Paneler
+
+msgid  Plain
+msgstr Enkle
+
+msgid  Plain Text
+msgstr Ren tekst
+
+msgid  Preview
+msgstr Forhåndsvis
+
+msgid  Preview on startup
+msgstr Forhåndsvis ved oppstart
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Sett markøren på en fil for å sammenligne, eller velg to
+
+msgid  Put the cursor on an archive to extract it
+msgstr Sett markøren på et arkiv for å pakke det ut
+
+msgid  Quit
+msgstr Avslutt
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Prøv igjen    S - Hopp over    A - Hopp over alle    Esc - Avbryt
+
+msgid  Read pictures ahead
+msgstr Les bilder på forhånd
+
+msgid  Reading a file this large may take a while.
+msgstr Å lese en så stor fil kan ta litt tid.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr Leser {dir}…  Esc for å stoppe
+
+msgid  Refuse
+msgstr Avvis
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Relativ
+
+msgid  Released under the {license} License
+msgstr Utgitt under {license}-lisensen
+
+msgid  Remember directories
+msgstr Husk mapper
+
+msgid  Rename
+msgstr Gi navn
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr Ga nytt navn til {done} av {total}, deretter: {e}
+
+msgid  Replace
+msgstr Erstatt
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr Erstatte "{find}" med "{with}"?   Y - Ja   N - Nei   A - Alle   Esc - Stopp
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Erstatt (regex, Alt+R for tekst):
+
+msgid  Replace:
+msgstr Erstatt:
+
+msgid  Row {at}/{count}
+msgstr Rad {at}/{count}
+
+msgid  Save
+msgstr Lagre
+
+msgid  Save changes before closing?
+msgstr Lagre endringene før lukking?
+
+msgid  Scroll bars
+msgstr Rullefelt
+
+msgid  Search:
+msgstr Søk:
+
+msgid  Select:
+msgstr Velg:
+
+msgid  Shade
+msgstr Skygge
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Shift+Enter (eller Ctrl+O) åpne slik systemet gjør
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Shift+F10 avslutt, cd84 blir der den er
+
+msgid  Shift+F2 compare directories
+msgstr Shift+F2 sammenlign mapper
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Shift+F3 (eller =) sammenlign to filer
+
+msgid  Shift+F3/P Previous
+msgstr Shift+F3/P Forrige
+
+msgid  Shift+F4 - Create file
+msgstr Shift+F4 - Ny fil
+
+msgid  Shift+F8 delete permanently
+msgstr Shift+F8 slett for godt
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Shift+Opp/Ned - Flytt    Esc - Lukk
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Shift+piler velger, Ctrl+A alt
+
+msgid  Show hidden files
+msgstr Vis skjulte filer
+
+msgid  Size
+msgstr Størrelse
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Størrelse som >10M, <1K eller 1M..10M, ikke {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Størrelse som >10M, <1K eller 1M..10M; Endret som <7d, >1y, 1d..7d, 2026-10-01 eller >2026-10-01
+
+msgid  Size column
+msgstr Kolonne Størrelse
+
+msgid  Size units
+msgstr Størrelsesenheter
+
+msgid  Sort by
+msgstr Sorter etter
+
+msgid  Sort direction
+msgstr Sorteringsretning
+
+msgid  Space - Select/deselect file
+msgstr Space - Velg/fjern valg av fil
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Byttet til {branch} stoppet uventet
+
+msgid  Symbolic links are not supported here
+msgstr Symbolske lenker støttes ikke her
+
+msgid  Symlink "{name}" at:
+msgstr Symbolsk lenke til "{name}" i:
+
+msgid  Symlink directory
+msgstr Symbolsk lenke til mappe
+
+msgid  Symlink file
+msgstr Symbolsk lenke til fil
+
+msgid  Synchronize
+msgstr Synkroniser
+
+msgid  Synchronizing
+msgstr Synkroniserer
+
+msgid  System default
+msgstr Systemets standard
+
+msgid  Tab - Algorithm
+msgstr Tab - Algoritme
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Felt   ←/→ - Bokstaver   Enter - Gi navn   Esc - Avbryt
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Felt  Space - Regex  Enter - Finn  Esc - Avbryt
+
+msgid  Tab - Format
+msgstr Tab - Format
+
+msgid  Tab - Hard link
+msgstr Tab - Hard lenke
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Neste felt    Enter - Bruk    Esc - Avbryt
+
+msgid  Tab - Symlink
+msgstr Tab - Symbolsk lenke
+
+msgid  Tab completes a name
+msgstr Tab fullfører et navn
+
+msgid  Tab width
+msgstr Tabulatorbredde
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab innrykk, Ctrl+/ kommentar
+
+msgid  Terminal
+msgstr Terminal
+
+msgid  Terminal (F9)
+msgstr Terminal (F9)
+
+msgid  Terminal too small
+msgstr Terminalen er for liten
+
+msgid  The archive ends before it
+msgstr Arkivet slutter før det
+
+msgid  The directories hold the same files
+msgstr Mappene har de samme filene
+
+msgid  The files are identical
+msgstr Filene er like
+
+msgid  The files differ from byte {at}
+msgstr Filene er ulike fra byte {at}
+
+msgid  The files differ from byte {at}, and in size
+msgstr Filene er ulike fra byte {at}, og i størrelse
+
+msgid  The files differ only in line endings
+msgstr Filene er bare ulike i linjeskift
+
+msgid  Theme
+msgstr Tema
+
+msgid  This cannot be undone
+msgstr Dette kan ikke angres
+
+msgid  Title Case
+msgstr Stor Forbokstav I Hvert Ord
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr For stor til å sammenlignes: {path} ({size}; grensen settes i F11)
+
+msgid  Transfer stopped unexpectedly
+msgstr Overføringen stoppet uventet
+
+msgid  Trash
+msgstr Kast
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Skriv for å avgrense    Opp/Ned - Velg    Enter - Gå    Esc - Lukk
+
+msgid  Type to search, Esc to clear
+msgstr Skriv for å søke, Esc tømmer
+
+msgid  UPPER CASE
+msgstr STORE BOKSTAVER
+
+msgid  Unchanged
+msgstr Uendret
+
+msgid  Underline
+msgstr Understrek
+
+msgid  Unsaved Changes
+msgstr Ulagrede endringer
+
+msgid  User Menu
+msgstr Brukermeny
+
+msgid  View
+msgstr Vis
+
+msgid  View "{name}" ({size})?
+msgstr Vise "{name}" ({size})?
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr Vise "{name}" ({width}x{height}, {size})?
+
+msgid  View:
+msgstr Vis:
+
+msgid  Viewer and editor
+msgstr Visning og redigering
+
+msgid  W Wrap
+msgstr W Bryt
+
+msgid  W [Wrap]
+msgstr W [Bryt]
+
+msgid  When destination exists
+msgstr Når målet finnes
+
+msgid  When opened
+msgstr Da den ble åpnet
+
+msgid  With:
+msgstr Med:
+
+msgid  Wrapped to the bottom
+msgstr Fortsatte fra bunnen
+
+msgid  Wrapped to the top
+msgstr Fortsatte fra toppen
+
+msgid  Written: {name}
+msgstr Skrevet: {name}
+
+msgid  X Image Text [Hex]
+msgstr X Bilde Tekst [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Bilde [Tekst] Hex
+
+msgid  X Text [Hex]
+msgstr X Tekst [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Bilde] Tekst Hex
+
+msgid  X [Text] Hex
+msgstr X [Tekst] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Overskriv    N - Hopp over    K - Behold begge
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Lagre    N - Forkast    Esc - Avbryt
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Enter - Ja    N / Esc - Nei
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] tegn 2 til 5   [C10+5:3] fra 10, med 5, 3 sifre
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] navn   [E] filtype   [C] teller
+
+msgid  a directory cannot be hard linked
+msgstr en mappe kan ikke hardlenkes
+
+msgid  already exists
+msgstr finnes allerede
+
+msgid  by name, text, regex, size, date
+msgstr etter navn, tekst, regex, størrelse, dato
+
+msgid  del
+msgstr slt
+
+msgid  filter: {pattern}
+msgstr filter: {pattern}
+
+msgid  flat
+msgstr flat
+
+msgid  found
+msgstr funnet
+
+msgid  git did not answer
+msgstr git svarte ikke
+
+msgid  given twice
+msgstr gitt to ganger
+
+msgid  just now
+msgstr akkurat nå
+
+msgid  lower case
+msgstr små bokstaver
+
+msgid  name not readable as text
+msgstr navnet kan ikke leses som tekst
+
+msgid  newer
+msgstr nyere
+
+msgid  not a plain name
+msgstr ikke et vanlig navn
+
+msgid  not readable as an archive ({e})
+msgstr kan ikke leses som et arkiv ({e})
+
+msgid  not there
+msgstr finnes ikke
+
+msgid  terminal
+msgstr terminal
+
+msgid  to be replaced by "{name}"
+msgstr skal erstattes av "{name}"
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr med utvalg: alle etter [N] [E] [C]
+
+msgid  {count} FAILED
+msgstr {count} FEIL
+
+msgid  {count} OK
+msgstr {count} OK
+
+msgid  {count} could not be read
+msgstr {count} kunne ikke leses
+
+msgid  {count} h ago
+msgstr {count} t siden
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr {count} elementer trenger en mappe å havne i, og {path} er ikke en
+
+msgid  {count} min ago
+msgstr {count} min siden
+
+msgid  {count} missing
+msgstr {count} mangler
+
+msgid  {count} mo ago
+msgstr {count} mnd siden
+
+msgid  {count} yr ago
+msgstr {count} år siden
+
+msgid  {deleting} to delete
+msgstr {deleting} slettes
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} av {total}, {rate}/s
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title} avbrutt etter {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr {name} er ikke et navn {format} kan lagre: det er ikke UTF-8
+
+msgid  {path} already exists
+msgstr {path} finnes allerede
+
+msgid  {path} could not be read after all
+msgstr {path} kunne likevel ikke leses
+
+msgid  {path} is a directory
+msgstr {path} er en mappe
+
+msgid  {program} exited with {status}
+msgstr {program} avsluttet med {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Flytt    Enter/←→ - Endre    Esc - Lukk
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Kopier  Del Slett  Space La være  > < Speil  R Tilbakestill  Enter Kjør  Esc Lukk
+
+msgctxt job
+msgid   Checksum
+msgstr  Sjekksum
+
+msgctxt job
+msgid   Copy
+msgstr  Kopiering
+
+msgctxt job
+msgid   Delete
+msgstr  Sletting
+
+msgctxt job
+msgid   Extract
+msgstr  Utpakking
+
+msgctxt job
+msgid   Move
+msgstr  Flytting
+
+msgctxt job
+msgid   Move to trash
+msgstr  Flytting til papirkurven
+
+msgctxt job
+msgid   Pack
+msgstr  Pakking
+
+msgctxt job
+msgid   Synchronize
+msgstr  Synkronisering
+
+msgid  Copied {count} name
+msgstr[one]   Kopierte {count} navn
+msgstr[other] Kopierte {count} navn
+
+msgid  Copied {count} path
+msgstr[one]   Kopierte {count} sti
+msgstr[other] Kopierte {count} stier
+
+msgid  Copy {count} item
+msgstr[one]   Kopier {count} element
+msgstr[other] Kopier {count} elementer
+
+msgid  Copy {count} item to: {names}
+msgstr[one]   Kopier {count} element ({names}) til:
+msgstr[other] Kopier {count} elementer ({names}) til:
+
+msgid  Delete {count} item permanently?
+msgstr[one]   Slette {count} element for godt?
+msgstr[other] Slette {count} elementer for godt?
+
+msgid  Delete: {count} item
+msgstr[one]   Slett: {count} element
+msgstr[other] Slett: {count} elementer
+
+msgid  Hard link {count} item
+msgstr[one]   Hard lenke til {count} element
+msgstr[other] Harde lenker til {count} elementer
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]   Hard lenke til {count} element ({names}) i:
+msgstr[other] Harde lenker til {count} elementer ({names}) i:
+
+msgid  Move to trash: {count} item
+msgstr[one]   Til papirkurven: {count} element
+msgstr[other] Til papirkurven: {count} elementer
+
+msgid  Move {count} item
+msgstr[one]   Flytt {count} element
+msgstr[other] Flytt {count} elementer
+
+msgid  Move {count} item to the trash?
+msgstr[one]   Flytte {count} element til papirkurven?
+msgstr[other] Flytte {count} elementer til papirkurven?
+
+msgid  Move {count} item to: {names}
+msgstr[one]   Flytt {count} element ({names}) til:
+msgstr[other] Flytt {count} elementer ({names}) til:
+
+msgid  Pack {count} item
+msgstr[one]   Pakk {count} element
+msgstr[other] Pakk {count} elementer
+
+msgid  Pack {count} item into: {names}
+msgstr[one]   Pakk {count} element ({names}) i:
+msgstr[other] Pakk {count} elementer ({names}) i:
+
+msgid  Rename {count} Entry
+msgstr[one]   Gi {count} element nytt navn
+msgstr[other] Gi {count} elementer nytt navn
+
+msgid  Replaced {count}
+msgstr[one]   Erstattet {count} treff
+msgstr[other] Erstattet {count} treff
+
+msgid  Symlink {count} item
+msgstr[one]   Symbolsk lenke til {count} element
+msgstr[other] Symbolske lenker til {count} elementer
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]   Symbolsk lenke til {count} element ({names}) i:
+msgstr[other] Symbolske lenker til {count} elementer ({names}) i:
+
+msgid  {count} day ago
+msgstr[one]   {count} dag siden
+msgstr[other] {count} dager siden
+
+msgid  {count} difference
+msgstr[one]   {count} forskjell
+msgstr[other] {count} forskjeller
+
+msgid  {count} directory could not be read
+msgstr[one]   {count} mappe kunne ikke leses
+msgstr[other] {count} mapper kunne ikke leses
+
+msgid  {count} file
+msgstr[one]   {count} fil
+msgstr[other] {count} filer
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]   {count} fil, {failed} kunne ikke leses
+msgstr[other] {count} filer, {failed} kunne ikke leses
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]   {count} element - et felt som står urørt, eller tomt, endrer ingenting
+msgstr[other] {count} elementer - et felt som står urørt, eller tomt, endrer ingenting
+
+msgid  {count} line
+msgstr[one]   {count} linje
+msgstr[other] {count} linjer
+
+msgid  {count} line not understood
+msgstr[one]   {count} linje ble ikke forstått
+msgstr[other] {count} linjer ble ikke forstått
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]   {count} av de nye navnene kan ikke brukes: {why} - se tabellen
+msgstr[other] {count} av de nye navnene kan ikke brukes: {why} - se tabellen
+
+msgid  {done} of {total} entry
+msgstr[one]   {done} av {total} element
+msgstr[other] {done} av {total} elementer
+
+msgid  {done} of {total} item
+msgstr[one]   {done} av {total} element
+msgstr[other] {done} av {total} elementer
+
+msgid  {found} differs
+msgstr[one]   {found} er ulik
+msgstr[other] {found} er ulike
+
+msgid  {found} differs, comparing
+msgstr[one]   {found} er ulik, sammenligner
+msgstr[other] {found} er ulike, sammenligner
+
+msgid  {found} found
+msgstr[one]   {found} funnet
+msgstr[other] {found} funnet
+
+msgid  {found} found, searching
+msgstr[one]   {found} funnet, søker
+msgstr[other] {found} funnet, søker
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]   {job_title} avbrutt etter {done} element
+msgstr[other] {job_title} avbrutt etter {done} elementer
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]   {job_title} avbrutt etter {done} element
+msgstr[other] {job_title} avbrutt etter {done} elementer
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]   {job_title} ferdig, {count} element hoppet over
+msgstr[other] {job_title} ferdig, {count} elementer hoppet over
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]   {problems} kan ikke få nytt navn slik det står    Esc - Avbryt
+msgstr[other] {problems} kan ikke få nytt navn slik det står    Esc - Avbryt
+
+msgid  {skipped} left as it is
+msgstr[one]   {skipped} blir som det er
+msgstr[other] {skipped} blir som de er

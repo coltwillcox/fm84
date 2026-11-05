@@ -19,11 +19,13 @@ pub enum Language {
     /// In the Latin alphabet.
     Serbian,
     Turkish,
+    /// Bokmål.
+    Norwegian,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 3] = [Language::English, Language::Serbian, Language::Turkish];
+    pub const ALL: [Language; 4] = [Language::English, Language::Serbian, Language::Turkish, Language::Norwegian];
 
     /// How the config file names it.
     pub fn key(self) -> &'static str {
@@ -31,6 +33,7 @@ impl Language {
             Language::English => "en",
             Language::Serbian => "sr",
             Language::Turkish => "tr",
+            Language::Norwegian => "nb",
         }
     }
 
@@ -41,6 +44,7 @@ impl Language {
             Language::English => "English",
             Language::Serbian => "Srpski (latinica)",
             Language::Turkish => "Türkçe",
+            Language::Norwegian => "Norsk bokmål",
         }
     }
 
@@ -55,6 +59,7 @@ impl Language {
             Language::English => None,
             Language::Serbian => Some(include_str!("../lang/sr.lang")),
             Language::Turkish => Some(include_str!("../lang/tr.lang")),
+            Language::Norwegian => Some(include_str!("../lang/nb.lang")),
         }
     }
 
@@ -63,7 +68,7 @@ impl Language {
         match self {
             // A noun after a number stays as it is in Turkish - "5 dosya" -
             // but a sentence can still say one apart from the rest.
-            Language::English | Language::Turkish => {
+            Language::English | Language::Turkish | Language::Norwegian => {
                 if count == 1 {
                     Form::One
                 } else {
@@ -87,6 +92,9 @@ impl Language {
             "c" | "posix" | "en" => Some(Language::English),
             "sr" => Some(Language::Serbian),
             "tr" => Some(Language::Turkish),
+            // Bokmål, and the older code for it; Nynorsk is a language of
+            // its own.
+            "nb" | "no" => Some(Language::Norwegian),
             _ => None,
         }
     }
