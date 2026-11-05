@@ -31,8 +31,8 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
     let rows: Vec<String> = view.report.lines().iter().flat_map(|line| rows_of(&printable_name(line), (inner.width as usize).max(1))).collect();
 
     let (title, keys): (String, &[&str]) = match &view.report {
-        Report::Computed { .. } => (" Checksums ".to_string(), &["Tab - Algorithm", "C - Copy", "Enter - Write", "Esc - Close"]),
-        Report::Checked { file, .. } => (format!(" Checked against {} ", shown_name(file)), &["C - Copy", "Esc - Close"]),
+        Report::Computed { .. } => (format!(" {} ", t!("Checksums")), &[t!("Tab - Algorithm"), t!("C - Copy"), t!("Enter - Write"), t!("Esc - Close")]),
+        Report::Checked { file, .. } => (format!(" {} ", t!("Checked against {file}", file = shown_name(file))), &[t!("C - Copy"), t!("Esc - Close")]),
     };
     // As many rows as the keys take at this width, each key whole.
     let keys = keys_in_rows(keys, inner.width as usize);

@@ -76,7 +76,8 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
     let status_style = style_title().bg(palette().selected_background);
 
     if let Some(Dialog::Replacing { .. }) = &app_state.dialog {
-        let question = format!(" Replace \"{}\" with \"{}\"?   Y - Yes   N - No   A - All   Esc - Stop ", printable_name(&app_state.find_term), printable_name(&app_state.replace_with));
+        let (find, with) = (printable_name(&app_state.find_term), printable_name(&app_state.replace_with));
+        let question = format!(" {} ", t!("Replace \"{find}\" with \"{with}\"?   Y - Yes   N - No   A - All   Esc - Stop", find, with));
         render_status_bar(f, area, question, status_style);
         return;
     }
@@ -85,18 +86,18 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
         && *kind != PromptKind::GoTo
     {
         let label = match kind {
-            PromptKind::Find if app_state.find_regex => " Find (regex, Alt+R for text): ",
-            PromptKind::Replace if app_state.find_regex => " Replace (regex, Alt+R for text): ",
-            PromptKind::Find => " Find: ",
-            PromptKind::GoToLine => " Go to line: ",
-            PromptKind::Select => " Select: ",
-            PromptKind::Deselect => " Deselect: ",
-            PromptKind::Replace => " Replace: ",
-            PromptKind::ReplaceWith => " With: ",
-            PromptKind::Filter => " Filter: ",
+            PromptKind::Find if app_state.find_regex => t!("Find (regex, Alt+R for text):"),
+            PromptKind::Replace if app_state.find_regex => t!("Replace (regex, Alt+R for text):"),
+            PromptKind::Find => t!("Find:"),
+            PromptKind::GoToLine => t!("Go to line:"),
+            PromptKind::Select => t!("Select:"),
+            PromptKind::Deselect => t!("Deselect:"),
+            PromptKind::Replace => t!("Replace:"),
+            PromptKind::ReplaceWith => t!("With:"),
+            PromptKind::Filter => t!("Filter:"),
             PromptKind::GoTo => unreachable!("typed in the path bar"),
         };
-        render_prompt_bar(f, area, label, input, status_style);
+        render_prompt_bar(f, area, &format!(" {label} "), input, status_style);
         return;
     }
     if let Some(note) = &app_state.find_note {
@@ -107,45 +108,46 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
     if let Some(editor_state) = app_state.editor() {
         {
             let filename = shown_name(&editor_state.file_path);
-            let modified = if editor_state.modified { " [Modified]" } else { "" };
-            let name_seg = format!("{}{}", filename, modified);
-            let pos_seg = format!("Ln {}, Col {}", editor_state.cursor_line + 1, editor_state.cursor_col + 1);
-            let lines_seg = format!("{} lines", editor_state.lines.len());
-            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, "F2/Ctrl+S Save", "Ctrl+F Find", "Ctrl+Z/Y Undo", "Esc Exit"]);
+            let name_seg = if editor_state.modified { format!("{} [{}]", filename, t!("Modified")) } else { filename };
+            let (line, column) = (editor_state.cursor_line + 1, editor_state.cursor_col + 1);
+            let pos_seg = t!("Ln {line}, Col {column}", line, column);
+            let count = editor_state.lines.len();
+            let lines_seg = tn!(count, "{count} line", "{count} lines", count);
+            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, t!("F2/Ctrl+S Save"), t!("Ctrl+F Find"), t!("Ctrl+Z/Y Undo"), t!("Esc Exit")]);
         }
     } else if let Screen::Diff(state) = &app_state.screen {
         let at = match (state.current, state.hunks.len()) {
-            (Some(current), count) => format!("Difference {}/{}", current + 1, count),
-            (None, count) => format!("{count} differences"),
+            (Some(current), count) => t!("Difference {at}/{count}", at = current + 1, count),
+            (None, count) => tn!(count, "{count} difference", "{count} differences", count),
         };
-        let rows = format!("Row {}/{}", state.scroll_offset + 1, state.rows.len());
-        render_segmented_status_bar(f, area, &[&at, &rows, "F3/N Next", "Shift+F3/P Previous", "Esc Exit"]);
+        let rows = t!("Row {at}/{count}", at = state.scroll_offset + 1, count = state.rows.len());
+        render_segmented_status_bar(f, area, &[&at, &rows, t!("F3/N Next"), t!("Shift+F3/P Previous"), t!("Esc Exit")]);
     } else if let Some(viewer_state) = app_state.viewer() {
         {
             let filename = shown_name(&viewer_state.file_path);
             // Lines, not the rows a wrapped one is broken into.
-            let line_seg = format!("Line {}/{}", viewer_state.row(viewer_state.scroll_offset).0 + 1, viewer_state.line_count());
+            let line_seg = t!("Line {at}/{count}", at = viewer_state.row(viewer_state.scroll_offset).0 + 1, count = viewer_state.line_count());
             let size_seg = format_size(viewer_state.file_size);
-            let zoom_seg = format!("+/- Zoom {}%", viewer_state.image_zoom);
+            let zoom_seg = t!("+/- Zoom {zoom}%", zoom = viewer_state.image_zoom);
             let mut segments = vec![filename.as_str(), line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()];
             // Bracketed half is the view you are in. Omitted on the notice F4
             // raises for a binary, where there is nothing to toggle.
             if !viewer_state.from_edit {
                 segments.push(match (viewer_state.image.is_some(), viewer_state.mode) {
-                    (true, ViewMode::Image) => "X [Image] Text Hex",
-                    (true, ViewMode::Text) => "X Image [Text] Hex",
-                    (true, ViewMode::Hex) => "X Image Text [Hex]",
-                    (false, ViewMode::Hex) => "X Text [Hex]",
-                    (false, _) => "X [Text] Hex",
+                    (true, ViewMode::Image) => t!("X [Image] Text Hex"),
+                    (true, ViewMode::Text) => t!("X Image [Text] Hex"),
+                    (true, ViewMode::Hex) => t!("X Image Text [Hex]"),
+                    (false, ViewMode::Hex) => t!("X Text [Hex]"),
+                    (false, _) => t!("X [Text] Hex"),
                 });
                 if viewer_state.mode == ViewMode::Image {
-                    segments.push(if viewer_state.image_fill { "F Fit [Fill]" } else { "F [Fit] Fill" });
+                    segments.push(if viewer_state.image_fill { t!("F Fit [Fill]") } else { t!("F [Fit] Fill") });
                     segments.push(zoom_seg.as_str());
                 } else {
                     if viewer_state.mode == ViewMode::Text {
-                        segments.push(if viewer_state.wrap { "W [Wrap]" } else { "W Wrap" });
+                        segments.push(if viewer_state.wrap { t!("W [Wrap]") } else { t!("W Wrap") });
                     }
-                    segments.push("Ctrl+F Find");
+                    segments.push(t!("Ctrl+F Find"));
                 }
             }
             render_segmented_status_bar(f, area, &segments);
@@ -153,11 +155,11 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
     } else if let Some(listing) = if app_state.is_left_active { &app_state.listing_left } else { &app_state.listing_right } {
         // A directory that has not answered yet - a network mount gone quiet.
         // The panel shows what it did until it does.
-        let text = format!(" Reading {}…  Esc to stop ", printable_name(&listing.dir.to_string_lossy()));
+        let text = format!(" {} ", t!("Reading {dir}…  Esc to stop", dir = printable_name(&listing.dir.to_string_lossy())));
         render_status_bar(f, area, text, status_style);
     } else if !app_state.search_input.is_empty() {
         // Show search string
-        let text = format!(" Search: {} ", app_state.search_input);
+        let text = format!(" {} {} ", t!("Search:"), app_state.search_input);
         render_status_bar(f, area, text, status_style);
     } else {
         // Show panel stats: selected/total files and selected/total size
@@ -229,23 +231,23 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
 /// there is text to search - not over a picture.
 fn fkey_labels(app_state: &AppState) -> Vec<(u8, &'static str)> {
     match app_state.screen {
-        Screen::Viewer(_) if app_state.can_find() => vec![(3, "Next"), (10, "Quit")],
-        Screen::Viewer(_) => vec![(10, "Quit")],
-        Screen::Editor(_) => vec![(2, "Save"), (3, "Next"), (4, "Replace"), (10, "Quit")],
-        Screen::Diff(_) => vec![(3, "Next"), (10, "Quit")],
+        Screen::Viewer(_) if app_state.can_find() => vec![(3, t!("Next")), (10, t!("Quit"))],
+        Screen::Viewer(_) => vec![(10, t!("Quit"))],
+        Screen::Editor(_) => vec![(2, t!("Save")), (3, t!("Next")), (4, t!("Replace")), (10, t!("Quit"))],
+        Screen::Diff(_) => vec![(3, t!("Next")), (10, t!("Quit"))],
         Screen::Panels => vec![
-            (1, "Help"),
-            (2, "Rename"),
-            (3, "View"),
-            (4, "Edit"),
-            (5, "Copy"),
-            (6, "Move"),
-            (7, "Mkdir"),
-            (8, if app_state.options.delete_to_trash { "Trash" } else { "Delete" }),
-            (9, "Terminal"),
-            (10, "Quit"),
-            (11, "Options"),
-            (12, "Preview"),
+            (1, t!("Help")),
+            (2, t!("Rename")),
+            (3, t!("View")),
+            (4, t!("Edit")),
+            (5, t!("Copy")),
+            (6, t!("Move")),
+            (7, t!("Mkdir")),
+            (8, if app_state.options.delete_to_trash { t!("Trash") } else { t!("Delete") }),
+            (9, t!("Terminal")),
+            (10, t!("Quit")),
+            (11, t!("Options")),
+            (12, t!("Preview")),
         ],
     }
 }

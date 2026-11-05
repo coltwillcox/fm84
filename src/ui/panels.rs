@@ -21,10 +21,10 @@ const MIN_NAME_WIDTH: u16 = 12;
 impl Column {
     fn title(self) -> &'static str {
         match self {
-            Column::Ext => "Ext",
-            Column::Size => "Size",
-            Column::Modified => "Modified",
-            Column::Attributes => "Attributes",
+            Column::Ext => t!("Ext"),
+            Column::Size => t!("Size"),
+            Column::Modified => t!("Modified"),
+            Column::Attributes => t!("Attributes"),
         }
     }
 
@@ -38,8 +38,11 @@ impl Column {
         }
     }
 
+    /// Wide enough for what it holds, and for its title with the arrow
+    /// beside it - which in another language may be the wider.
     fn width(self, options: &Options) -> u16 {
-        match self {
+        let titled = display_width(self.title()) as u16 + if self.sort_key().is_some() { 2 } else { 0 };
+        let held = match self {
             Column::Ext => 5,
             Column::Size => 8,
             Column::Modified => match options.date_format {
@@ -49,7 +52,8 @@ impl Column {
                 DateFormat::Relative => 11,
             },
             Column::Attributes => 10,
-        }
+        };
+        held.max(titled)
     }
 
     fn enabled(self, options: &Options) -> bool {
@@ -392,8 +396,8 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
     // pattern - kept short, as a long one would push the path off the line.
     let filter_label = |is_left: bool| {
         let parts: Vec<String> = [
-            app_state.flat(is_left).map(|flat| if flat.feed.is_some() { "found" } else { "flat" }.to_string()),
-            app_state.filter(is_left).map(|filter| format!("filter: {}", tail_of(&filter.text, 24))),
+            app_state.flat(is_left).map(|flat| if flat.feed.is_some() { t!("found") } else { t!("flat") }.to_string()),
+            app_state.filter(is_left).map(|filter| t!("filter: {pattern}", pattern = tail_of(&filter.text, 24))),
         ]
         .into_iter()
         .flatten()
@@ -716,7 +720,7 @@ fn make_header_row(columns: &[Column], options: &Options) -> Row<'static> {
         let title = if key == Some(options.sort_key) { format!("{title}{arrow}") } else { title.to_string() };
         Cell::from(Span::styled(title, style_columns()))
     };
-    let mut cells = vec![Cell::from(Span::styled("", style_columns())), heading("Name", Some(SortKey::Name))];
+    let mut cells = vec![Cell::from(Span::styled("", style_columns())), heading(t!("Name"), Some(SortKey::Name))];
     for column in columns {
         cells.push(Cell::from(Span::styled("", style_columns())));
         cells.push(heading(column.title(), column.sort_key()));

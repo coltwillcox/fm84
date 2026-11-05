@@ -11,10 +11,13 @@ pub enum FindFiles {
     Found(Search),
 }
 
-/// The form's fields, in the order they are shown and Tab goes through them.
-pub const FIND_FIELDS: [&str; 4] = ["Name", "Containing", "Size", "Modified"];
+/// The form's fields' labels, in the order they are shown and Tab goes
+/// through them.
+pub fn find_fields() -> [&'static str; 4] {
+    [t!("Name"), t!("Containing"), t!("Size"), t!("Modified")]
+}
 /// The row after the fields, where Space turns regular expressions on.
-pub const FIND_REGEX_ROW: usize = FIND_FIELDS.len();
+pub const FIND_REGEX_ROW: usize = 4;
 
 /// What to look for: a name pattern, text the file has to hold, its size
 /// and when it was modified - and whether the text is a regular expression.

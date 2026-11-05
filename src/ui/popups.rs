@@ -127,7 +127,7 @@ pub(super) fn fit_rows(mut blocks: Vec<Vec<Line<'static>>>, room: usize) -> Vec<
 
 pub(super) fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message: &str) {
     let popup_area = popup_rect(20, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Error ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Error")), style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -138,7 +138,7 @@ pub(super) fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message
 pub(super) fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir: bool, input: &TextInput) {
     let popup_area = popup_rect(20, area);
     let popup_block = Block::default()
-        .title(Line::from(Span::styled(if is_dir { " Create Directory " } else { " Create File " }, style_title())).centered())
+        .title(Line::from(Span::styled(format!(" {} ", if is_dir { t!("Create Directory") } else { t!("Create File") }), style_title())).centered())
         .borders(Borders::ALL)
         .style(style_border());
 
@@ -156,7 +156,7 @@ pub(super) fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir
     spans.extend(typed);
     spans.push(Span::raw(" ".repeat(width.saturating_sub(left + typed_width))));
     let input_line = Line::from(spans).style(style_input());
-    popup_body(f, popup_area, vec![input_line, Line::from(Span::styled("Enter - Create    Esc - Cancel", style_columns()))]);
+    popup_body(f, popup_area, vec![input_line, Line::from(Span::styled(t!("Enter - Create    Esc - Cancel"), style_columns()))]);
 }
 
 pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, bool)], to_trash: bool) {
@@ -165,13 +165,15 @@ pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items:
 
     // Which kind of delete it is, said plainly: one can be undone and the
     // other cannot.
-    let verb = if to_trash { "Move to trash" } else { "Delete" };
-    let title = if count == 1 {
-        let item_type = if items[0].1 { "directory" } else { "file" };
-        format!(" {verb}: {item_type} ")
-    } else {
-        format!(" {verb}: {count} items ")
+    let title = match (to_trash, count, count == 1 && items[0].1) {
+        (true, 1, true) => t!("Move to trash: directory").to_string(),
+        (true, 1, false) => t!("Move to trash: file").to_string(),
+        (false, 1, true) => t!("Delete: directory").to_string(),
+        (false, 1, false) => t!("Delete: file").to_string(),
+        (true, count, _) => tn!(count, "Move to trash: {count} item", "Move to trash: {count} items", count),
+        (false, count, _) => tn!(count, "Delete: {count} item", "Delete: {count} items", count),
     };
+    let title = format!(" {title} ");
 
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
@@ -179,19 +181,24 @@ pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items:
     f.render_widget(popup_block, popup_area);
 
     let mut lines = Vec::new();
-    let question = if to_trash { "Move {} to the trash?" } else { "Delete {} permanently?" };
     if count == 1 {
-        let name = format!("\"{}\"", shown_name(&items[0].0));
-        lines.push(Line::from(Span::styled(question.replace("{}", &name), style_title())));
+        let name = shown_name(&items[0].0);
+        let question = if to_trash { t!("Move \"{name}\" to the trash?", name) } else { t!("Delete \"{name}\" permanently?", name) };
+        lines.push(Line::from(Span::styled(question, style_title())));
     } else {
         let names: Vec<String> = items.iter().map(|(path, _)| shown_name(path)).collect();
-        lines.push(Line::from(Span::styled(question.replace("{}", &format!("{count} items")), style_title())));
+        let question = if to_trash {
+            tn!(count, "Move {count} item to the trash?", "Move {count} items to the trash?", count)
+        } else {
+            tn!(count, "Delete {count} item permanently?", "Delete {count} items permanently?", count)
+        };
+        lines.push(Line::from(Span::styled(question, style_title())));
         lines.push(Line::from(Span::styled(names.join(", "), style_file())));
     }
     if !to_trash {
-        lines.push(Line::from(Span::styled("This cannot be undone", style_file())));
+        lines.push(Line::from(Span::styled(t!("This cannot be undone"), style_file())));
     }
-    lines.push(Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", style_columns())));
+    lines.push(Line::from(Span::styled(t!("Y / Enter - Yes    N / Esc - No"), style_columns())));
     popup_body(f, popup_area, lines);
 }
 
@@ -199,7 +206,7 @@ pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items:
 /// date, so which to keep can be weighed, and the answers.
 fn render_job_clash(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, clash: &crate::app::JobClash) {
     let popup_area = popup_rect(40, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Already there ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Already there")), style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -212,26 +219,32 @@ fn render_job_clash(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState
     // what they are shown for.
     let exact = clash.source_size != clash.dest_size && clash.source_size.map(format_size) == clash.dest_size.map(format_size);
     let width = if exact { 15 } else { 9 };
+    // The labels as wide as the wider of them, and "newer" as wide as it
+    // is in the language shown, so the columns line up either way.
+    let (new_label, existing_label, newer_label) = (t!("New"), t!("Existing"), t!("newer"));
+    let label_width = display_width(new_label).max(display_width(existing_label));
     let describe = |label: &str, size: Option<u64>, modified: Option<std::time::SystemTime>, other: Option<std::time::SystemTime>| {
+        let label = format!("{label}{}", " ".repeat(label_width.saturating_sub(display_width(label))));
         let size = size.map(|bytes| if exact { format!("{} B", grouped(bytes)) } else { format_size(bytes) }).unwrap_or_else(|| "?".to_string());
         let date = modified.map(|at| format_exact(at, app_state.options.date_format)).unwrap_or_else(|| "?".to_string());
         let newer = matches!((modified, other), (Some(this), Some(that)) if this > that);
-        format!("{label}  {size:>width$}  {date}{}", if newer { "  newer" } else { "       " })
+        let newer = if newer { format!("  {newer_label}") } else { " ".repeat(display_width(newer_label) + 2) };
+        format!("{label}  {size:>width$}  {date}{newer}")
     };
-    let mut lines = vec![Line::from(Span::styled(format!("\"{}\" is already in {folder}", shown_name(&clash.dest)), style_title()))];
+    let mut lines = vec![Line::from(Span::styled(t!("\"{name}\" is already in {folder}", name = shown_name(&clash.dest), folder), style_title()))];
     // Copied under another name, the new one is not the name in the question.
     if clash.source.file_name() != clash.dest.file_name() {
-        lines.push(Line::from(Span::styled(format!("to be replaced by \"{}\"", shown_name(&clash.source)), style_file())));
+        lines.push(Line::from(Span::styled(t!("to be replaced by \"{name}\"", name = shown_name(&clash.source)), style_file())));
     }
     lines.extend([
-        Line::from(Span::styled(describe("New     ", clash.source_size, clash.source_modified, clash.dest_modified), style_file())),
-        Line::from(Span::styled(describe("Existing", clash.dest_size, clash.dest_modified, clash.source_modified), style_file())),
-        Line::from(Span::styled("Y - Overwrite    N - Skip    K - Keep both", style_columns())),
-        Line::from(Span::styled("A - Overwrite all    S - Skip all    B - Keep both all", style_columns())),
-        Line::from(Span::styled("O - Overwrite all older    Esc - Abort", style_columns())),
+        Line::from(Span::styled(describe(new_label, clash.source_size, clash.source_modified, clash.dest_modified), style_file())),
+        Line::from(Span::styled(describe(existing_label, clash.dest_size, clash.dest_modified, clash.source_modified), style_file())),
+        Line::from(Span::styled(t!("Y - Overwrite    N - Skip    K - Keep both"), style_columns())),
+        Line::from(Span::styled(t!("A - Overwrite all    S - Skip all    B - Keep both all"), style_columns())),
+        Line::from(Span::styled(t!("O - Overwrite all older    Esc - Abort"), style_columns())),
     ]);
     if app_state.quit_armed {
-        lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));
+        lines.push(Line::from(Span::styled(t!("F10 again - Quit"), style_file())));
     }
     popup_body(f, popup_area, lines);
 }
@@ -265,19 +278,20 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
     }
 
     let title = if job.is_cancelling() {
-        " Cancelling ".to_string()
+        t!("Cancelling")
     } else {
         match job.kind {
-            TransferKind::Copy => " Copying ".to_string(),
-            TransferKind::Move => " Moving ".to_string(),
-            TransferKind::Delete => " Deleting ".to_string(),
-            TransferKind::Trash => " Moving to trash ".to_string(),
-            TransferKind::Extract => " Extracting ".to_string(),
-            TransferKind::Pack => " Packing ".to_string(),
-            TransferKind::Checksum => " Checksumming ".to_string(),
-            TransferKind::Sync => " Synchronizing ".to_string(),
+            TransferKind::Copy => t!("Copying"),
+            TransferKind::Move => t!("Moving"),
+            TransferKind::Delete => t!("Deleting"),
+            TransferKind::Trash => t!("Moving to trash"),
+            TransferKind::Extract => t!("Extracting"),
+            TransferKind::Pack => t!("Packing"),
+            TransferKind::Checksum => t!("Checksumming"),
+            TransferKind::Sync => t!("Synchronizing"),
         }
     };
+    let title = format!(" {title} ");
     let popup_area = popup_rect(30, area);
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
@@ -291,26 +305,26 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
     let bar_width = popup_area.width.saturating_sub(14) as usize;
     let bar = match job.fraction() {
         Some(fraction) => format!("{} {:>3.0}%", progress_bar(fraction, bar_width), fraction * 100.0),
-        None => "Counting...".to_string(),
+        None => t!("Counting...").to_string(),
     };
 
     // Once F10 has been pressed the offer stays up for the rest of the job, so
     // there is always something on screen saying how to get out of one that is
     // not going to finish.
-    let hint = if app_state.quit_armed { "Esc - Cancel    F10 again - Quit" } else { "Esc - Cancel" };
+    let hint = if app_state.quit_armed { t!("Esc - Cancel    F10 again - Quit") } else { t!("Esc - Cancel") };
 
     // A copy moves bytes and a delete removes entries, so each is counted in
     // what it actually does rather than forcing both into the same figure.
     let detail = match (job.kind, job.total) {
         (TransferKind::Delete, Some(total)) if total > 0 => {
-            format!("{} of {} entries    {hint}", job.done, total)
+            format!("{}    {hint}", tn!(total, "{done} of {total} entry", "{done} of {total} entries", done = job.done, total))
         }
         (TransferKind::Trash, Some(total)) if total > 0 => {
-            format!("{} of {} items    {hint}", job.done, total)
+            format!("{}    {hint}", tn!(total, "{done} of {total} item", "{done} of {total} items", done = job.done, total))
         }
         (_, Some(total)) if total > 0 => {
             let rate = job.done as f64 / elapsed.as_secs_f64().max(0.001);
-            format!("{} of {} at {}/s    {hint}", format_size(job.done), format_size(total), format_size(rate as u64))
+            format!("{}    {hint}", t!("{done} of {total} at {rate}/s", done = format_size(job.done), total = format_size(total), rate = format_size(rate as u64)))
         }
         _ => hint.to_string(),
     };
@@ -334,22 +348,23 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
 /// answered.
 fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind, problem: &crate::app::JobProblem, quit_armed: bool) {
     let title = match kind {
-        TransferKind::Copy => " Cannot copy ",
-        TransferKind::Move => " Cannot move ",
-        TransferKind::Delete => " Cannot delete ",
-        TransferKind::Trash => " Cannot move to trash ",
-        TransferKind::Extract => " Cannot extract ",
-        TransferKind::Pack => " Cannot pack ",
-        TransferKind::Checksum => " Cannot read ",
-        TransferKind::Sync => " Cannot synchronize ",
+        TransferKind::Copy => t!("Cannot copy"),
+        TransferKind::Move => t!("Cannot move"),
+        TransferKind::Delete => t!("Cannot delete"),
+        TransferKind::Trash => t!("Cannot move to trash"),
+        TransferKind::Extract => t!("Cannot extract"),
+        TransferKind::Pack => t!("Cannot pack"),
+        TransferKind::Checksum => t!("Cannot read"),
+        TransferKind::Sync => t!("Cannot synchronize"),
     };
+    let title = format!(" {title} ");
     let popup_area = popup_rect(30, area);
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let hint = "R - Retry    S - Skip    A - Skip all    Esc - Abort";
+    let hint = t!("R - Retry    S - Skip    A - Skip all    Esc - Abort");
     let mut lines = vec![
         Line::from(""),
         Line::from(Span::styled(shown_name(&problem.path), style_title())),
@@ -360,10 +375,10 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
     ];
     // What the trash will not take can still be deleted for good, on purpose.
     if kind == TransferKind::Trash {
-        lines.push(Line::from(Span::styled("D - Delete permanently", style_file())));
+        lines.push(Line::from(Span::styled(t!("D - Delete permanently"), style_file())));
     }
     if quit_armed {
-        lines.push(Line::from(Span::styled("F10 again - Quit", style_file())));
+        lines.push(Line::from(Span::styled(t!("F10 again - Quit"), style_file())));
     }
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
 }
@@ -373,33 +388,39 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
 /// answers. A file that has gone is said to have, and cannot be reloaded.
 pub(super) fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, opened: Option<crate::app::DiskStamp>, now: Option<crate::app::DiskStamp>) {
     let popup_area = popup_rect(40, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Changed on disk ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Changed on disk")), style_title())).centered())
+        .borders(Borders::ALL)
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     let name = app_state.editor().map(|state| shown_name(&state.file_path)).unwrap_or_default();
+    let (when_opened, now_label) = (t!("When opened"), t!("Now"));
+    let label_width = display_width(when_opened).max(display_width(now_label)) + 1;
     let stamp = |label: &str, stamp: Option<crate::app::DiskStamp>| {
         let shown = match stamp {
             Some(stamp) => {
                 let date = stamp.modified.map(|at| format_exact(at, app_state.options.date_format)).unwrap_or_else(|| "?".to_string());
                 format!("{:>9}  {date}", format_size(stamp.size))
             }
-            None => "not there".to_string(),
+            None => t!("not there").to_string(),
         };
-        Line::from(Span::styled(format!("{label:<12}{shown}"), style_file()))
+        let pad = " ".repeat(label_width.saturating_sub(display_width(label)));
+        Line::from(Span::styled(format!("{label}{pad}{shown}"), style_file()))
     };
     let mut lines = match now {
-        Some(_) => vec![Line::from(Span::styled(format!("\"{name}\" has changed since it was opened"), style_title()))],
-        None => vec![Line::from(Span::styled(format!("\"{name}\" is no longer there"), style_title()))],
+        Some(_) => vec![Line::from(Span::styled(t!("\"{name}\" has changed since it was opened", name), style_title()))],
+        None => vec![Line::from(Span::styled(t!("\"{name}\" is no longer there", name), style_title()))],
     };
-    lines.push(stamp("When opened", opened));
-    lines.push(stamp("Now", now));
+    lines.push(stamp(when_opened, opened));
+    lines.push(stamp(now_label, now));
     let keys = match now {
-        Some(_) => "O - Overwrite it    R - Reload, losing your edits",
-        None => "O - Save it again",
+        Some(_) => t!("O - Overwrite it    R - Reload, losing your edits"),
+        None => t!("O - Save it again"),
     };
     lines.push(Line::from(Span::styled(keys, style_columns())));
-    lines.push(Line::from(Span::styled("Esc - Back to editing", style_columns())));
+    lines.push(Line::from(Span::styled(t!("Esc - Back to editing"), style_columns())));
     popup_body(f, popup_area, lines);
 }
 
@@ -411,12 +432,16 @@ pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, sta
     f.render_widget(popup_block, popup_area);
 
     let width = popup_inner(popup_area).width as usize;
-    const LABEL: usize = 12;
+    let labels = crate::app::find_fields();
+    let (in_label, regex_label) = (t!("In"), t!("Regex"));
+    // As wide as the widest label, in whichever language, and a gap.
+    let label_width = labels.iter().chain([&in_label, &regex_label]).map(|label| display_width(label)).max().unwrap_or(0) + 2;
+    let label = |label: &str| format!("{label}{}", " ".repeat(label_width.saturating_sub(display_width(label))));
     // The field the keys go to has the cursor in it and a bar behind it; the
     // other shows what it holds.
-    let field = |label: &str, input: &TextInput, focused: bool| {
-        let room = width.saturating_sub(LABEL);
-        let mut spans = vec![Span::styled(format!("{label:<LABEL$}"), style_columns())];
+    let field = |name: &str, input: &TextInput, focused: bool| {
+        let room = width.saturating_sub(label_width);
+        let mut spans = vec![Span::styled(label(name), style_columns())];
         let typed = if focused {
             input.cursor_spans_within(room, style_input(), style_input_cursor())
         } else {
@@ -436,23 +461,23 @@ pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, sta
         vec![
             // Padded out like the fields, so the labels line up.
             Line::from(Span::styled(
-                format!("{:<LABEL$}{:<room$}", "In", tail_of(&start.to_string_lossy(), width.saturating_sub(LABEL)), room = width.saturating_sub(LABEL)),
+                format!("{}{:<room$}", label(in_label), tail_of(&start.to_string_lossy(), width.saturating_sub(label_width)), room = width.saturating_sub(label_width)),
                 style_file(),
             )),
-            field(crate::app::FIND_FIELDS[0], &form.fields[0], form.focus == 0),
-            field(crate::app::FIND_FIELDS[1], &form.fields[1], form.focus == 1),
-            field(crate::app::FIND_FIELDS[2], &form.fields[2], form.focus == 2),
-            field(crate::app::FIND_FIELDS[3], &form.fields[3], form.focus == 3),
+            field(labels[0], &form.fields[0], form.focus == 0),
+            field(labels[1], &form.fields[1], form.focus == 1),
+            field(labels[2], &form.fields[2], form.focus == 2),
+            field(labels[3], &form.fields[3], form.focus == 3),
             {
                 let focused = form.focus == crate::app::FIND_REGEX_ROW;
-                let check = format!("[{}] Containing is a regular expression", if form.regex { "x" } else { " " });
-                let room = width.saturating_sub(LABEL);
+                let check = format!("[{}] {}", if form.regex { "x" } else { " " }, t!("Containing is a regular expression"));
+                let room = width.saturating_sub(label_width);
                 let check = format!("{:<room$}", tail_of(&check, room));
-                Line::from(vec![Span::styled(format!("{:<LABEL$}", "Regex"), style_columns()), Span::styled(check, if focused { style_input() } else { style_file() })])
+                Line::from(vec![Span::styled(label(regex_label), style_columns()), Span::styled(check, if focused { style_input() } else { style_file() })])
             },
-            Line::from(Span::styled("Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case", style_columns())),
-            Line::from(Span::styled("Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01", style_columns())),
-            Line::from(Span::styled("Tab - Field  Space - Regex  Enter - Find  Esc - Cancel", style_columns())),
+            Line::from(Span::styled(t!("Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case"), style_columns())),
+            Line::from(Span::styled(t!("Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01"), style_columns())),
+            Line::from(Span::styled(t!("Tab - Field  Space - Regex  Enter - Find  Esc - Cancel"), style_columns())),
         ],
     );
 }
@@ -462,7 +487,7 @@ pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, sta
 /// results that fit, for PageUp and PageDown.
 pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, search: &crate::app::Search) -> usize {
     let popup_area = popup_rect(80, area);
-    let title = format!(" Find: {} ", printable_name(&search.label));
+    let title = format!(" {} {} ", t!("Find:"), printable_name(&search.label));
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -475,16 +500,15 @@ pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, 
     let found = search.results.len();
     let status = match &search.looking_in {
         Some(dir) => {
-            let said = format!("{found} found, searching ");
+            let said = format!("{} ", tn!(found, "{found} found, searching", "{found} found, searching", found));
             format!("{said}{}", tail_of(&dir.to_string_lossy(), width.saturating_sub(display_width(&said) + 1)))
         }
-        None if found == 0 => "Nothing found".to_string(),
-        None => format!("{found} found"),
+        None if found == 0 => t!("Nothing found").to_string(),
+        None => tn!(found, "{found} found", "{found} found", found),
     };
     let status = match search.unreadable {
         0 => status,
-        1 => format!("{status} - 1 directory could not be read"),
-        many => format!("{status} - {many} directories could not be read"),
+        count => format!("{status} - {}", tn!(count, "{count} directory could not be read", "{count} directories could not be read", count)),
     };
 
     let mut lines = vec![Line::from(Span::styled(status, style_title())), Line::from("")];
@@ -512,9 +536,9 @@ pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, 
         lines.push(Line::from(""));
     }
     let hint = if search.done {
-        "Enter - Go to    F - Feed to panel    Esc - Close"
+        t!("Enter - Go to    F - Feed to panel    Esc - Close")
     } else {
-        "Enter - Go to    F - Feed to panel    Esc - Stop and close"
+        t!("Enter - Go to    F - Feed to panel    Esc - Stop and close")
     };
     lines.push(Line::from(Span::styled(hint, style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
@@ -526,7 +550,7 @@ pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, 
 /// written beside its field.
 pub(super) fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &AttributesForm) -> Vec<(Rect, u16)> {
     let popup_area = popup_rect(50, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Attributes ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Attributes")), style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -535,8 +559,14 @@ pub(super) fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, fo
     // Room kept after the mode for what it comes to.
     const BECOMES: usize = 12;
     let what = match form.items.as_slice() {
-        [(path, is_dir)] => format!("{} \"{}\"", if *is_dir { "Directory" } else { "File" }, shown_name(path)),
-        items => format!("{} items - a field left as it is, or empty, changes nothing", items.len()),
+        [(path, false)] => t!("File \"{name}\"", name = shown_name(path)),
+        [(path, true)] => t!("Directory \"{name}\"", name = shown_name(path)),
+        items => tn!(
+            items.len(),
+            "{count} item - a field left as it is, or empty, changes nothing",
+            "{count} items - a field left as it is, or empty, changes nothing",
+            count = items.len()
+        ),
     };
     let mut lines = vec![Line::from(Span::styled(tail_of(&what, width), style_file()))];
     for (index, field) in form.fields.iter().enumerate() {
@@ -563,9 +593,9 @@ pub(super) fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, fo
         lines.push(Line::from(spans));
     }
     if form.fields.len() > 1 {
-        lines.push(Line::from(Span::styled("Mode as 755 or u+x,go-w; owner and group by name or number", style_columns())));
+        lines.push(Line::from(Span::styled(t!("Mode as 755 or u+x,go-w; owner and group by name or number"), style_columns())));
     }
-    lines.push(Line::from(Span::styled("Tab - Next field    Enter - Apply    Esc - Cancel", style_columns())));
+    lines.push(Line::from(Span::styled(t!("Tab - Next field    Enter - Apply    Esc - Cancel"), style_columns())));
     // Each field's row, for a click: the lines are as wide as the body, so
     // the text starts just after the label.
     let inner = popup_inner(popup_area);
@@ -588,7 +618,7 @@ fn mode_preview(_mode: u32) -> String {
 /// keeping the end of it, which tells them apart.
 pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &[PathBuf], index: usize, here: &Path) {
     let popup_area = popup_rect(60, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Bookmarks ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Bookmarks")), style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -599,7 +629,7 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
 
     let mut lines = Vec::new();
     if list.is_empty() {
-        lines.push(Line::from(Span::styled("No bookmarks yet - A keeps the panel's directory", style_file())));
+        lines.push(Line::from(Span::styled(t!("No bookmarks yet - A keeps the panel's directory"), style_file())));
     }
     let first = if rows > 0 && index >= rows { index + 1 - rows } else { 0 };
     for (number, path) in list.iter().enumerate().skip(first).take(rows) {
@@ -615,8 +645,8 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled("Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove", style_columns())).centered());
-    lines.push(Line::from(Span::styled("Shift+Up/Down - Move    Esc - Close", style_columns())).centered());
+    lines.push(Line::from(Span::styled(t!("Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove"), style_columns())).centered());
+    lines.push(Line::from(Span::styled(t!("Shift+Up/Down - Move    Esc - Close"), style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -624,7 +654,7 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
 /// the bookmarks are - laid out as they are, too.
 pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, menu: &crate::app::UserMenu) {
     let popup_area = popup_rect(60, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" User Menu ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("User Menu")), style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -635,7 +665,7 @@ pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
 
     let mut lines = Vec::new();
     if menu.entries.is_empty() {
-        lines.push(Line::from(Span::styled("No commands yet - E adds them, as label = command, in", style_file())));
+        lines.push(Line::from(Span::styled(t!("No commands yet - E adds them, as label = command, in"), style_file())));
         if let Some(file) = &menu.file {
             lines.push(Line::from(Span::styled(tail_of(&from_home(file), width), style_dir())));
         }
@@ -661,7 +691,7 @@ pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled("Enter/1-9 - Run    E - Edit the menu    Esc - Close", style_columns())).centered());
+    lines.push(Line::from(Span::styled(t!("Enter/1-9 - Run    E - Edit the menu    Esc - Close"), style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -670,7 +700,7 @@ pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
 pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, menu: &crate::app::OpenWith) {
     let popup_area = popup_rect(60, area);
     let name = menu.path.file_name().map(|name| printable_name(&name.to_string_lossy())).unwrap_or_default();
-    let title = format!(" Open {} With ", cut_to(&name, (popup_area.width as usize).saturating_sub(16)));
+    let title = format!(" {} ", t!("Open {name} With", name = cut_to(&name, (popup_area.width as usize).saturating_sub(16))));
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -687,7 +717,7 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
         let label = cut_to(&printable_name(&opener.label), label_width);
         let label = format!("{label}{}", " ".repeat(label_width.saturating_sub(display_width(&label))));
         let room = width.saturating_sub(key.len() + label_width + 3);
-        let detail = if opener.terminal { format!("[terminal] {}", opener.detail) } else { opener.detail.clone() };
+        let detail = if opener.terminal { format!("[{}] {}", t!("terminal"), opener.detail) } else { opener.detail.clone() };
         let detail = cut_to(&printable_name(&detail), room);
         let used = key.len() + label_width + 3 + display_width(&detail);
         let pad = " ".repeat(width.saturating_sub(used));
@@ -701,7 +731,7 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled("Enter/1-9 - Open    E - Edit associations    Esc - Close", style_columns())).centered());
+    lines.push(Line::from(Span::styled(t!("Enter/1-9 - Open    E - Edit associations    Esc - Close"), style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -710,20 +740,23 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
 /// cannot be had. The table's rows are kept for Page Up and Page Down.
 pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, rename: &mut crate::app::MultiRename) {
     let popup_area = popup_rect(80, area);
-    let title = format!(" Rename {} Entries ", rename.entries.len());
+    let count = rename.entries.len();
+    let title = format!(" {} ", tn!(count, "Rename {count} Entry", "Rename {count} Entries", count));
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
     let width = inner.width as usize;
-    const LABEL: usize = 10;
-    let room = width.saturating_sub(LABEL);
+    let labels = [t!("Name"), t!("Find"), t!("Replace"), t!("Case")];
+    let label_width = labels.iter().map(|label| display_width(label)).max().unwrap_or(0) + 2;
+    let label = |label: &str| format!("{label}{}", " ".repeat(label_width.saturating_sub(display_width(label))));
+    let room = width.saturating_sub(label_width);
 
     let mut lines = Vec::new();
-    for (index, label) in ["Name", "Find", "Replace"].iter().enumerate() {
+    for (index, name) in labels[..3].iter().enumerate() {
         let input = &rename.fields[index];
-        let mut spans = vec![Span::styled(format!("{label:<LABEL$}"), style_columns())];
+        let mut spans = vec![Span::styled(label(name), style_columns())];
         let focused = rename.focus == index;
         let typed = if focused {
             input.cursor_spans_within(room, style_input(), style_input_cursor())
@@ -738,8 +771,8 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
     }
     let case = format!("◂ {} ▸", rename.case.label());
     let case_style = if rename.focus == crate::app::CASE_ROW { style_input() } else { style_file() };
-    lines.push(Line::from(vec![Span::styled(format!("{:<LABEL$}", "Case"), style_columns()), Span::styled(case, case_style)]));
-    for hint in ["[N] name   [E] extension   [C] counter", "[N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits"] {
+    lines.push(Line::from(vec![Span::styled(label(labels[3]), style_columns()), Span::styled(case, case_style)]));
+    for hint in [t!("[N] name   [E] extension   [C] counter"), t!("[N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits")] {
         lines.push(Line::from(Span::styled(cut_to(hint, width), style_columns())));
     }
     lines.push(Line::from(""));
@@ -747,7 +780,7 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
     // Old names on the left, new on the right, each half the width.
     let half = width.saturating_sub(3) / 2;
     let pad = |text: &str, to: usize| format!("{text}{}", " ".repeat(to.saturating_sub(display_width(text))));
-    lines.push(Line::from(vec![Span::styled(pad("Old name", half), style_title()), Span::styled("   New name", style_title())]));
+    lines.push(Line::from(vec![Span::styled(pad(t!("Old name"), half), style_title()), Span::styled(format!("   {}", t!("New name")), style_title())]));
     // Above the table, and the blank row and keys below it.
     let rows = (inner.height as usize).saturating_sub(lines.len() + 2);
     rename.room = rows.max(1);
@@ -773,9 +806,10 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
         lines.push(Line::from(""));
     }
     let keys = if problems > 0 {
-        Line::from(Span::styled(cut_to(&format!("{problems} cannot be renamed as it stands    Esc - Cancel"), width), Style::new().fg(palette().selected_marker))).centered()
+        let said = tn!(problems, "{problems} cannot be renamed as it stands    Esc - Cancel", "{problems} cannot be renamed as they stand    Esc - Cancel", problems);
+        Line::from(Span::styled(cut_to(&said, width), Style::new().fg(palette().selected_marker))).centered()
     } else {
-        Line::from(Span::styled(cut_to("Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel", width), style_columns())).centered()
+        Line::from(Span::styled(cut_to(t!("Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel"), width), style_columns())).centered()
     };
     lines.push(keys);
     f.render_widget(Paragraph::new(lines), inner);
@@ -790,7 +824,7 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
     // As wide as the panels: a path and both sides' sizes and ages to fit.
     let panels = screen_layout(area)[2];
     let popup_area = centered(panels, (panels.width as usize).saturating_sub(4).max(1), popup_rect(80, area).height as usize);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Synchronize ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Synchronize")), style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -805,17 +839,16 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
     let found = plan.entries.len();
     let mut status = match &plan.looking_in {
         Some(dir) => {
-            let said = format!("{found} differ, comparing ");
+            let said = format!("{} ", tn!(found, "{found} differs, comparing", "{found} differ, comparing", found));
             let dir = if dir.as_os_str().is_empty() { ".".to_string() } else { dir.to_string_lossy().into_owned() };
             format!("{said}{}", tail_of(&dir, width.saturating_sub(display_width(&said))))
         }
-        None if found == 0 => "The directories hold the same files".to_string(),
-        None => format!("{found} differ"),
+        None if found == 0 => t!("The directories hold the same files").to_string(),
+        None => tn!(found, "{found} differs", "{found} differ", found),
     };
     match plan.unreadable {
         0 => {}
-        1 => status.push_str(" - 1 directory could not be read"),
-        many => status.push_str(&format!(" - {many} directories could not be read")),
+        count => status.push_str(&format!(" - {}", tn!(count, "{count} directory could not be read", "{count} directories could not be read", count))),
     }
     lines.push(Line::from(Span::styled(status, style_title())));
     lines.push(Line::from(""));
@@ -837,6 +870,9 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
             format!("{:>9} {:<16}", cut_to(&size, 9), cut_to(&date, 16))
         }
     };
+    // Three columns, whatever the language calls a delete.
+    let del = format!("{:<3}", cut_to(t!("del"), 3));
+    let (delete_left, delete_right) = (format!(" ✗ {del} "), format!(" {del} ✗ "));
     let rows = (inner.height as usize).saturating_sub(lines.len() + 3);
     plan.room = rows.max(1);
     plan.scroll = plan.scroll.min(plan.entries.len().saturating_sub(plan.room)).min(plan.cursor);
@@ -853,8 +889,8 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
         let (arrow, arrow_style) = match entry.action {
             SyncAction::ToRight => ("  ──▶  ", style_dir()),
             SyncAction::ToLeft => ("  ◀──  ", style_dir()),
-            SyncAction::DeleteLeft => (" ✗ del ", Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD)),
-            SyncAction::DeleteRight => (" del ✗ ", Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD)),
+            SyncAction::DeleteLeft => (delete_left.as_str(), Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD)),
+            SyncAction::DeleteRight => (delete_right.as_str(), Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD)),
             SyncAction::Skip if difference.left.is_some() && difference.right.is_some() => ("   ≠   ", style_columns()),
             SyncAction::Skip => ("       ", style_columns()),
         };
@@ -877,18 +913,22 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
         lines.push(Line::from(""));
     }
     let [right, left, deleting, skipped] = plan.counts();
-    let tally = format!("{right} ──▶    {left} ◀──    {deleting} to delete    {skipped} left as they are");
+    let tally = format!(
+        "{right} ──▶    {left} ◀──    {}    {}",
+        t!("{deleting} to delete", deleting),
+        tn!(skipped, "{skipped} left as it is", "{skipped} left as they are", skipped)
+    );
     lines.push(Line::from(Span::styled(cut_to(&tally, width), style_title())).centered());
     let keys = if plan.armed {
         Line::from(Span::styled(
-            cut_to(&format!("Enter again to run, deleting {deleting}    Any other key - Not yet"), width),
+            cut_to(&t!("Enter again to run, deleting {deleting}    Any other key - Not yet", deleting), width),
             Style::new().fg(palette().selected_marker).add_modifier(Modifier::BOLD),
         ))
         .centered()
     } else if !plan.done {
-        Line::from(Span::styled(cut_to("Comparing...    Esc - Stop and close", width), style_columns())).centered()
+        Line::from(Span::styled(cut_to(t!("Comparing...    Esc - Stop and close"), width), style_columns())).centered()
     } else {
-        Line::from(Span::styled(cut_to("→ ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close", width), style_columns())).centered()
+        Line::from(Span::styled(cut_to(t!("→ ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close"), width), style_columns())).centered()
     };
     lines.push(keys);
     f.render_widget(Paragraph::new(lines), inner);
@@ -928,7 +968,10 @@ fn from_home(path: &Path) -> String {
 /// are.
 pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &crate::app::HistoryList, here: &Path) {
     let popup_area = popup_rect(60, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Directory History ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Directory History")), style_title())).centered())
+        .borders(Borders::ALL)
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -938,16 +981,17 @@ pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list:
     // under it.
     let rows = (inner.height as usize).saturating_sub(4);
 
-    let label = "Filter: ";
+    let label = format!("{} ", t!("Filter:"));
+    let label_width = display_width(&label);
+    let typed = list.input.cursor_spans_within(width.saturating_sub(label_width), style_input(), style_input_cursor());
     let mut field = vec![Span::styled(label, style_columns())];
-    let typed = list.input.cursor_spans_within(width.saturating_sub(label.len()), style_input(), style_input_cursor());
     let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
     field.extend(typed);
-    field.push(Span::styled(" ".repeat(width.saturating_sub(label.len() + typed_width)), style_input()));
+    field.push(Span::styled(" ".repeat(width.saturating_sub(label_width + typed_width)), style_input()));
     let mut lines = vec![Line::from(field), Line::from("")];
 
     if list.shown.is_empty() {
-        lines.push(Line::from(Span::styled("Nothing visited matches", style_file())));
+        lines.push(Line::from(Span::styled(t!("Nothing visited matches"), style_file())));
     }
     let first = if rows > 0 && list.index >= rows { list.index + 1 - rows } else { 0 };
     for (number, path) in list.shown.iter().enumerate().skip(first).take(rows) {
@@ -960,7 +1004,7 @@ pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list:
     while lines.len() < rows + 3 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled("Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close", style_columns())).centered());
+    lines.push(Line::from(Span::styled(t!("Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close"), style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -972,7 +1016,7 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     // of margin above and below, and the blank row and the keys under it.
     let most = popup_rect(60, area);
     let popup_area = centered(most, most.width as usize, list.names.len() + 6);
-    let title = format!(" Branches: {} ", shown_name(&list.dir));
+    let title = format!(" {} {} ", t!("Branches:"), shown_name(&list.dir));
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -996,7 +1040,7 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled("Enter/Click - Switch    Esc - Close", style_columns())).centered());
+    lines.push(Line::from(Span::styled(t!("Enter/Click - Switch    Esc - Close"), style_columns())).centered());
     f.render_widget(Paragraph::new(lines), inner);
     hits
 }
@@ -1005,33 +1049,87 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
 /// on the other panel - the file's path there for a single file, the
 /// directory for anything else. `is_copy` = true for F5 copy, false for F6
 /// move.
+/// What a destination is asked for, each said whole: a sentence put
+/// together from a verb and a preposition reads right in English alone.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Destination {
+    Copy,
+    Move,
+    Symlink,
+    HardLink,
+    Extract,
+    Pack,
+}
+
+impl Destination {
+    fn title(self, count: usize, is_dir: bool) -> String {
+        use Destination::*;
+        match (self, count, is_dir) {
+            (Extract, _, _) => t!("Extract archive").to_string(),
+            (Copy, 1, false) => t!("Copy file").to_string(),
+            (Copy, 1, true) => t!("Copy directory").to_string(),
+            (Copy, count, _) => tn!(count, "Copy {count} item", "Copy {count} items", count),
+            (Move, 1, false) => t!("Move file").to_string(),
+            (Move, 1, true) => t!("Move directory").to_string(),
+            (Move, count, _) => tn!(count, "Move {count} item", "Move {count} items", count),
+            (Symlink, 1, false) => t!("Symlink file").to_string(),
+            (Symlink, 1, true) => t!("Symlink directory").to_string(),
+            (Symlink, count, _) => tn!(count, "Symlink {count} item", "Symlink {count} items", count),
+            (HardLink, 1, false) => t!("Hard link file").to_string(),
+            (HardLink, 1, true) => t!("Hard link directory").to_string(),
+            (HardLink, count, _) => tn!(count, "Hard link {count} item", "Hard link {count} items", count),
+            (Pack, 1, false) => t!("Pack file").to_string(),
+            (Pack, 1, true) => t!("Pack directory").to_string(),
+            (Pack, count, _) => tn!(count, "Pack {count} item", "Pack {count} items", count),
+        }
+    }
+
+    /// What goes, and where to: one by its name, more by how many.
+    fn source(self, count: usize, name: &str, names: &str) -> String {
+        use Destination::*;
+        match (self, count) {
+            (Copy, 1) => t!("Copy \"{name}\" to:", name),
+            (Copy, count) => tn!(count, "Copy {count} item to: {names}", "Copy {count} items to: {names}", count, names),
+            (Move, 1) => t!("Move \"{name}\" to:", name),
+            (Move, count) => tn!(count, "Move {count} item to: {names}", "Move {count} items to: {names}", count, names),
+            (Symlink, 1) => t!("Symlink \"{name}\" at:", name),
+            (Symlink, count) => tn!(count, "Symlink {count} item at: {names}", "Symlink {count} items at: {names}", count, names),
+            (HardLink, 1) => t!("Hard link \"{name}\" at:", name),
+            (HardLink, count) => tn!(count, "Hard link {count} item at: {names}", "Hard link {count} items at: {names}", count, names),
+            (Extract, _) => t!("Extract \"{name}\" to:", name),
+            (Pack, 1) => t!("Pack \"{name}\" into:", name),
+            (Pack, count) => tn!(count, "Pack {count} item into: {names}", "Pack {count} items into: {names}", count, names),
+        }
+    }
+
+    fn enter(self) -> &'static str {
+        match self {
+            Destination::Copy => t!("Enter - Copy"),
+            Destination::Move => t!("Enter - Move"),
+            Destination::Symlink => t!("Enter - Symlink"),
+            Destination::HardLink => t!("Enter - Hard link"),
+            Destination::Extract => t!("Enter - Extract"),
+            Destination::Pack => t!("Enter - Pack"),
+        }
+    }
+}
+
 /// F5, F6 and Ctrl+Shift+F5: what is chosen, and where it is to go, typed.
-/// `verb` names the operation, and `preposition` leads into the destination.
-/// `what` names a single source when "file" or "directory" would not say it,
-/// and `also` is a key the dialog answers beyond Enter and Esc.
-#[allow(clippy::too_many_arguments)]
-pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], what: Option<&str>, verb: &str, preposition: &str, input: &TextInput, also: Option<&str>) {
+/// `also` is a key the dialog answers beyond Enter and Esc.
+pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, sources: &[(PathBuf, bool)], kind: Destination, input: &TextInput, also: Option<&str>) {
     let popup_area = popup_rect(35, area);
     let count = sources.len();
 
-    let title = if count == 1 {
-        let item_type = what.unwrap_or(if sources[0].1 { "directory" } else { "file" });
-        format!(" {} {} ", verb, item_type)
-    } else {
-        format!(" {} {} items ", verb, count)
-    };
+    let title = format!(" {} ", kind.title(count, sources.first().is_some_and(|(_, is_dir)| *is_dir)));
 
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    let source_msg = if count == 1 {
-        format!("{} \"{}\" {}:", verb, shown_name(&sources[0].0), preposition)
-    } else {
-        let names: Vec<String> = sources.iter().map(|(source, _)| shown_name(source)).collect();
-        format!("{} {} items {}: {}", verb, count, preposition, names.join(", "))
-    };
+    let name = sources.first().map(|(source, _)| shown_name(source)).unwrap_or_default();
+    let names: Vec<String> = sources.iter().map(|(source, _)| shown_name(source)).collect();
+    let source_msg = kind.source(count, &name, &names.join(", "));
 
     // The destination, the width of the popup, scrolling to keep the cursor
     // in view on a path longer than that. Padded out to the full width so the
@@ -1049,20 +1147,15 @@ pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, s
         vec![
             Line::from(Span::styled(source_msg, style_title())),
             input_line,
-            Line::from(Span::styled(
-                [Some(format!("Enter - {verb}")), also.map(str::to_string), Some("Esc - Cancel".to_string())].into_iter().flatten().collect::<Vec<_>>().join("    "),
-                style_columns(),
-            )),
+            Line::from(Span::styled([Some(kind.enter()), also, Some(t!("Esc - Cancel"))].into_iter().flatten().collect::<Vec<_>>().join("    "), style_columns())),
         ],
     );
 }
 
 pub(super) fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, large: &crate::app::LargeFile) {
     let name = shown_name(&large.path);
-    let verb = if large.is_edit { "Edit" } else { "View" };
-
     let popup_area = popup_rect(30, area);
-    let title = if large.dimensions.is_some() { " Large Picture " } else { " Large File " };
+    let title = format!(" {} ", if large.dimensions.is_some() { t!("Large Picture") } else { t!("Large File") });
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
@@ -1070,14 +1163,17 @@ pub(super) fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, la
 
     // A picture is named by its dimensions as well: the figure beside them is
     // what it unpacks to, which says nothing about the size of the file itself.
-    let message = match large.dimensions {
-        Some((width, height)) => format!("{} \"{}\" ({}x{}, {})?", verb, name, width, height, format_size(large.size)),
-        None => format!("{} \"{}\" ({})?", verb, name, format_size(large.size)),
+    let size = format_size(large.size);
+    let message = match (large.dimensions, large.is_edit) {
+        (Some((width, height)), true) => t!("Edit \"{name}\" ({width}x{height}, {size})?", name, width, height, size),
+        (Some((width, height)), false) => t!("View \"{name}\" ({width}x{height}, {size})?", name, width, height, size),
+        (None, true) => t!("Edit \"{name}\" ({size})?", name, size),
+        (None, false) => t!("View \"{name}\" ({size})?", name, size),
     };
     let note = if large.dimensions.is_some() {
-        "Decoding a picture this size needs that much memory."
+        t!("Decoding a picture this size needs that much memory.")
     } else {
-        "Reading a file this large may take a while."
+        t!("Reading a file this large may take a while.")
     };
     popup_body(
         f,
@@ -1085,14 +1181,17 @@ pub(super) fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, la
         vec![
             Line::from(Span::styled(message, style_title())),
             Line::from(Span::styled(note, style_file())),
-            Line::from(Span::styled("Y / Enter - Yes    N / Esc - No", style_columns())),
+            Line::from(Span::styled(t!("Y / Enter - Yes    N / Esc - No"), style_columns())),
         ],
     );
 }
 
 pub(super) fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     let popup_area = popup_rect(25, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Unsaved Changes ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Unsaved Changes")), style_title())).centered())
+        .borders(Borders::ALL)
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1101,8 +1200,8 @@ pub(super) fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
         f,
         popup_area,
         vec![
-            Line::from(Span::styled("Save changes before closing?", style_title())),
-            Line::from(Span::styled("Y - Save    N - Discard    Esc - Cancel", style_columns())),
+            Line::from(Span::styled(t!("Save changes before closing?"), style_title())),
+            Line::from(Span::styled(t!("Y - Save    N - Discard    Esc - Cancel"), style_columns())),
         ],
     );
 }

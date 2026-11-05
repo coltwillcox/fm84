@@ -177,7 +177,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
 
         // Guard against terminal too small to render
         if area.height < 10 || area.width < 30 {
-            let msg = Paragraph::new("Terminal too small").alignment(Alignment::Center).style(style_title());
+            let msg = Paragraph::new(t!("Terminal too small")).alignment(Alignment::Center).style(style_title());
             let y = area.height / 2;
             if y < area.height {
                 f.render_widget(msg, Rect::new(area.x, area.y + y, area.width, 1));
@@ -232,12 +232,12 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
             Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),
-            Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_destination_popup(f, area, sources, None, if *is_copy { "Copy" } else { "Move" }, "to", input, None),
+            Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_destination_popup(f, area, sources, if *is_copy { Destination::Copy } else { Destination::Move }, input, None),
             Some(Dialog::Symlink { sources, input, hard, .. }) => {
-                let (verb, other) = if *hard { ("Hard link", "Tab - Symlink") } else { ("Symlink", "Tab - Hard link") };
-                render_destination_popup(f, area, sources, None, verb, "at", input, Some(other));
+                let (kind, other) = if *hard { (Destination::HardLink, t!("Tab - Symlink")) } else { (Destination::Symlink, t!("Tab - Hard link")) };
+                render_destination_popup(f, area, sources, kind, input, Some(other));
             }
-            Some(Dialog::Extract { archive, input }) => render_destination_popup(f, area, &[(archive.clone(), false)], Some("archive"), "Extract", "to", input, None),
+            Some(Dialog::Extract { archive, input }) => render_destination_popup(f, area, &[(archive.clone(), false)], Destination::Extract, input, None),
             Some(Dialog::Checksums(_)) => {
                 if let Some(Dialog::Checksums(view)) = &mut app_state.dialog {
                     render_checksums_popup(f, area, view);
@@ -254,7 +254,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
                     render_multi_rename_popup(f, area, rename);
                 }
             }
-            Some(Dialog::Pack { sources, input }) => render_destination_popup(f, area, sources, None, "Pack", "into", input, Some("Tab - Format")),
+            Some(Dialog::Pack { sources, input }) => render_destination_popup(f, area, sources, Destination::Pack, input, Some(t!("Tab - Format"))),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
             Some(Dialog::DiskChanged { opened, now, .. }) => render_disk_changed_popup(f, area, app_state, *opened, *now),

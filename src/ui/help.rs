@@ -5,85 +5,94 @@ use super::*;
 /// What F1 lists, under a heading each as F11's options are: the keys, then
 /// what fm84 is. The version, description, licence and address come from
 /// Cargo.toml, so they never fall behind it.
-const HELP: &[(&str, &[&str])] = &[
-    (
-        "Keys",
-        &[
-            "F1 - This help",
-            "F2 - Rename folder/file",
-            "  with a selection: all by [N] [E] [C]",
-            "  Shift+F2 compare directories",
-            "F3 - View file (X text/hex/image)",
-            "  F fit/fill, +/- zoom, W wrap",
-            "  Shift+F3 (or =) compare two files",
-            "F4 - Edit file (Ctrl+S/F2 save)",
-            "  Ctrl+F find, F3/Shift+F3 next/prev",
-            "  Ctrl+G go to line, Ctrl+R/F4 replace",
-            "  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V",
-            "  Shift+arrows select, Ctrl+A all",
-            "F5 - Copy (to the other panel, or where typed)",
-            "  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard",
-            "F6 - Move (to the other panel, or where typed)",
-            "F7 - Create directory",
-            "  Alt+F7 (or Ctrl+F7) find files",
-            "Shift+F4 - Create file",
-            "F8 - Move to trash",
-            "  Shift+F8 delete permanently",
-            "Alt+A - Permissions, owner, time",
-            "Alt+P - Pack into an archive (Tab format)",
-            "Alt+H - Checksums (Tab algorithm); check a file",
-            "F9 - Open terminal",
-            "Alt+M - User menu (E edits it)",
-            "F10 - Quit",
-            "  Shift+F10 quit, cd84 staying put",
-            "F11 - Options (Alt+F1/F2 drives)",
-            "F12 - Preview in other panel",
-            "Enter - Open dir, or go into an archive",
-            "  .zip .7z .tar(.gz .zst .xz .bz2): read-only",
-            "  F5 copies out, Alt+F9 (or Ctrl+F9) all of it",
-            "  Shift+Enter (or Ctrl+O) open as the system does",
-            "  Alt+O open with... (E per extension)",
-            "Ctrl+Left/Right - Dir to that panel",
-            "  Ctrl+U swap panels, Alt+I same dir there",
-            "Ctrl+L - Go to path (or click it)",
-            "  Tab completes a name",
-            "  Alt+Left/Right back/forward",
-            "  Alt+Down every directory visited",
-            "  Click the git branch to switch it",
-            "Ctrl+D - Bookmarks",
-            "Ctrl+T/Ctrl+W - New/close tab",
-            "  Ctrl+PgUp/PgDn, Alt+1..9 switch",
-            "Space - Select/deselect file",
-            "  Alt+Shift+Enter size every directory",
-            "+/- select/deselect by pattern, * invert",
-            "  Alt+* invert with directories",
-            "Ctrl+S - Filter the panel by pattern",
-            "Ctrl+B - Every file below, flat",
-            "Ctrl+C/Alt+C - Copy paths/names",
-            "Ctrl+F3..F6 - Sort name/ext/date/size",
-            "Ctrl+R - Reload both panels",
-            "Type to search, Esc to clear",
-        ],
-    ),
-    (
-        "About",
-        &[
-            concat!("FM84 - File Manager '84, v", env!("CARGO_PKG_VERSION")),
-            env!("CARGO_PKG_DESCRIPTION"),
-            "Built with Rust, Ratatui and Crossterm",
-            "Copyright (c) 2025-2026 Colt Willcox",
-            concat!("Released under the ", env!("CARGO_PKG_LICENSE"), " License"),
-            env!("CARGO_PKG_REPOSITORY"),
-        ],
-    ),
-];
+fn help() -> Vec<(&'static str, Vec<String>)> {
+    // The description from Cargo.toml, in the language shown while it is
+    // still the one written here.
+    let description = if env!("CARGO_PKG_DESCRIPTION") == "A synthwave dual-pane TUI file manager" {
+        t!("A synthwave dual-pane TUI file manager")
+    } else {
+        env!("CARGO_PKG_DESCRIPTION")
+    };
+    vec![
+        (
+            t!("Keys"),
+            vec![
+                t!("F1 - This help").to_string(),
+                t!("F2 - Rename folder/file").to_string(),
+                format!("  {}", t!("with a selection: all by [N] [E] [C]")),
+                format!("  {}", t!("Shift+F2 compare directories")),
+                t!("F3 - View file (X text/hex/image)").to_string(),
+                format!("  {}", t!("F fit/fill, +/- zoom, W wrap")),
+                format!("  {}", t!("Shift+F3 (or =) compare two files")),
+                t!("F4 - Edit file (Ctrl+S/F2 save)").to_string(),
+                format!("  {}", t!("Ctrl+F find, F3/Shift+F3 next/prev")),
+                format!("  {}", t!("Ctrl+G go to line, Ctrl+R/F4 replace")),
+                format!("  {}", t!("Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V")),
+                format!("  {}", t!("Shift+arrows select, Ctrl+A all")),
+                t!("F5 - Copy (to the other panel, or where typed)").to_string(),
+                format!("  {}", t!("Alt+F5 (or Ctrl+Shift+F5) link, Tab hard")),
+                t!("F6 - Move (to the other panel, or where typed)").to_string(),
+                t!("F7 - Create directory").to_string(),
+                format!("  {}", t!("Alt+F7 (or Ctrl+F7) find files")),
+                t!("Shift+F4 - Create file").to_string(),
+                t!("F8 - Move to trash").to_string(),
+                format!("  {}", t!("Shift+F8 delete permanently")),
+                t!("Alt+A - Permissions, owner, time").to_string(),
+                t!("Alt+P - Pack into an archive (Tab format)").to_string(),
+                t!("Alt+H - Checksums (Tab algorithm); check a file").to_string(),
+                t!("F9 - Open terminal").to_string(),
+                t!("Alt+M - User menu (E edits it)").to_string(),
+                t!("F10 - Quit").to_string(),
+                format!("  {}", t!("Shift+F10 quit, cd84 staying put")),
+                t!("F11 - Options (Alt+F1/F2 drives)").to_string(),
+                t!("F12 - Preview in other panel").to_string(),
+                t!("Enter - Open dir, or go into an archive").to_string(),
+                format!("  {}", t!(".zip .7z .tar(.gz .zst .xz .bz2): read-only")),
+                format!("  {}", t!("F5 copies out, Alt+F9 (or Ctrl+F9) all of it")),
+                format!("  {}", t!("Shift+Enter (or Ctrl+O) open as the system does")),
+                format!("  {}", t!("Alt+O open with... (E per extension)")),
+                t!("Ctrl+Left/Right - Dir to that panel").to_string(),
+                format!("  {}", t!("Ctrl+U swap panels, Alt+I same dir there")),
+                t!("Ctrl+L - Go to path (or click it)").to_string(),
+                format!("  {}", t!("Tab completes a name")),
+                format!("  {}", t!("Alt+Left/Right back/forward")),
+                format!("  {}", t!("Alt+Down every directory visited")),
+                format!("  {}", t!("Click the git branch to switch it")),
+                t!("Ctrl+D - Bookmarks").to_string(),
+                t!("Ctrl+T/Ctrl+W - New/close tab").to_string(),
+                format!("  {}", t!("Ctrl+PgUp/PgDn, Alt+1..9 switch")),
+                t!("Space - Select/deselect file").to_string(),
+                format!("  {}", t!("Alt+Shift+Enter size every directory")),
+                t!("+/- select/deselect by pattern, * invert").to_string(),
+                format!("  {}", t!("Alt+* invert with directories")),
+                t!("Ctrl+S - Filter the panel by pattern").to_string(),
+                t!("Ctrl+B - Every file below, flat").to_string(),
+                t!("Ctrl+C/Alt+C - Copy paths/names").to_string(),
+                t!("Ctrl+F3..F6 - Sort name/ext/date/size").to_string(),
+                t!("Ctrl+R - Reload both panels").to_string(),
+                t!("Type to search, Esc to clear").to_string(),
+            ],
+        ),
+        (
+            t!("About"),
+            vec![
+                concat!("FM84 - File Manager '84, v", env!("CARGO_PKG_VERSION")).to_string(),
+                description.to_string(),
+                t!("Built with Rust, Ratatui and Crossterm").to_string(),
+                "Copyright (c) 2025-2026 Colt Willcox".to_string(),
+                t!("Released under the {license} License", license = env!("CARGO_PKG_LICENSE")),
+                env!("CARGO_PKG_REPOSITORY").to_string(),
+            ],
+        ),
+    ]
+}
 
 /// F1's lines as they are drawn, and whether each is a heading: a heading
 /// over each part, with a blank row before every one but the first, and the
 /// lines under it set in from it - laid out as F11 lays out its options.
 pub fn help_lines() -> Vec<(String, bool)> {
     let mut lines = Vec::new();
-    for (heading, items) in HELP {
+    for (heading, items) in help() {
         if !lines.is_empty() {
             lines.push((String::new(), false));
         }
@@ -105,7 +114,7 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
     let room = (inner.height as usize).max(1);
     let first = scroll.min(help.len().saturating_sub(room));
 
-    let mut popup_block = Block::default().title(Line::from(Span::styled(" Help/About ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let mut popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Help/About")), style_title())).centered()).borders(Borders::ALL).style(style_border());
     if room < help.len() {
         let shown = format!(" {}-{}/{} ", first + 1, (first + room).min(help.len()), help.len());
         popup_block = popup_block.title_bottom(Line::from(Span::styled(shown, style_columns())).right_aligned());

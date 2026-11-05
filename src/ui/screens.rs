@@ -7,8 +7,8 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
     let bar_style = app_state.options.scroll_bar;
     if let Some(viewer_state) = app_state.viewer() {
         let filename = shown_name(&viewer_state.file_path);
-        let prefix = if viewer_state.from_edit { "Edit" } else { "View" };
-        let title = format!(" {}: {} ", prefix, filename);
+        let prefix = if viewer_state.from_edit { t!("Edit:") } else { t!("View:") };
+        let title = format!(" {} {} ", prefix, filename);
 
         let border_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).border_style(style_border());
 
@@ -55,7 +55,7 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
 
         // Render content
         if viewer_state.from_edit {
-            let binary_msg = Paragraph::new("Binary file detected. Press Esc to return.").alignment(Alignment::Center).style(style_title());
+            let binary_msg = Paragraph::new(t!("Binary file detected. Press Esc to return.")).alignment(Alignment::Center).style(style_title());
             f.render_widget(binary_msg, chunks[1]);
         } else {
             // Both modes render from the same line text, so the selection and
@@ -147,7 +147,10 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
 /// only on the right. Lines that differ are shaded as a selection is. Gives
 /// back the rows shown and the width of each side's text, for scrolling.
 pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> (usize, usize) {
-    let block = Block::default().title(Line::from(Span::styled(" Compare ", style_title())).centered()).borders(Borders::ALL).border_style(style_border());
+    let block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Compare")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_style(style_border());
     let inner = block.inner(area);
     // A difference near the end is jumped to with the rows after it, not past
     // them: the last row stays at the bottom, as scrolling keeps it.
@@ -208,8 +211,8 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
     let bar_style = app_state.options.scroll_bar;
     let (viewport_height, content_area) = if let Screen::Editor(editor_state) = &mut app_state.screen {
         let filename = shown_name(&editor_state.file_path);
-        let modified = if editor_state.modified { " [Modified]" } else { "" };
-        let title = format!(" Edit: {}{} ", filename, modified);
+        let modified = if editor_state.modified { format!(" [{}]", t!("Modified")) } else { String::new() };
+        let title = format!(" {} {}{} ", t!("Edit:"), filename, modified);
 
         let border_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).border_style(style_border());
 
