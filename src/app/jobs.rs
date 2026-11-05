@@ -676,8 +676,8 @@ impl AppState {
         }
         match result {
             Ok(Transfer::Done) if job.skipped > 0 => {
-                let entries = if job.skipped == 1 { "entry" } else { "entries" };
-                self.display_error(format!("{} finished, {} {entries} skipped", job.kind.title(), job.skipped))
+                let (job_title, count) = (job.kind.title(), job.skipped);
+                self.display_error(tn!(count, "{job_title} finished, {count} entry skipped", "{job_title} finished, {count} entries skipped", job_title, count))
             }
             Ok(Transfer::Done) => {}
             Ok(Transfer::Cancelled) => {

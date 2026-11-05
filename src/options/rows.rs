@@ -25,6 +25,7 @@ pub enum OptionRow {
     Editor,
     RememberDirs,
     PreviewOnStart,
+    Language,
     Theme,
     ThemeBackground,
     IconStyle,
@@ -41,7 +42,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 34] = [
+pub const OPTION_ROWS: [OptionRow; 35] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -62,6 +63,7 @@ pub const OPTION_ROWS: [OptionRow; 34] = [
     OptionRow::Editor,
     OptionRow::RememberDirs,
     OptionRow::PreviewOnStart,
+    OptionRow::Language,
     OptionRow::Theme,
     OptionRow::ThemeBackground,
     OptionRow::IconStyle,
@@ -101,6 +103,7 @@ impl OptionRow {
             OptionRow::Editor => "Editor (F4)",
             OptionRow::RememberDirs => "Remember directories",
             OptionRow::PreviewOnStart => "Preview on startup",
+            OptionRow::Language => "Language",
             OptionRow::Theme => "Theme",
             OptionRow::ThemeBackground => "Background",
             OptionRow::IconStyle => "Icons",
@@ -123,7 +126,7 @@ impl OptionRow {
         match self {
             OptionRow::ShowHidden => Some("Panels"),
             OptionRow::ConfirmDelete => Some("Behaviour"),
-            OptionRow::Theme => Some("Appearance"),
+            OptionRow::Language => Some("Appearance"),
             OptionRow::TabWidth => Some("Viewer and editor"),
             _ => None,
         }
@@ -191,6 +194,11 @@ impl Options {
             OptionRow::Editor => self.editor.clone(),
             OptionRow::RememberDirs => on_off(self.remember_dirs),
             OptionRow::PreviewOnStart => on_off(self.preview_on_start),
+            // Each in its own words; Automatic says which it came to.
+            OptionRow::Language => match self.language {
+                Some(language) => language.label().to_string(),
+                None => format!("Automatic ({})", crate::i18n::detect().label()),
+            },
             OptionRow::Theme => self.theme.label().to_string(),
             OptionRow::ThemeBackground => if self.theme_background { "Theme" } else { "Terminal" }.to_string(),
             OptionRow::IconStyle => match self.icon_style {
@@ -287,6 +295,10 @@ impl Options {
             }
             OptionRow::RememberDirs => self.remember_dirs = !self.remember_dirs,
             OptionRow::PreviewOnStart => self.preview_on_start = !self.preview_on_start,
+            OptionRow::Language => {
+                let choices: Vec<Option<crate::i18n::Language>> = std::iter::once(None).chain(crate::i18n::Language::ALL.into_iter().map(Some)).collect();
+                self.language = step(&choices, self.language, forward);
+            }
             OptionRow::Theme => {
                 self.theme = step(&Theme::ALL, self.theme, forward);
             }

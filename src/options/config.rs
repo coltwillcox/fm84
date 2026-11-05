@@ -117,6 +117,12 @@ impl Options {
                 "editor" => options.editor = value.to_string(),
                 "remember_dirs" => options.remember_dirs = flag(options.remember_dirs),
                 "preview_on_start" => options.preview_on_start = flag(options.preview_on_start),
+                "language" => {
+                    options.language = match value {
+                        "auto" => None,
+                        key => crate::i18n::Language::from_key(key).or(options.language),
+                    }
+                }
                 "theme" => options.theme = Theme::ALL.into_iter().find(|theme| theme.key() == value).unwrap_or(options.theme),
                 "background" => {
                     options.theme_background = match value {
@@ -239,6 +245,8 @@ impl Options {
              preview_on_start = {}\n\
              \n\
              # Appearance\n\
+             # auto follows LANG; or en, sr.\n\
+             language = {}\n\
              theme = {}\n\
              # theme paints the theme's own background; terminal keeps the terminal's.\n\
              background = {}\n\
@@ -285,6 +293,7 @@ impl Options {
             self.editor,
             self.remember_dirs,
             self.preview_on_start,
+            self.language.map_or("auto", crate::i18n::Language::key),
             self.theme.key(),
             if self.theme_background { "theme" } else { "terminal" },
             icons,

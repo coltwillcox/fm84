@@ -23,6 +23,7 @@ fn a_saved_file_reads_back_the_same() {
         editor: "nvim".to_string(),
         remember_dirs: true,
         preview_on_start: true,
+        language: Some(crate::i18n::Language::Serbian),
         theme: Theme::GithubLight,
         theme_background: false,
         icon_style: IconStyle::Plain,
@@ -56,7 +57,7 @@ fn nonsense_leaves_the_default() {
     let options = Options::parse(
         "show_hidden = maybe\nsort = colour\nno equals sign\nunknown = 1\n\
          tab_width = 0\ntab_width = lots\nlarge_file_mib = 0\nhighlight_limit_kib = -5\ntheme = beige\n\
-         clock = 25\ncursor = triangle\ncursor_blink = sometimes\ndate_format = roman\nsize_units = furlongs\non_existing = sometimes\n",
+         clock = 25\nlanguage = klingon\ncursor = triangle\ncursor_blink = sometimes\ndate_format = roman\nsize_units = furlongs\non_existing = sometimes\n",
     );
     assert_eq!(options, Options::default());
     assert_eq!(Options::parse(""), Options::default());

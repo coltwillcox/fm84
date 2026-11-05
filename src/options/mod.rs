@@ -271,6 +271,9 @@ pub struct Options {
     /// Reopen both panels where they were when fm84 last quit.
     pub remember_dirs: bool,
     pub preview_on_start: bool,
+    /// The language the words are shown in; None for the one the
+    /// environment asks for.
+    pub language: Option<crate::i18n::Language>,
     pub theme: Theme,
     /// Paint the theme's background, rather than drawing on the terminal's.
     /// A light theme needs it; on a dark terminal its text would vanish.
@@ -326,6 +329,7 @@ impl Default for Options {
             editor: String::new(),
             remember_dirs: false,
             preview_on_start: false,
+            language: None,
             theme: Theme::Synthwave,
             theme_background: true,
             icon_style: IconStyle::NerdFont,

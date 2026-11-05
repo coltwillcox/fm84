@@ -1,0 +1,15 @@
+# fm84 na srpskom, latinicom.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, 21, 31..., [few] for 2-4, 22-24...,
+# [other] for the rest. {name} is a place the program fills, kept as it is.
+# The keys to press - Y, N, A and the like - stay as they are.
+
+msgid  Cannot save options: {e}
+msgstr Ne mogu da sačuvam podešavanja: {e}
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]   {job_title}: gotovo, preskočena {count} stavka
+msgstr[few]   {job_title}: gotovo, preskočene {count} stavke
+msgstr[other] {job_title}: gotovo, preskočeno {count} stavki

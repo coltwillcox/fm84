@@ -60,6 +60,7 @@ impl AppState {
     /// they list. A failed write still leaves the change in place for this run.
     fn options_changed(&mut self, row: OptionRow) {
         crate::display::apply(&self.options);
+        crate::i18n::apply(self.options.language);
         // The detail lines are held until the cursor moves, and the date
         // format is one of the things they are written in.
         self.cursor_detail = None;
@@ -68,7 +69,7 @@ impl AppState {
             self.reload_panel(false, None);
         }
         if let Err(e) = self.options.save() {
-            self.display_error(format!("Cannot save options: {}", e));
+            self.display_error(t!("Cannot save options: {e}", e));
         }
     }
 }

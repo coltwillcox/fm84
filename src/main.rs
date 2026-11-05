@@ -1,3 +1,6 @@
+// First, for t! and tn! to be there in every module after it.
+#[macro_use]
+mod i18n;
 mod app;
 mod archive;
 mod attributes;
@@ -200,6 +203,7 @@ fn install_panic_hook() {
 fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::path::PathBuf>, choosedir: Option<std::path::PathBuf>) -> io::Result<()> {
     let mut app_state = AppState::new();
     display::apply(&app_state.options);
+    i18n::apply(app_state.options.language);
 
     // A directory gone since then is handled by the reload, which climbs to
     // the nearest one still there.

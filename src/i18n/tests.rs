@@ -1,0 +1,287 @@
+use super::*;
+use std::collections::{BTreeSet, HashSet};
+use std::path::Path;
+
+#[test]
+fn serbian_counts_take_one_few_or_other() {
+    let form = |count| Language::Serbian.plural(count);
+    for one in [1, 21, 31, 101, 1001] {
+        assert_eq!(form(one), Form::One, "{one}");
+    }
+    for few in [2, 3, 4, 22, 34, 102] {
+        assert_eq!(form(few), Form::Few, "{few}");
+    }
+    for other in [0, 5, 10, 11, 12, 13, 14, 15, 20, 111, 112, 114] {
+        assert_eq!(form(other), Form::Other, "{other}");
+    }
+    assert_eq!(Language::English.plural(1), Form::One);
+    assert_eq!(Language::English.plural(0), Form::Other);
+}
+
+#[test]
+fn a_locale_names_its_language() {
+    assert_eq!(Language::from_locale("sr_RS.UTF-8"), Some(Language::Serbian));
+    assert_eq!(Language::from_locale("sr@latin"), Some(Language::Serbian));
+    assert_eq!(Language::from_locale("en-GB"), Some(Language::English));
+    assert_eq!(Language::from_locale("C.UTF-8"), Some(Language::English));
+    assert_eq!(Language::from_locale("POSIX"), Some(Language::English));
+    assert_eq!(Language::from_locale("de_DE.UTF-8"), None);
+    for language in Language::ALL {
+        assert_eq!(Language::from_key(language.key()), Some(language));
+    }
+}
+
+#[test]
+fn a_catalog_reads_and_says_what_is_wrong_with_one_that_does_not() {
+    let catalog = parse("# comment\nmsgid  Open {name}\nmsgstr Otvori {name}\n\nmsgid Two\\nlines\nmsgstr Dva\\nreda\n\nmsgid {count} file\nmsgstr[one] {count} datoteka\nmsgstr[few] {count} datoteke\n").unwrap();
+    assert_eq!(catalog.plain["Open {name}"], "Otvori {name}");
+    assert_eq!(catalog.plain["Two\nlines"], "Dva\nreda");
+    assert_eq!(catalog.forms[&("{count} file".to_string(), Form::Few)], "{count} datoteke");
+    for (wrong, line) in [
+        ("msgstr Alone", 1),
+        ("msgid One\nmsgid Two\nmsgstr Dva", 2),
+        ("msgid One", 1),
+        ("msgid One\nmsgstr Jedan\nmsgstr Opet", 3),
+        ("msgid One\nmsgstr[many] Mnogo", 2),
+        ("msgid One\nmsgtext Jedan", 2),
+        ("msgid One\nmsgstr", 2),
+    ] {
+        assert_eq!(parse(wrong).err().map(|error| error.line), Some(line), "{wrong}");
+    }
+}
+
+#[test]
+fn places_are_filled_by_name() {
+    assert_eq!(fill("{a} and {b}, {a}", &[("a", &1), ("b", &"two")]), "1 and two, 1");
+    assert_eq!(fill("{missing} {", &[("a", &1)]), "{missing} {");
+    let name = "x.txt";
+    assert_eq!(t!("Cannot open {name}: {e}", name, e = "gone"), "Cannot open x.txt: gone");
+    assert_eq!(tn!(1, "{count} file", "{count} files", count = 1), "1 file");
+    assert_eq!(tn!(3, "{count} file", "{count} files", count = 3), "3 files");
+}
+
+#[test]
+fn the_language_shown_is_the_one_set() {
+    let english = "Cannot save options: {e}";
+    set_language(Language::Serbian);
+    let shown = tr(english);
+    set_language(Language::English);
+    assert_ne!(shown, english, "no Serbian for a sentence the catalog has");
+    assert_eq!(tr(english), english);
+    // What a catalog has no words for is shown in English.
+    set_language(Language::Serbian);
+    assert_eq!(tr("not a sentence fm84 has"), "not a sentence fm84 has");
+    set_language(Language::English);
+}
+
+/// A sentence from the code: its English, and for one with a count the
+/// English for many too.
+struct Sentence {
+    english: String,
+    other: Option<String>,
+    at: String,
+}
+
+/// Every `t!` and `tn!` in the code, by the literals in it.
+fn sentences() -> Vec<Sentence> {
+    let mut found = Vec::new();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut dirs = vec![root];
+    while let Some(dir) = dirs.pop() {
+        for entry in std::fs::read_dir(&dir).unwrap().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                dirs.push(path);
+            } else if path.extension().is_some_and(|extension| extension == "rs") && !path.starts_with(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/i18n")) && !path.ends_with("src/i18n.rs") {
+                let text = std::fs::read_to_string(&path).unwrap();
+                found.extend(sentences_in(&text, &path.display().to_string()));
+            }
+        }
+    }
+    found
+}
+
+fn sentences_in(text: &str, file: &str) -> Vec<Sentence> {
+    let mut found = Vec::new();
+    let bytes = text.as_bytes();
+    for (start, _) in text.match_indices("!(") {
+        let counted = start >= 2 && &text[start - 2..start] == "tn";
+        let name_start = if counted { start - 2 } else { start.saturating_sub(1) };
+        if !(counted || (start >= 1 && &text[start - 1..start] == "t")) {
+            continue;
+        }
+        if name_start > 0 && (bytes[name_start - 1].is_ascii_alphanumeric() || bytes[name_start - 1] == b'_') {
+            continue;
+        }
+        let line = text[..start].lines().count();
+        let at = format!("{file}:{line}");
+        let mut rest = &text[start + 2..];
+        if counted {
+            // Past the count, to the first literal.
+            let Some(quote) = rest.find('"') else { continue };
+            rest = &rest[quote..];
+        }
+        let rest = rest.trim_start();
+        assert!(!rest.starts_with('r'), "{at}: a raw string in t!, which the check cannot read");
+        let Some((english, after)) = literal(rest) else {
+            panic!("{at}: t! takes a string literal first");
+        };
+        let other = if counted {
+            let after = after.trim_start().strip_prefix(',').unwrap_or_else(|| panic!("{at}: tn! takes two literals")).trim_start();
+            Some(literal(after).unwrap_or_else(|| panic!("{at}: tn! takes two literals")).0)
+        } else {
+            None
+        };
+        found.push(Sentence { english, other, at });
+    }
+    found
+}
+
+/// The string literal `text` starts with, as the program has it, and what
+/// follows it.
+fn literal(text: &str) -> Option<(String, &str)> {
+    let mut chars = text.strip_prefix('"')?.char_indices();
+    let mut out = String::new();
+    while let Some((at, c)) = chars.next() {
+        match c {
+            '"' => return Some((out, &text[at + 2..])),
+            '\\' => match chars.next()?.1 {
+                'n' => out.push('\n'),
+                't' => out.push('\t'),
+                '\\' => out.push('\\'),
+                '"' => out.push('"'),
+                '\'' => out.push('\''),
+                '0' => out.push('\0'),
+                'u' => {
+                    let mut hex = String::new();
+                    chars.next();
+                    for (_, c) in chars.by_ref() {
+                        if c == '}' {
+                            break;
+                        }
+                        hex.push(c);
+                    }
+                    out.push(char::from_u32(u32::from_str_radix(&hex, 16).ok()?)?);
+                }
+                // A line carried on: the break and the indent after it go.
+                '\n' => {
+                    for (_, c) in chars.clone() {
+                        if !c.is_whitespace() {
+                            break;
+                        }
+                        chars.next();
+                    }
+                }
+                other => {
+                    out.push('\\');
+                    out.push(other);
+                }
+            },
+            c => out.push(c),
+        }
+    }
+    None
+}
+
+/// The `{name}` places in a sentence.
+fn places(text: &str) -> BTreeSet<String> {
+    let mut found = BTreeSet::new();
+    let mut rest = text;
+    while let Some(open) = rest.find('{') {
+        let after = &rest[open + 1..];
+        match after.find('}') {
+            Some(close) if after[..close].chars().all(|c| c.is_ascii_alphanumeric() || c == '_') && close > 0 => {
+                found.insert(after[..close].to_string());
+                rest = &after[close + 1..];
+            }
+            _ => rest = after,
+        }
+    }
+    found
+}
+
+/// The languages that have words for everything, and are to keep it so:
+/// one of these missing a sentence fails the test. Any other shipped one
+/// shows what it lacks in English.
+const COMPLETE: &[Language] = &[];
+
+#[test]
+fn the_scan_finds_each_kind_of_sentence() {
+    let code = "let a = t!(\"Plain\");\nprint!(\"not one\");\nlet b = t!(\"With {name}\", name);\nlet c = tn!(items.len(), \"{count} file\", \"{count} files\", count);\nlet d = t!(\"Carried \\\n        on\");\nlet e = t!(\"A \\\"quote\\\" \\u{2192}\");\n";
+    let found = sentences_in(code, "x.rs");
+    let english: Vec<(&str, Option<&str>)> = found.iter().map(|sentence| (sentence.english.as_str(), sentence.other.as_deref())).collect();
+    assert_eq!(english, [("Plain", None), ("With {name}", None), ("{count} file", Some("{count} files")), ("Carried on", None), ("A \"quote\" \u{2192}", None)]);
+    assert_eq!(found[2].at, "x.rs:4");
+}
+
+/// Every shipped catalog reads; has words for every sentence in the code,
+/// in every form a count takes; fills the same places the English does;
+/// and has nothing for a sentence the code no longer has.
+#[test]
+fn every_catalog_is_whole_and_up_to_date() {
+    let sentences = sentences();
+    let mut problems = Vec::new();
+    for sentence in &sentences {
+        let english = &sentence.english;
+        if english.trim() != english {
+            problems.push(format!("{}: spaces around {english:?}, which a catalog cannot hold - put them outside t!", sentence.at));
+        }
+        if let Some(other) = &sentence.other
+            && places(english) != places(other)
+        {
+            problems.push(format!("{}: the two forms of {english:?} fill different places", sentence.at));
+        }
+    }
+    let plain: HashSet<&str> = sentences.iter().filter(|sentence| sentence.other.is_none()).map(|sentence| sentence.english.as_str()).collect();
+    let counted: HashSet<&str> = sentences.iter().filter(|sentence| sentence.other.is_some()).map(|sentence| sentence.english.as_str()).collect();
+    for language in Language::ALL {
+        let Some(source) = language.source() else { continue };
+        let catalog = match parse(source) {
+            Ok(catalog) => catalog,
+            Err(error) => {
+                problems.push(format!("lang/{}.lang:{}: {}", language.key(), error.line, error.message));
+                continue;
+            }
+        };
+        let whole = COMPLETE.contains(&language);
+        let forms: &[Form] = match language {
+            Language::English => &[Form::One, Form::Other],
+            Language::Serbian => &[Form::One, Form::Few, Form::Other],
+        };
+        for sentence in &sentences {
+            let english = &sentence.english;
+            let mut wanted = places(english);
+            if let Some(other) = &sentence.other {
+                wanted.extend(places(other));
+                for &form in forms {
+                    match catalog.forms.get(&(english.clone(), form)) {
+                        None if whole => problems.push(format!("{}: no {form:?} form in {} for {english:?}", sentence.at, language.key())),
+                        None => {}
+                        Some(translated) if places(translated) != wanted => problems.push(format!("{}: {} fills {:?} for {english:?}, not {wanted:?}", sentence.at, language.key(), places(translated))),
+                        Some(_) => {}
+                    }
+                }
+            } else {
+                match catalog.plain.get(english) {
+                    None if whole => problems.push(format!("{}: nothing in {} for {english:?}", sentence.at, language.key())),
+                    None => {}
+                    Some(translated) if places(translated) != wanted => problems.push(format!("{}: {} fills {:?} for {english:?}, not {wanted:?}", sentence.at, language.key(), places(translated))),
+                    Some(_) => {}
+                }
+            }
+        }
+        for english in catalog.plain.keys() {
+            if !plain.contains(english.as_str()) {
+                problems.push(format!("lang/{}.lang: {english:?} is no longer in the code{}", language.key(), if counted.contains(english.as_str()) { " without a count" } else { "" }));
+            }
+        }
+        for (english, _) in catalog.forms.keys() {
+            if !counted.contains(english.as_str()) {
+                problems.push(format!("lang/{}.lang: {english:?} is no longer in the code with a count", language.key()));
+            }
+        }
+    }
+    problems.sort();
+    problems.dedup();
+    assert!(problems.is_empty(), "{} problems:\n{}", problems.len(), problems.join("\n"));
+}
