@@ -362,18 +362,29 @@ fn holds(path: &Path, text: &Text, cancel: &AtomicBool) -> bool {
     };
     let mut carried: Vec<u8> = Vec::new();
     let mut chunk = vec![0; CHUNK];
+    // A match that ran to the end of what was read, waiting on what comes
+    // next: `$` and `\b` match at the end of the bytes searched, which is
+    // the end of the file only once nothing more can be read.
+    let mut waiting = false;
     loop {
         if cancel.load(Ordering::Relaxed) {
             return false;
         }
         let read = match file.read(&mut chunk) {
-            Ok(0) | Err(_) => return false,
+            Ok(0) => return waiting,
+            Err(_) => return false,
             Ok(read) => read,
         };
         carried.extend_from_slice(&chunk[..read]);
         let found = match text {
             Text::Plain(needle) => !needle.find_all(&String::from_utf8_lossy(&carried)).is_empty(),
-            Text::Regex(regex) => regex.is_match(&carried),
+            Text::Regex(regex) => {
+                waiting = false;
+                regex.find_iter(&carried).any(|found| {
+                    waiting = found.end() == carried.len();
+                    !waiting
+                })
+            }
         };
         if found {
             return true;
@@ -554,6 +565,12 @@ mod tests {
         assert_eq!(run(&regex(r"^ +run\(")).0, ["src/main.rs"]);
         assert!(run(&regex(r"^needle")).0.is_empty());
         assert_eq!(run(&regex(r"x{3}needle$")).0, ["src/big.txt"]);
+        // Nor is the end of a chunk the end of a line, or of a word.
+        let cut = dir.join("cut.txt");
+        fs::write(&cut, format!("{}foobar\nend", "x".repeat(CHUNK - 3))).unwrap();
+        let held = |typed: &str| holds(&cut, &Text::new(typed, true).unwrap().unwrap(), &AtomicBool::new(false));
+        assert!(!held(r"foo$") && !held(r"foo\b"), "matched where the chunk was cut");
+        assert!(held(r"foobar$") && held(r"^end$") && held(r"d\b"));
         // One that is not an expression says why.
         let wrong = Text::new("fn (", true).err().unwrap();
         assert!(wrong.starts_with("Not a regular expression"), "{wrong}");
