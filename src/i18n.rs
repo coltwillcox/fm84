@@ -21,11 +21,12 @@ pub enum Language {
     Turkish,
     /// Bokmål.
     Norwegian,
+    German,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 4] = [Language::English, Language::Serbian, Language::Turkish, Language::Norwegian];
+    pub const ALL: [Language; 5] = [Language::English, Language::Serbian, Language::Turkish, Language::Norwegian, Language::German];
 
     /// How the config file names it.
     pub fn key(self) -> &'static str {
@@ -34,6 +35,7 @@ impl Language {
             Language::Serbian => "sr",
             Language::Turkish => "tr",
             Language::Norwegian => "nb",
+            Language::German => "de",
         }
     }
 
@@ -45,6 +47,7 @@ impl Language {
             Language::Serbian => "Srpski (latinica)",
             Language::Turkish => "Türkçe",
             Language::Norwegian => "Norsk bokmål",
+            Language::German => "Deutsch",
         }
     }
 
@@ -60,6 +63,7 @@ impl Language {
             Language::Serbian => Some(include_str!("../lang/sr.lang")),
             Language::Turkish => Some(include_str!("../lang/tr.lang")),
             Language::Norwegian => Some(include_str!("../lang/nb.lang")),
+            Language::German => Some(include_str!("../lang/de.lang")),
         }
     }
 
@@ -68,7 +72,7 @@ impl Language {
         match self {
             // A noun after a number stays as it is in Turkish - "5 dosya" -
             // but a sentence can still say one apart from the rest.
-            Language::English | Language::Turkish | Language::Norwegian => {
+            Language::English | Language::Turkish | Language::Norwegian | Language::German => {
                 if count == 1 {
                     Form::One
                 } else {
@@ -95,6 +99,7 @@ impl Language {
             // Bokmål, and the older code for it; Nynorsk is a language of
             // its own.
             "nb" | "no" => Some(Language::Norwegian),
+            "de" => Some(Language::German),
             _ => None,
         }
     }
