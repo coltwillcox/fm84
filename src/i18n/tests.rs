@@ -64,6 +64,7 @@ fn a_locale_names_its_language() {
     assert_eq!(Language::from_locale("cs_CZ.UTF-8"), Some(Language::Czech));
     assert_eq!(Language::from_locale("pl_PL.UTF-8"), Some(Language::Polish));
     assert_eq!(Language::from_locale("sv_SE.UTF-8"), Some(Language::Swedish));
+    assert_eq!(Language::from_locale("es_ES.UTF-8"), Some(Language::Spanish));
     assert_eq!(Language::from_locale("ja_JP.UTF-8"), None);
     for language in Language::ALL {
         assert_eq!(Language::from_key(language.key()), Some(language));
@@ -274,6 +275,7 @@ const COMPLETE: &[Language] = &[
     Language::Czech,
     Language::Polish,
     Language::Swedish,
+    Language::Spanish,
 ];
 
 #[test]
