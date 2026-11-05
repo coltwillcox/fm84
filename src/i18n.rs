@@ -25,11 +25,22 @@ pub enum Language {
     Italian,
     Greek,
     French,
+    Slovenian,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 8] = [Language::English, Language::Serbian, Language::Turkish, Language::Norwegian, Language::German, Language::Italian, Language::Greek, Language::French];
+    pub const ALL: [Language; 9] = [
+        Language::English,
+        Language::Serbian,
+        Language::Turkish,
+        Language::Norwegian,
+        Language::German,
+        Language::Italian,
+        Language::Greek,
+        Language::French,
+        Language::Slovenian,
+    ];
 
     /// How the config file names it.
     pub fn key(self) -> &'static str {
@@ -42,6 +53,7 @@ impl Language {
             Language::Italian => "it",
             Language::Greek => "el",
             Language::French => "fr",
+            Language::Slovenian => "sl",
         }
     }
 
@@ -57,6 +69,7 @@ impl Language {
             Language::Italian => "Italiano",
             Language::Greek => "Ελληνικά",
             Language::French => "Français",
+            Language::Slovenian => "Slovenščina",
         }
     }
 
@@ -76,6 +89,7 @@ impl Language {
             Language::Italian => Some(include_str!("../lang/it.lang")),
             Language::Greek => Some(include_str!("../lang/el.lang")),
             Language::French => Some(include_str!("../lang/fr.lang")),
+            Language::Slovenian => Some(include_str!("../lang/sl.lang")),
         }
     }
 
@@ -99,6 +113,14 @@ impl Language {
                     Form::Other
                 }
             }
+            // By the last two digits: 1, 101 one; 2, 102 two; 3, 4, 103
+            // few; the rest, and 11 to 14, other.
+            Language::Slovenian => match count % 100 {
+                1 => Form::One,
+                2 => Form::Two,
+                3 | 4 => Form::Few,
+                _ => Form::Other,
+            },
             // 1, 21, 101 one; 2-4, 22-24 few; the rest, and 11-14, other.
             Language::Serbian => match (count % 10, count % 100) {
                 (1, tens) if tens != 11 => Form::One,
@@ -123,6 +145,7 @@ impl Language {
             "it" => Some(Language::Italian),
             "el" => Some(Language::Greek),
             "fr" => Some(Language::French),
+            "sl" => Some(Language::Slovenian),
             _ => None,
         }
     }
@@ -132,6 +155,8 @@ impl Language {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum Form {
     One,
+    /// Of a language with a dual, as Slovenian has: two of a thing.
+    Two,
     Few,
     Other,
 }
@@ -140,6 +165,7 @@ impl Form {
     fn from_key(key: &str) -> Option<Form> {
         match key {
             "one" => Some(Form::One),
+            "two" => Some(Form::Two),
             "few" => Some(Form::Few),
             "other" => Some(Form::Other),
             _ => None,
@@ -255,7 +281,7 @@ pub(crate) fn parse(text: &str) -> Result<Catalog, ParseError> {
             }
         } else if let Some(form) = keyword.strip_prefix("msgstr[").and_then(|form| form.strip_suffix(']')) {
             let Some(form) = Form::from_key(form) else {
-                return Err(error(number, "a form that is not one, few or other"));
+                return Err(error(number, "a form that is not one, two, few or other"));
             };
             if catalog.forms.insert((current, form), rest).is_some() {
                 return Err(error(number, "translated twice"));
