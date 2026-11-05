@@ -32,11 +32,12 @@ pub enum Language {
     Slovak,
     Czech,
     Polish,
+    Swedish,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 15] = [
+    pub const ALL: [Language; 16] = [
         Language::English,
         Language::Serbian,
         Language::Turkish,
@@ -52,6 +53,7 @@ impl Language {
         Language::Slovak,
         Language::Czech,
         Language::Polish,
+        Language::Swedish,
     ];
 
     /// How the config file names it.
@@ -72,6 +74,7 @@ impl Language {
             Language::Slovak => "sk",
             Language::Czech => "cs",
             Language::Polish => "pl",
+            Language::Swedish => "sv",
         }
     }
 
@@ -94,6 +97,7 @@ impl Language {
             Language::Slovak => "Slovenčina",
             Language::Czech => "Čeština",
             Language::Polish => "Polski",
+            Language::Swedish => "Svenska",
         }
     }
 
@@ -120,6 +124,7 @@ impl Language {
             Language::Slovak => Some(include_str!("../lang/sk.lang")),
             Language::Czech => Some(include_str!("../lang/cs.lang")),
             Language::Polish => Some(include_str!("../lang/pl.lang")),
+            Language::Swedish => Some(include_str!("../lang/sv.lang")),
         }
     }
 
@@ -128,7 +133,7 @@ impl Language {
         match self {
             // A noun after a number stays as it is in Turkish - "5 dosya" -
             // but a sentence can still say one apart from the rest.
-            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek | Language::Hungarian => {
+            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek | Language::Hungarian | Language::Swedish => {
                 if count == 1 {
                     Form::One
                 } else {
@@ -203,6 +208,7 @@ impl Language {
             "sk" => Some(Language::Slovak),
             "cs" => Some(Language::Czech),
             "pl" => Some(Language::Polish),
+            "sv" => Some(Language::Swedish),
             _ => None,
         }
     }

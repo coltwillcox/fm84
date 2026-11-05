@@ -1,0 +1,1603 @@
+# fm84 på svenska.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, [other] for the rest. A msgctxt sets
+# one use of a word apart from the same word elsewhere. {name} is a place
+# the program fills, kept as it is. The letters to press - Y, N, A and the
+# like - stay as they are, and so do the names of the keys. Names are
+# quoted ”thus”.
+
+msgid  "{name}" has changed since it was opened
+msgstr ”{name}” har ändrats sedan den öppnades
+
+msgid  "{name}" is already in {folder}
+msgstr ”{name}” finns redan i {folder}
+
+msgid  "{name}" is no longer there
+msgstr ”{name}” finns inte längre
+
+msgid  "{path}" is already there
+msgstr ”{path}” finns redan där
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Zoom {zoom} %
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- markera/avmarkera med mönster, * invertera
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): skrivskyddade
+
+msgid  12-hour
+msgstr 12-timmars
+
+msgid  24-hour
+msgstr 24-timmars
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Skriv över alla    S - Hoppa över alla    B - Behåll båda för alla
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr En hård länk till {path}, som inte kopieras ut
+
+msgid  A root directory cannot go to the trash
+msgstr En rotmapp kan inte läggas i papperskorgen
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr En synthwave-filhanterare med två paneler, för terminalen
+
+msgid  About
+msgstr Om
+
+msgid  Already exists: {name}
+msgstr Finns redan: {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Finns redan: {path} - Skriv över eller Behåll båda i F11
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Finns redan: {path} - ett annat namn, eller Skriv över eller Behåll båda i F11
+
+msgid  Already there
+msgstr Finns redan
+
+msgid  Alt+* invert with directories
+msgstr Alt+* invertera med mappar
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Behörighet, ägare, tid
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Ner alla besökta mappar
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (eller Ctrl+Shift+F5) länk, Tab hård
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (eller Ctrl+F7) sök filer
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Kontrollsummor (Tab algoritm); kontrollera en fil
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Vänster/Höger bakåt/framåt
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Användarmeny (E redigerar den)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O öppna med... (E per filändelse)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Packa i ett arkiv (Tab format)
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R i Sök eller Ersätt: regex
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - Synkronisera de två mapparna
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Shift+Enter storlek på alla mappar
+
+msgid  Appearance
+msgstr Utseende
+
+msgid  Archives are read-only
+msgstr Arkiv är skrivskyddade
+
+msgid  Ascending
+msgstr Stigande
+
+msgid  Ask
+msgstr Fråga
+
+msgid  Ask before opening over
+msgstr Fråga innan öppning över
+
+msgid  Attributes
+msgstr Attribut
+
+msgid  Attributes column
+msgstr Kolumn Attribut
+
+msgid  Automatic
+msgstr Automatisk
+
+msgid  Automatic ({language})
+msgstr Automatisk ({language})
+
+msgid  Background
+msgstr Bakgrund
+
+msgid  Bar
+msgstr Streck
+
+msgid  Behaviour
+msgstr Beteende
+
+msgid  Binary
+msgstr Binär
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Binärfil. Tryck Esc för att gå tillbaka.
+
+msgid  Block
+msgstr Block
+
+msgid  Bookmarks
+msgstr Bokmärken
+
+msgid  Both panels show the same directory
+msgstr Båda panelerna visar samma mapp
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Båda panelerna visar samma mapp: inget att synkronisera
+
+msgid  Branches:
+msgstr Grenar:
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Byggd med Rust, Ratatui och Crossterm
+
+msgid  Built-in
+msgstr Inbyggd
+
+msgid  C - Copy
+msgstr C - Kopiera
+
+msgid  Cancelling
+msgstr Avbryter
+
+msgid  Cannot calculate size: {e}
+msgstr Kan inte beräkna storleken: {e}
+
+msgid  Cannot change {what}
+msgstr Kan inte ändra {what}
+
+msgid  Cannot copy
+msgstr Kan inte kopiera
+
+msgid  Cannot copy "{path}" into itself
+msgstr Kan inte kopiera ”{path}” in i sig själv
+
+msgid  Cannot copy to {path}
+msgstr Kan inte kopiera till {path}
+
+msgid  Cannot delete
+msgstr Kan inte ta bort
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr Kan inte redigera {path}: det är inte UTF-8-text. F3 visar den som den är.
+
+msgid  Cannot extract
+msgstr Kan inte packa upp
+
+msgid  Cannot link {what}
+msgstr Kan inte länka {what}
+
+msgid  Cannot make room beside {path}
+msgstr Kan inte göra plats bredvid {path}
+
+msgid  Cannot make room to compare: {e}
+msgstr Kan inte göra plats för att jämföra: {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Kan inte göra plats för att öppna det: {e}
+
+msgid  Cannot move
+msgstr Kan inte flytta
+
+msgid  Cannot move to the trash: {why}
+msgstr Kan inte flytta till papperskorgen: {why}
+
+msgid  Cannot move to trash
+msgstr Kan inte flytta till papperskorgen
+
+msgid  Cannot open file: {e}
+msgstr Kan inte öppna filen: {e}
+
+msgid  Cannot open terminal: {e}
+msgstr Kan inte öppna terminal: {e}
+
+msgid  Cannot open {path}: {e}
+msgstr Kan inte öppna {path}: {e}
+
+msgid  Cannot pack
+msgstr Kan inte packa
+
+msgid  Cannot pack into {path}
+msgstr Kan inte packa i {path}
+
+msgid  Cannot reach {target}
+msgstr Kan inte nå {target}
+
+msgid  Cannot read
+msgstr Kan inte läsa
+
+msgid  Cannot read file
+msgstr Kan inte läsa filen
+
+msgid  Cannot read {path}
+msgstr Kan inte läsa {path}
+
+msgid  Cannot read {path}: {e}
+msgstr Kan inte läsa {path}: {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Kan inte ersätta mappen {path} med en fil
+
+msgid  Cannot replace directory {path} with a link
+msgstr Kan inte ersätta mappen {path} med en länk
+
+msgid  Cannot replace file {path} with a directory
+msgstr Kan inte ersätta filen {path} med en mapp
+
+msgid  Cannot run git: {e}
+msgstr Kan inte köra git: {e}
+
+msgid  Cannot run {label}: {e}
+msgstr Kan inte köra {label}: {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr Kan inte spara bokmärkena: {e}
+
+msgid  Cannot save options: {e}
+msgstr Kan inte spara inställningarna: {e}
+
+msgid  Cannot start {program}: {e}
+msgstr Kan inte starta {program}: {e}
+
+msgid  Cannot synchronize
+msgstr Kan inte synkronisera
+
+msgid  Cannot write {path}: {e}
+msgstr Kan inte skriva {path}: {e}
+
+msgid  Case
+msgstr Skiftläge
+
+msgid  Case-sensitive sort
+msgstr Skilj på skiftläge
+
+msgid  Changed on disk
+msgstr Ändrad på disken
+
+msgid  Checked against {file}
+msgstr Kontrollerat mot {file}
+
+msgid  Checksumming
+msgstr Beräknar kontrollsummor
+
+msgid  Checksums
+msgstr Kontrollsummor
+
+msgid  Choose another program
+msgstr Välj ett annat program
+
+msgid  Classic
+msgstr Klassisk
+
+msgid  Click the git branch to switch it
+msgstr Klicka på git-grenen för att byta
+
+msgid  Clock
+msgstr Klocka
+
+msgid  Compare
+msgstr Jämför
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Jämför...    Esc - Stoppa och stäng
+
+msgid  Confirm copy and move
+msgstr Bekräfta kopiering och flytt
+
+msgid  Confirm delete
+msgstr Bekräfta borttagning
+
+msgid  Containing
+msgstr Innehåller
+
+msgid  Containing is a regular expression
+msgstr Innehåller är ett reguljärt uttryck
+
+msgid  Copied name: {text}
+msgstr Kopierade namn: {text}
+
+msgid  Copied path: {text}
+msgstr Kopierade sökväg: {text}
+
+msgid  Copied the report
+msgstr Rapporten kopierad
+
+msgid  Copied: {text}
+msgstr Kopierat: {text}
+
+msgid  Copy
+msgstr Kopiera
+
+msgid  Copy "{name}" to:
+msgstr Kopiera ”{name}” till:
+
+msgid  Copy directory
+msgstr Kopiera mapp
+
+msgid  Copy file
+msgstr Kopiera fil
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Kopiera ut det ur arkivet först: kontrollsummor beräknas för filer på disken
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Kopiera ut det ur arkivet först: det som packas måste ligga på disken
+
+msgid  Copying
+msgstr Kopierar
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Kunde inte ändra {count} av {total}. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Kunde inte länka {count} av {total}. {first}
+
+msgid  Counting...
+msgstr Räknar...
+
+msgid  Create Directory
+msgstr Ny mapp
+
+msgid  Create File
+msgstr Ny fil
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Alla filer under, platt
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Kopiera sökvägar/namn
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Bokmärken
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Sök
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F sök, F3/Shift+F3 nästa/föregående
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Sortera namn/typ/datum/storlek
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G gå till rad, Ctrl+R/F4 ersätt
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Gå till sökväg (eller klicka på den)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Vänster/Höger - Mapp till den panelen
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgUp/PgDn, Alt+1..9 byter
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Läs in båda panelerna igen
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - Filtrera panelen med mönster
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Ny/stäng flik
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U byt paneler, Alt+I samma mapp där
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z ångra, Ctrl+Y gör om, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Ångra
+
+msgid  Cursor
+msgstr Markör
+
+msgid  Cursor blinks
+msgstr Markören blinkar
+
+msgid  D - Delete permanently
+msgstr D - Ta bort permanent
+
+msgid  Dashed
+msgstr Streckad
+
+msgid  Date format
+msgstr Datumformat
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Att avkoda så stor en bild kräver så mycket minne.
+
+msgid  Delete
+msgstr Ta bort
+
+msgid  Delete "{name}" permanently?
+msgstr Ta bort ”{name}” permanent?
+
+msgid  Delete to trash (F8)
+msgstr Ta bort till papperskorgen (F8)
+
+msgid  Delete: directory
+msgstr Ta bort: mapp
+
+msgid  Delete: file
+msgstr Ta bort: fil
+
+msgid  Deleting
+msgstr Tar bort
+
+msgid  Descending
+msgstr Fallande
+
+msgid  Deselect:
+msgstr Avmarkera:
+
+msgid  Destination already exists: {path}
+msgstr Målet finns redan: {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Skiljer sig: {left} till vänster, {right} till höger
+
+msgid  Difference {at}/{count}
+msgstr Skillnad {at}/{count}
+
+msgid  Directories first
+msgstr Mappar först
+
+msgid  Directory "{name}"
+msgstr Mapp ”{name}”
+
+msgid  Directory History
+msgstr Mapphistorik
+
+msgid  Double
+msgstr Dubbel
+
+msgid  Edit
+msgstr Redigera
+
+msgid  Edit "{name}" ({size})?
+msgstr Redigera ”{name}” ({size})?
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr Redigera ”{name}” ({width}x{height}, {size})?
+
+msgid  Edit:
+msgstr Redigera:
+
+msgid  Editor (F4)
+msgstr Redigerare (F4)
+
+msgid  Empty terminal command
+msgstr Tomt terminalkommando
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Krypterat: fm84 kan inte läsa det utan lösenordet
+
+msgid  Enter - Copy
+msgstr Enter - Kopiera
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Enter - Skapa    Esc - Avbryt
+
+msgid  Enter - Extract
+msgstr Enter - Packa upp
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Enter - Gå till    F - Till panelen    Esc - Stäng
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Enter - Gå till    F - Till panelen    Esc - Stoppa och stäng
+
+msgid  Enter - Hard link
+msgstr Enter - Hård länk
+
+msgid  Enter - Move
+msgstr Enter - Flytta
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Enter - Öppna mapp, eller gå in i ett arkiv
+
+msgid  Enter - Pack
+msgstr Enter - Packa
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Enter - Spara    Esc - Avbryt    {} - mapp
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Enter - Spara    Esc - Avbryt    {} - fil
+
+msgid  Enter - Symlink
+msgstr Enter - Symbolisk länk
+
+msgid  Enter - Write
+msgstr Enter - Skriv
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Enter igen för att köra, {deleting} tas bort    Annan tangent - Inte än
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Enter/1-9 - Gå    A/Ins - Lägg till denna    D/Del - Ta bort
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Enter/1-9 - Öppna    E - Redigera kopplingar    Esc - Stäng
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Enter/1-9 - Kör    E - Redigera menyn    Esc - Stäng
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Enter/klick - Byt    Esc - Stäng
+
+msgid  Error
+msgstr Fel
+
+msgid  Esc - Back to editing
+msgstr Esc - Tillbaka till redigering
+
+msgid  Esc - Cancel
+msgstr Esc - Avbryt
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Esc - Avbryt    F10 igen - Avsluta
+
+msgid  Esc - Close
+msgstr Esc - Stäng
+
+msgid  Esc Exit
+msgstr Esc Stäng
+
+msgid  Existing
+msgstr Befintlig
+
+msgid  Ext
+msgstr Typ
+
+msgid  Ext column
+msgstr Kolumn Typ
+
+msgid  Extension
+msgstr Filändelse
+
+msgid  Extract "{name}" to:
+msgstr Packa upp ”{name}” till:
+
+msgid  Extract archive
+msgstr Packa upp arkiv
+
+msgid  Extracting
+msgstr Packar upp
+
+msgid  F Fit [Fill]
+msgstr F Anpassa [Fyll]
+
+msgid  F [Fit] Fill
+msgstr F [Anpassa] Fyll
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F anpassa/fyll, +/- zoom, W radbrytning
+
+msgid  F on the results feeds them to the panel
+msgstr F i resultaten lägger dem i panelen
+
+msgid  F1 - This help
+msgstr F1 - Denna hjälp
+
+msgid  F10 - Quit
+msgstr F10 - Avsluta
+
+msgid  F10 again - Quit
+msgstr F10 igen - Avsluta
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Inställningar (Alt+F1/F2 enheter)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Förhandsvisning i andra panelen
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Byt namn på mapp/fil
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Spara
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Visa fil (X text/hex/bild)
+
+msgid  F3/N Next
+msgstr F3/N Nästa
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Redigera fil (Ctrl+S/F2 sparar)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Kopiera (till andra panelen, eller dit som skrivs)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 kopierar ut, Alt+F9 (eller Ctrl+F9) allt
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Flytta (till andra panelen, eller dit som skrivs)
+
+msgid  F7 - Create directory
+msgstr F7 - Ny mapp
+
+msgid  F8 - Move to trash
+msgstr F8 - Flytta till papperskorgen
+
+msgid  F9 - Open terminal
+msgstr F9 - Öppna terminal
+
+msgid  File "{name}"
+msgstr Fil ”{name}”
+
+msgid  Fill
+msgstr Fyll
+
+msgid  Filter:
+msgstr Filter:
+
+msgid  Find
+msgstr Sök
+
+msgid  Find (regex, Alt+R for text):
+msgstr Sök (regex, Alt+R för text):
+
+msgid  Find files
+msgstr Sök filer
+
+msgid  Find files cannot search inside an archive yet
+msgstr Sök filer kan inte söka i arkiv än
+
+msgid  Find:
+msgstr Sök:
+
+msgid  First letter
+msgstr Stor första bokstav
+
+msgid  Fit
+msgstr Anpassa
+
+msgid  Git marks
+msgstr Git-markeringar
+
+msgid  Go to line:
+msgstr Gå till rad:
+
+msgid  Gone
+msgstr Borta
+
+msgid  Group
+msgstr Grupp
+
+msgid  Hard link "{name}" at:
+msgstr Hård länk till ”{name}” i:
+
+msgid  Hard link directory
+msgstr Hård länk till mapp
+
+msgid  Hard link file
+msgstr Hård länk till fil
+
+msgid  Heavy
+msgstr Tjock
+
+msgid  Help
+msgstr Hjälp
+
+msgid  Help/About
+msgstr Hjälp/Om
+
+msgid  High contrast
+msgstr Hög kontrast
+
+msgid  Highlight files up to
+msgstr Färgmarkera filer upp till
+
+msgid  Icons
+msgstr Ikoner
+
+msgid  Image backgrounds
+msgstr Bildbakgrunder
+
+msgid  Images open as
+msgstr Bilder öppnas som
+
+msgid  In
+msgstr I
+
+msgid  It got shorter while it was being packed
+msgstr Den blev kortare medan den packades
+
+msgid  Keep both
+msgstr Behåll båda
+
+msgid  Keys
+msgstr Tangenter
+
+msgid  Language
+msgstr Språk
+
+msgid  Large File
+msgstr Stor fil
+
+msgid  Large Picture
+msgstr Stor bild
+
+msgid  Line numbers
+msgstr Radnummer
+
+msgid  Line {at}/{count}
+msgstr Rad {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Rad {line}, kol {column}
+
+msgid  Military
+msgstr Militär
+
+msgid  Mkdir
+msgstr Ny mapp
+
+msgid  Mode
+msgstr Behörighet
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Behörighet som 755 eller u+x,go-w; ägare och grupp med namn eller nummer
+
+msgid  Modified
+msgstr Ändrad
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Ändrad som <7d, >1y, 1d..7d, 2026-10-01 eller >2026-10-01, inte {text}
+
+msgid  Modified column
+msgstr Kolumn Ändrad
+
+msgid  Move
+msgstr Flytta
+
+msgid  Move "{name}" to the trash?
+msgstr Flytta ”{name}” till papperskorgen?
+
+msgid  Move "{name}" to:
+msgstr Flytta ”{name}” till:
+
+msgid  Move directory
+msgstr Flytta mapp
+
+msgid  Move file
+msgstr Flytta fil
+
+msgid  Move to trash: directory
+msgstr Till papperskorgen: mapp
+
+msgid  Move to trash: file
+msgstr Till papperskorgen: fil
+
+msgid  Moving
+msgstr Flyttar
+
+msgid  Moving to trash
+msgstr Flyttar till papperskorgen
+
+msgid  Name
+msgstr Namn
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Namn som för +: *.jpg;*.png, eller */ för mappar. Gemener hittar både gemener och versaler
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Ge det ett arkivnamn, som slutar på {endings}
+
+msgid  New
+msgstr Ny
+
+msgid  New name
+msgstr Nytt namn
+
+msgid  Next
+msgstr Nästa
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Inga bokmärken än - A sparar panelens mapp
+
+msgid  No branches yet: nothing has been committed
+msgstr Inga grenar än: inget har committats
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Inga kommandon än - E lägger till dem, som namn = kommando, i
+
+msgid  No config directory
+msgstr Ingen konfigurationsmapp
+
+msgid  No config directory to keep a menu in
+msgstr Ingen konfigurationsmapp att spara en meny i
+
+msgid  No config directory to keep associations in
+msgstr Ingen konfigurationsmapp att spara kopplingarna i
+
+msgid  No such directory: {path}
+msgstr Mappen finns inte: {path}
+
+msgid  No such file or directory: {path}
+msgstr Filen eller mappen finns inte: {path}
+
+msgid  No such group: {text}
+msgstr Gruppen finns inte: {text}
+
+msgid  No such user: {text}
+msgstr Användaren finns inte: {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Ingen terminalemulator hittades. Sätt $TERMINAL.
+
+msgid  Not a line number: {text}
+msgstr Inte ett radnummer: {text}
+
+msgid  Not a mode: {text}
+msgstr Inte en behörighet: {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Inte en behörighet: {text} - 755, eller u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Inte ett vanligt filnamn: {name}
+
+msgid  Not a regular expression: {why}
+msgstr Inte ett reguljärt uttryck: {why}
+
+msgid  Not a regular file
+msgstr Inte en vanlig fil
+
+msgid  Not a regular file: {path}
+msgstr Inte en vanlig fil: {path}
+
+msgid  Not a time here: {text}
+msgstr Tiden finns inte här: {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Inte en tid: {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Inte ett arkiv: {path}
+
+msgid  Not found: {term}
+msgstr Hittades inte: {term}
+
+msgid  Nothing chosen for {label}
+msgstr Inget valt för {label}
+
+msgid  Nothing found
+msgstr Inget hittades
+
+msgid  Nothing found to feed to the panel
+msgstr Inget hittades att lägga i panelen
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Inget är mindre än 0 byte
+
+msgid  Nothing replaced
+msgstr Inget ersattes
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Inget att jämföra med: den andra panelen har ingen fil med det namnet, och ingen under markören
+
+msgid  Nothing to synchronize
+msgstr Inget att synkronisera
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Inget att skriva: ingen kontrollsumma kunde beräknas
+
+msgid  Nothing visited matches
+msgstr Ingen besökt mapp matchar
+
+msgid  Now
+msgstr Nu
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Skriv över alla äldre    Esc - Avbryt
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Skriv över    R - Läs in igen, ändringarna går förlorade
+
+msgid  O - Save it again
+msgstr O - Spara igen
+
+msgid  Off
+msgstr Av
+
+msgid  Old name
+msgstr Gammalt namn
+
+msgid  On
+msgstr På
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr Den ena panelens mapp ligger i den andras: inget att synkronisera
+
+msgid  Only the first {count} files are listed
+msgstr Bara de första {count} filerna visas
+
+msgid  Open {name} With
+msgstr Öppna {name} med
+
+msgid  Options
+msgstr Inställn.
+
+msgid  Overwrite
+msgstr Skriv över
+
+msgid  Owner
+msgstr Ägare
+
+msgid  Pack "{name}" into:
+msgstr Packa ”{name}” i:
+
+msgid  Pack directory
+msgstr Packa mapp
+
+msgid  Pack file
+msgstr Packa fil
+
+msgid  Packing
+msgstr Packar
+
+msgid  Panels
+msgstr Paneler
+
+msgid  Plain
+msgstr Enkla
+
+msgid  Plain Text
+msgstr Vanlig text
+
+msgid  Preview
+msgstr Förhandsv.
+
+msgid  Preview on startup
+msgstr Förhandsvisning vid start
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Ställ markören på en fil att jämföra, eller markera två
+
+msgid  Put the cursor on an archive to extract it
+msgstr Ställ markören på ett arkiv för att packa upp det
+
+msgid  Quit
+msgstr Avsluta
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Försök igen    S - Hoppa över    A - Hoppa över alla    Esc - Avbryt
+
+msgid  Read pictures ahead
+msgstr Läs bilder i förväg
+
+msgid  Reading a file this large may take a while.
+msgstr Att läsa så stor en fil kan ta en stund.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr Läser {dir}…  Esc för att stoppa
+
+msgid  Refuse
+msgstr Vägra
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Relativ
+
+msgid  Released under the {license} License
+msgstr Utgiven under {license}-licensen
+
+msgid  Remember directories
+msgstr Kom ihåg mappar
+
+msgid  Rename
+msgstr Byt namn
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr Bytte namn på {done} av {total}, sedan: {e}
+
+msgid  Replace
+msgstr Ersätt
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr Ersätt ”{find}” med ”{with}”?   Y - Ja   N - Nej   A - Alla   Esc - Stopp
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Ersätt (regex, Alt+R för text):
+
+msgid  Replace:
+msgstr Ersätt:
+
+msgid  Row {at}/{count}
+msgstr Rad {at}/{count}
+
+msgid  Save
+msgstr Spara
+
+msgid  Save changes before closing?
+msgstr Spara ändringarna innan stängning?
+
+msgid  Scroll bars
+msgstr Rullningslister
+
+msgid  Search:
+msgstr Sök:
+
+msgid  Select:
+msgstr Markera:
+
+msgid  Shade
+msgstr Skuggad
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Shift+Enter (eller Ctrl+O) öppna som systemet gör
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Shift+F10 avsluta, cd84 stannar kvar
+
+msgid  Shift+F2 compare directories
+msgstr Shift+F2 jämför mappar
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Shift+F3 (eller =) jämför två filer
+
+msgid  Shift+F3/P Previous
+msgstr Shift+F3/P Föregående
+
+msgid  Shift+F4 - Create file
+msgstr Shift+F4 - Ny fil
+
+msgid  Shift+F8 delete permanently
+msgstr Shift+F8 ta bort permanent
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Shift+Upp/Ner - Flytta    Esc - Stäng
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Shift+pilar markerar, Ctrl+A allt
+
+msgid  Show hidden files
+msgstr Visa dolda filer
+
+msgid  Size
+msgstr Storlek
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Storlek som >10M, <1K eller 1M..10M, inte {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Storlek som >10M, <1K eller 1M..10M; Ändrad som <7d, >1y, 1d..7d, 2026-10-01 eller >2026-10-01
+
+msgid  Size column
+msgstr Kolumn Storlek
+
+msgid  Size units
+msgstr Storleksenheter
+
+msgid  Sort by
+msgstr Sortera efter
+
+msgid  Sort direction
+msgstr Sorteringsordning
+
+msgid  Space - Select/deselect file
+msgstr Space - Markera/avmarkera fil
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Bytet till {branch} avbröts oväntat
+
+msgid  Symbolic links are not supported here
+msgstr Symboliska länkar stöds inte här
+
+msgid  Symlink "{name}" at:
+msgstr Symbolisk länk till ”{name}” i:
+
+msgid  Symlink directory
+msgstr Symbolisk länk till mapp
+
+msgid  Symlink file
+msgstr Symbolisk länk till fil
+
+msgid  Synchronize
+msgstr Synkronisera
+
+msgid  Synchronizing
+msgstr Synkroniserar
+
+msgid  System default
+msgstr Systemets standard
+
+msgid  Tab - Algorithm
+msgstr Tab - Algoritm
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Fält   ←/→ - Skiftläge   Enter - Byt namn   Esc - Avbryt
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Fält  Space - Regex  Enter - Sök  Esc - Avbryt
+
+msgid  Tab - Format
+msgstr Tab - Format
+
+msgid  Tab - Hard link
+msgstr Tab - Hård länk
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Nästa fält    Enter - Verkställ    Esc - Avbryt
+
+msgid  Tab - Symlink
+msgstr Tab - Symbolisk länk
+
+msgid  Tab completes a name
+msgstr Tab fyller i ett namn
+
+msgid  Tab width
+msgstr Tabbredd
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab indrag, Ctrl+/ kommentar
+
+msgid  Terminal
+msgstr Terminal
+
+msgid  Terminal (F9)
+msgstr Terminal (F9)
+
+msgid  Terminal too small
+msgstr Terminalen är för liten
+
+msgid  The archive ends before it
+msgstr Arkivet tar slut innan
+
+msgid  The directories hold the same files
+msgstr Mapparna har samma filer
+
+msgid  The files are identical
+msgstr Filerna är identiska
+
+msgid  The files differ from byte {at}
+msgstr Filerna skiljer sig från byte {at}
+
+msgid  The files differ from byte {at}, and in size
+msgstr Filerna skiljer sig från byte {at}, och i storlek
+
+msgid  The files differ only in line endings
+msgstr Filerna skiljer sig bara i radslut
+
+msgid  Theme
+msgstr Tema
+
+msgid  This cannot be undone
+msgstr Detta kan inte ångras
+
+msgid  Title Case
+msgstr Stor Bokstav I Varje Ord
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr För stor för jämförelse: {path} ({size}; gränsen sätts i F11)
+
+msgid  Transfer stopped unexpectedly
+msgstr Överföringen avbröts oväntat
+
+msgid  Trash
+msgstr Släng
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Skriv för att begränsa    Upp/Ner - Välj    Enter - Gå    Esc - Stäng
+
+msgid  Type to search, Esc to clear
+msgstr Skriv för att söka, Esc rensar
+
+msgid  UPPER CASE
+msgstr VERSALER
+
+msgid  Unchanged
+msgstr Oförändrat
+
+msgid  Underline
+msgstr Understrykning
+
+msgid  Unsaved Changes
+msgstr Osparade ändringar
+
+msgid  User Menu
+msgstr Användarmeny
+
+msgid  View
+msgstr Visa
+
+msgid  View "{name}" ({size})?
+msgstr Visa ”{name}” ({size})?
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr Visa ”{name}” ({width}x{height}, {size})?
+
+msgid  View:
+msgstr Visa:
+
+msgid  Viewer and editor
+msgstr Visare och redigerare
+
+msgid  W Wrap
+msgstr W Radbrytning
+
+msgid  W [Wrap]
+msgstr W [Radbrytning]
+
+msgid  When destination exists
+msgstr När målet finns
+
+msgid  When opened
+msgstr Vid öppning
+
+msgid  With:
+msgstr Med:
+
+msgid  Wrapped to the bottom
+msgstr Fortsatte från slutet
+
+msgid  Wrapped to the top
+msgstr Fortsatte från början
+
+msgid  Written: {name}
+msgstr Skrevs: {name}
+
+msgid  X Image Text [Hex]
+msgstr X Bild Text [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Bild [Text] Hex
+
+msgid  X Text [Hex]
+msgstr X Text [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Bild] Text Hex
+
+msgid  X [Text] Hex
+msgstr X [Text] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Skriv över    N - Hoppa över    K - Behåll båda
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Spara    N - Kasta    Esc - Avbryt
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Enter - Ja    N / Esc - Nej
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] tecken 2 till 5   [C10+5:3] från 10, med 5, 3 siffror
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] namn   [E] filändelse   [C] räknare
+
+msgid  a directory cannot be hard linked
+msgstr en mapp kan inte hårdlänkas
+
+msgid  already exists
+msgstr finns redan
+
+msgid  by name, text, regex, size, date
+msgstr efter namn, text, regex, storlek, datum
+
+msgid  del
+msgstr bort
+
+msgid  filter: {pattern}
+msgstr filter: {pattern}
+
+msgid  flat
+msgstr platt
+
+msgid  found
+msgstr hittade
+
+msgid  git did not answer
+msgstr git svarade inte
+
+msgid  given twice
+msgstr angivet två gånger
+
+msgid  just now
+msgstr just nu
+
+msgid  lower case
+msgstr gemener
+
+msgid  name not readable as text
+msgstr namnet kan inte läsas som text
+
+msgid  newer
+msgstr nyare
+
+msgid  not a plain name
+msgstr inte ett vanligt namn
+
+msgid  not readable as an archive ({e})
+msgstr kan inte läsas som arkiv ({e})
+
+msgid  not there
+msgstr finns inte
+
+msgid  terminal
+msgstr terminal
+
+msgid  to be replaced by "{name}"
+msgstr ska ersättas av ”{name}”
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr med markering: alla efter [N] [E] [C]
+
+msgid  {count} FAILED
+msgstr {count} FEL
+
+msgid  {count} OK
+msgstr {count} OK
+
+msgid  {count} could not be read
+msgstr {count} kunde inte läsas
+
+msgid  {count} h ago
+msgstr {count} tim sedan
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr {count} objekt behöver en målmapp, och {path} är ingen
+
+msgid  {count} min ago
+msgstr {count} min sedan
+
+msgid  {count} missing
+msgstr {count} saknas
+
+msgid  {count} mo ago
+msgstr {count} mån sedan
+
+msgid  {count} yr ago
+msgstr {count} år sedan
+
+msgid  {deleting} to delete
+msgstr {deleting} tas bort
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} av {total}, {rate}/s
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title} avbröts efter {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr {name} är inte ett namn som {format} kan lagra: det är inte UTF-8
+
+msgid  {path} already exists
+msgstr {path} finns redan
+
+msgid  {path} could not be read after all
+msgstr {path} kunde ändå inte läsas
+
+msgid  {path} is a directory
+msgstr {path} är en mapp
+
+msgid  {program} exited with {status}
+msgstr {program} avslutades med {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Flytta    Enter/←→ - Ändra    Esc - Stäng
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Kopiera  Del Ta bort  Space Lämna  > < Spegla  R Återställ  Enter Kör  Esc Stäng
+
+msgctxt job
+msgid   Checksum
+msgstr  Kontrollsumma
+
+msgctxt job
+msgid   Copy
+msgstr  Kopiering
+
+msgctxt job
+msgid   Delete
+msgstr  Borttagning
+
+msgctxt job
+msgid   Extract
+msgstr  Uppackning
+
+msgctxt job
+msgid   Move
+msgstr  Flytt
+
+msgctxt job
+msgid   Move to trash
+msgstr  Flytt till papperskorgen
+
+msgctxt job
+msgid   Pack
+msgstr  Packning
+
+msgctxt job
+msgid   Synchronize
+msgstr  Synkronisering
+
+msgid  Copied {count} name
+msgstr[one]    Kopierade {count} namn
+msgstr[other]  Kopierade {count} namn
+
+msgid  Copied {count} path
+msgstr[one]    Kopierade {count} sökväg
+msgstr[other]  Kopierade {count} sökvägar
+
+msgid  Copy {count} item
+msgstr[one]    Kopiera {count} objekt
+msgstr[other]  Kopiera {count} objekt
+
+msgid  Copy {count} item to: {names}
+msgstr[one]    Kopiera {count} objekt ({names}) till:
+msgstr[other]  Kopiera {count} objekt ({names}) till:
+
+msgid  Delete {count} item permanently?
+msgstr[one]    Ta bort {count} objekt permanent?
+msgstr[other]  Ta bort {count} objekt permanent?
+
+msgid  Delete: {count} item
+msgstr[one]    Ta bort: {count} objekt
+msgstr[other]  Ta bort: {count} objekt
+
+msgid  Hard link {count} item
+msgstr[one]    Hård länk till {count} objekt
+msgstr[other]  Hårda länkar till {count} objekt
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]    Hård länk till {count} objekt ({names}) i:
+msgstr[other]  Hårda länkar till {count} objekt ({names}) i:
+
+msgid  Move to trash: {count} item
+msgstr[one]    Till papperskorgen: {count} objekt
+msgstr[other]  Till papperskorgen: {count} objekt
+
+msgid  Move {count} item
+msgstr[one]    Flytta {count} objekt
+msgstr[other]  Flytta {count} objekt
+
+msgid  Move {count} item to the trash?
+msgstr[one]    Flytta {count} objekt till papperskorgen?
+msgstr[other]  Flytta {count} objekt till papperskorgen?
+
+msgid  Move {count} item to: {names}
+msgstr[one]    Flytta {count} objekt ({names}) till:
+msgstr[other]  Flytta {count} objekt ({names}) till:
+
+msgid  Pack {count} item
+msgstr[one]    Packa {count} objekt
+msgstr[other]  Packa {count} objekt
+
+msgid  Pack {count} item into: {names}
+msgstr[one]    Packa {count} objekt ({names}) i:
+msgstr[other]  Packa {count} objekt ({names}) i:
+
+msgid  Rename {count} Entry
+msgstr[one]    Byt namn på {count} objekt
+msgstr[other]  Byt namn på {count} objekt
+
+msgid  Replaced {count}
+msgstr[one]    Ersatte {count} förekomst
+msgstr[other]  Ersatte {count} förekomster
+
+msgid  Symlink {count} item
+msgstr[one]    Symbolisk länk till {count} objekt
+msgstr[other]  Symboliska länkar till {count} objekt
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]    Symbolisk länk till {count} objekt ({names}) i:
+msgstr[other]  Symboliska länkar till {count} objekt ({names}) i:
+
+msgid  {count} day ago
+msgstr[one]    {count} dag sedan
+msgstr[other]  {count} dagar sedan
+
+msgid  {count} difference
+msgstr[one]    {count} skillnad
+msgstr[other]  {count} skillnader
+
+msgid  {count} directory could not be read
+msgstr[one]    {count} mapp kunde inte läsas
+msgstr[other]  {count} mappar kunde inte läsas
+
+msgid  {count} file
+msgstr[one]    {count} fil
+msgstr[other]  {count} filer
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]    {count} fil, {failed} kunde inte läsas
+msgstr[other]  {count} filer, {failed} kunde inte läsas
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]    {count} objekt - ett fält som lämnas som det är, eller tomt, ändrar ingenting
+msgstr[other]  {count} objekt - ett fält som lämnas som det är, eller tomt, ändrar ingenting
+
+msgid  {count} line
+msgstr[one]    {count} rad
+msgstr[other]  {count} rader
+
+msgid  {count} line not understood
+msgstr[one]    {count} rad förstods inte
+msgstr[other]  {count} rader förstods inte
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]    {count} av de nya namnen går inte: {why} - se tabellen
+msgstr[other]  {count} av de nya namnen går inte: {why} - se tabellen
+
+msgid  {done} of {total} entry
+msgstr[one]    {done} av {total} objekt
+msgstr[other]  {done} av {total} objekt
+
+msgid  {done} of {total} item
+msgstr[one]    {done} av {total} objekt
+msgstr[other]  {done} av {total} objekt
+
+msgid  {found} differs
+msgstr[one]    {found} skiljer sig
+msgstr[other]  {found} skiljer sig
+
+msgid  {found} differs, comparing
+msgstr[one]    {found} skiljer sig, jämför
+msgstr[other]  {found} skiljer sig, jämför
+
+msgid  {found} found
+msgstr[one]    {found} hittade
+msgstr[other]  {found} hittade
+
+msgid  {found} found, searching
+msgstr[one]    {found} hittade, söker
+msgstr[other]  {found} hittade, söker
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]    {job_title} avbröts efter {done} objekt
+msgstr[other]  {job_title} avbröts efter {done} objekt
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]    {job_title} avbröts efter {done} objekt
+msgstr[other]  {job_title} avbröts efter {done} objekt
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]    {job_title} klar, {count} objekt hoppades över
+msgstr[other]  {job_title} klar, {count} objekt hoppades över
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]    {problems} kan inte byta namn så här    Esc - Avbryt
+msgstr[other]  {problems} kan inte byta namn så här    Esc - Avbryt
+
+msgid  {skipped} left as it is
+msgstr[one]    {skipped} lämnas som de är
+msgstr[other]  {skipped} lämnas som de är
