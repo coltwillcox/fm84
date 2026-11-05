@@ -4,6 +4,26 @@
 use super::*;
 
 impl AppState {
+    /// What Ctrl+F looks for: the term, as text or as a regular expression.
+    /// None for nothing to look for - or an expression that is not one,
+    /// which was said so when it was typed.
+    pub fn find_needle(&self) -> Option<crate::find::Needle> {
+        crate::find::Needle::with(&self.find_term, self.find_regex).ok().flatten()
+    }
+
+    /// A term typed into Find or Replace that will not do: an expression
+    /// that is not one. Said so, and the prompt opened on it again.
+    fn refuse_term(&mut self, kind: PromptKind, term: &str) -> bool {
+        let Err(message) = crate::find::Needle::with(term, self.find_regex) else {
+            return false;
+        };
+        self.display_error(message);
+        let mut input = TextInput::new();
+        input.set(term.to_string());
+        self.dialog = Some(Dialog::Prompt(kind, input));
+        true
+    }
+
     /// The prompt and the marks go with the file they were for. The term is
     /// kept, to be offered again.
     pub(super) fn close_find(&mut self) {
@@ -49,6 +69,9 @@ impl AppState {
                     self.find_shown = false;
                     return;
                 }
+                if self.refuse_term(kind, &input.text) {
+                    return;
+                }
                 self.find_term = input.text;
                 self.find(true, true);
             }
@@ -67,7 +90,7 @@ impl AppState {
             // What to replace, and then what with. Nothing to replace is a
             // cancel; nothing to replace it with deletes it.
             PromptKind::Replace => {
-                if input.text.is_empty() {
+                if input.text.is_empty() || self.refuse_term(kind, &input.text) {
                     return;
                 }
                 self.find_term = input.text;
@@ -102,7 +125,7 @@ impl AppState {
 
     /// Go to the first match from the cursor and ask about it.
     fn start_replace(&mut self) {
-        let Some(needle) = crate::find::Needle::new(&self.find_term) else {
+        let Some(needle) = self.find_needle() else {
             return;
         };
         let Some(state) = self.editor() else {
@@ -123,11 +146,13 @@ impl AppState {
         let Some(Dialog::Replacing { mut stop_at, mut wrapped, mut replaced }) = self.dialog.take() else {
             return false;
         };
-        let Some(needle) = crate::find::Needle::new(&self.find_term) else {
+        let Some(needle) = self.find_needle() else {
             return false;
         };
         if replace && let Some(((line, start), (_, end))) = self.editor().and_then(EditorState::selection) {
-            let with = self.replace_with.clone();
+            // A regular expression's groups, $1 and on, from the match.
+            let matched = self.editor().and_then(EditorState::selected_text).unwrap_or_default();
+            let with = needle.expand(&matched, &self.replace_with);
             self.replace_selection(&with);
             replaced += 1;
             // Gone round and back on the line it started on, text before the
@@ -239,7 +264,7 @@ impl AppState {
     /// `fresh` is a new search from the prompt, which may find the match the
     /// cursor is already on; F3 and Shift+F3 go on past it.
     pub fn find(&mut self, forward: bool, fresh: bool) {
-        let Some(needle) = crate::find::Needle::new(&self.find_term) else {
+        let Some(needle) = self.find_needle() else {
             // F3 with nothing looked for yet asks what to look for.
             self.open_prompt(PromptKind::Find);
             return;

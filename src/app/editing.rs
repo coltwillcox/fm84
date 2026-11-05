@@ -793,31 +793,6 @@ impl AppState {
         self.finish_edit();
     }
 
-    pub fn editor_enter(&mut self) {
-        let line = self.editor().map_or(0, |state| state.cursor_line);
-        self.push_undo(self.edit_range(line..=line));
-        self.delete_selection();
-        let mut from = None;
-        if let Screen::Editor(state) = &mut self.screen {
-            from = Some(state.cursor_line);
-            let line = &mut state.lines[state.cursor_line];
-            let byte_idx = char_to_byte(line, state.cursor_col);
-            let new_line = line[byte_idx..].to_string();
-            line.truncate(byte_idx);
-            state.cursor_line += 1;
-            state.lines.insert(state.cursor_line, new_line);
-            state.cursor_col = 0;
-            state.modified = true;
-            if state.cursor_line >= state.scroll_offset + self.editor_viewport_height {
-                state.scroll_offset = state.cursor_line - self.editor_viewport_height + 1;
-            }
-        }
-        if let Some(from) = from {
-            self.editor_rehighlight_from(from);
-        }
-        self.finish_edit();
-    }
-
     /// Save the file in the editor - unless something else has written it
     /// since it was read here, when nothing is written and the caller asks
     /// first. A file gone altogether counts: saving would bring back what
@@ -858,5 +833,6 @@ impl AppState {
     }
 }
 
+mod lines;
 #[cfg(test)]
 mod tests;

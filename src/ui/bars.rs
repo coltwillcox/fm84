@@ -85,6 +85,8 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
         && *kind != PromptKind::GoTo
     {
         let label = match kind {
+            PromptKind::Find if app_state.find_regex => " Find (regex, Alt+R for text): ",
+            PromptKind::Replace if app_state.find_regex => " Replace (regex, Alt+R for text): ",
             PromptKind::Find => " Find: ",
             PromptKind::GoToLine => " Go to line: ",
             PromptKind::Select => " Select: ",

@@ -103,8 +103,12 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
     // Alt+* inverts the directories as well as the files. Ctrl is an alias
     // for the terminals that can report it; most send Ctrl+* as a bare * or
     // not at all, while Alt arrives anywhere.
+    // Alt+R in Find or Replace: the term a regular expression, or text.
+    let finding = matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::Find | PromptKind::Replace, _))) && app_state.error.is_none();
     if c == '*' && in_panel {
         app_state.invert_selection(true);
+    } else if finding && modifiers.contains(KeyModifiers::ALT) && matches!(c, 'r' | 'R') {
+        app_state.find_regex = !app_state.find_regex;
     } else if modifiers.contains(KeyModifiers::ALT) {
         // Alt+1 to Alt+8 go to that tab, and Alt+9 to the last, however
         // many there are - as browsers have it.
@@ -168,6 +172,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             'c' if app_state.is_viewing() => app_state.viewer_copy(),
             'c' if in_panel => copy_names(app_state, true),
             'x' if in_editor => app_state.editor_cut(),
+            // Ctrl+/ comments the lines, or uncomments them. Most terminals
+            // send it as Ctrl+_, which reads as Ctrl+7.
+            '/' | '_' | '7' if in_editor => app_state.editor_toggle_comment(),
             'v' if in_editor => app_state.editor_paste(),
             // Ctrl+R rereads both panels from disk.
             'r' if !app_state.is_modal_open() => {

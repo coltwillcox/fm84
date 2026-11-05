@@ -52,16 +52,8 @@ impl Text {
         if !regex {
             return Ok(Needle::new(typed).map(Text::Plain));
         }
-        // A capital makes it exact - one that is a letter to find, that is:
-        // the S of \S and the W of \W are classes, not capitals.
-        let mut escaped = false;
-        let capital = typed.chars().any(|c| {
-            let literal = !escaped && c.is_uppercase();
-            escaped = !escaped && c == '\\';
-            literal
-        });
         regex::bytes::RegexBuilder::new(typed)
-            .case_insensitive(!capital)
+            .case_insensitive(!crate::find::has_capital(typed, true))
             .multi_line(true)
             .size_limit(1 << 24)
             .build()

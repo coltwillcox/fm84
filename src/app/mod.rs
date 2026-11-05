@@ -254,6 +254,8 @@ pub struct AppState {
     /// What Ctrl+F last looked for. Kept when the prompt closes, for F3 and
     /// Shift+F3, and offered again the next time it opens.
     pub find_term: String,
+    /// Alt+R in the find prompt: the term is a regular expression.
+    pub find_regex: bool,
     /// Whether the matches of find_term are marked on screen. On from the
     /// first search until the viewer or editor closes.
     pub find_shown: bool,
@@ -471,6 +473,7 @@ impl AppState {
             find_files_last: FindForm::default(),
             find_files_page: 10,
             find_term: String::new(),
+            find_regex: false,
             replace_with: String::new(),
             viewer_wrap: false,
             find_shown: false,

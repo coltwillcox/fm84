@@ -63,7 +63,7 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
             let selection = viewer_state.selected_range();
             // Not on a picture, whose characters only happen to be letters.
             let marking = app_state.find_shown && viewer_state.mode != ViewMode::Image;
-            let needle = marking.then(|| crate::find::Needle::new(&app_state.find_term)).flatten();
+            let needle = marking.then(|| app_state.find_needle()).flatten();
             // The line the last row came from, as characters, with its
             // matches: a wrapped line fills row after row, and a minified one
             // can be megabytes, so it is laid out once a frame rather than
@@ -263,7 +263,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         // cursor to sit on, unless show_cursor paints the cell for Classic.
         let cursor_style = Style::new().add_modifier(EDITOR_CURSOR);
         let selection = editor_state.selection();
-        let needle = app_state.find_shown.then(|| crate::find::Needle::new(&app_state.find_term)).flatten();
+        let needle = app_state.find_shown.then(|| crate::find::Needle::with(&app_state.find_term, app_state.find_regex).ok().flatten()).flatten();
         let mut content_lines: Vec<Line> = Vec::with_capacity(end - start);
 
         for (idx, line) in editor_state.lines[start..end].iter().enumerate() {

@@ -9,9 +9,57 @@
 pub struct Needle {
     chars: Vec<char>,
     fold: bool,
+    /// Looked for as a regular expression, smart case too.
+    regex: Option<regex::Regex>,
+}
+
+/// Whether a term has a capital in it, which makes a search exact. In a
+/// regular expression, the letter after a backslash is not one: `\S` and
+/// `\W` are classes.
+pub fn has_capital(term: &str, regex: bool) -> bool {
+    let mut escaped = false;
+    term.chars().any(|c| {
+        let literal = !escaped && c.is_uppercase();
+        escaped = regex && !escaped && c == '\\';
+        literal
+    })
 }
 
 impl Needle {
+    /// `term` as text, or as a regular expression - an error, in its own
+    /// words, for one that is not. None for an empty term.
+    pub fn with(term: &str, regex: bool) -> Result<Option<Self>, String> {
+        if !regex || term.is_empty() {
+            return Ok(Self::new(term));
+        }
+        let built = regex::RegexBuilder::new(term).case_insensitive(!has_capital(term, true)).size_limit(1 << 24).build().map_err(|e| match e {
+            regex::Error::Syntax(said) => format!("Not a regular expression: {}", said.lines().last().unwrap_or(&said).trim_start_matches("error: ")),
+            other => format!("Not a regular expression: {other}"),
+        })?;
+        Ok(Some(Needle {
+            chars: Vec::new(),
+            fold: false,
+            regex: Some(built),
+        }))
+    }
+
+    /// What replaces a match of this in `matched`: `with` as it is, or for a
+    /// regular expression with `$1`, `${name}` and the like filled in from
+    /// it.
+    pub fn expand(&self, matched: &str, with: &str) -> String {
+        match &self.regex {
+            Some(regex) => match regex.captures(matched) {
+                Some(captures) => {
+                    let mut out = String::new();
+                    captures.expand(with, &mut out);
+                    out
+                }
+                None => with.to_string(),
+            },
+            None => with.to_string(),
+        }
+    }
+
     /// None for an empty term, which would match everywhere.
     pub fn new(term: &str) -> Option<Self> {
         if term.is_empty() {
@@ -19,7 +67,7 @@ impl Needle {
         }
         let fold = !term.chars().any(char::is_uppercase);
         let chars = term.chars().map(|c| if fold { fold_char(c) } else { c }).collect();
-        Some(Needle { chars, fold })
+        Some(Needle { chars, fold, regex: None })
     }
 
     /// How many characters it is.
@@ -30,6 +78,18 @@ impl Needle {
     /// Every match in `line`, as character ranges, left to right and not
     /// overlapping - so "aa" in "aaaa" is found twice, as an editor would.
     pub fn find_all(&self, line: &str) -> Vec<(usize, usize)> {
+        if let Some(regex) = &self.regex {
+            // Byte offsets as characters, counted on as the matches go. One
+            // that matches nothing at all - `x*` between two letters - is no
+            // match to select or to step to.
+            let (mut chars, mut bytes) = (0, 0);
+            let mut at = |byte: usize| {
+                chars += line[bytes..byte].chars().count();
+                bytes = byte;
+                chars
+            };
+            return regex.find_iter(line).filter(|found| !found.is_empty()).map(|found| (at(found.start()), at(found.end()))).collect();
+        }
         let haystack: Vec<char> = line.chars().map(|c| if self.fold { fold_char(c) } else { c }).collect();
         let length = self.chars.len();
         let mut found = Vec::new();

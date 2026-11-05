@@ -130,6 +130,10 @@ pub(super) fn editor_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::Insert if extend => app_state.editor_paste(),
         KeyCode::Delete if extend => app_state.editor_cut(),
         KeyCode::Delete => app_state.editor_delete(),
+        // Tab indents a selection of lines rather than typing over it, and
+        // Shift+Tab brings the lines back out, or the cursor's.
+        KeyCode::Tab if app_state.editor_spans_lines() => app_state.editor_indent(true),
+        KeyCode::BackTab => app_state.editor_indent(false),
         KeyCode::Tab => app_state.editor_insert_char('\t'),
         KeyCode::Char(c) => app_state.editor_insert_char(c),
         _ => {}
