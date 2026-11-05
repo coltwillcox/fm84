@@ -322,6 +322,10 @@ fn fits(query: &Query, entry: &fs::DirEntry, path: &Path, is_dir: bool) -> bool 
     let Ok(metadata) = fs::metadata(path).or_else(|_| entry.metadata()) else {
         return false;
     };
+    // A link to a directory has no size of its own either.
+    if query.size.is_some() && metadata.is_dir() {
+        return false;
+    }
     query.size.is_none_or(|size| size.holds(metadata.len())) && query.modified.is_none_or(|modified| metadata.modified().is_ok_and(|time| modified.holds(time)))
 }
 
@@ -600,6 +604,12 @@ mod tests {
         };
         assert_eq!(run(&sized(">60K")).0, ["src/big.txt"]);
         assert_eq!(run(&sized("<1K")).0, ["Cargo.toml", "src/deep/walk.rs", "src/main.rs"]);
+        // Nor has a link to one, which is listed as what it points at.
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(dir.join("src"), dir.join("to-src")).unwrap();
+            assert_eq!(run(&sized("<1M")).0, ["Cargo.toml", "src/big.txt", "src/deep/walk.rs", "src/main.rs"]);
+        }
         fs::remove_dir_all(&dir).unwrap();
     }
 
