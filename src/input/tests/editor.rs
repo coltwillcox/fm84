@@ -274,4 +274,15 @@ fn find_and_replace_by_regular_expression() {
     typed(&mut app_state, r"\d{3}");
     assert!(app_state.find_note.as_deref().is_some_and(|note| note.starts_with("Not found")));
     std::fs::remove_file(path).unwrap();
+
+    // $0 is the match as the line has it, \B and all: "cat" alone has a
+    // word boundary before it, which "concat" has not.
+    let (mut app_state, path) = editing("boundary.txt", "concat cat\n");
+    ctrl(&mut app_state, 'r');
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('r'), KeyModifiers::ALT));
+    typed(&mut app_state, r"\Bcat");
+    typed(&mut app_state, "[$0]");
+    press(&mut app_state, KeyCode::Char('a'));
+    assert_eq!(lines(&app_state)[0], "con[cat] cat");
+    std::fs::remove_file(path).unwrap();
 }

@@ -151,8 +151,8 @@ impl AppState {
         };
         if replace && let Some(((line, start), (_, end))) = self.editor().and_then(EditorState::selection) {
             // A regular expression's groups, $1 and on, from the match.
-            let matched = self.editor().and_then(EditorState::selected_text).unwrap_or_default();
-            let with = needle.expand(&matched, &self.replace_with);
+            let text = self.editor().and_then(|state| state.lines.get(line).cloned()).unwrap_or_default();
+            let with = needle.expand(&text, start, &self.replace_with);
             self.replace_selection(&with);
             replaced += 1;
             // Gone round and back on the line it started on, text before the

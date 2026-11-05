@@ -43,12 +43,15 @@ impl Needle {
         }))
     }
 
-    /// What replaces a match of this in `matched`: `with` as it is, or for a
-    /// regular expression with `$1`, `${name}` and the like filled in from
-    /// it.
-    pub fn expand(&self, matched: &str, with: &str) -> String {
+    /// What replaces the match starting `column` characters along `line`:
+    /// `with` as it is, or for a regular expression with `$1`, `${name}`
+    /// and the like filled in from it. Matched again in the line, not in
+    /// the text matched alone: `\B` or `\b` at its edges looks at what is
+    /// either side.
+    pub fn expand(&self, line: &str, column: usize, with: &str) -> String {
+        let at = line.char_indices().nth(column).map_or(line.len(), |(byte, _)| byte);
         match &self.regex {
-            Some(regex) => match regex.captures(matched) {
+            Some(regex) => match regex.captures_at(line, at) {
                 Some(captures) => {
                     let mut out = String::new();
                     captures.expand(with, &mut out);
