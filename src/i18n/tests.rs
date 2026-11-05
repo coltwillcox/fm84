@@ -30,6 +30,9 @@ fn serbian_counts_take_one_few_or_other() {
     // Slovak: 2 to 4 few, by the whole number - 22 is other.
     let slovak = |count| Language::Slovak.plural(count);
     assert_eq!([1, 2, 4, 5, 21, 22].map(slovak), [Form::One, Form::Few, Form::Few, Form::Other, Form::Other, Form::Other]);
+    // Polish: 1 alone one; 22 few, but 12 and 21 other.
+    let polish = |count| Language::Polish.plural(count);
+    assert_eq!([1, 2, 4, 5, 12, 21, 22, 112, 122].map(polish), [Form::One, Form::Few, Form::Few, Form::Other, Form::Other, Form::Other, Form::Few, Form::Other, Form::Few]);
     // French counts nothing as one.
     assert_eq!(Language::French.plural(0), Form::One);
     assert_eq!(Language::French.plural(1), Form::One);
@@ -59,6 +62,7 @@ fn a_locale_names_its_language() {
     assert_eq!(Language::from_locale("hu_HU.UTF-8"), Some(Language::Hungarian));
     assert_eq!(Language::from_locale("sk_SK.UTF-8"), Some(Language::Slovak));
     assert_eq!(Language::from_locale("cs_CZ.UTF-8"), Some(Language::Czech));
+    assert_eq!(Language::from_locale("pl_PL.UTF-8"), Some(Language::Polish));
     assert_eq!(Language::from_locale("ja_JP.UTF-8"), None);
     for language in Language::ALL {
         assert_eq!(Language::from_key(language.key()), Some(language));
@@ -267,6 +271,7 @@ const COMPLETE: &[Language] = &[
     Language::Hungarian,
     Language::Slovak,
     Language::Czech,
+    Language::Polish,
 ];
 
 #[test]
