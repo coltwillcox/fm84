@@ -223,6 +223,13 @@ fn ctrl_slash_comments_and_uncomments() {
         assert_eq!(lines(&app_state)[0], format!("{mark} a"), "{name}");
         std::fs::remove_file(path).unwrap();
     }
+
+    // Space that is not a space or a tab is not indent: what follows it is
+    // no comment, and is commented as it stands.
+    let (mut app_state, path) = editing("nbsp.py", "\u{a0}# a\n");
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('7'), KeyModifiers::CONTROL));
+    assert_eq!(lines(&app_state)[0], "# \u{a0}# a");
+    std::fs::remove_file(path).unwrap();
 }
 
 /// Alt+R in the prompt makes the term a regular expression: found and

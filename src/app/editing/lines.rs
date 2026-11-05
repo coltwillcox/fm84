@@ -148,7 +148,10 @@ impl AppState {
         self.push_undo(first..=last);
         if let Screen::Editor(state) = &mut self.screen {
             let filled: Vec<usize> = (first..=last).filter(|&index| !state.lines[index].trim().is_empty()).collect();
-            let commented = !filled.is_empty() && filled.iter().all(|&index| state.lines[index].trim_start().starts_with(mark));
+            // After the indent as indent_of reads it, spaces and tabs: the
+            // mark is taken out from there, and a no-break space before it
+            // would have it cut a character in two.
+            let commented = !filled.is_empty() && filled.iter().all(|&index| state.lines[index][indent_of(&state.lines[index]).len()..].starts_with(mark));
             let column = filled.iter().map(|&index| indent_of(&state.lines[index]).len()).min().unwrap_or(0);
             let mut cursor_shift: isize = 0;
             for &index in &filled {
