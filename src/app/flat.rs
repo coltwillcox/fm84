@@ -15,6 +15,27 @@ pub struct Flat {
 }
 
 impl AppState {
+    /// What Find files fed either panel, under the names `moves` gave it -
+    /// and what was inside a directory renamed, under its new path. The
+    /// list holds paths, and at the next reread one no longer there is
+    /// taken to be gone.
+    pub fn feed_follow(&mut self, moves: &[(PathBuf, PathBuf)]) {
+        for flat in [&mut self.flat_left, &mut self.flat_right].into_iter().flatten() {
+            let Some(feed) = &flat.feed else { continue };
+            let dir = &flat.dir;
+            let followed: Vec<(PathBuf, bool)> = feed
+                .iter()
+                .map(|(relative, is_dir)| {
+                    let at = dir.join(relative);
+                    let moved = moves.iter().find_map(|(from, to)| at.strip_prefix(from).ok().map(|below| if below.as_os_str().is_empty() { to.clone() } else { to.join(below) }));
+                    let relative = moved.and_then(|moved| moved.strip_prefix(dir).ok().map(Path::to_path_buf)).unwrap_or_else(|| relative.clone());
+                    (relative, *is_dir)
+                })
+                .collect();
+            flat.feed = Some(Arc::new(followed));
+        }
+    }
+
     pub fn flat(&self, is_left: bool) -> Option<&Flat> {
         if is_left { self.flat_left.as_ref() } else { self.flat_right.as_ref() }
     }

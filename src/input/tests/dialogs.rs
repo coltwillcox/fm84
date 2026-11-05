@@ -300,6 +300,16 @@ fn find_files_filters_and_feeds_the_panel() {
     assert_eq!(app_state.children_left.iter().filter(|item| !item.is_parent()).count(), 2);
     assert!(app_state.flat_left.as_ref().is_some_and(|flat| flat.feed.is_some()), "a reread keeps it");
 
+    // One renamed stays in the list, under its new name.
+    let at = app_state.children_left.iter().position(|item| item.name_full == format!("src{sep}main.rs")).unwrap();
+    app_state.state_left.select(Some(at));
+    press(&mut app_state, KeyCode::F(2));
+    app_state.dialog_input().unwrap().set("app.rs".to_string());
+    press(&mut app_state, KeyCode::Enter);
+    let mut names: Vec<String> = app_state.children_left.iter().filter(|item| !item.is_parent()).map(|item| item.name_full.clone()).collect();
+    names.sort();
+    assert_eq!(names, [format!("src{sep}app.rs"), format!("src{sep}deep{sep}lib.rs")]);
+
     // Ctrl+B goes back to the directory as it is.
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
     assert!(app_state.flat_left.is_none());

@@ -362,6 +362,7 @@ impl AppState {
                 self.dir_sizes.insert(to.clone(), size);
             }
         }
+        self.feed_follow(&moves[..renamed]);
         // The cursor stays on the entry it was on, under its new name.
         let is_left = self.is_left_active;
         let (children, state, dir) = if is_left {

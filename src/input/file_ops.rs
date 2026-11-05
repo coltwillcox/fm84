@@ -95,8 +95,9 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
         Ok(_) => {
             // A directory's size is kept by its path, which just changed.
             if let Some(size) = app_state.dir_sizes.remove(&original_path) {
-                app_state.dir_sizes.insert(new_path, size);
+                app_state.dir_sizes.insert(new_path.clone(), size);
             }
+            app_state.feed_follow(&[(original_path, new_path)]);
             app_state.reload_panel(app_state.is_left_active, Some(landing.as_os_str()));
         }
         Err(e) => app_state.display_error(e.to_string()),
