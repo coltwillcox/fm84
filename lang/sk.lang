@@ -1,0 +1,1641 @@
+# fm84 po slovensky.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, [few] for 2, 3 and 4, [other] for the
+# rest, 21 too. A msgctxt sets one use of a word apart from the same word
+# elsewhere. {name} is a place the program fills, kept as it is. The letters
+# to press - Y, N, A and the like - stay as they are, and so do the names of
+# the keys. Names are quoted „thus“.
+
+msgid  "{name}" has changed since it was opened
+msgstr „{name}“ sa od otvorenia zmenil
+
+msgid  "{name}" is already in {folder}
+msgstr „{name}“ už existuje v {folder}
+
+msgid  "{name}" is no longer there
+msgstr „{name}“ už neexistuje
+
+msgid  "{path}" is already there
+msgstr „{path}“ už tam je
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Priblíženie {zoom} %
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- výber/zrušenie podľa vzoru, * obrátiť
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): len na čítanie
+
+msgid  12-hour
+msgstr 12-hodinové
+
+msgid  24-hour
+msgstr 24-hodinové
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Prepísať všetky    S - Preskočiť všetky    B - Vždy ponechať oba
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr Pevný odkaz na {path}, ktorý sa nekopíruje von
+
+msgid  A root directory cannot go to the trash
+msgstr Koreňový priečinok nemôže ísť do koša
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr Synthwave správca súborov s dvoma panelmi, pre terminál
+
+msgid  About
+msgstr O programe
+
+msgid  Already exists: {name}
+msgstr Už existuje: {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Už existuje: {path} - Prepísať či Ponechať oba v F11
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Už existuje: {path} - iný názov, alebo Prepísať či Ponechať oba v F11
+
+msgid  Already there
+msgstr Už existuje
+
+msgid  Alt+* invert with directories
+msgstr Alt+* obrátiť aj s priečinkami
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Práva, vlastník, čas
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Dole všetky navštívené priečinky
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (alebo Ctrl+Shift+F5) odkaz, Tab pevný
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (alebo Ctrl+F7) hľadanie súborov
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Kontrolné súčty (Tab algoritmus); overiť súbor
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Vľavo/Vpravo späť/vpred
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Používateľská ponuka (E ju upraví)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O otvoriť v... (E podľa prípony)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Zbaliť do archívu (Tab formát)
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R v Hľadať alebo Nahradiť: regex
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - Synchronizovať oba priečinky
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Shift+Enter veľkosť všetkých priečinkov
+
+msgid  Appearance
+msgstr Vzhľad
+
+msgid  Archives are read-only
+msgstr Archívy sú len na čítanie
+
+msgid  Ascending
+msgstr Vzostupne
+
+msgid  Ask
+msgstr Pýtať sa
+
+msgid  Ask before opening over
+msgstr Pýtať sa pred otvorením nad
+
+msgid  Attributes
+msgstr Atribúty
+
+msgid  Attributes column
+msgstr Stĺpec Atribúty
+
+msgid  Automatic
+msgstr Automaticky
+
+msgid  Automatic ({language})
+msgstr Automaticky ({language})
+
+msgid  Background
+msgstr Pozadie
+
+msgid  Bar
+msgstr Čiara
+
+msgid  Behaviour
+msgstr Správanie
+
+msgid  Binary
+msgstr Binárny
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Binárny súbor. Esc na návrat.
+
+msgid  Block
+msgstr Blok
+
+msgid  Bookmarks
+msgstr Záložky
+
+msgid  Both panels show the same directory
+msgstr Oba panely ukazujú rovnaký priečinok
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Oba panely ukazujú rovnaký priečinok: nie je čo synchronizovať
+
+msgid  Branches:
+msgstr Vetvy:
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Vytvorené s Rust, Ratatui a Crossterm
+
+msgid  Built-in
+msgstr Vstavaný
+
+msgid  C - Copy
+msgstr C - Kopírovať
+
+msgid  Cancelling
+msgstr Ruším
+
+msgid  Cannot calculate size: {e}
+msgstr Veľkosť sa nedá vypočítať: {e}
+
+msgid  Cannot change {what}
+msgstr Nedá sa zmeniť: {what}
+
+msgid  Cannot copy
+msgstr Nedá sa kopírovať
+
+msgid  Cannot copy "{path}" into itself
+msgstr „{path}“ sa nedá kopírovať sám do seba
+
+msgid  Cannot copy to {path}
+msgstr Nedá sa kopírovať do {path}
+
+msgid  Cannot delete
+msgstr Nedá sa odstrániť
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr {path} sa nedá upraviť: nie je to text UTF-8. F3 ho zobrazí, aký je.
+
+msgid  Cannot extract
+msgstr Nedá sa rozbaliť
+
+msgid  Cannot link {what}
+msgstr Nedá sa prepojiť: {what}
+
+msgid  Cannot make room beside {path}
+msgstr Vedľa {path} sa nedá urobiť miesto
+
+msgid  Cannot make room to compare: {e}
+msgstr Na porovnanie sa nedá urobiť miesto: {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Na otvorenie sa nedá urobiť miesto: {e}
+
+msgid  Cannot move
+msgstr Nedá sa presunúť
+
+msgid  Cannot move to the trash: {why}
+msgstr Nedá sa presunúť do koša: {why}
+
+msgid  Cannot move to trash
+msgstr Nedá sa presunúť do koša
+
+msgid  Cannot open file: {e}
+msgstr Súbor sa nedá otvoriť: {e}
+
+msgid  Cannot open terminal: {e}
+msgstr Terminál sa nedá otvoriť: {e}
+
+msgid  Cannot open {path}: {e}
+msgstr {path} sa nedá otvoriť: {e}
+
+msgid  Cannot pack
+msgstr Nedá sa zbaliť
+
+msgid  Cannot pack into {path}
+msgstr Nedá sa zbaliť do {path}
+
+msgid  Cannot reach {target}
+msgstr Nedostupné: {target}
+
+msgid  Cannot read
+msgstr Nedá sa čítať
+
+msgid  Cannot read file
+msgstr Súbor sa nedá prečítať
+
+msgid  Cannot read {path}
+msgstr {path} sa nedá prečítať
+
+msgid  Cannot read {path}: {e}
+msgstr {path} sa nedá prečítať: {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Priečinok {path} sa nedá nahradiť súborom
+
+msgid  Cannot replace directory {path} with a link
+msgstr Priečinok {path} sa nedá nahradiť odkazom
+
+msgid  Cannot replace file {path} with a directory
+msgstr Súbor {path} sa nedá nahradiť priečinkom
+
+msgid  Cannot run git: {e}
+msgstr Git sa nedá spustiť: {e}
+
+msgid  Cannot run {label}: {e}
+msgstr {label} sa nedá spustiť: {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr Záložky sa nedajú uložiť: {e}
+
+msgid  Cannot save options: {e}
+msgstr Nastavenia sa nedajú uložiť: {e}
+
+msgid  Cannot start {program}: {e}
+msgstr {program} sa nedá spustiť: {e}
+
+msgid  Cannot synchronize
+msgstr Nedá sa synchronizovať
+
+msgid  Cannot write {path}: {e}
+msgstr {path} sa nedá zapísať: {e}
+
+msgid  Case
+msgstr Písmená
+
+msgid  Case-sensitive sort
+msgstr Rozlišovať veľkosť písmen
+
+msgid  Changed on disk
+msgstr Zmenené na disku
+
+msgid  Checked against {file}
+msgstr Overené podľa {file}
+
+msgid  Checksumming
+msgstr Výpočet kontrolných súčtov
+
+msgid  Checksums
+msgstr Kontrolné súčty
+
+msgid  Choose another program
+msgstr Vybrať iný program
+
+msgid  Classic
+msgstr Klasický
+
+msgid  Click the git branch to switch it
+msgstr Klik na git vetvu ju prepne
+
+msgid  Clock
+msgstr Hodiny
+
+msgid  Compare
+msgstr Porovnanie
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Porovnávam...    Esc - Zastaviť a zavrieť
+
+msgid  Confirm copy and move
+msgstr Potvrdiť kopírovanie a presun
+
+msgid  Confirm delete
+msgstr Potvrdiť odstránenie
+
+msgid  Containing
+msgstr Obsahuje
+
+msgid  Containing is a regular expression
+msgstr Obsahuje je regulárny výraz
+
+msgid  Copied name: {text}
+msgstr Názov skopírovaný: {text}
+
+msgid  Copied path: {text}
+msgstr Cesta skopírovaná: {text}
+
+msgid  Copied the report
+msgstr Správa skopírovaná
+
+msgid  Copied: {text}
+msgstr Skopírované: {text}
+
+msgid  Copy
+msgstr Kopíruj
+
+msgid  Copy "{name}" to:
+msgstr Kopírovať „{name}“ do:
+
+msgid  Copy directory
+msgstr Kopírovať priečinok
+
+msgid  Copy file
+msgstr Kopírovať súbor
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Najprv ho skopírujte z archívu: kontrolné súčty sa počítajú zo súborov na disku
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Najprv ho skopírujte z archívu: čo sa balí, musí byť na disku
+
+msgid  Copying
+msgstr Kopírovanie
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Nezmenené: {count} z {total}. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Neprepojené: {count} z {total}. {first}
+
+msgid  Counting...
+msgstr Počítam...
+
+msgid  Create Directory
+msgstr Nový priečinok
+
+msgid  Create File
+msgstr Nový súbor
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Všetky súbory pod tým, plocho
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Kopírovať cesty/názvy
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Záložky
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Hľadať
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F hľadať, F3/Shift+F3 ďalší/predchádzajúci
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Zoradiť názov/prípona/dátum/veľkosť
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G na riadok, Ctrl+R/F4 nahradiť
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Prejsť na cestu (alebo na ňu kliknúť)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Vľavo/Vpravo - Priečinok do toho panela
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgUp/PgDn, Alt+1..9 prepínanie
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Znova načítať oba panely
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - Filtrovať panel podľa vzoru
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Nová/zavrieť karta
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U vymeniť panely, Alt+I rovnaký priečinok tam
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z späť, Ctrl+Y znova, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Späť
+
+msgid  Cursor
+msgstr Kurzor
+
+msgid  Cursor blinks
+msgstr Kurzor bliká
+
+msgid  D - Delete permanently
+msgstr D - Natrvalo odstrániť
+
+msgid  Dashed
+msgstr Prerušované
+
+msgid  Date format
+msgstr Formát dátumu
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Dekódovanie takého veľkého obrázka potrebuje toľko pamäte.
+
+msgid  Delete
+msgstr Odstráň
+
+msgid  Delete "{name}" permanently?
+msgstr Natrvalo odstrániť „{name}“?
+
+msgid  Delete to trash (F8)
+msgstr Odstraňovať do koša (F8)
+
+msgid  Delete: directory
+msgstr Odstrániť: priečinok
+
+msgid  Delete: file
+msgstr Odstrániť: súbor
+
+msgid  Deleting
+msgstr Odstraňovanie
+
+msgid  Descending
+msgstr Zostupne
+
+msgid  Deselect:
+msgstr Zrušiť výber:
+
+msgid  Destination already exists: {path}
+msgstr Cieľ už existuje: {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Rozdiely: vľavo {left}, vpravo {right}
+
+msgid  Difference {at}/{count}
+msgstr Rozdiel {at}/{count}
+
+msgid  Directories first
+msgstr Priečinky najprv
+
+msgid  Directory "{name}"
+msgstr Priečinok „{name}“
+
+msgid  Directory History
+msgstr História priečinkov
+
+msgid  Double
+msgstr Dvojité
+
+msgid  Edit
+msgstr Uprav
+
+msgid  Edit "{name}" ({size})?
+msgstr Upraviť „{name}“ ({size})?
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr Upraviť „{name}“ ({width}x{height}, {size})?
+
+msgid  Edit:
+msgstr Úprava:
+
+msgid  Editor (F4)
+msgstr Editor (F4)
+
+msgid  Empty terminal command
+msgstr Prázdny príkaz terminálu
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Šifrované: fm84 ho bez hesla neprečíta
+
+msgid  Enter - Copy
+msgstr Enter - Kopírovať
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Enter - Vytvoriť    Esc - Zrušiť
+
+msgid  Enter - Extract
+msgstr Enter - Rozbaliť
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Enter - Prejsť    F - Do panela    Esc - Zavrieť
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Enter - Prejsť    F - Do panela    Esc - Zastaviť a zavrieť
+
+msgid  Enter - Hard link
+msgstr Enter - Pevný odkaz
+
+msgid  Enter - Move
+msgstr Enter - Presunúť
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Enter - Otvoriť priečinok, alebo vojsť do archívu
+
+msgid  Enter - Pack
+msgstr Enter - Zbaliť
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Enter - Uložiť    Esc - Zrušiť    {} - priečinok
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Enter - Uložiť    Esc - Zrušiť    {} - súbor
+
+msgid  Enter - Symlink
+msgstr Enter - Symbolický odkaz
+
+msgid  Enter - Write
+msgstr Enter - Zapísať
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Znova Enter na spustenie, odstráni sa {deleting}    Iný kláves - Ešte nie
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Enter/1-9 - Prejsť    A/Ins - Pridať tento    D/Del - Odobrať
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Enter/1-9 - Otvoriť    E - Upraviť priradenia    Esc - Zavrieť
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Enter/1-9 - Spustiť    E - Upraviť ponuku    Esc - Zavrieť
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Enter/klik - Prepnúť    Esc - Zavrieť
+
+msgid  Error
+msgstr Chyba
+
+msgid  Esc - Back to editing
+msgstr Esc - Späť k úpravám
+
+msgid  Esc - Cancel
+msgstr Esc - Zrušiť
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Esc - Zrušiť    Znova F10 - Koniec
+
+msgid  Esc - Close
+msgstr Esc - Zavrieť
+
+msgid  Esc Exit
+msgstr Esc Koniec
+
+msgid  Existing
+msgstr Existujúci
+
+msgid  Ext
+msgstr Prípona
+
+msgid  Ext column
+msgstr Stĺpec Prípona
+
+msgid  Extension
+msgstr Prípona
+
+msgid  Extract "{name}" to:
+msgstr Rozbaliť „{name}“ do:
+
+msgid  Extract archive
+msgstr Rozbaliť archív
+
+msgid  Extracting
+msgstr Rozbaľovanie
+
+msgid  F Fit [Fill]
+msgstr F Prispôsobiť [Vyplniť]
+
+msgid  F [Fit] Fill
+msgstr F [Prispôsobiť] Vyplniť
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F prispôsobiť/vyplniť, +/- priblíženie, W zalamovanie
+
+msgid  F on the results feeds them to the panel
+msgstr F vo výsledkoch ich dá do panela
+
+msgid  F1 - This help
+msgstr F1 - Táto pomoc
+
+msgid  F10 - Quit
+msgstr F10 - Koniec
+
+msgid  F10 again - Quit
+msgstr Znova F10 - Koniec
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Nastavenia (Alt+F1/F2 jednotky)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Náhľad v druhom paneli
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Premenovať priečinok/súbor
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Uložiť
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Zobraziť súbor (X text/hex/obrázok)
+
+msgid  F3/N Next
+msgstr F3/N Ďalší
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Upraviť súbor (Ctrl+S/F2 uloží)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Kopírovať (do druhého panela, alebo kam je napísané)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 kopíruje von, Alt+F9 (alebo Ctrl+F9) všetko
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Presunúť (do druhého panela, alebo kam je napísané)
+
+msgid  F7 - Create directory
+msgstr F7 - Nový priečinok
+
+msgid  F8 - Move to trash
+msgstr F8 - Presunúť do koša
+
+msgid  F9 - Open terminal
+msgstr F9 - Otvoriť terminál
+
+msgid  File "{name}"
+msgstr Súbor „{name}“
+
+msgid  Fill
+msgstr Vyplniť
+
+msgid  Filter:
+msgstr Filter:
+
+msgid  Find
+msgstr Hľadať
+
+msgid  Find (regex, Alt+R for text):
+msgstr Hľadať (regex, Alt+R pre text):
+
+msgid  Find files
+msgstr Hľadanie súborov
+
+msgid  Find files cannot search inside an archive yet
+msgstr Hľadanie súborov zatiaľ nehľadá v archívoch
+
+msgid  Find:
+msgstr Hľadať:
+
+msgid  First letter
+msgstr Prvé písmeno veľké
+
+msgid  Fit
+msgstr Prispôsobiť
+
+msgid  Git marks
+msgstr Značky git
+
+msgid  Go to line:
+msgstr Prejsť na riadok:
+
+msgid  Gone
+msgstr Zmizol
+
+msgid  Group
+msgstr Skupina
+
+msgid  Hard link "{name}" at:
+msgstr Pevný odkaz na „{name}“ v:
+
+msgid  Hard link directory
+msgstr Pevný odkaz na priečinok
+
+msgid  Hard link file
+msgstr Pevný odkaz na súbor
+
+msgid  Heavy
+msgstr Hrubé
+
+msgid  Help
+msgstr Pomoc
+
+msgid  Help/About
+msgstr Pomoc/O programe
+
+msgid  High contrast
+msgstr Vysoký kontrast
+
+msgid  Highlight files up to
+msgstr Zvýrazňovať do
+
+msgid  Icons
+msgstr Ikony
+
+msgid  Image backgrounds
+msgstr Pozadie obrázkov
+
+msgid  Images open as
+msgstr Obrázky sa otvárajú
+
+msgid  In
+msgstr V
+
+msgid  It got shorter while it was being packed
+msgstr Počas balenia sa skrátil
+
+msgid  Keep both
+msgstr Ponechať oba
+
+msgid  Keys
+msgstr Klávesy
+
+msgid  Language
+msgstr Jazyk
+
+msgid  Large File
+msgstr Veľký súbor
+
+msgid  Large Picture
+msgstr Veľký obrázok
+
+msgid  Line numbers
+msgstr Čísla riadkov
+
+msgid  Line {at}/{count}
+msgstr Riadok {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Riad. {line}, stĺp. {column}
+
+msgid  Military
+msgstr Vojenská
+
+msgid  Mkdir
+msgstr Nový prieč.
+
+msgid  Mode
+msgstr Práva
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Práva ako 755 alebo u+x,go-w; vlastník a skupina menom alebo číslom
+
+msgid  Modified
+msgstr Zmenené
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Zmenené ako <7d, >1y, 1d..7d, 2026-10-01 alebo >2026-10-01, nie {text}
+
+msgid  Modified column
+msgstr Stĺpec Zmenené
+
+msgid  Move
+msgstr Presuň
+
+msgid  Move "{name}" to the trash?
+msgstr Presunúť „{name}“ do koša?
+
+msgid  Move "{name}" to:
+msgstr Presunúť „{name}“ do:
+
+msgid  Move directory
+msgstr Presunúť priečinok
+
+msgid  Move file
+msgstr Presunúť súbor
+
+msgid  Move to trash: directory
+msgstr Do koša: priečinok
+
+msgid  Move to trash: file
+msgstr Do koša: súbor
+
+msgid  Moving
+msgstr Presúvanie
+
+msgid  Moving to trash
+msgstr Presúvanie do koša
+
+msgid  Name
+msgstr Názov
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Názov ako pri +: *.jpg;*.png, alebo */ pre priečinky. Malé písmená nájdu malé aj veľké
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Pomenujte ho ako archív, s príponou {endings}
+
+msgid  New
+msgstr Nový
+
+msgid  New name
+msgstr Nový názov
+
+msgid  Next
+msgstr Ďalší
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Zatiaľ žiadne záložky - A uloží priečinok panela
+
+msgid  No branches yet: nothing has been committed
+msgstr Zatiaľ žiadne vetvy: nič nebolo commitnuté
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Zatiaľ žiadne príkazy - E ich pridá, ako názov = príkaz, do
+
+msgid  No config directory
+msgstr Nie je priečinok nastavení
+
+msgid  No config directory to keep a menu in
+msgstr Nie je priečinok nastavení pre ponuku
+
+msgid  No config directory to keep associations in
+msgstr Nie je priečinok nastavení pre priradenia
+
+msgid  No such directory: {path}
+msgstr Priečinok neexistuje: {path}
+
+msgid  No such file or directory: {path}
+msgstr Súbor alebo priečinok neexistuje: {path}
+
+msgid  No such group: {text}
+msgstr Skupina neexistuje: {text}
+
+msgid  No such user: {text}
+msgstr Používateľ neexistuje: {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Nenašiel sa emulátor terminálu. Nastavte $TERMINAL.
+
+msgid  Not a line number: {text}
+msgstr Nie je číslo riadka: {text}
+
+msgid  Not a mode: {text}
+msgstr Nie sú to práva: {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Nie sú to práva: {text} - 755, alebo u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Nie je jednoduchý názov súboru: {name}
+
+msgid  Not a regular expression: {why}
+msgstr Nie je to regulárny výraz: {why}
+
+msgid  Not a regular file
+msgstr Nie je bežný súbor
+
+msgid  Not a regular file: {path}
+msgstr Nie je bežný súbor: {path}
+
+msgid  Not a time here: {text}
+msgstr Tento čas tu neexistuje: {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Nie je to čas: {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Nie je archív: {path}
+
+msgid  Not found: {term}
+msgstr Nenájdené: {term}
+
+msgid  Nothing chosen for {label}
+msgstr Pre {label} nie je nič vybrané
+
+msgid  Nothing found
+msgstr Nič sa nenašlo
+
+msgid  Nothing found to feed to the panel
+msgstr Nič sa nenašlo do panela
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Nič nie je menšie ako 0 bajtov
+
+msgid  Nothing replaced
+msgstr Nič nenahradené
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Nie je s čím porovnať: druhý panel nemá súbor toho názvu, ani žiadny pod kurzorom
+
+msgid  Nothing to synchronize
+msgstr Nie je čo synchronizovať
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Nie je čo zapísať: žiadny kontrolný súčet sa nepodarilo vypočítať
+
+msgid  Nothing visited matches
+msgstr Žiadny navštívený priečinok nezodpovedá
+
+msgid  Now
+msgstr Teraz
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Prepísať všetky staršie    Esc - Prerušiť
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Prepísať    R - Znova načítať, úpravy sa stratia
+
+msgid  O - Save it again
+msgstr O - Uložiť znova
+
+msgid  Off
+msgstr Vyp.
+
+msgid  Old name
+msgstr Starý názov
+
+msgid  On
+msgstr Zap.
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr Priečinok jedného panela je v priečinku druhého: nie je čo synchronizovať
+
+msgid  Only the first {count} files are listed
+msgstr Zobrazených je len prvých {count} súborov
+
+msgid  Open {name} With
+msgstr Otvoriť {name} v
+
+msgid  Options
+msgstr Nastavenia
+
+msgid  Overwrite
+msgstr Prepísať
+
+msgid  Owner
+msgstr Vlastník
+
+msgid  Pack "{name}" into:
+msgstr Zbaliť „{name}“ do:
+
+msgid  Pack directory
+msgstr Zbaliť priečinok
+
+msgid  Pack file
+msgstr Zbaliť súbor
+
+msgid  Packing
+msgstr Balenie
+
+msgid  Panels
+msgstr Panely
+
+msgid  Plain
+msgstr Jednoduché
+
+msgid  Plain Text
+msgstr Obyčajný text
+
+msgid  Preview
+msgstr Náhľad
+
+msgid  Preview on startup
+msgstr Náhľad pri spustení
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Na porovnanie dajte kurzor na súbor, alebo vyberte dva
+
+msgid  Put the cursor on an archive to extract it
+msgstr Na rozbalenie dajte kurzor na archív
+
+msgid  Quit
+msgstr Koniec
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Znova    S - Preskočiť    A - Preskočiť všetky    Esc - Prerušiť
+
+msgid  Read pictures ahead
+msgstr Čítať obrázky vopred
+
+msgid  Reading a file this large may take a while.
+msgstr Čítanie takého veľkého súboru môže chvíľu trvať.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr Čítam {dir}…  Esc na zastavenie
+
+msgid  Refuse
+msgstr Odmietnuť
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Relatívne
+
+msgid  Released under the {license} License
+msgstr Vydané pod licenciou {license}
+
+msgid  Remember directories
+msgstr Pamätať si priečinky
+
+msgid  Rename
+msgstr Premenuj
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr Premenované {done} z {total}, potom: {e}
+
+msgid  Replace
+msgstr Nahraď
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr Nahradiť „{find}“ za „{with}“?   Y - Áno   N - Nie   A - Všetky   Esc - Stop
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Nahradiť (regex, Alt+R pre text):
+
+msgid  Replace:
+msgstr Nahradiť:
+
+msgid  Row {at}/{count}
+msgstr Riadok {at}/{count}
+
+msgid  Save
+msgstr Ulož
+
+msgid  Save changes before closing?
+msgstr Uložiť zmeny pred zatvorením?
+
+msgid  Scroll bars
+msgstr Posuvníky
+
+msgid  Search:
+msgstr Hľadať:
+
+msgid  Select:
+msgstr Vybrať:
+
+msgid  Shade
+msgstr Tieňované
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Shift+Enter (alebo Ctrl+O) otvoriť ako systém
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Shift+F10 koniec, cd84 zostane, kde je
+
+msgid  Shift+F2 compare directories
+msgstr Shift+F2 porovnať priečinky
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Shift+F3 (alebo =) porovnať dva súbory
+
+msgid  Shift+F3/P Previous
+msgstr Shift+F3/P Predchádzajúci
+
+msgid  Shift+F4 - Create file
+msgstr Shift+F4 - Nový súbor
+
+msgid  Shift+F8 delete permanently
+msgstr Shift+F8 natrvalo odstrániť
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Shift+Hore/Dole - Posunúť    Esc - Zavrieť
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Shift+šípky vyberajú, Ctrl+A všetko
+
+msgid  Show hidden files
+msgstr Zobraziť skryté súbory
+
+msgid  Size
+msgstr Veľkosť
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Veľkosť ako >10M, <1K alebo 1M..10M, nie {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Veľkosť ako >10M, <1K alebo 1M..10M; Zmenené ako <7d, >1y, 1d..7d, 2026-10-01 alebo >2026-10-01
+
+msgid  Size column
+msgstr Stĺpec Veľkosť
+
+msgid  Size units
+msgstr Jednotky veľkosti
+
+msgid  Sort by
+msgstr Zoradiť podľa
+
+msgid  Sort direction
+msgstr Smer zoradenia
+
+msgid  Space - Select/deselect file
+msgstr Space - Vybrať/zrušiť súbor
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Prepnutie na {branch} sa nečakane zastavilo
+
+msgid  Symbolic links are not supported here
+msgstr Symbolické odkazy tu nie sú podporované
+
+msgid  Symlink "{name}" at:
+msgstr Symbolický odkaz na „{name}“ v:
+
+msgid  Symlink directory
+msgstr Symbolický odkaz na priečinok
+
+msgid  Symlink file
+msgstr Symbolický odkaz na súbor
+
+msgid  Synchronize
+msgstr Synchronizácia
+
+msgid  Synchronizing
+msgstr Synchronizácia
+
+msgid  System default
+msgstr Predvolené systémom
+
+msgid  Tab - Algorithm
+msgstr Tab - Algoritmus
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Pole   ←/→ - Písmená   Enter - Premenovať   Esc - Zrušiť
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Pole  Space - Regex  Enter - Hľadať  Esc - Zrušiť
+
+msgid  Tab - Format
+msgstr Tab - Formát
+
+msgid  Tab - Hard link
+msgstr Tab - Pevný odkaz
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Ďalšie pole    Enter - Použiť    Esc - Zrušiť
+
+msgid  Tab - Symlink
+msgstr Tab - Symbolický odkaz
+
+msgid  Tab completes a name
+msgstr Tab doplní názov
+
+msgid  Tab width
+msgstr Šírka tabulátora
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab odsadenie, Ctrl+/ komentár
+
+msgid  Terminal
+msgstr Terminál
+
+msgid  Terminal (F9)
+msgstr Terminál (F9)
+
+msgid  Terminal too small
+msgstr Terminál je príliš malý
+
+msgid  The archive ends before it
+msgstr Archív končí skôr
+
+msgid  The directories hold the same files
+msgstr Priečinky obsahujú rovnaké súbory
+
+msgid  The files are identical
+msgstr Súbory sú zhodné
+
+msgid  The files differ from byte {at}
+msgstr Súbory sa líšia od bajtu {at}
+
+msgid  The files differ from byte {at}, and in size
+msgstr Súbory sa líšia od bajtu {at}, aj veľkosťou
+
+msgid  The files differ only in line endings
+msgstr Súbory sa líšia len koncami riadkov
+
+msgid  Theme
+msgstr Téma
+
+msgid  This cannot be undone
+msgstr Toto sa nedá vrátiť
+
+msgid  Title Case
+msgstr Každé Slovo Veľké
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr Príliš veľké na porovnanie: {path} ({size}; limit sa nastavuje v F11)
+
+msgid  Transfer stopped unexpectedly
+msgstr Prenos sa nečakane zastavil
+
+msgid  Trash
+msgstr Kôš
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Píšte na zúženie    Hore/Dole - Vybrať    Enter - Prejsť    Esc - Zavrieť
+
+msgid  Type to search, Esc to clear
+msgstr Píšte na hľadanie, Esc vymaže
+
+msgid  UPPER CASE
+msgstr VEĽKÉ PÍSMENÁ
+
+msgid  Unchanged
+msgstr Bez zmeny
+
+msgid  Underline
+msgstr Podčiarknutie
+
+msgid  Unsaved Changes
+msgstr Neuložené zmeny
+
+msgid  User Menu
+msgstr Používateľská ponuka
+
+msgid  View
+msgstr Zobraz
+
+msgid  View "{name}" ({size})?
+msgstr Zobraziť „{name}“ ({size})?
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr Zobraziť „{name}“ ({width}x{height}, {size})?
+
+msgid  View:
+msgstr Zobrazenie:
+
+msgid  Viewer and editor
+msgstr Prehliadač a editor
+
+msgid  W Wrap
+msgstr W Zalamovanie
+
+msgid  W [Wrap]
+msgstr W [Zalamovanie]
+
+msgid  When destination exists
+msgstr Keď cieľ existuje
+
+msgid  When opened
+msgstr Pri otvorení
+
+msgid  With:
+msgstr Za:
+
+msgid  Wrapped to the bottom
+msgstr Pokračuje sa od konca
+
+msgid  Wrapped to the top
+msgstr Pokračuje sa od začiatku
+
+msgid  Written: {name}
+msgstr Zapísané: {name}
+
+msgid  X Image Text [Hex]
+msgstr X Obrázok Text [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Obrázok [Text] Hex
+
+msgid  X Text [Hex]
+msgstr X Text [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Obrázok] Text Hex
+
+msgid  X [Text] Hex
+msgstr X [Text] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Prepísať    N - Preskočiť    K - Ponechať oba
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Uložiť    N - Zahodiť    Esc - Zrušiť
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Enter - Áno    N / Esc - Nie
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] znaky 2 až 5   [C10+5:3] od 10, po 5, 3 číslice
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] názov   [E] prípona   [C] počítadlo
+
+msgid  a directory cannot be hard linked
+msgstr na priečinok sa nedá urobiť pevný odkaz
+
+msgid  already exists
+msgstr už existuje
+
+msgid  by name, text, regex, size, date
+msgstr podľa názvu, textu, regexu, veľkosti, dátumu
+
+msgid  del
+msgstr ods
+
+msgid  filter: {pattern}
+msgstr filter: {pattern}
+
+msgid  flat
+msgstr plocho
+
+msgid  found
+msgstr nájdené
+
+msgid  git did not answer
+msgstr git neodpovedal
+
+msgid  given twice
+msgstr zadané dvakrát
+
+msgid  just now
+msgstr práve teraz
+
+msgid  lower case
+msgstr malé písmená
+
+msgid  name not readable as text
+msgstr názov nie je čitateľný ako text
+
+msgid  newer
+msgstr novší
+
+msgid  not a plain name
+msgstr nie je jednoduchý názov
+
+msgid  not readable as an archive ({e})
+msgstr nedá sa čítať ako archív ({e})
+
+msgid  not there
+msgstr neexistuje
+
+msgid  terminal
+msgstr terminál
+
+msgid  to be replaced by "{name}"
+msgstr nahradí ho „{name}“
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr s výberom: všetky podľa [N] [E] [C]
+
+msgid  {count} FAILED
+msgstr chybné: {count}
+
+msgid  {count} OK
+msgstr v poriadku: {count}
+
+msgid  {count} could not be read
+msgstr nečitateľné: {count}
+
+msgid  {count} h ago
+msgstr pred {count} h
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr Položky ({count}) potrebujú cieľový priečinok, a {path} ním nie je
+
+msgid  {count} min ago
+msgstr pred {count} min
+
+msgid  {count} missing
+msgstr chýba: {count}
+
+msgid  {count} mo ago
+msgstr pred {count} mes.
+
+msgid  {count} yr ago
+msgstr pred {count} r.
+
+msgid  {deleting} to delete
+msgstr na odstránenie: {deleting}
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} z {total}, {rate}/s
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title}: zrušené po {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr {name} nie je názov, ktorý {format} uloží: nie je to UTF-8
+
+msgid  {path} already exists
+msgstr {path} už existuje
+
+msgid  {path} could not be read after all
+msgstr {path} sa predsa nedalo prečítať
+
+msgid  {path} is a directory
+msgstr {path} je priečinok
+
+msgid  {program} exited with {status}
+msgstr {program} skončil so {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Pohyb    Enter/←→ - Zmeniť    Esc - Zavrieť
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Kopírovať  Del Odstrániť  Space Nechať  > < Zrkadliť  R Obnoviť  Enter Spustiť  Esc Zavrieť
+
+msgctxt job
+msgid   Checksum
+msgstr  Kontrolný súčet
+
+msgctxt job
+msgid   Copy
+msgstr  Kopírovanie
+
+msgctxt job
+msgid   Delete
+msgstr  Odstraňovanie
+
+msgctxt job
+msgid   Extract
+msgstr  Rozbaľovanie
+
+msgctxt job
+msgid   Move
+msgstr  Presúvanie
+
+msgctxt job
+msgid   Move to trash
+msgstr  Presúvanie do koša
+
+msgctxt job
+msgid   Pack
+msgstr  Balenie
+
+msgctxt job
+msgid   Synchronize
+msgstr  Synchronizácia
+
+msgid  Copied {count} name
+msgstr[one]    Skopírovaný {count} názov
+msgstr[few]    Skopírované {count} názvy
+msgstr[other]  Skopírovaných {count} názvov
+
+msgid  Copied {count} path
+msgstr[one]    Skopírovaná {count} cesta
+msgstr[few]    Skopírované {count} cesty
+msgstr[other]  Skopírovaných {count} ciest
+
+msgid  Copy {count} item
+msgstr[one]    Kopírovať {count} položku
+msgstr[few]    Kopírovať {count} položky
+msgstr[other]  Kopírovať {count} položiek
+
+msgid  Copy {count} item to: {names}
+msgstr[one]    Kopírovať {count} položku ({names}) do:
+msgstr[few]    Kopírovať {count} položky ({names}) do:
+msgstr[other]  Kopírovať {count} položiek ({names}) do:
+
+msgid  Delete {count} item permanently?
+msgstr[one]    Natrvalo odstrániť {count} položku?
+msgstr[few]    Natrvalo odstrániť {count} položky?
+msgstr[other]  Natrvalo odstrániť {count} položiek?
+
+msgid  Delete: {count} item
+msgstr[one]    Odstrániť: {count} položka
+msgstr[few]    Odstrániť: {count} položky
+msgstr[other]  Odstrániť: {count} položiek
+
+msgid  Hard link {count} item
+msgstr[one]    Pevné odkazy na {count} položku
+msgstr[few]    Pevné odkazy na {count} položky
+msgstr[other]  Pevné odkazy na {count} položiek
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]    Pevné odkazy na {count} položku ({names}) v:
+msgstr[few]    Pevné odkazy na {count} položky ({names}) v:
+msgstr[other]  Pevné odkazy na {count} položiek ({names}) v:
+
+msgid  Move to trash: {count} item
+msgstr[one]    Do koša: {count} položka
+msgstr[few]    Do koša: {count} položky
+msgstr[other]  Do koša: {count} položiek
+
+msgid  Move {count} item
+msgstr[one]    Presunúť {count} položku
+msgstr[few]    Presunúť {count} položky
+msgstr[other]  Presunúť {count} položiek
+
+msgid  Move {count} item to the trash?
+msgstr[one]    Presunúť {count} položku do koša?
+msgstr[few]    Presunúť {count} položky do koša?
+msgstr[other]  Presunúť {count} položiek do koša?
+
+msgid  Move {count} item to: {names}
+msgstr[one]    Presunúť {count} položku ({names}) do:
+msgstr[few]    Presunúť {count} položky ({names}) do:
+msgstr[other]  Presunúť {count} položiek ({names}) do:
+
+msgid  Pack {count} item
+msgstr[one]    Zbaliť {count} položku
+msgstr[few]    Zbaliť {count} položky
+msgstr[other]  Zbaliť {count} položiek
+
+msgid  Pack {count} item into: {names}
+msgstr[one]    Zbaliť {count} položku ({names}) do:
+msgstr[few]    Zbaliť {count} položky ({names}) do:
+msgstr[other]  Zbaliť {count} položiek ({names}) do:
+
+msgid  Rename {count} Entry
+msgstr[one]    Premenovať {count} položku
+msgstr[few]    Premenovať {count} položky
+msgstr[other]  Premenovať {count} položiek
+
+msgid  Replaced {count}
+msgstr[one]    Nahradený {count} výskyt
+msgstr[few]    Nahradené {count} výskyty
+msgstr[other]  Nahradených {count} výskytov
+
+msgid  Symlink {count} item
+msgstr[one]    Symbolické odkazy na {count} položku
+msgstr[few]    Symbolické odkazy na {count} položky
+msgstr[other]  Symbolické odkazy na {count} položiek
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]    Symbolické odkazy na {count} položku ({names}) v:
+msgstr[few]    Symbolické odkazy na {count} položky ({names}) v:
+msgstr[other]  Symbolické odkazy na {count} položiek ({names}) v:
+
+msgid  {count} day ago
+msgstr[one]    pred {count} dňom
+msgstr[few]    pred {count} dňami
+msgstr[other]  pred {count} dňami
+
+msgid  {count} difference
+msgstr[one]    {count} rozdiel
+msgstr[few]    {count} rozdiely
+msgstr[other]  {count} rozdielov
+
+msgid  {count} directory could not be read
+msgstr[one]    {count} priečinok sa nedal prečítať
+msgstr[few]    {count} priečinky sa nedali prečítať
+msgstr[other]  {count} priečinkov sa nedalo prečítať
+
+msgid  {count} file
+msgstr[one]    {count} súbor
+msgstr[few]    {count} súbory
+msgstr[other]  {count} súborov
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]    {count} súbor, nečitateľné: {failed}
+msgstr[few]    {count} súbory, nečitateľné: {failed}
+msgstr[other]  {count} súborov, nečitateľné: {failed}
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]    {count} položka - pole ponechané, ako je, alebo prázdne, nič nezmení
+msgstr[few]    {count} položky - pole ponechané, ako je, alebo prázdne, nič nezmení
+msgstr[other]  {count} položiek - pole ponechané, ako je, alebo prázdne, nič nezmení
+
+msgid  {count} line
+msgstr[one]    {count} riadok
+msgstr[few]    {count} riadky
+msgstr[other]  {count} riadkov
+
+msgid  {count} line not understood
+msgstr[one]    {count} riadok nezrozumiteľný
+msgstr[few]    {count} riadky nezrozumiteľné
+msgstr[other]  {count} riadkov nezrozumiteľných
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]    {count} nový názov nie je možný: {why} - pozrite tabuľku
+msgstr[few]    {count} nové názvy nie sú možné: {why} - pozrite tabuľku
+msgstr[other]  {count} nových názvov nie je možných: {why} - pozrite tabuľku
+
+msgid  {done} of {total} entry
+msgstr[one]    {done} z {total} položky
+msgstr[few]    {done} z {total} položiek
+msgstr[other]  {done} z {total} položiek
+
+msgid  {done} of {total} item
+msgstr[one]    {done} z {total} položky
+msgstr[few]    {done} z {total} položiek
+msgstr[other]  {done} z {total} položiek
+
+msgid  {found} differs
+msgstr[one]    {found} sa líši
+msgstr[few]    {found} sa líšia
+msgstr[other]  {found} sa líši
+
+msgid  {found} differs, comparing
+msgstr[one]    {found} sa líši, porovnávam
+msgstr[few]    {found} sa líšia, porovnávam
+msgstr[other]  {found} sa líši, porovnávam
+
+msgid  {found} found
+msgstr[one]    {found} nájdený
+msgstr[few]    {found} nájdené
+msgstr[other]  {found} nájdených
+
+msgid  {found} found, searching
+msgstr[one]    {found} nájdený, hľadám
+msgstr[few]    {found} nájdené, hľadám
+msgstr[other]  {found} nájdených, hľadám
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]    {job_title}: zrušené po {done} položke
+msgstr[few]    {job_title}: zrušené po {done} položkách
+msgstr[other]  {job_title}: zrušené po {done} položkách
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]    {job_title}: zrušené po {done} položke
+msgstr[few]    {job_title}: zrušené po {done} položkách
+msgstr[other]  {job_title}: zrušené po {done} položkách
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]    {job_title}: hotovo, preskočená {count} položka
+msgstr[few]    {job_title}: hotovo, preskočené {count} položky
+msgstr[other]  {job_title}: hotovo, preskočených {count} položiek
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]    {problems} sa takto nedá premenovať    Esc - Zrušiť
+msgstr[few]    {problems} sa takto nedajú premenovať    Esc - Zrušiť
+msgstr[other]  {problems} sa takto nedá premenovať    Esc - Zrušiť
+
+msgid  {skipped} left as it is
+msgstr[one]    {skipped} zostáva, ako je
+msgstr[few]    {skipped} zostávajú, ako sú
+msgstr[other]  {skipped} zostáva, ako je
