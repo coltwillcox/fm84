@@ -1623,3 +1623,18 @@ msgid  {skipped} left as it is
 msgstr[one]   {skipped} ostaje kako jeste
 msgstr[few]   {skipped} ostaju kako jesu
 msgstr[other] {skipped} ostaje kako jeste
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab uvlačenje, Ctrl+/ komentar
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R u traženju ili zameni: regex
+
+msgid  by name, text, regex, size, date
+msgstr po imenu, tekstu, regexu, veličini, datumu
+
+msgid  F on the results feeds them to the panel
+msgstr F u rezultatima ih stavlja u panel
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - Sinhronizuj dva direktorijuma

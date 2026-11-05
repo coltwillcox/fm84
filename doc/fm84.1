@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-02" "fm84 0.41.0" "User Commands"
+.TH FM84 1 "2026-11-05" "fm84 0.42.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -567,8 +567,59 @@ Options.
 Preview the file under the cursor in the other panel.
 .TP
 .B Alt+F7 Ctrl+F7
-Find files by name and, if asked, by content, down from the active panel's
-directory.
+Find files by name and, if asked, by content, size and age, down from the
+active panel's directory.
+Containing is text, or with the switch under the fields a regular
+expression, in which
+.B ^
+and
+.B $
+are each line's ends.
+Size is
+.BR >10M ,
+.BR <1K ,
+.BR >= ,
+.B <=
+or
+.BR 1M..10M ,
+in K, M, G and T of 1024.
+Modified is an age, as
+.B <7d
+newer than a week,
+.B >1y
+older than a year,
+.B 1d..7d
+between, in min, h, d, w, mo and y; or a date:
+.B 2026\-10\-01
+that day,
+.B >2026\-10\-01
+after it,
+.B 2026\-10\-01..2026\-10\-31
+from one to the other.
+Tab goes through the fields, Space turns the switch.
+On the results, Enter goes to the one chosen and
+.B F
+feeds them all to the active panel, as one list under the directory the
+search started in, each by its path from there.
+.TP
+.B Alt+S
+Synchronize the panels' directories: compare them all the way down and show
+a plan of what differs.
+What one side lacks is copied to it, and the newer of two files over the
+older; two of an age but not of a size, and a file meeting a directory, are
+left.
+In the plan, Right and Left copy that way, Delete or D deletes from the side
+that has it alone, Space or = leaves it,
+.B >
+and
+.B <
+make one side as the other is, deleting what only it has, and R puts the plan
+back.
+Enter runs it as one job, writing over what is in the way; a plan that
+deletes asks for a second Enter, unless Confirm delete is off.
+Hidden entries are left out unless the panels show them, links are never
+followed, and times two seconds apart are the same.
+Not inside an archive, nor with one directory inside the other.
 .SS During a copy, move or delete
 .TP 18
 .B Esc
@@ -622,6 +673,18 @@ Undo.
 .B Ctrl+Y Ctrl+Shift+Z
 Redo.
 .TP
+.B Tab Shift+Tab
+Indent the selected lines a step, or bring them, or the cursor's line, a step
+back: a tab in a file indented with tabs, the tab width of spaces otherwise.
+Tab with nothing selected types a tab.
+.TP
+.B Ctrl+/ Ctrl+_ Ctrl+7
+Make the selected lines, or the cursor's, comments with the file's own mark,
+at their shallowest indent; or, when they all are, code again.
+.TP
+.B Enter
+Break the line, the new one as indented as the one it came from.
+.TP
 .B Ctrl+R F4
 Replace; then
 .BR Y ,
@@ -629,6 +692,12 @@ Replace; then
 or
 .B A
 to replace, skip or replace all.
+By a regular expression,
+.BR $1 ,
+.B ${name}
+and
+.B $0
+in the replacement are filled in from each match.
 .TP
 .B O R
 Overwrite or reload, when the file changed on disk since it was opened.
@@ -637,6 +706,10 @@ Overwrite or reload, when the file changed on disk since it was opened.
 .B Ctrl+F
 Find.
 All in lower case matches either case.
+.TP
+.B Alt+R
+In the Find and Replace prompts, look for a regular expression instead of
+text, or for text again.
 .TP
 .B F3 Shift+F3
 Next or previous match.
@@ -656,6 +729,11 @@ confirmations, delete to trash, what to do when a destination exists, the
 terminal and editor commands, remembering directories; the theme, icons,
 clock, and the cursor's shape and whether it blinks; tab width, line numbers,
 what the scroll bars are drawn with, highlighting and image settings.
+.B Language
+is Automatic, which follows the environment (see
+.BR ENVIRONMENT ),
+or English, or Serbian in the Latin alphabet; the keys stay the same in any
+of them.
 The list scrolls within the panels when it does not fit, with Up and Down or
 the mouse wheel.
 .PP
@@ -739,6 +817,15 @@ Without either, fm84 tries
 and
 .BR xterm ,
 in that order.
+.TP
+.B LANGUAGE LC_ALL LC_MESSAGES LANG
+The language fm84 is shown in, while F11's Language is Automatic: the first
+of LANGUAGE's colon\-separated list that fm84 has words for, unless the
+locale is C; otherwise the first of the other three that is set.
+.B sr
+in any of them, as
+.BR sr_RS.UTF\-8 ,
+is Serbian; anything else is English.
 .TP
 .B XDG_DATA_HOME
 Where the trash is, as the freedesktop.org trash specification has it.

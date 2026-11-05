@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.41.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.42.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -101,9 +101,19 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 🔭 Find Files (Alt+F7)
 - 🎯 **By name, and by what is in them** - a name pattern as `+` takes it (`*.jpg;*.png`, `*/` for directories), and text the file has to hold, lower case matching either case. **Ctrl+F7** works too, for desktops that take Alt+F7 for moving windows. The last search is offered again
+- 🧪 **Or by a regular expression** - the switch under the fields makes Containing one, as `^(pub )?fn \w+\(`: `^` and `$` are each line's ends, and lower case matches either case. One that is not an expression says why, and the form stays to put it right
+- 📏 **By size and by age** - Size as `>10M`, `<1K`, `>=`, `<=` or `1M..10M`, in K, M, G and T of 1024, `1.5G` too; Modified as an age - `<7d` in the last week, `>1y` older than a year, `1d..7d` between, in `min`, `h`, `d`, `w`, `mo` and `y` - or a date: `2026-10-01` that day, `>2026-10-01` after it, `<` before it, `>=` and `<=` it included, `2026-10-01..2026-10-31` from one to the other, the days whole. Directories have no size, and are left out of a search by it. An empty field asks for nothing. **Tab** and **Shift+Tab** go through the fields and the switch, **Space** turns it on
 - 🌳 **Down from the panel you are in** - each directory's contents straight after it, in the order the panels list them, as `find` lists a tree. Links to directories are not followed, and hidden entries are passed over unless F11 shows them. The system's own trees - `/proc`, `/sys`, `/dev` and `/run`, all but `/run/media` - are left out unless the search starts in one: their entries pass for files and are not, and some never answer a read
 - 🪶 **Never in the way** - it runs on a thread of its own, and results arrive as they are found while it says where it is looking. Files are read 64 KiB at a time, never whole, and pipes and devices are never opened. Directories that cannot be read are counted, not fatal
 - ↩️ **Enter goes there** - the panel moves to the directory of the result chosen, cursor on it. Esc closes the list, stopping a search still under way
+- 📥 **F feeds them to the panel** - what has been found so far, in the active panel as one list under the directory the search started in, each by its path from there, as Ctrl+B lists - to be copied, moved, deleted, renamed or selected together. The path bar says `found`. A reread drops what has gone since, and a rename keeps the file in the list under its new name; Ctrl+B, or going anywhere else, goes back to the directory as it is
+
+### 🔄 Synchronize Directories (Alt+S)
+- ⚖️ **All the way down** - the two panels' directories compared on a thread of its own, the plan filling in as differences are found and saying where it is looking. An entry on one side only is a difference, and is not gone into; a directory on both is gone into. Two files differ when one is newer, or when they are the same age and not the same size; times two seconds apart count as the same, as FAT keeps them. Links are compared as the links they are, never followed, and hidden entries are left out unless F11 shows them
+- 📋 **A plan, row by row** - each path, both sides' sizes and dates (the dates go when the popup is too narrow), the newer side brighter, and between them what is to happen: `──▶` copied to the right, `◀──` to the left, `✗ del` deleted, `≠` left as it is. What is missing on one side is copied there, and the newer of two files over the older; two of the same age, and a file meeting a directory, are left for you to say. The foot counts each kind
+- ⌨️ **Change it** - **→** and **←** copy that way, **Delete** or **D** deletes from the side that has it alone, **Space** or **=** leaves it, each moving on to the next row so a run is set by holding the key. **>** makes the right as the left is - everything copied across, what only the right has deleted - and **<** the other way; **R** puts back what the compare said. Arrows, PageUp/PageDown and Home/End move about
+- ▶️ **Enter runs it** - as one job, with the progress bar and Esc, writing over what is in the way and deleting to the trash when F11 says so. A plan that deletes asks for a second Enter first, unless Confirm delete is off; any other key takes the first back. Both panels are read again after
+- 🚫 **Not everywhere** - not inside an archive, and not with one directory inside the other, which copying across would copy into itself - through a link too
 
 ### 📝 File Operations
 - **F1** 💡 - Help/About: the keys, then what fm84 is - its version, licence and where it lives. Like every popup it sits over the panels, no taller than they are; when the list is longer, the arrows, PageUp/PageDown, Home/End and the wheel scroll it, and the corner says which lines show
@@ -193,8 +203,12 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 💾 **Save** - F2 or Ctrl+S, written beside the file and swapped in whole, so a full disk or a crash mid-save leaves the old file rather than half of the new one; links, permissions and owner are kept
 - 🛑 **Changed on disk** - when something else has written the file since it was opened, a save stops and says so, the file as it was and as it is now: **O** overwrites it, **R** reloads it and drops the edits, **Esc** goes back to them. A file deleted meanwhile can be saved again with O
 - 📍 **Line/Column tracking** - always know where you are
+- ↩️ **Enter keeps the indent** - the new line starts as indented as the one it came from, as far as the cursor, so Enter in the middle of an indent does not make it deeper; a line left with nothing but its indent is emptied
+- ⇥ **Indent lines** - **Tab** on a selection of lines indents each one a step, **Shift+Tab** brings them - or, with nothing selected, the cursor's line - a step back out. A step is a tab in a file indented with tabs, and F11's tab width of spaces otherwise; empty lines are left be. The lines stay selected for another press, and each press is one step to undo. Tab with nothing selected still types a tab
+- 💬 **Comment lines** - **Ctrl+/** (Ctrl+_ or Ctrl+7, as most terminals send it) makes the selected lines, or the cursor's, comments with the file's own mark - `//` for Rust, C, Go, JavaScript and the like, `#` for Python, shell and config, `--` for Lua and SQL, `;` for Lisp and INI, `%` for TeX, `"` for Vim, `REM` for batch - at the shallowest indent among them, so a block stays lined up. When every line already is one, it makes them code again
 - 🔎 **Find and go to line** - Ctrl+F, F3 / Shift+F3 and Ctrl+G, as in the Viewer; the match found is selected, so typing replaces it
-- 🔁 **Replace** - Ctrl+R or F4 asks what to replace (the selection, or the last thing looked for) and what with, then goes from the cursor a match at a time: **Y** replaces, **N** skips, **A** replaces the rest, **Esc** stops. It goes round the end of the file and stops where it began, never into the text it has just put in; Enter is not an answer. Replace all is one step for Ctrl+Z
+- 🧪 **Regular expressions** - **Alt+R** in the Find or Replace prompt, in the Viewer too, switches between text and an expression, and the prompt says which. Lower case matches either case; one that is not an expression says why
+- 🔁 **Replace** - Ctrl+R or F4 asks what to replace (the selection, or the last thing looked for) and what with, then goes from the cursor a match at a time: **Y** replaces, **N** skips, **A** replaces the rest, **Esc** stops. It goes round the end of the file and stops where it began, never into the text it has just put in; Enter is not an answer. Replace all is one step for Ctrl+Z. By a regular expression, the replacement fills in `$1`, `${name}` and `$0` from each match
 - ⚠️ **Unsaved changes prompt** - Save/Discard/Cancel dialog on close, and on F10; a save that fails keeps the editor open, edits and all
 - 🔤 **UTF-8 only** - a file that is not UTF-8 text is refused rather than opened with its odd bytes replaced, which saving would make permanent; F3 shows it
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
@@ -239,6 +253,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 👁️ **Preview on startup** - start with F12's preview open
 
 **Appearance**
+- 🌐 **Language** - **Automatic**, which follows `LANGUAGE`, `LC_ALL`, `LC_MESSAGES` and `LANG` (on Windows, mostly English), or one chosen: **English** or **Srpski (latinica)**, each named in its own words. Every word fm84 shows changes at once; the keys stay the keys, so `Y`, `N` and `A` answer whatever the words beside them say. The translations are built into fm84 itself, nothing to install beside it
 - 🎨 **Theme** - switched on the spot, 17 of them:
   - fm84's own: **Synthwave**, **Outrun**, **Vaporwave**, **High contrast**, **Military**, **Picard**
   - dark: **Dracula**, **Monokai**, **Nord**, **Gruvbox Dark**, **Solarized Dark**, **Tokyo Night**, **Catppuccin Mocha**
@@ -335,7 +350,8 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `F11` | Options - panels, behaviour, appearance, viewer and editor |
 | `F12` | Preview cursor file in other panel |
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
-| `Alt+F7` / `Ctrl+F7` | Find files by name and content |
+| `Alt+F7` / `Ctrl+F7` | Find files by name, content or regex, size and date (`F` on the results feeds them to the panel) |
+| `Alt+S` | Synchronize the panels' directories (`→` `←` copy, `Del` delete, `Space` leave, `>` `<` mirror, `R` reset, `Enter` run) |
 | `Alt+F9` / `Ctrl+F9` | Extract the whole of an archive |
 | `Alt+P` | Pack what is chosen into an archive (`Tab` changes the format) |
 | `Alt+H` | Checksums of what is chosen (`Tab` / `Shift+Tab` the algorithm, `C` copies, `Enter` writes), or check a checksum file |
@@ -355,6 +371,9 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 | `F3` / `Shift+F3` | Next / previous match (in Viewer and Editor) |
 | `Ctrl+G` | Go to line (in Viewer and Editor) |
 | `Ctrl+R` / `F4` | Replace (in Editor) |
+| `Alt+R` | Text or regular expression, in the Find and Replace prompts (in Viewer and Editor) |
+| `Tab` / `Shift+Tab` | Indent / unindent the selected lines (in Editor) |
+| `Ctrl+/` / `Ctrl+_` / `Ctrl+7` | Comment or uncomment the selected lines (in Editor) |
 | `Y` / `N` / `A` | Replace / Skip / Replace all, when replacing (in Editor) |
 | `O` / `R` | Overwrite / Reload, when the file changed on disk since it was opened (in Editor) |
 | `Space` / `Insert` | Select/deselect file |
@@ -404,7 +423,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.41.0
+fm84 --version          # fm84 0.42.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -504,5 +523,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.41.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.42.0 ▄▀▄▀▄▀</code>
 </p>

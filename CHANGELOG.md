@@ -6,6 +6,22 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.42.0] - 2026-11-05
+
+### ✨ Added
+- 🔭 **Find files by more than a name** - Alt+F7's form has **Size** and **Modified** fields beside Name and Containing, and a switch that makes Containing a regular expression. Size as `>10M`, `<1K`, `>=`, `<=` or `1M..10M`, in K, M, G and T of 1024; Modified as an age - `<7d` in the last week, `>1y` older than a year, `1d..7d` between, in `min`, `h`, `d`, `w`, `mo` and `y` - or a date, `2026-10-01` that day, `>2026-10-01` after it, `2026-10-01..2026-10-31` from one to the other, the days whole. In a regular expression `^` and `$` are each line's ends, and lower case matches either case. **Tab** goes through the fields and the switch, **Space** turns it on, and a field that will not read says why
+- 📥 **Feed found files to a panel** - **F** on the results puts them in the active panel as one list under the directory the search started in, each by its path from there, as Ctrl+B lists, to be copied, moved, deleted or renamed together. The path bar says `found`; a reread drops what has gone, a rename keeps it under its new name, and Ctrl+B or going elsewhere goes back to the directory
+- 🔄 **Synchronize directories with Alt+S** - the panels' directories compared all the way down, on a thread of its own, and a plan of what differs: an entry on one side only is copied across, of two files the newer one is copied over the older, and two of the same age but not the same size, or a file meeting a directory, are left for you to say. Each row shows both sides' sizes and dates, the newer brighter. **→** and **←** copy that way, **Del** deletes from the side that has it alone, **Space** leaves it, **>** and **<** make one side as the other is, deleting what only it has, and **R** puts back what the compare said. **Enter** runs it as one job with the progress bar - a second Enter first when it deletes, unless Confirm delete is off - writing over what is in the way and deleting to the trash when F11 says so. Hidden entries are left out unless F11 shows them, links are compared as links, and times two seconds apart count as the same, as FAT keeps them. Not inside an archive, nor with one directory inside the other
+- ↩️ **Enter keeps the indent** in the editor - the new line starts as indented as the one it came from, as far as the cursor, and a line left with nothing but its indent is emptied
+- 🧪 **Find and replace by regular expression** in the viewer and the editor - **Alt+R** in the Find or Replace prompt switches between text and an expression, the prompt saying which. Lower case matches either case, and a replacement fills in `$1`, `${name}` and `$0` from each match
+- ⇥ **Indent and comment lines** in the editor - **Tab** on a selection of lines indents each a step, **Shift+Tab** brings them, or the cursor's line, a step back; a tab in a file indented with tabs, F11's tab width of spaces otherwise. **Ctrl+/** - or Ctrl+_ or Ctrl+7, as terminals send it - makes the lines comments with the file's own mark (`//`, `#`, `--`, `;` and the rest), at the shallowest indent so a block stays lined up, or makes them code again. The lines stay selected for another press, and each is one step to undo
+- 🌐 **Languages** - every word fm84 shows can be translated, and **Srpski (latinica)** is the first: F11's new **Language** row picks one, or Automatic, which follows `LANGUAGE`, `LC_ALL`, `LC_MESSAGES` and `LANG`. The keys stay the keys - `Y`, `N`, `A` - whatever the words beside them. The translations are built into fm84; columns, labels and forms widen to fit a longer word
+
+### 🔧 Changed
+- 🔢 **One is one** - "1 line", "1 day ago", "1 difference" and the like, where a count of one used to read as many
+
+---
+
 ## [0.41.0] - 2026-11-02
 
 ### ✨ Added

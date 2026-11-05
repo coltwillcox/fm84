@@ -192,6 +192,8 @@ fm84 --shell-init powershell | Out-String | Invoke-Expression in $PROFILE.
 Config: {config}
 Beside it: session, bookmarks, menu (Alt+M's commands) and open (the
 programs files open with, by extension).
+The language follows LANGUAGE, LC_ALL, LC_MESSAGES and LANG, unless F11's
+Language picks one: English, or Serbian (sr) in the Latin alphabet.
 Press F1 inside for the keys.",
         version = version()
     )
