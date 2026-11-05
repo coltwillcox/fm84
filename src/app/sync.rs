@@ -119,7 +119,7 @@ impl AppState {
             return;
         }
         if self.panel_archive(true).is_some() || self.panel_archive(false).is_some() {
-            self.display_error(crate::app::READ_ONLY.to_string());
+            self.display_error(crate::app::read_only().to_string());
             return;
         }
         let (left, right) = (self.panel_dir(true), self.panel_dir(false));
@@ -128,8 +128,12 @@ impl AppState {
         let real = |dir: &Path| dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
         let (real_left, real_right) = (real(&left), real(&right));
         if real_left.starts_with(&real_right) || real_right.starts_with(&real_left) {
-            let said = if real_left == real_right { "Both panels show the same directory" } else { "One panel's directory is inside the other's" };
-            self.display_error(format!("{said}: nothing to synchronize"));
+            let said = if real_left == real_right {
+                t!("Both panels show the same directory: nothing to synchronize")
+            } else {
+                t!("One panel's directory is inside the other's: nothing to synchronize")
+            };
+            self.display_error(said.to_string());
             return;
         }
         let cancel = Arc::new(AtomicBool::new(false));
@@ -276,7 +280,7 @@ impl AppState {
             .collect();
         self.dialog = None;
         if steps.is_empty() {
-            self.find_note = Some("Nothing to synchronize".to_string());
+            self.find_note = Some(t!("Nothing to synchronize").to_string());
             return;
         }
         self.start_sync(steps, to_trash);

@@ -34,10 +34,10 @@ impl ModeChange {
         if !text.is_empty() && text.chars().all(|c| c.is_digit(8)) {
             return match u32::from_str_radix(text, 8) {
                 Ok(mode) if mode <= 0o7777 => Ok(ModeChange::Absolute(mode)),
-                _ => Err(format!("Not a mode: {text}")),
+                _ => Err(t!("Not a mode: {text}", text)),
             };
         }
-        let not_a_mode = || format!("Not a mode: {text} - 755, or u+x,go-w");
+        let not_a_mode = || t!("Not a mode: {text} - 755, or u+x,go-w", text);
         let mut clauses = Vec::new();
         for part in text.split(',') {
             let mut chars = part.trim().chars().peekable();
@@ -121,9 +121,9 @@ pub fn parse_time(text: &str) -> Result<SystemTime, String> {
     let text = text.trim();
     let naive = NaiveDateTime::parse_from_str(text, "%Y-%m-%d %H:%M:%S")
         .or_else(|_| NaiveDateTime::parse_from_str(text, "%Y-%m-%d %H:%M"))
-        .map_err(|_| format!("Not a time: {text} - 2026-10-23 14:02:11"))?;
+        .map_err(|_| t!("Not a time: {text} - 2026-10-23 14:02:11", text))?;
     // A time a clock change skips is not one; one it repeats is the first.
-    Local.from_local_datetime(&naive).earliest().map(SystemTime::from).ok_or_else(|| format!("Not a time here: {text}"))
+    Local.from_local_datetime(&naive).earliest().map(SystemTime::from).ok_or_else(|| t!("Not a time here: {text}", text))
 }
 
 pub fn format_time(time: SystemTime) -> String {

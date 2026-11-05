@@ -264,7 +264,7 @@ impl AppState {
                     self.dir_sizes.insert(path, size);
                 }
                 Ok(None) => {}
-                Err(e) => self.display_error(format!("Cannot calculate size: {}", e)),
+                Err(e) => self.display_error(t!("Cannot calculate size: {e}", e)),
             }
         }
         // Workers freed, for what is waiting.

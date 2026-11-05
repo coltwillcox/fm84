@@ -327,7 +327,7 @@ fn run_user_command(terminal: &mut Tui, app_state: &mut AppState, mut command: a
     take_terminal()?;
     terminal.clear()?;
     if let Err(e) = result {
-        app_state.display_error(format!("Cannot run {}: {}", command.label, e));
+        app_state.display_error(t!("Cannot run {label}: {e}", label = command.label, e));
     }
     app_state.reload_panel(true, None);
     app_state.reload_panel(false, None);
@@ -349,9 +349,9 @@ fn run_external_editor(terminal: &mut Tui, app_state: &mut AppState, path: &std:
     terminal.clear()?;
 
     match result {
-        Ok(status) if !status.success() => app_state.display_error(format!("{} exited with {}", program.display(), status)),
+        Ok(status) if !status.success() => app_state.display_error(t!("{program} exited with {status}", program = program.display(), status)),
         Ok(_) => {}
-        Err(e) => app_state.display_error(format!("Cannot start {}: {}", program.display(), e)),
+        Err(e) => app_state.display_error(t!("Cannot start {program}: {e}", program = program.display(), e)),
     }
     // The file has likely changed size, and the editor may have left a backup
     // or swap file beside it.

@@ -97,7 +97,7 @@ static CACHE: Mutex<Vec<(Key, Arc<Index>)>> = Mutex::new(Vec::new());
 
 /// The index of `archive`, read on first asking.
 pub fn index(archive: &Path) -> io::Result<Arc<Index>> {
-    let kind = kind_of(archive).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, format!("Not an archive: {}", archive.display())))?;
+    let kind = kind_of(archive).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, t!("Not an archive: {path}", path = archive.display())))?;
     let metadata = fs::metadata(archive)?;
     let key = (archive.to_path_buf(), metadata.modified().ok(), metadata.len());
     if let Some((_, index)) = CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner).iter().find(|(cached, _)| *cached == key) {
@@ -154,7 +154,7 @@ pub enum Next {
 }
 
 fn encrypted() -> io::Error {
-    io::Error::new(io::ErrorKind::Unsupported, "Encrypted: fm84 cannot read it without the password")
+    io::Error::new(io::ErrorKind::Unsupported, t!("Encrypted: fm84 cannot read it without the password"))
 }
 
 pub(crate) fn sevenz_error(error: sevenz_rust2::Error) -> io::Error {
@@ -226,7 +226,7 @@ pub fn read_entries(archive: &Path, kind: Kind, positions: &[usize], visit: &mut
                 // is cut short. Nothing more to be had from it.
                 if !pending.is_empty() {
                     for ordinal in std::mem::take(&mut pending) {
-                        let missing = io::Error::new(io::ErrorKind::UnexpectedEof, "The archive ends before it");
+                        let missing = io::Error::new(io::ErrorKind::UnexpectedEof, t!("The archive ends before it"));
                         if let Next::Stop = visit(ordinal, Err(missing)) {
                             return Ok(());
                         }
@@ -282,7 +282,7 @@ fn read_7z_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(us
             }
         }
         for position in std::mem::take(&mut pending) {
-            let missing = io::Error::new(io::ErrorKind::UnexpectedEof, "The archive ends before it");
+            let missing = io::Error::new(io::ErrorKind::UnexpectedEof, t!("The archive ends before it"));
             if let Next::Stop = visit(position, Err(missing)) {
                 return Ok(());
             }

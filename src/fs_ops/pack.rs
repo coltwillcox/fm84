@@ -104,7 +104,7 @@ fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Rep
         return Ok(true);
     }
     if format.needs_utf8() && name.to_str().is_none() {
-        let refused = Error::new(ErrorKind::InvalidData, format!("{} is not a name a {} can hold: it is not UTF-8", name.display(), format.extension()));
+        let refused = Error::new(ErrorKind::InvalidData, t!("{name} is not a name a {format} can hold: it is not UTF-8", name = name.display(), format = format.extension()));
         attempt(path, report, |_| -> Result<(), Error> { Err(Error::new(refused.kind(), refused.to_string())) })?;
         return Ok(true);
     }
@@ -219,7 +219,7 @@ impl<R: Read> Read for Counted<'_, '_, '_, R> {
         let room = buf.len().min(usize::try_from(self.left).unwrap_or(usize::MAX));
         let read = self.inner.read(&mut buf[..room])?;
         if read == 0 && self.left > 0 {
-            return Err(Error::new(ErrorKind::UnexpectedEof, "It got shorter while it was being packed"));
+            return Err(Error::new(ErrorKind::UnexpectedEof, t!("It got shorter while it was being packed")));
         }
         self.left -= read as u64;
         if !self.report.borrow_mut().step(Step::Advanced(read as u64)) {
@@ -433,7 +433,7 @@ impl Read for Lazy<'_, '_, '_, '_> {
                     // Tried on the walk; failing now is past leaving it out.
                     let file = match open_member(member, report, cancelled)? {
                         Some(file) => file,
-                        None => return Err(Error::other(format!("{} could not be read after all", member.path.display()))),
+                        None => return Err(Error::other(t!("{path} could not be read after all", path = member.path.display()))),
                     };
                     *opened = Some(Counted::new(file, member.metadata.len(), report, cancelled));
                 }

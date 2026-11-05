@@ -88,10 +88,10 @@ fn trash_error(error: trash::Error) -> Error {
         // already says it plainly. Only that build of the crate has it.
         #[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))]
         trash::Error::FileSystem { source, .. } => source,
-        trash::Error::TargetedRoot => Error::other("A root directory cannot go to the trash"),
-        trash::Error::CouldNotAccess { target } => Error::other(format!("Cannot reach {target}")),
+        trash::Error::TargetedRoot => Error::other(t!("A root directory cannot go to the trash")),
+        trash::Error::CouldNotAccess { target } => Error::other(t!("Cannot reach {target}", target)),
         trash::Error::Os { description, .. } | trash::Error::Unknown { description } => Error::other(description),
-        other => Error::other(format!("Cannot move to the trash: {other:?}")),
+        other => Error::other(t!("Cannot move to the trash: {why}", why = format!("{other:?}"))),
     }
 }
 

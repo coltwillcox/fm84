@@ -36,7 +36,7 @@ impl AppState {
             let _ = sender.send(crate::git::branches(&worker_dir));
         });
         match answer.recv_timeout(crate::constants::GIT_WAIT) {
-            Ok(Ok((names, _))) if names.is_empty() => self.display_error("No branches yet: nothing has been committed".to_string()),
+            Ok(Ok((names, _))) if names.is_empty() => self.display_error(t!("No branches yet: nothing has been committed").to_string()),
             Ok(Ok((names, current))) => {
                 self.dialog = Some(Dialog::Branches(Box::new(BranchList {
                     dir,
@@ -46,7 +46,7 @@ impl AppState {
                 })));
             }
             Ok(Err(e)) => self.display_error(e),
-            Err(_) => self.display_error("git did not answer".to_string()),
+            Err(_) => self.display_error(t!("git did not answer").to_string()),
         }
     }
 
@@ -93,7 +93,7 @@ impl AppState {
         match answer.recv_timeout(crate::constants::GIT_WAIT) {
             Ok(result) => self.finish_switch(result),
             Err(mpsc::RecvTimeoutError::Timeout) => self.branch_switch = Some(PendingSwitch { branch, answer }),
-            Err(mpsc::RecvTimeoutError::Disconnected) => self.finish_switch(Err(format!("Switching to {branch} stopped unexpectedly"))),
+            Err(mpsc::RecvTimeoutError::Disconnected) => self.finish_switch(Err(t!("Switching to {branch} stopped unexpectedly", branch))),
         }
     }
 
@@ -105,7 +105,7 @@ impl AppState {
         let result = match pending.answer.try_recv() {
             Ok(result) => result,
             Err(TryRecvError::Empty) => return,
-            Err(TryRecvError::Disconnected) => Err(format!("Switching to {} stopped unexpectedly", pending.branch)),
+            Err(TryRecvError::Disconnected) => Err(t!("Switching to {branch} stopped unexpectedly", branch = pending.branch)),
         };
         self.branch_switch = None;
         self.finish_switch(result);

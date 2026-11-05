@@ -42,12 +42,15 @@ pub fn format_modified(time: std::time::SystemTime, format: crate::options::Date
             // fast - reads as just now rather than as a negative age.
             let seconds = now.duration_since(time).map_or(0, |age| age.as_secs());
             match seconds {
-                0..60 => "just now".to_string(),
-                60..3600 => format!("{} min ago", seconds / 60),
-                3600..86_400 => format!("{} h ago", seconds / 3600),
-                86_400..2_592_000 => format!("{} days ago", seconds / 86_400),
-                2_592_000..31_536_000 => format!("{} mo ago", seconds / 2_592_000),
-                _ => format!("{} yr ago", seconds / 31_536_000),
+                0..60 => t!("just now").to_string(),
+                60..3600 => t!("{count} min ago", count = seconds / 60),
+                3600..86_400 => t!("{count} h ago", count = seconds / 3600),
+                86_400..2_592_000 => {
+                    let count = seconds / 86_400;
+                    tn!(count, "{count} day ago", "{count} days ago", count)
+                }
+                2_592_000..31_536_000 => t!("{count} mo ago", count = seconds / 2_592_000),
+                _ => t!("{count} yr ago", count = seconds / 31_536_000),
             }
         }
     }

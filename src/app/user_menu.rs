@@ -54,7 +54,7 @@ impl AppState {
             return;
         };
         let Some(file) = menu.file else {
-            self.display_error("No config directory to keep a menu in".to_string());
+            self.display_error(t!("No config directory to keep a menu in").to_string());
             return;
         };
         if self.options.editor.trim().is_empty() {

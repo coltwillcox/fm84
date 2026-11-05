@@ -95,14 +95,14 @@ impl TransferKind {
     /// The word the popup and the cancelled message use.
     pub fn title(self) -> &'static str {
         match self {
-            TransferKind::Copy => "Copy",
-            TransferKind::Move => "Move",
-            TransferKind::Delete => "Delete",
-            TransferKind::Trash => "Move to trash",
-            TransferKind::Extract => "Extract",
-            TransferKind::Pack => "Pack",
-            TransferKind::Checksum => "Checksum",
-            TransferKind::Sync => "Synchronize",
+            TransferKind::Copy => t!("Copy"),
+            TransferKind::Move => t!("Move"),
+            TransferKind::Delete => t!("Delete"),
+            TransferKind::Trash => t!("Move to trash"),
+            TransferKind::Extract => t!("Extract"),
+            TransferKind::Pack => t!("Pack"),
+            TransferKind::Checksum => t!("Checksum"),
+            TransferKind::Sync => t!("Synchronize"),
         }
     }
 }
@@ -620,7 +620,7 @@ impl AppState {
                 Err(TryRecvError::Empty) => break,
                 // Gone without a word, which only happens if it panicked.
                 Err(TryRecvError::Disconnected) => {
-                    finished = Some(Err("Transfer stopped unexpectedly".to_string()));
+                    finished = Some(Err(t!("Transfer stopped unexpectedly").to_string()));
                     break;
                 }
             }
@@ -681,12 +681,12 @@ impl AppState {
             }
             Ok(Transfer::Done) => {}
             Ok(Transfer::Cancelled) => {
-                let far = match job.kind {
-                    TransferKind::Delete => format!("{} entries", job.done),
-                    TransferKind::Trash => format!("{} items", job.done),
-                    _ => crate::utils::format_size(job.done),
-                };
-                self.display_error(format!("{} cancelled after {far}", job.kind.title()))
+                let (job_title, done) = (job.kind.title(), job.done);
+                self.display_error(match job.kind {
+                    TransferKind::Delete => tn!(done, "{job_title} cancelled after {done} entry", "{job_title} cancelled after {done} entries", job_title, done),
+                    TransferKind::Trash => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
+                    _ => t!("{job_title} cancelled after {size}", job_title, size = crate::utils::format_size(done)),
+                })
             }
             Err(e) => self.display_error(e),
         }

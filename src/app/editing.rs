@@ -255,7 +255,7 @@ impl AppState {
         // not UTF-8 can still be waiting further in. Opened lossily, saving
         // would write a replacement character over every one of them, so the
         // file is refused - with a reason, rather than the decoder's own.
-        let content = String::from_utf8(std::fs::read(&file_path).map_err(|e| e.to_string())?).map_err(|_| format!("Cannot edit {}: it is not UTF-8 text. F3 shows it as it is.", file_path.display()))?;
+        let content = String::from_utf8(std::fs::read(&file_path).map_err(|e| e.to_string())?).map_err(|_| t!("Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.", path = file_path.display()))?;
         let line_ending = detect_line_ending(&content);
         let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
         if content.ends_with('\n') {

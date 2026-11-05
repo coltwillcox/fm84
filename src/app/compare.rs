@@ -52,11 +52,11 @@ impl AppState {
         use crate::diff::Compared;
         match crate::diff::compare(&left, &right, self.options.large_file_bytes()) {
             Ok(Compared::Text(state)) => self.screen = Screen::Diff(*state),
-            Ok(Compared::Identical) => self.find_note = Some("The files are identical".to_string()),
-            Ok(Compared::LineEndings) => self.find_note = Some("The files differ only in line endings".to_string()),
+            Ok(Compared::Identical) => self.find_note = Some(t!("The files are identical").to_string()),
+            Ok(Compared::LineEndings) => self.find_note = Some(t!("The files differ only in line endings").to_string()),
             Ok(Compared::Binary { at, sizes_differ }) => {
-                let sizes = if sizes_differ { ", and in size" } else { "" };
-                self.find_note = Some(format!("The files differ from byte {}{}", crate::utils::grouped(at), sizes));
+                let at = crate::utils::grouped(at);
+                self.find_note = Some(if sizes_differ { t!("The files differ from byte {at}, and in size", at) } else { t!("The files differ from byte {at}", at) });
             }
             Err(message) => self.display_error(message),
         }
@@ -96,14 +96,14 @@ impl AppState {
             return;
         }
         if self.dir_left == self.dir_right {
-            self.find_note = Some("Both panels show the same directory".to_string());
+            self.find_note = Some(t!("Both panels show the same directory").to_string());
             return;
         }
         let (left, right) = differences(&self.children_left, &self.children_right);
         self.find_note = Some(if left.is_empty() && right.is_empty() {
-            "The directories hold the same files".to_string()
+            t!("The directories hold the same files").to_string()
         } else {
-            format!("Differ: {} on the left, {} on the right", left.len(), right.len())
+            t!("Differ: {left} on the left, {right} on the right", left = left.len(), right = right.len())
         });
         self.selected_left = left;
         self.selected_right = right;

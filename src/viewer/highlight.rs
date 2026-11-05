@@ -47,7 +47,7 @@ pub fn detect_syntax(path: &Path) -> String {
         Some("cpp") | Some("hpp") => "C++".to_string(),
         Some("html") => "HTML".to_string(),
         Some("css") => "CSS".to_string(),
-        _ => "Plain Text".to_string(),
+        _ => t!("Plain Text").to_string(),
     }
 }
 

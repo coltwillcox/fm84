@@ -268,10 +268,11 @@ pub(super) fn copy_names(app_state: &mut AppState, full: bool) {
         .collect::<Vec<_>>()
         .join("\n");
     crate::utils::set_system_clipboard(&text);
-    let what = if full { "path" } else { "name" };
-    app_state.find_note = Some(match items.len() {
-        1 => format!("Copied {what}: {text}"),
-        count => format!("Copied {count} {what}s"),
+    app_state.find_note = Some(match (items.len(), full) {
+        (1, true) => t!("Copied path: {text}", text),
+        (1, false) => t!("Copied name: {text}", text),
+        (count, true) => tn!(count, "Copied {count} path", "Copied {count} paths", count),
+        (count, false) => tn!(count, "Copied {count} name", "Copied {count} names", count),
     });
     // The editor pastes from it too, which works where OSC 52 does not.
     app_state.clipboard = text;

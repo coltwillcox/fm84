@@ -83,51 +83,51 @@ pub const OPTION_ROWS: [OptionRow; 35] = [
 impl OptionRow {
     pub fn label(self) -> &'static str {
         match self {
-            OptionRow::ShowHidden => "Show hidden files",
-            OptionRow::SortKey => "Sort by",
-            OptionRow::SortDirection => "Sort direction",
-            OptionRow::DirsFirst => "Directories first",
-            OptionRow::CaseSensitive => "Case-sensitive sort",
-            OptionRow::ColumnExt => "Ext column",
-            OptionRow::ColumnSize => "Size column",
-            OptionRow::ColumnModified => "Modified column",
-            OptionRow::ColumnAttributes => "Attributes column",
-            OptionRow::GitMarks => "Git marks",
-            OptionRow::DateFormat => "Date format",
-            OptionRow::SizeUnits => "Size units",
-            OptionRow::ConfirmDelete => "Confirm delete",
-            OptionRow::DeleteToTrash => "Delete to trash (F8)",
-            OptionRow::ConfirmCopyMove => "Confirm copy and move",
-            OptionRow::OnExisting => "When destination exists",
-            OptionRow::Terminal => "Terminal (F9)",
-            OptionRow::Editor => "Editor (F4)",
-            OptionRow::RememberDirs => "Remember directories",
-            OptionRow::PreviewOnStart => "Preview on startup",
-            OptionRow::Language => "Language",
-            OptionRow::Theme => "Theme",
-            OptionRow::ThemeBackground => "Background",
-            OptionRow::IconStyle => "Icons",
-            OptionRow::Clock => "Clock",
-            OptionRow::Cursor => "Cursor",
-            OptionRow::CursorBlink => "Cursor blinks",
-            OptionRow::TabWidth => "Tab width",
-            OptionRow::LineNumbers => "Line numbers",
-            OptionRow::ScrollBars => "Scroll bars",
-            OptionRow::HighlightLimit => "Highlight files up to",
-            OptionRow::LargeFile => "Ask before opening over",
-            OptionRow::ImageDefault => "Images open as",
-            OptionRow::ImageBackgrounds => "Image backgrounds",
-            OptionRow::ImagePrefetch => "Read pictures ahead",
+            OptionRow::ShowHidden => t!("Show hidden files"),
+            OptionRow::SortKey => t!("Sort by"),
+            OptionRow::SortDirection => t!("Sort direction"),
+            OptionRow::DirsFirst => t!("Directories first"),
+            OptionRow::CaseSensitive => t!("Case-sensitive sort"),
+            OptionRow::ColumnExt => t!("Ext column"),
+            OptionRow::ColumnSize => t!("Size column"),
+            OptionRow::ColumnModified => t!("Modified column"),
+            OptionRow::ColumnAttributes => t!("Attributes column"),
+            OptionRow::GitMarks => t!("Git marks"),
+            OptionRow::DateFormat => t!("Date format"),
+            OptionRow::SizeUnits => t!("Size units"),
+            OptionRow::ConfirmDelete => t!("Confirm delete"),
+            OptionRow::DeleteToTrash => t!("Delete to trash (F8)"),
+            OptionRow::ConfirmCopyMove => t!("Confirm copy and move"),
+            OptionRow::OnExisting => t!("When destination exists"),
+            OptionRow::Terminal => t!("Terminal (F9)"),
+            OptionRow::Editor => t!("Editor (F4)"),
+            OptionRow::RememberDirs => t!("Remember directories"),
+            OptionRow::PreviewOnStart => t!("Preview on startup"),
+            OptionRow::Language => t!("Language"),
+            OptionRow::Theme => t!("Theme"),
+            OptionRow::ThemeBackground => t!("Background"),
+            OptionRow::IconStyle => t!("Icons"),
+            OptionRow::Clock => t!("Clock"),
+            OptionRow::Cursor => t!("Cursor"),
+            OptionRow::CursorBlink => t!("Cursor blinks"),
+            OptionRow::TabWidth => t!("Tab width"),
+            OptionRow::LineNumbers => t!("Line numbers"),
+            OptionRow::ScrollBars => t!("Scroll bars"),
+            OptionRow::HighlightLimit => t!("Highlight files up to"),
+            OptionRow::LargeFile => t!("Ask before opening over"),
+            OptionRow::ImageDefault => t!("Images open as"),
+            OptionRow::ImageBackgrounds => t!("Image backgrounds"),
+            OptionRow::ImagePrefetch => t!("Read pictures ahead"),
         }
     }
 
     /// The heading this row opens, when it is the first of its group.
     pub fn section(self) -> Option<&'static str> {
         match self {
-            OptionRow::ShowHidden => Some("Panels"),
-            OptionRow::ConfirmDelete => Some("Behaviour"),
-            OptionRow::Language => Some("Appearance"),
-            OptionRow::TabWidth => Some("Viewer and editor"),
+            OptionRow::ShowHidden => Some(t!("Panels")),
+            OptionRow::ConfirmDelete => Some(t!("Behaviour")),
+            OptionRow::Language => Some(t!("Appearance")),
+            OptionRow::TabWidth => Some(t!("Viewer and editor")),
             _ => None,
         }
     }
@@ -149,17 +149,17 @@ impl OptionRow {
 
 impl Options {
     pub fn value(&self, row: OptionRow) -> String {
-        let on_off = |on: bool| if on { "On" } else { "Off" }.to_string();
+        let on_off = |on: bool| if on { t!("On") } else { t!("Off") }.to_string();
         match row {
             OptionRow::ShowHidden => on_off(self.show_hidden),
             OptionRow::SortKey => match self.sort_key {
-                SortKey::Name => "Name",
-                SortKey::Extension => "Extension",
-                SortKey::Size => "Size",
-                SortKey::Modified => "Modified",
+                SortKey::Name => t!("Name"),
+                SortKey::Extension => t!("Extension"),
+                SortKey::Size => t!("Size"),
+                SortKey::Modified => t!("Modified"),
             }
             .to_string(),
-            OptionRow::SortDirection => if self.sort_descending { "Descending" } else { "Ascending" }.to_string(),
+            OptionRow::SortDirection => if self.sort_descending { t!("Descending") } else { t!("Ascending") }.to_string(),
             OptionRow::DirsFirst => on_off(self.dirs_first),
             OptionRow::CaseSensitive => on_off(self.case_sensitive),
             OptionRow::ColumnExt => on_off(self.column_ext),
@@ -170,7 +170,7 @@ impl Options {
             OptionRow::DateFormat => match self.date_format {
                 DateFormat::Short => "dd/mm/yy",
                 DateFormat::Iso => "yyyy-mm-dd",
-                DateFormat::Relative => "Relative",
+                DateFormat::Relative => t!("Relative"),
             }
             .to_string(),
             OptionRow::SizeUnits => match self.size_units {
@@ -182,42 +182,42 @@ impl Options {
             OptionRow::DeleteToTrash => on_off(self.delete_to_trash),
             OptionRow::ConfirmCopyMove => on_off(self.confirm_copy_move),
             OptionRow::OnExisting => match self.on_existing {
-                OnExisting::Ask => "Ask",
-                OnExisting::Overwrite => "Overwrite",
-                OnExisting::Refuse => "Refuse",
-                OnExisting::KeepBoth => "Keep both",
+                OnExisting::Ask => t!("Ask"),
+                OnExisting::Overwrite => t!("Overwrite"),
+                OnExisting::Refuse => t!("Refuse"),
+                OnExisting::KeepBoth => t!("Keep both"),
             }
             .to_string(),
-            OptionRow::Terminal if self.terminal.is_empty() => "Automatic".to_string(),
+            OptionRow::Terminal if self.terminal.is_empty() => t!("Automatic").to_string(),
             OptionRow::Terminal => self.terminal.clone(),
-            OptionRow::Editor if self.editor.is_empty() => "Built-in".to_string(),
+            OptionRow::Editor if self.editor.is_empty() => t!("Built-in").to_string(),
             OptionRow::Editor => self.editor.clone(),
             OptionRow::RememberDirs => on_off(self.remember_dirs),
             OptionRow::PreviewOnStart => on_off(self.preview_on_start),
             // Each in its own words; Automatic says which it came to.
             OptionRow::Language => match self.language {
                 Some(language) => language.label().to_string(),
-                None => format!("Automatic ({})", crate::i18n::detect().label()),
+                None => t!("Automatic ({language})", language = crate::i18n::detect().label()),
             },
             OptionRow::Theme => self.theme.label().to_string(),
-            OptionRow::ThemeBackground => if self.theme_background { "Theme" } else { "Terminal" }.to_string(),
+            OptionRow::ThemeBackground => if self.theme_background { t!("Theme") } else { t!("Terminal") }.to_string(),
             OptionRow::IconStyle => match self.icon_style {
                 IconStyle::NerdFont => "Nerd Font",
                 IconStyle::NerdFontMono => "Nerd Font Mono",
-                IconStyle::Plain => "Plain",
+                IconStyle::Plain => t!("Plain"),
             }
             .to_string(),
             OptionRow::Clock => match self.clock {
-                Clock::Hours24 => "24-hour",
-                Clock::Hours12 => "12-hour",
-                Clock::Off => "Off",
+                Clock::Hours24 => t!("24-hour"),
+                Clock::Hours12 => t!("12-hour"),
+                Clock::Off => t!("Off"),
             }
             .to_string(),
             OptionRow::Cursor => match self.cursor {
-                CursorShape::Bar => "Bar",
-                CursorShape::Block => "Block",
-                CursorShape::Underline => "Underline",
-                CursorShape::Classic => "Classic",
+                CursorShape::Bar => t!("Bar"),
+                CursorShape::Block => t!("Block"),
+                CursorShape::Underline => t!("Underline"),
+                CursorShape::Classic => t!("Classic"),
             }
             .to_string(),
             OptionRow::CursorBlink => on_off(self.cursor_blink),
@@ -229,12 +229,12 @@ impl Options {
                 format!("{} {down}{along}", self.scroll_bar.label())
             }
             OptionRow::HighlightLimit => match self.highlight_limit_kib {
-                0 => "Off".to_string(),
+                0 => t!("Off").to_string(),
                 kib if kib % 1024 == 0 => format!("{} MiB", kib / 1024),
                 kib => format!("{} KiB", kib),
             },
             OptionRow::LargeFile => format!("{} MiB", self.large_file_mib),
-            OptionRow::ImageDefault => if self.image_fill { "Fill" } else { "Fit" }.to_string(),
+            OptionRow::ImageDefault => if self.image_fill { t!("Fill") } else { t!("Fit") }.to_string(),
             OptionRow::ImageBackgrounds => on_off(self.image_backgrounds),
             OptionRow::ImagePrefetch => on_off(self.image_prefetch),
         }

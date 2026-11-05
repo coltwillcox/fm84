@@ -59,8 +59,8 @@ impl Text {
             .build()
             .map(|regex| Some(Text::Regex(regex)))
             .map_err(|e| match e {
-                regex::Error::Syntax(said) => format!("Not a regular expression: {}", said.lines().last().unwrap_or(&said).trim_start_matches("error: ")),
-                other => format!("Not a regular expression: {other}"),
+                regex::Error::Syntax(said) => t!("Not a regular expression: {why}", why = said.lines().last().unwrap_or(&said).trim_start_matches("error: ")),
+                other => t!("Not a regular expression: {why}", why = other),
             })
     }
 }
@@ -81,7 +81,7 @@ impl SizeRange {
         if text.is_empty() {
             return Ok(None);
         }
-        let wrong = || format!("Size as >10M, <1K or 1M..10M, not {text}");
+        let wrong = || t!("Size as >10M, <1K or 1M..10M, not {text}", text);
         let range = if let Some((from, to)) = text.split_once("..") {
             let (from, to) = (bytes(from).ok_or_else(wrong)?, bytes(to).ok_or_else(wrong)?);
             SizeRange { min: from.min(to), max: from.max(to) }
@@ -100,7 +100,7 @@ impl SizeRange {
         } else if let Some(at) = text.strip_prefix('<') {
             let at = bytes(at).ok_or_else(wrong)?;
             if at == 0 {
-                return Err("Nothing is smaller than 0 bytes".to_string());
+                return Err(t!("Nothing is smaller than 0 bytes").to_string());
             }
             SizeRange { min: 0, max: at - 1 }
         } else {
@@ -155,7 +155,7 @@ impl TimeRange {
         if text.is_empty() {
             return Ok(None);
         }
-        let wrong = || format!("Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}");
+        let wrong = || t!("Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}", text);
         let at = |age: Duration| SystemTime::from(now) - age;
         let range = |after, before| Ok(Some(TimeRange { after, before }));
         // A day's start, and the next day's.

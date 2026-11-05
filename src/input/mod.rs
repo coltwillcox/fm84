@@ -1,7 +1,7 @@
 //! Keys, pastes and the mouse, each to whatever is on top: a running job, an
 //! error, the dialog that is open, then the screen.
 
-use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, READ_ONLY, Saved, Screen, TextInput, TransferKind};
+use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, TextInput, TransferKind, read_only};
 use crate::fs_ops::{check_destinations, create_directory, create_file, create_hard_link, create_symlink, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets, typed_path};
 use crate::options::{OnExisting, SortKey};
 use crate::strip::StripHit;

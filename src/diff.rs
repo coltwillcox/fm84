@@ -117,10 +117,10 @@ pub fn compare(left_path: &Path, right_path: &Path, limit: u64) -> Result<Compar
         let metadata = std::fs::metadata(path).map_err(|e| format!("{}: {}", path.display(), e))?;
         // A pipe or a device could block for good, or never end.
         if !metadata.is_file() {
-            return Err(format!("Not a regular file: {}", path.display()));
+            return Err(t!("Not a regular file: {path}", path = path.display()));
         }
         if metadata.len() > limit {
-            return Err(format!("Too large to compare: {} ({}; F11 sets the limit)", path.display(), crate::utils::format_size(metadata.len())));
+            return Err(t!("Too large to compare: {path} ({size}; F11 sets the limit)", path = path.display(), size = crate::utils::format_size(metadata.len())));
         }
         std::fs::read(path).map_err(|e| format!("{}: {}", path.display(), e))
     };

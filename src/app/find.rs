@@ -78,7 +78,7 @@ impl AppState {
             PromptKind::GoToLine => match input.text.trim().parse::<usize>() {
                 Ok(number) => self.go_to_line(number),
                 Err(_) if input.text.trim().is_empty() => {}
-                Err(_) => self.find_note = Some(format!("Not a line number: {}", input.text.trim())),
+                Err(_) => self.find_note = Some(t!("Not a line number: {text}", text = input.text.trim())),
             },
             PromptKind::Select | PromptKind::Deselect => {
                 let Some(glob) = crate::glob::Glob::new(&input.text) else {
@@ -135,7 +135,7 @@ impl AppState {
         self.find_shown = true;
         match self.editor_find(&needle, true, true) {
             Some(wrapped) => self.dialog = Some(Dialog::Replacing { stop_at, wrapped, replaced: 0 }),
-            None => self.find_note = Some(format!("Not found: {}", self.find_term)),
+            None => self.find_note = Some(t!("Not found: {term}", term = self.find_term)),
         }
     }
 
@@ -238,9 +238,8 @@ impl AppState {
             self.dialog = None;
         }
         self.find_note = Some(match replaced {
-            0 => "Nothing replaced".to_string(),
-            1 => "Replaced 1".to_string(),
-            many => format!("Replaced {many}"),
+            0 => t!("Nothing replaced").to_string(),
+            count => tn!(count, "Replaced {count}", "Replaced {count}", count),
         });
     }
 
@@ -276,8 +275,8 @@ impl AppState {
 
         let found = if self.is_editing() { self.editor_find(&needle, forward, fresh) } else { self.viewer_find(&needle, forward, fresh) };
         self.find_note = match found {
-            None => Some(format!("Not found: {}", self.find_term)),
-            Some(true) => Some(if forward { "Wrapped to the top" } else { "Wrapped to the bottom" }.to_string()),
+            None => Some(t!("Not found: {term}", term = self.find_term)),
+            Some(true) => Some(if forward { t!("Wrapped to the top") } else { t!("Wrapped to the bottom") }.to_string()),
             Some(false) => None,
         };
     }

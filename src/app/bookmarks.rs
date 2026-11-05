@@ -78,7 +78,7 @@ impl AppState {
         if let Some(Dialog::Bookmarks { list, .. }) = &self.dialog
             && let Err(e) = crate::options::save_bookmarks(list)
         {
-            self.display_error(format!("Cannot save bookmarks: {}", e));
+            self.display_error(t!("Cannot save bookmarks: {e}", e));
         }
     }
 }

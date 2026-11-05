@@ -113,7 +113,7 @@ pub fn is_regular_file(path: &Path) -> bool {
 }
 
 pub(super) fn not_regular(path: &Path) -> Error {
-    Error::new(ErrorKind::InvalidInput, format!("Not a regular file: {}", path.display()))
+    Error::new(ErrorKind::InvalidInput, t!("Not a regular file: {path}", path = path.display()))
 }
 
 /// True for a name that stays in the directory it is given in: one plain

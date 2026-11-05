@@ -130,7 +130,7 @@ pub fn hash_all(path: &Path, report: &mut dyn Progress) -> io::Result<Option<Sum
 
 fn hash_with(path: &Path, algorithms: &[Algorithm], report: &mut dyn Progress) -> io::Result<Option<Vec<String>>> {
     if !crate::fs_ops::is_regular_file(path) {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "Not a regular file"));
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, t!("Not a regular file")));
     }
     let mut file = std::fs::File::open(path)?;
     let mut hashers: Vec<Hasher> = algorithms.iter().map(|algorithm| algorithm.hasher()).collect();
@@ -171,7 +171,7 @@ pub fn targets(sources: &[(PathBuf, bool)], base: &Path) -> (Vec<Target>, Vec<(P
     stack.reverse();
     while let Some(path) = stack.pop() {
         let Ok(own) = path.symlink_metadata() else {
-            unreadable.push((name_of(&path), "Gone".to_string()));
+            unreadable.push((name_of(&path), t!("Gone").to_string()));
             continue;
         };
         if own.is_dir() {
@@ -190,7 +190,7 @@ pub fn targets(sources: &[(PathBuf, bool)], base: &Path) -> (Vec<Target>, Vec<(P
                 path,
             });
         } else if !own.file_type().is_symlink() {
-            unreadable.push((name_of(&path), "Not a regular file".to_string()));
+            unreadable.push((name_of(&path), t!("Not a regular file").to_string()));
         }
     }
     (found, unreadable)
@@ -391,21 +391,29 @@ impl Report {
         match self {
             Report::Computed { sums, .. } => {
                 let failed = sums.iter().filter(|(_, sum)| sum.is_err()).count();
-                let files = if sums.len() == 1 { "file" } else { "files" };
-                if failed == 0 { format!("{} {files}", sums.len()) } else { format!("{} {files}, {failed} could not be read", sums.len()) }
+                let count = sums.len();
+                if failed == 0 {
+                    tn!(count, "{count} file", "{count} files", count)
+                } else {
+                    tn!(count, "{count} file, {failed} could not be read", "{count} files, {failed} could not be read", count, failed)
+                }
             }
             Report::Checked { results, not_understood, .. } => {
                 let count = |wanted: fn(&Check) -> bool| results.iter().filter(|(_, _, check)| wanted(check)).count();
-                let mut parts = vec![format!("{} OK", count(|check| *check == Check::Ok))];
-                for (number, word) in [
-                    (count(|check| *check == Check::Failed), "FAILED"),
-                    (count(|check| *check == Check::Missing), "missing"),
-                    (count(|check| matches!(check, Check::Unreadable(_))), "could not be read"),
-                    (*not_understood, "lines not understood"),
-                ] {
-                    if number > 0 {
-                        parts.push(format!("{number} {word}"));
-                    }
+                let mut parts = vec![t!("{count} OK", count = count(|check| *check == Check::Ok))];
+                let (failed, missing, unreadable) = (count(|check| *check == Check::Failed), count(|check| *check == Check::Missing), count(|check| matches!(check, Check::Unreadable(_))));
+                if failed > 0 {
+                    parts.push(t!("{count} FAILED", count = failed));
+                }
+                if missing > 0 {
+                    parts.push(t!("{count} missing", count = missing));
+                }
+                if unreadable > 0 {
+                    parts.push(t!("{count} could not be read", count = unreadable));
+                }
+                if *not_understood > 0 {
+                    let count = *not_understood;
+                    parts.push(tn!(count, "{count} line not understood", "{count} lines not understood", count));
                 }
                 parts.join(", ")
             }

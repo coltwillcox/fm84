@@ -73,7 +73,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
     }
     // A rename stays in its directory; moving is F6.
     if !is_plain_name(&new_name) {
-        app_state.display_error(format!("Not a plain file name: {}", new_name));
+        app_state.display_error(t!("Not a plain file name: {name}", name = new_name));
         return;
     }
 
@@ -87,7 +87,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
     // does the same entry under another case, which on a case-insensitive
     // filesystem is how "readme" becomes "README".
     if new_path != original_path && path_exists(&new_path) && !is_same_entry(&original_path, &new_path) {
-        app_state.display_error(format!("Already exists: {}", new_name));
+        app_state.display_error(t!("Already exists: {name}", name = new_name));
         return;
     }
 
@@ -142,7 +142,7 @@ pub(super) fn handle_create_confirm(app_state: &mut AppState) {
 
     // Made in the directory on show, not in one named by the path typed.
     if !is_plain_name(&name) {
-        app_state.display_error(format!("Not a plain file name: {}", name));
+        app_state.display_error(t!("Not a plain file name: {name}", name));
         return;
     }
 
@@ -219,7 +219,7 @@ fn go_transfer(app_state: &mut AppState, sources: &[(PathBuf, bool)], destinatio
     // Into an archive: the other panel inside one, or a path typed through
     // one. Asked of the disk, as transfer_targets asks it.
     if crate::archive::locate(destination).is_some() {
-        app_state.display_error(READ_ONLY.to_string());
+        app_state.display_error(read_only().to_string());
         return;
     }
     match transfer_targets(sources, destination, names_dir) {
@@ -238,7 +238,7 @@ fn go_transfer(app_state: &mut AppState, sources: &[(PathBuf, bool)], destinatio
 fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
     // Into an archive, whichever way the destination was arrived at.
     if items.iter().any(|(_, dest, _)| dest.parent().is_some_and(|dir| crate::archive::locate(dir).is_some())) {
-        return app_state.display_error(READ_ONLY.to_string());
+        return app_state.display_error(read_only().to_string());
     }
     if let Some(archive) = app_state.panel_archive(app_state.is_left_active).cloned() {
         return submit_extract(app_state, archive, items);
@@ -253,7 +253,7 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
     // The work itself, the panel reload and the selections are all handled
     // by the job as it finishes.
     match app_state.options.on_existing {
-        OnExisting::Refuse if !taken.is_empty() => app_state.display_error(format!("Destination already exists: {}", taken[0].display())),
+        OnExisting::Refuse if !taken.is_empty() => app_state.display_error(t!("Destination already exists: {path}", path = taken[0].display())),
         OnExisting::Overwrite => app_state.start_transfer(items, is_copy, Clashes::ReplaceAll),
         OnExisting::KeepBoth => app_state.start_transfer(items, is_copy, Clashes::KeepBothAll),
         OnExisting::Ask | OnExisting::Refuse => app_state.start_transfer(items, is_copy, Clashes::Ask),
@@ -270,8 +270,8 @@ fn submit_extract(app_state: &mut AppState, archive: PathBuf, items: Vec<(PathBu
     for (source, dest, is_dir) in items {
         if let Ok(metadata) = dest.symlink_metadata() {
             match (is_dir, metadata.is_dir()) {
-                (false, true) => return app_state.display_error(format!("Cannot replace directory {} with a file", dest.display())),
-                (true, false) => return app_state.display_error(format!("Cannot replace file {} with a directory", dest.display())),
+                (false, true) => return app_state.display_error(t!("Cannot replace directory {path} with a file", path = dest.display())),
+                (true, false) => return app_state.display_error(t!("Cannot replace file {path} with a directory", path = dest.display())),
                 _ => taken.push(dest.clone()),
             }
         }
@@ -281,7 +281,7 @@ fn submit_extract(app_state: &mut AppState, archive: PathBuf, items: Vec<(PathBu
         extracting.push((inner.to_path_buf(), dest));
     }
     match app_state.options.on_existing {
-        OnExisting::Refuse if !taken.is_empty() => app_state.display_error(format!("Destination already exists: {}", taken[0].display())),
+        OnExisting::Refuse if !taken.is_empty() => app_state.display_error(t!("Destination already exists: {path}", path = taken[0].display())),
         OnExisting::Overwrite => app_state.start_extract(archive, extracting, Clashes::ReplaceAll, None),
         OnExisting::KeepBoth => app_state.start_extract(archive, extracting, Clashes::KeepBothAll, None),
         OnExisting::Ask | OnExisting::Refuse => app_state.start_extract(archive, extracting, Clashes::Ask, None),
@@ -305,7 +305,7 @@ pub(super) fn open_extract_all(app_state: &mut AppState) {
             let item = state.selected().and_then(|index| children.get(index));
             match item.map(|item| item.path_in(dir)).filter(|path| item.is_some_and(|item| !item.is_dir) && crate::archive::kind_of(path).is_some()) {
                 Some(path) => path,
-                None => return app_state.display_error("Put the cursor on an archive to extract it".to_string()),
+                None => return app_state.display_error(t!("Put the cursor on an archive to extract it").to_string()),
             }
         }
     };
@@ -342,10 +342,10 @@ pub(super) fn handle_extract_confirm(app_state: &mut AppState) {
 /// F11 says: the archive is not read here, so nothing can be checked ahead.
 fn go_extract_all(app_state: &mut AppState, archive: PathBuf, destination: &Path) {
     if crate::archive::locate(destination).is_some() {
-        return app_state.display_error(READ_ONLY.to_string());
+        return app_state.display_error(read_only().to_string());
     }
     if !destination.is_dir() {
-        return app_state.display_error(format!("No such directory: {}", destination.display()));
+        return app_state.display_error(t!("No such directory: {path}", path = destination.display()));
     }
     let clashes = match app_state.options.on_existing {
         OnExisting::Overwrite => Clashes::ReplaceAll,
@@ -362,7 +362,7 @@ fn go_extract_all(app_state: &mut AppState, archive: PathBuf, destination: &Path
 pub(super) fn open_pack(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
     if app_state.panel_archive(is_left).is_some() {
-        return app_state.display_error("Copy it out of the archive first: what is packed has to be on the disk".to_string());
+        return app_state.display_error(t!("Copy it out of the archive first: what is packed has to be on the disk").to_string());
     }
     let sources = chosen_items(app_state);
     if sources.is_empty() {
@@ -419,20 +419,20 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
     let dest = typed_path(&input.text, &app_state.panel_dir(app_state.is_left_active));
     let Some(format) = PackFormat::of(&dest) else {
         let endings: Vec<&str> = PackFormat::ALL.iter().map(|format| format.extension()).collect();
-        return app_state.display_error(format!("Name it as an archive, ending in {}", endings.join(", ")));
+        return app_state.display_error(t!("Name it as an archive, ending in {endings}", endings = endings.join(", ")));
     };
     match dest.parent() {
-        Some(dir) if crate::archive::locate(dir).is_some() => return app_state.display_error(READ_ONLY.to_string()),
+        Some(dir) if crate::archive::locate(dir).is_some() => return app_state.display_error(read_only().to_string()),
         Some(dir) if dir.is_dir() => {}
-        Some(dir) => return app_state.display_error(format!("No such directory: {}", dir.display())),
-        None => return app_state.display_error(format!("Cannot pack into {}", dest.display())),
+        Some(dir) => return app_state.display_error(t!("No such directory: {path}", path = dir.display())),
+        None => return app_state.display_error(t!("Cannot pack into {path}", path = dest.display())),
     }
     let (dest, replacing) = match dest.symlink_metadata() {
-        Ok(metadata) if metadata.is_dir() => return app_state.display_error(format!("{} is a directory", dest.display())),
+        Ok(metadata) if metadata.is_dir() => return app_state.display_error(t!("{path} is a directory", path = dest.display())),
         Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => (dest, true),
         // Beside it, as a copy keeps both.
         Ok(_) if app_state.options.on_existing == OnExisting::KeepBoth => (crate::fs_ops::free_name(&dest), false),
-        Ok(_) => return app_state.display_error(format!("Already exists: {} - another name, or Overwrite or Keep both under F11", dest.display())),
+        Ok(_) => return app_state.display_error(t!("Already exists: {path} - another name, or Overwrite or Keep both under F11", path = dest.display())),
         Err(_) => (dest, false),
     };
     app_state.start_pack(sources, dest, format, replacing);
@@ -443,7 +443,7 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
 pub(super) fn open_checksums(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
     if app_state.panel_archive(is_left).is_some() {
-        return app_state.display_error("Copy it out of the archive first: checksums are worked out of files on the disk".to_string());
+        return app_state.display_error(t!("Copy it out of the archive first: checksums are worked out of files on the disk").to_string());
     }
     let sources = chosen_items(app_state);
     if let [(path, false)] = &sources[..]
@@ -476,7 +476,7 @@ pub(super) fn checksums_key(app_state: &mut AppState, code: KeyCode) {
         KeyCode::Char('c' | 'C') => {
             let text = view.report.to_copy();
             crate::utils::set_system_clipboard(&text);
-            app_state.find_note = Some(if text.contains('\n') { "Copied the report".to_string() } else { format!("Copied: {text}") });
+            app_state.find_note = Some(if text.contains('\n') { t!("Copied the report").to_string() } else { t!("Copied: {text}", text) });
             app_state.clipboard = text;
         }
 
@@ -498,16 +498,16 @@ fn write_checksums(app_state: &mut AppState) {
         return;
     };
     let Some((dest, text)) = view.report.sums_file() else {
-        return app_state.display_error("Nothing to write: no checksum could be worked out".to_string());
+        return app_state.display_error(t!("Nothing to write: no checksum could be worked out").to_string());
     };
     let (dest, replacing) = match dest.symlink_metadata() {
         Err(_) => (dest, false),
         Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => (dest, true),
         Ok(_) if app_state.options.on_existing == OnExisting::KeepBoth => (crate::fs_ops::free_name(&dest), false),
-        Ok(_) => return app_state.display_error(format!("Already exists: {} - Overwrite or Keep both under F11", dest.display())),
+        Ok(_) => return app_state.display_error(t!("Already exists: {path} - Overwrite or Keep both under F11", path = dest.display())),
     };
     if let Err(e) = crate::fs_ops::write_whole(&dest, &text, replacing) {
-        return app_state.display_error(format!("Cannot write {}: {e}", dest.display()));
+        return app_state.display_error(t!("Cannot write {path}: {e}", path = dest.display(), e));
     }
     app_state.dialog = None;
     for is_left in [true, false] {
@@ -515,7 +515,7 @@ fn write_checksums(app_state: &mut AppState) {
             app_state.reload_panel(is_left, dest.file_name());
         }
     }
-    app_state.find_note = Some(format!("Written: {}", dest.file_name().unwrap_or_default().to_string_lossy()));
+    app_state.find_note = Some(t!("Written: {name}", name = dest.file_name().unwrap_or_default().to_string_lossy()));
 }
 
 /// Shift+F3: which two files to compare. Two files selected in the panel you
@@ -546,13 +546,13 @@ pub(super) fn open_compare(app_state: &mut AppState) {
     }
 
     let Some((name, here)) = file_at_cursor(app_state, is_left) else {
-        app_state.display_error("Put the cursor on a file to compare, or select two".to_string());
+        app_state.display_error(t!("Put the cursor on a file to compare, or select two").to_string());
         return;
     };
     let (other_children, other_dir) = if is_left { (&app_state.children_right, &app_state.dir_right) } else { (&app_state.children_left, &app_state.dir_left) };
     let namesake = other_children.iter().find(|item| !item.is_dir && item.name_os == name).map(|item| item.path_in(other_dir));
     let Some(there) = namesake.or_else(|| file_at_cursor(app_state, !is_left).map(|(_, path)| path)) else {
-        app_state.display_error("Nothing to compare with: the other panel has no file of that name, nor one under its cursor".to_string());
+        app_state.display_error(t!("Nothing to compare with: the other panel has no file of that name, nor one under its cursor").to_string());
         return;
     };
     if is_left {
@@ -618,7 +618,7 @@ pub(super) fn handle_symlink_confirm(app_state: &mut AppState) {
     if let Ok(links) = &links
         && links.iter().any(|(_, link, _)| link.parent().is_some_and(|dir| crate::archive::locate(dir).is_some()))
     {
-        app_state.display_error(READ_ONLY.to_string());
+        app_state.display_error(read_only().to_string());
         return;
     }
     let links = match links {
@@ -648,7 +648,7 @@ pub(super) fn handle_symlink_confirm(app_state: &mut AppState) {
     }
     match failed.len() {
         0 => {}
-        1 if links.len() == 1 => app_state.display_error(format!("Cannot link {}", failed[0])),
-        count => app_state.display_error(format!("Could not link {count} of {}. {}", links.len(), failed[0])),
+        1 if links.len() == 1 => app_state.display_error(t!("Cannot link {what}", what = failed[0])),
+        count => app_state.display_error(t!("Could not link {count} of {total}. {first}", count, total = links.len(), first = failed[0])),
     }
 }

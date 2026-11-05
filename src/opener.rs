@@ -76,14 +76,14 @@ pub fn openers(path: &Path, is_dir: bool, associations: &[Association]) -> Vec<O
         openers.extend(desktop_openers(&mimes, &data, &config));
     }
     openers.push(Opener {
-        label: "System default".to_string(),
+        label: t!("System default").to_string(),
         detail: String::new(),
         launch: Launch::Default,
         terminal: false,
     });
     if cfg!(windows) && !is_dir {
         openers.push(Opener {
-            label: "Choose another program".to_string(),
+            label: t!("Choose another program").to_string(),
             detail: String::new(),
             launch: Launch::Choose,
             terminal: false,

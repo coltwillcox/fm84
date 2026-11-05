@@ -185,7 +185,7 @@ pub fn copy_path(source: PathBuf, dest: PathBuf, is_dir: bool, report: Report<'_
     // Refused here as well as before the transfer starts, so no caller can
     // reach the runaway however it assembles its paths.
     if copies_into_itself(&source, &dest) {
-        return Err(Error::new(ErrorKind::InvalidInput, format!("Cannot copy \"{}\" into itself", source.display())));
+        return Err(Error::new(ErrorKind::InvalidInput, t!("Cannot copy \"{path}\" into itself", path = source.display())));
     }
 
     // A symlink is copied as the link itself, never as its target, matching
@@ -357,7 +357,7 @@ pub(super) fn place(temp: &Path, dest: &Path, replacing: bool) -> Result<(), Err
     } else if path_exists(dest) {
         // Taken while the copy ran, and nobody said it could be replaced. A
         // rename would replace it without a word.
-        Err(Error::new(ErrorKind::AlreadyExists, format!("Destination already exists: {}", dest.display())))
+        Err(Error::new(ErrorKind::AlreadyExists, t!("Destination already exists: {path}", path = dest.display())))
     } else {
         rename(temp, dest)
     };
@@ -559,15 +559,15 @@ pub fn transfer_targets(sources: &[(PathBuf, bool)], destination: &Path, names_d
         return Ok(sources.iter().map(|(source, is_dir)| (source.clone(), destination.join(source.file_name().unwrap_or_default()), *is_dir)).collect());
     }
     if names_dir {
-        return Err(format!("No such directory: {}", destination.display()));
+        return Err(t!("No such directory: {path}", path = destination.display()));
     }
     let [(source, is_dir)] = sources else {
-        return Err(format!("{} items need a directory to go into, and {} is not one", sources.len(), destination.display()));
+        return Err(t!("{count} items need a directory to go into, and {path} is not one", count = sources.len(), path = destination.display()));
     };
     match destination.parent() {
         Some(parent) if parent.is_dir() => Ok(vec![(source.clone(), destination.to_path_buf(), *is_dir)]),
-        Some(parent) => Err(format!("No such directory: {}", parent.display())),
-        None => Err(format!("Cannot copy to {}", destination.display())),
+        Some(parent) => Err(t!("No such directory: {path}", path = parent.display())),
+        None => Err(t!("Cannot copy to {path}", path = destination.display())),
     }
 }
 
@@ -585,11 +585,11 @@ pub fn check_destinations(items: &[(PathBuf, PathBuf, bool)]) -> Result<Vec<Path
             continue;
         }
         if is_same_entry(source, dest) {
-            return Err(format!("\"{}\" is already there", source.display()));
+            return Err(t!("\"{path}\" is already there", path = source.display()));
         }
         match (is_real_dir(source), is_real_dir(dest)) {
-            (false, true) => return Err(format!("Cannot replace directory {} with a file", dest.display())),
-            (true, false) => return Err(format!("Cannot replace file {} with a directory", dest.display())),
+            (false, true) => return Err(t!("Cannot replace directory {path} with a file", path = dest.display())),
+            (true, false) => return Err(t!("Cannot replace file {path} with a directory", path = dest.display())),
             _ => {}
         }
         taken.push(dest.clone());
@@ -597,7 +597,7 @@ pub fn check_destinations(items: &[(PathBuf, PathBuf, bool)]) -> Result<Vec<Path
     // A destination inside the source would be copied into itself, filling the
     // disk.
     if let Some((source, _, _)) = items.iter().find(|(source, dest, _)| copies_into_itself(source, dest)) {
-        return Err(format!("Cannot copy \"{}\" into itself", source.display()));
+        return Err(t!("Cannot copy \"{path}\" into itself", path = source.display()));
     }
     Ok(taken)
 }

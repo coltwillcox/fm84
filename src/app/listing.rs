@@ -172,7 +172,7 @@ fn read_archive_listing(dir: &Path, located: crate::archive::Located, options: &
         }
         // Said as what it is: an archive fm84 cannot read, not a missing
         // directory.
-        Err(e) => (dir.to_path_buf(), Err(std::io::Error::new(e.kind(), format!("not readable as an archive ({e})")))),
+        Err(e) => (dir.to_path_buf(), Err(std::io::Error::new(e.kind(), t!("not readable as an archive ({e})", e)))),
     };
     let stamp = std::fs::metadata(&archive).and_then(|metadata| metadata.modified()).ok();
     Listed {
@@ -326,7 +326,7 @@ impl AppState {
             }
             // Gone without a word, which only happens if it panicked.
             Err(mpsc::RecvTimeoutError::Disconnected) => {
-                self.display_error(format!("Cannot read {}", pending.dir.display()));
+                self.display_error(t!("Cannot read {path}", path = pending.dir.display()));
                 self.undo_tab(is_left, pending.tab);
                 Some(false)
             }
@@ -345,7 +345,7 @@ impl AppState {
                 }
                 Err(TryRecvError::Empty) => *self.listing_mut(is_left) = Some(pending),
                 Err(TryRecvError::Disconnected) => {
-                    self.display_error(format!("Cannot read {}", pending.dir.display()));
+                    self.display_error(t!("Cannot read {path}", path = pending.dir.display()));
                     if let Some(flat) = pending.restore_flat.clone() {
                         *self.flat_mut(is_left) = flat;
                     }
@@ -375,7 +375,7 @@ impl AppState {
     /// One that is gone is climbed out of, to the nearest parent still there.
     fn apply_listing(&mut self, is_left: bool, pending: PendingListing, listed: Listed) -> bool {
         let Some(found) = listed.dir else {
-            self.display_error(format!("No such directory: {}", pending.dir.display()));
+            self.display_error(t!("No such directory: {path}", path = pending.dir.display()));
             self.undo_tab(is_left, pending.tab);
             self.forget_travel(is_left, pending.travel);
             return false;
@@ -384,7 +384,7 @@ impl AppState {
             && found == pending.dir
             && let Err(e) = &listed.items
         {
-            self.display_error(format!("Cannot open {}: {}", pending.dir.display(), e));
+            self.display_error(t!("Cannot open {path}: {e}", path = pending.dir.display(), e));
             self.undo_tab(is_left, pending.tab);
             self.forget_travel(is_left, pending.travel);
             return false;
@@ -393,7 +393,7 @@ impl AppState {
         // else that is not there as typed stays where it is, and says so.
         let to_file = pending.travel == Travel::GoTo && found != pending.dir && pending.dir.parent() == Some(found.as_path()) && listed.items.as_ref().is_ok_and(|items| items.iter().any(|item| Some(item.name_os.as_os_str()) == pending.dir.file_name()));
         if pending.travel == Travel::GoTo && found != pending.dir && !to_file {
-            self.display_error(format!("No such file or directory: {}", pending.dir.display()));
+            self.display_error(t!("No such file or directory: {path}", path = pending.dir.display()));
             return false;
         }
         let leaving = self.panel_as_tab(is_left);
@@ -455,7 +455,7 @@ impl AppState {
             Err(e) => self.display_error(e.to_string()),
         }
         if listed.truncated {
-            self.find_note = Some(format!("Only the first {} files are listed", crate::constants::FLAT_MAX));
+            self.find_note = Some(t!("Only the first {count} files are listed", count = crate::constants::FLAT_MAX));
         }
 
         // What is watched for a change: the archive file, for a directory

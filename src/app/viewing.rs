@@ -137,7 +137,7 @@ impl AppState {
             // A pipe, socket or device: opening one to read can block for good,
             // and /dev/zero would pass the size check below and never end.
             Ok(metadata) if !metadata.is_file() => {
-                self.display_error(format!("Not a regular file: {}", file_path.display()));
+                self.display_error(t!("Not a regular file: {path}", path = file_path.display()));
                 return;
             }
             Ok(metadata) => metadata.len(),

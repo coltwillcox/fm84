@@ -26,7 +26,7 @@ pub fn create_directory(path: PathBuf) -> Result<(), Error> {
 /// without Developer Mode or the right to make them.
 pub fn create_symlink(target: &Path, link: &Path, is_dir: bool) -> Result<(), Error> {
     if path_exists(link) {
-        return Err(Error::new(ErrorKind::AlreadyExists, format!("{} already exists", link.display())));
+        return Err(Error::new(ErrorKind::AlreadyExists, t!("{path} already exists", path = link.display())));
     }
     #[cfg(unix)]
     {
@@ -40,7 +40,7 @@ pub fn create_symlink(target: &Path, link: &Path, is_dir: bool) -> Result<(), Er
     #[cfg(not(any(unix, windows)))]
     {
         let _ = (target, is_dir);
-        Err(Error::new(ErrorKind::Unsupported, "Symbolic links are not supported here"))
+        Err(Error::new(ErrorKind::Unsupported, t!("Symbolic links are not supported here")))
     }
 }
 
@@ -50,10 +50,10 @@ pub fn create_symlink(target: &Path, link: &Path, is_dir: bool) -> Result<(), Er
 /// fm84 runs on allows.
 pub fn create_hard_link(target: &Path, link: &Path, is_dir: bool) -> Result<(), Error> {
     if is_dir {
-        return Err(Error::new(ErrorKind::InvalidInput, "a directory cannot be hard linked"));
+        return Err(Error::new(ErrorKind::InvalidInput, t!("a directory cannot be hard linked")));
     }
     if path_exists(link) {
-        return Err(Error::new(ErrorKind::AlreadyExists, format!("{} already exists", link.display())));
+        return Err(Error::new(ErrorKind::AlreadyExists, t!("{path} already exists", path = link.display())));
     }
     // Of a symbolic link, the file it points at. Linux would link the
     // symlink itself, macOS what it points at; and a second name for a
@@ -181,7 +181,7 @@ pub(super) fn temp_beside(dest: &Path) -> Result<(PathBuf, File), Error> {
             Err(e) => return Err(e),
         }
     }
-    Err(Error::new(ErrorKind::AlreadyExists, format!("Cannot make room beside {}", dest.display())))
+    Err(Error::new(ErrorKind::AlreadyExists, t!("Cannot make room beside {path}", path = dest.display())))
 }
 
 /// Clear a link out of the way of a file about to be written at `dest`, so the
@@ -199,7 +199,7 @@ pub(super) fn clear_link(dest: &Path) -> Result<(), Error> {
 /// link in the way goes. A directory does not - no link replaces a tree.
 pub(super) fn clear_for_link(dest: &Path) -> Result<(), Error> {
     match dest.symlink_metadata() {
-        Ok(metadata) if metadata.is_dir() => Err(Error::new(ErrorKind::AlreadyExists, format!("Cannot replace directory {} with a link", dest.display()))),
+        Ok(metadata) if metadata.is_dir() => Err(Error::new(ErrorKind::AlreadyExists, t!("Cannot replace directory {path} with a link", path = dest.display()))),
         Ok(_) => clear_link(dest).and_then(|()| if path_exists(dest) { remove_file(dest) } else { Ok(()) }),
         Err(_) => Ok(()),
     }

@@ -194,7 +194,7 @@ fn git_bytes(dir: &Path, arguments: &[&str]) -> Result<Vec<u8>, String> {
         .env("GIT_OPTIONAL_LOCKS", "0")
         .stdin(Stdio::null())
         .output()
-        .map_err(|e| format!("Cannot run git: {e}"))?;
+        .map_err(|e| t!("Cannot run git: {e}", e))?;
     if output.status.success() {
         return Ok(output.stdout);
     }

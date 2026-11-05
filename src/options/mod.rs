@@ -88,8 +88,8 @@ impl Theme {
             Theme::Synthwave => "Synthwave",
             Theme::Outrun => "Outrun",
             Theme::Vaporwave => "Vaporwave",
-            Theme::HighContrast => "High contrast",
-            Theme::Military => "Military",
+            Theme::HighContrast => t!("High contrast"),
+            Theme::Military => t!("Military"),
             Theme::Picard => "Picard",
             Theme::Dracula => "Dracula",
             Theme::Monokai => "Monokai",
@@ -210,11 +210,11 @@ impl ScrollBarStyle {
 
     pub fn label(self) -> &'static str {
         match self {
-            ScrollBarStyle::Heavy => "Heavy",
-            ScrollBarStyle::Double => "Double",
-            ScrollBarStyle::Dashed => "Dashed",
-            ScrollBarStyle::Block => "Block",
-            ScrollBarStyle::Shade => "Shade",
+            ScrollBarStyle::Heavy => t!("Heavy"),
+            ScrollBarStyle::Double => t!("Double"),
+            ScrollBarStyle::Dashed => t!("Dashed"),
+            ScrollBarStyle::Block => t!("Block"),
+            ScrollBarStyle::Shade => t!("Shade"),
             ScrollBarStyle::Ascii => "ASCII",
         }
     }

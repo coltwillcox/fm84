@@ -111,7 +111,7 @@ fn f5_copies_out_and_f6_is_refused() {
 
     on(&mut app_state, "readme.txt");
     press(&mut app_state, KeyCode::F(6));
-    assert_eq!(app_state.error.as_deref(), Some(crate::app::READ_ONLY));
+    assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()));
     assert!(app_state.dialog.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -137,7 +137,7 @@ fn nothing_writes_into_an_archive() {
     ];
     for (code, modifiers) in keys {
         handle_key(&mut app_state, KeyEvent::new(code, modifiers));
-        assert_eq!(app_state.error.as_deref(), Some(crate::app::READ_ONLY), "{code:?} {modifiers:?}");
+        assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()), "{code:?} {modifiers:?}");
         assert!(app_state.dialog.is_none() && app_state.job.is_none() && matches!(app_state.screen, Screen::Panels), "{code:?} {modifiers:?}");
         app_state.reset_error();
     }
@@ -149,7 +149,7 @@ fn nothing_writes_into_an_archive() {
     for code in [KeyCode::F(5), KeyCode::F(6)] {
         press(&mut app_state, code);
         press(&mut app_state, KeyCode::Enter);
-        assert_eq!(app_state.error.as_deref(), Some(crate::app::READ_ONLY), "{code:?}");
+        assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()), "{code:?}");
         assert!(app_state.job.is_none());
         app_state.reset_error();
     }
@@ -270,7 +270,7 @@ fn alt_f9_extracts_a_whole_archive() {
     handle_key(&mut app_state, KeyEvent::new(KeyCode::F(9), KeyModifiers::ALT));
     app_state.dialog_input().unwrap().set(archive.join("2024").display().to_string());
     press(&mut app_state, KeyCode::Enter);
-    assert_eq!(app_state.error.as_deref(), Some(crate::app::READ_ONLY));
+    assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()));
     assert!(app_state.job.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -378,7 +378,7 @@ fn alt_p_packs_into_the_other_panel() {
     alt_p(&mut app_state);
     app_state.dialog_input().unwrap().set(out.join("photos.7z/inside.zip").display().to_string());
     press(&mut app_state, KeyCode::Enter);
-    assert_eq!(app_state.error.as_deref(), Some(crate::app::READ_ONLY));
+    assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()));
     app_state.reset_error();
     app_state.open_dir(true, out.join("photos.7z"), None);
     alt_p(&mut app_state);

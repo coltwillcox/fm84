@@ -47,7 +47,7 @@ pub(super) fn open_terminal(app_state: &mut AppState) {
     let command = app_state.options.terminal.trim();
     let result = if command.is_empty() { spawn_detached_terminal(dir) } else { spawn_configured_terminal(command, dir) };
     if let Err(e) = result {
-        app_state.display_error(format!("Cannot open terminal: {}", e));
+        app_state.display_error(t!("Cannot open terminal: {e}", e));
     }
 }
 
@@ -56,7 +56,7 @@ pub(super) fn open_terminal(app_state: &mut AppState) {
 /// the directory either way.
 fn spawn_configured_terminal(command: &str, dir: &std::path::Path) -> std::io::Result<()> {
     let mut parts = command.split_whitespace().map(|part| crate::utils::substitute(part, dir.as_os_str()));
-    let program = parts.next().ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "Empty terminal command"))?;
+    let program = parts.next().ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, t!("Empty terminal command")))?;
     let mut process = Command::new(program);
     process.args(parts).current_dir(dir).stdout(Stdio::null()).stderr(Stdio::null());
     detach(&mut process);
@@ -115,7 +115,7 @@ fn spawn_detached_terminal(dir: &std::path::Path) -> std::io::Result<()> {
             return Ok(());
         }
     }
-    Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No terminal emulator found. Set $TERMINAL."))
+    Err(std::io::Error::new(std::io::ErrorKind::NotFound, t!("No terminal emulator found. Set $TERMINAL.")))
 }
 
 /// Enter, or 1 to 9, on Alt+M's menu: the command highlighted, on what the
@@ -142,7 +142,7 @@ pub(super) fn run_user_menu_entry(app_state: &mut AppState) {
     };
     let file = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()).map(|item| item.path_in(dir));
     if (needs_file && file.is_none()) || (needs_files && files.is_empty()) {
-        app_state.display_error(format!("Nothing chosen for {}", entry.label));
+        app_state.display_error(t!("Nothing chosen for {label}", label = entry.label));
         return;
     }
     let values = crate::app::MenuValues {

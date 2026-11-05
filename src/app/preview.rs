@@ -29,7 +29,7 @@ fn read_archive_preview(path: &Path) -> Option<Preview> {
         return Some(Preview::Lines(vec![format!("{} items", index.children(&entry.path).count())]));
     }
     let (EntryKind::File, Some(position)) = (entry.kind, entry.position) else {
-        return Some(Preview::Lines(vec!["Not a regular file".to_string()]));
+        return Some(Preview::Lines(vec![t!("Not a regular file").to_string()]));
     };
     let located = crate::archive::locate(path)?;
     let mut head = None;

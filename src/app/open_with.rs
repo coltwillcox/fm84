@@ -36,7 +36,7 @@ impl AppState {
     pub fn edit_associations(&mut self) {
         self.dialog = None;
         let Some(file) = crate::options::associations_file() else {
-            self.display_error("No config directory to keep associations in".to_string());
+            self.display_error(t!("No config directory to keep associations in").to_string());
             return;
         };
         if self.options.editor.trim().is_empty() {
@@ -71,7 +71,7 @@ impl AppState {
             Some(opener) => self.launch(&opener, path),
             None => {
                 if let Err(e) = crate::input::open_with_default(path) {
-                    self.display_error(format!("Cannot open file: {e}"));
+                    self.display_error(t!("Cannot open file: {e}", e));
                 }
             }
         }
@@ -85,7 +85,7 @@ impl AppState {
         let mut process = match &opener.launch {
             Launch::Default => {
                 if let Err(e) = crate::input::open_with_default(path) {
-                    self.display_error(format!("Cannot open file: {e}"));
+                    self.display_error(t!("Cannot open file: {e}", e));
                 }
                 return;
             }
@@ -125,7 +125,7 @@ impl AppState {
             Ok(mut child) => {
                 std::thread::spawn(move || child.wait());
             }
-            Err(e) => self.display_error(format!("Cannot start {}: {e}", opener.label)),
+            Err(e) => self.display_error(t!("Cannot start {program}: {e}", program = opener.label, e)),
         }
     }
 }

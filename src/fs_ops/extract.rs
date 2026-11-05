@@ -160,7 +160,7 @@ pub fn extract(archive: &Path, items: &[(PathBuf, PathBuf)], report: Report<'_>)
                             clear_for_link(&target)?;
                             fs::hard_link(original, &target)
                         }
-                        _ => Err(Error::other(format!("A hard link to {}, which is not being copied out", entry.link.as_deref().unwrap_or(Path::new("?")).display()))),
+                        _ => Err(Error::other(t!("A hard link to {path}, which is not being copied out", path = entry.link.as_deref().unwrap_or(Path::new("?")).display()))),
                     }
                 })?;
             }
@@ -227,7 +227,7 @@ fn make_link(points_to: &Path, link: &Path) -> Result<(), Error> {
 
 #[cfg(not(any(unix, windows)))]
 fn make_link(_points_to: &Path, _link: &Path) -> Result<(), Error> {
-    Err(Error::new(ErrorKind::Unsupported, "Symbolic links are not supported here"))
+    Err(Error::new(ErrorKind::Unsupported, t!("Symbolic links are not supported here")))
 }
 
 #[cfg(test)]

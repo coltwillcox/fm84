@@ -38,10 +38,10 @@ pub enum AttributeKind {
 impl AttributeKind {
     pub fn label(self) -> &'static str {
         match self {
-            AttributeKind::Mode => "Mode",
-            AttributeKind::Owner => "Owner",
-            AttributeKind::Group => "Group",
-            AttributeKind::Modified => "Modified",
+            AttributeKind::Mode => t!("Mode"),
+            AttributeKind::Owner => t!("Owner"),
+            AttributeKind::Group => t!("Group"),
+            AttributeKind::Modified => t!("Modified"),
         }
     }
 }
@@ -55,7 +55,7 @@ impl AppState {
             match std::fs::metadata(path) {
                 Ok(found) => metadata.push(found),
                 Err(e) => {
-                    self.display_error(format!("Cannot read {}: {}", path.display(), e));
+                    self.display_error(t!("Cannot read {path}: {e}", path = path.display(), e));
                     return;
                 }
             }
@@ -138,9 +138,9 @@ impl AppState {
             let read = match field.kind {
                 AttributeKind::Mode => crate::attributes::ModeChange::parse(text).map(|mode| change.mode = Some(mode)),
                 #[cfg(unix)]
-                AttributeKind::Owner => crate::fs_ops::user_id(text).map(|uid| change.owner = Some(uid)).ok_or_else(|| format!("No such user: {text}")),
+                AttributeKind::Owner => crate::fs_ops::user_id(text).map(|uid| change.owner = Some(uid)).ok_or_else(|| t!("No such user: {text}", text)),
                 #[cfg(unix)]
-                AttributeKind::Group => crate::fs_ops::group_id(text).map(|gid| change.group = Some(gid)).ok_or_else(|| format!("No such group: {text}")),
+                AttributeKind::Group => crate::fs_ops::group_id(text).map(|gid| change.group = Some(gid)).ok_or_else(|| t!("No such group: {text}", text)),
                 #[cfg(not(unix))]
                 AttributeKind::Owner | AttributeKind::Group => Ok(()),
                 AttributeKind::Modified => crate::attributes::parse_time(text).map(|time| change.modified = Some(time)),
@@ -167,8 +167,8 @@ impl AppState {
         self.reload_panel(false, None);
         match failed.len() {
             0 => {}
-            1 if form.items.len() == 1 => self.display_error(format!("Cannot change {}", failed[0])),
-            count => self.display_error(format!("Could not change {count} of {}. {}", form.items.len(), failed[0])),
+            1 if form.items.len() == 1 => self.display_error(t!("Cannot change {what}", what = failed[0])),
+            count => self.display_error(t!("Could not change {count} of {total}. {first}", count, total = form.items.len(), first = failed[0])),
         }
     }
 }

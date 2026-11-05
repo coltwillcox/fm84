@@ -3,7 +3,9 @@
 use super::*;
 
 /// What is said of anything that would write into an archive.
-pub const READ_ONLY: &str = "Archives are read-only";
+pub fn read_only() -> &'static str {
+    t!("Archives are read-only")
+}
 
 impl AppState {
     /// The archive a panel's directory runs through, as its listing found it.
@@ -26,7 +28,7 @@ impl AppState {
     pub fn refuse_in_archive(&mut self, is_left: bool) -> bool {
         let inside = self.panel_archive(is_left).is_some();
         if inside {
-            self.display_error(READ_ONLY.to_string());
+            self.display_error(read_only().to_string());
         }
         inside
     }
@@ -51,7 +53,7 @@ impl AppState {
         let dest = match crate::archive::scratch_dir() {
             Ok(dir) => dir.join(name),
             Err(e) => {
-                self.display_error(format!("Cannot make room to open it: {e}"));
+                self.display_error(t!("Cannot make room to open it: {e}", e));
                 return;
             }
         };
@@ -78,7 +80,7 @@ impl AppState {
             };
             let dest = match crate::archive::scratch_dir() {
                 Ok(dir) => dir.join(name),
-                Err(e) => return self.display_error(format!("Cannot make room to compare: {e}")),
+                Err(e) => return self.display_error(t!("Cannot make room to compare: {e}", e)),
             };
             match out_of.iter_mut().find(|(known, _)| known == archive) {
                 Some((_, items)) => items.push((inner.to_path_buf(), dest.clone())),

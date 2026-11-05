@@ -79,7 +79,7 @@ impl AppState {
     /// Alt+F7: ask what to look for, offering the last search again.
     pub fn open_find_files(&mut self) {
         if self.panel_archive(self.is_left_active).is_some() {
-            self.display_error("Find files cannot search inside an archive yet".to_string());
+            self.display_error(t!("Find files cannot search inside an archive yet").to_string());
             return;
         }
         let mut form = self.find_files_last.clone();
@@ -233,7 +233,7 @@ impl AppState {
         let start = search.start.clone();
         let feed: Vec<(PathBuf, bool)> = search.results.iter().filter_map(|(path, is_dir)| path.strip_prefix(&start).ok().map(|relative| (relative.to_path_buf(), *is_dir))).collect();
         if feed.is_empty() {
-            self.display_error("Nothing found to feed to the panel".to_string());
+            self.display_error(t!("Nothing found to feed to the panel").to_string());
             return;
         }
         let first = feed[0].0.clone().into_os_string();

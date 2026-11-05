@@ -112,7 +112,7 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
     // Get metadata once (single stat syscall)
     let metadata = std::fs::metadata(path)?;
     if !metadata.is_file() {
-        return Err(Error::new(std::io::ErrorKind::InvalidInput, format!("Not a regular file: {}", path.display())));
+        return Err(Error::new(std::io::ErrorKind::InvalidInput, t!("Not a regular file: {path}", path = path.display())));
     }
     let file_size = metadata.len();
 
@@ -156,7 +156,7 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
             horizontal_offset: 0,
             total_lines: hex_line_count(&bytes),
             file_size,
-            syntax_name: "Binary".to_string(),
+            syntax_name: t!("Binary").to_string(),
             from_edit: false,
             bytes,
             mode: ViewMode::Hex,
@@ -243,7 +243,7 @@ pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Preview {
     // Checked first: the preview follows the cursor, so opening a named pipe
     // here would freeze the app just for passing over one.
     if !crate::fs_ops::is_regular_file(path) {
-        return Preview::Lines(vec!["Not a regular file".to_string()]);
+        return Preview::Lines(vec![t!("Not a regular file").to_string()]);
     }
     let binary = is_binary_file(path).unwrap_or(false);
 
@@ -261,7 +261,7 @@ pub fn load_preview(path: &Path, max_bytes: u64, max_lines: usize) -> Preview {
 }
 
 pub fn unreadable_preview() -> Preview {
-    Preview::Lines(vec!["Cannot read file".to_string()])
+    Preview::Lines(vec![t!("Cannot read file").to_string()])
 }
 
 /// The preview of the head of a file read from anywhere - an archive, say:

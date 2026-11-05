@@ -22,11 +22,11 @@ impl CaseChange {
 
     pub fn label(self) -> &'static str {
         match self {
-            CaseChange::Unchanged => "Unchanged",
-            CaseChange::Lower => "lower case",
-            CaseChange::Upper => "UPPER CASE",
-            CaseChange::First => "First letter",
-            CaseChange::Title => "Title Case",
+            CaseChange::Unchanged => t!("Unchanged"),
+            CaseChange::Lower => t!("lower case"),
+            CaseChange::Upper => t!("UPPER CASE"),
+            CaseChange::First => t!("First letter"),
+            CaseChange::Title => t!("Title Case"),
         }
     }
 
@@ -83,10 +83,10 @@ pub enum RenameProblem {
 impl RenameProblem {
     pub fn label(self) -> &'static str {
         match self {
-            RenameProblem::NotPlain => "not a plain name",
-            RenameProblem::Twice => "given twice",
-            RenameProblem::Taken => "already exists",
-            RenameProblem::Unreadable => "name not readable as text",
+            RenameProblem::NotPlain => t!("not a plain name"),
+            RenameProblem::Twice => t!("given twice"),
+            RenameProblem::Taken => t!("already exists"),
+            RenameProblem::Unreadable => t!("name not readable as text"),
         }
     }
 }
@@ -334,7 +334,13 @@ impl AppState {
         let preview = rename.preview();
         if let Some(problem) = preview.iter().find_map(|(_, problem)| *problem) {
             let count = preview.iter().filter(|(_, problem)| problem.is_some()).count();
-            self.display_error(format!("{count} of the new names cannot be had: {} - see the table", problem.label()));
+            self.display_error(tn!(
+                count,
+                "{count} of the new names cannot be had: {why} - see the table",
+                "{count} of the new names cannot be had: {why} - see the table",
+                count,
+                why = problem.label()
+            ));
             return;
         }
         let Some(Dialog::MultiRename(rename)) = self.dialog.take() else {
@@ -380,7 +386,7 @@ impl AppState {
         }
         self.reload_panel(is_left, landing.as_deref());
         if let Err((done, e)) = result {
-            self.display_error(format!("Renamed {done} of {}, then: {e}", moves.len()));
+            self.display_error(t!("Renamed {done} of {total}, then: {e}", done, total = moves.len(), e));
         }
     }
 }

@@ -33,8 +33,8 @@ impl Needle {
             return Ok(Self::new(term));
         }
         let built = regex::RegexBuilder::new(term).case_insensitive(!has_capital(term, true)).size_limit(1 << 24).build().map_err(|e| match e {
-            regex::Error::Syntax(said) => format!("Not a regular expression: {}", said.lines().last().unwrap_or(&said).trim_start_matches("error: ")),
-            other => format!("Not a regular expression: {other}"),
+            regex::Error::Syntax(said) => t!("Not a regular expression: {why}", why = said.lines().last().unwrap_or(&said).trim_start_matches("error: ")),
+            other => t!("Not a regular expression: {why}", why = other),
         })?;
         Ok(Some(Needle {
             chars: Vec::new(),

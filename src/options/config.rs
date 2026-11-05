@@ -31,7 +31,7 @@ pub(super) fn write_config_file(name: &str, contents: &str) -> io::Result<()> {
     if cfg!(test) {
         return Ok(());
     }
-    let path = config_path(name).ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No config directory"))?;
+    let path = config_path(name).ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, t!("No config directory")))?;
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)?;
     }
