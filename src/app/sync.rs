@@ -123,8 +123,12 @@ impl AppState {
             return;
         }
         let (left, right) = (self.panel_dir(true), self.panel_dir(false));
-        if left.starts_with(&right) || right.starts_with(&left) {
-            let said = if left == right { "Both panels show the same directory" } else { "One panel's directory is inside the other's" };
+        // As the directories really are: one reached through a link may be
+        // inside the other all the same.
+        let real = |dir: &Path| dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
+        let (real_left, real_right) = (real(&left), real(&right));
+        if real_left.starts_with(&real_right) || real_right.starts_with(&real_left) {
+            let said = if real_left == real_right { "Both panels show the same directory" } else { "One panel's directory is inside the other's" };
             self.display_error(format!("{said}: nothing to synchronize"));
             return;
         }

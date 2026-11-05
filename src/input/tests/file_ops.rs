@@ -1002,5 +1002,14 @@ fn alt_s_synchronizes_the_panels() {
     app_state.open_dir(false, left.join("sub"), None);
     alt_s(&mut app_state);
     assert!(app_state.dialog.is_none() && app_state.error.as_deref().is_some_and(|error| error.contains("inside")));
+    // Nor when it is only through a link that it is.
+    #[cfg(unix)]
+    {
+        app_state.error = None;
+        std::os::unix::fs::symlink(left.join("sub"), root.join("link")).unwrap();
+        app_state.open_dir(false, root.join("link"), None);
+        alt_s(&mut app_state);
+        assert!(app_state.dialog.is_none() && app_state.error.as_deref().is_some_and(|error| error.contains("inside")));
+    }
     std::fs::remove_dir_all(&root).unwrap();
 }
