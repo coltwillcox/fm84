@@ -1,0 +1,1604 @@
+# fm84 en français.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 0 and 1, [other] for the rest. A msgctxt
+# sets one use of a word apart from the same word elsewhere. {name} is a
+# place the program fills, kept as it is. The letters to press - Y, N, A and
+# the like - stay as they are; the names of the keys are written as a French
+# keyboard has them: Maj, Entrée, Échap, Suppr, Inser, Espace. A space comes
+# before : and ?, and names are quoted « thus ».
+
+msgid  "{name}" has changed since it was opened
+msgstr « {name} » a changé depuis son ouverture
+
+msgid  "{name}" is already in {folder}
+msgstr « {name} » existe déjà dans {folder}
+
+msgid  "{name}" is no longer there
+msgstr « {name} » n'existe plus
+
+msgid  "{path}" is already there
+msgstr « {path} » est déjà là
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Zoom {zoom} %
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- (dé)sélectionner par motif, * inverser
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2) : lecture seule
+
+msgid  12-hour
+msgstr 12 heures
+
+msgid  24-hour
+msgstr 24 heures
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Tout écraser    S - Tout passer    B - Toujours garder les deux
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr Un lien physique vers {path}, qui n'est pas extrait
+
+msgid  A root directory cannot go to the trash
+msgstr Un dossier racine ne peut pas aller à la corbeille
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr Un gestionnaire de fichiers synthwave à deux panneaux, pour le terminal
+
+msgid  About
+msgstr À propos
+
+msgid  Already exists: {name}
+msgstr Existe déjà : {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Existe déjà : {path} - Écraser ou Garder les deux dans F11
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Existe déjà : {path} - un autre nom, ou Écraser ou Garder les deux dans F11
+
+msgid  Already there
+msgstr Existe déjà
+
+msgid  Alt+* invert with directories
+msgstr Alt+* inverser avec les dossiers
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Droits, propriétaire, date
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Bas tous les dossiers visités
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (ou Ctrl+Maj+F5) lien, Tab physique
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (ou Ctrl+F7) rechercher des fichiers
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Sommes de contrôle (Tab algorithme) ; vérifier un fichier
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Gauche/Droite précédent/suivant
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Menu utilisateur (E le modifie)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O ouvrir avec... (E par extension)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Compresser dans une archive (Tab format)
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R dans Rechercher ou Remplacer : regex
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - Synchroniser les deux dossiers
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Maj+Entrée taille de tous les dossiers
+
+msgid  Appearance
+msgstr Apparence
+
+msgid  Archives are read-only
+msgstr Les archives sont en lecture seule
+
+msgid  Ascending
+msgstr Croissant
+
+msgid  Ask
+msgstr Demander
+
+msgid  Ask before opening over
+msgstr Demander avant d'ouvrir au-delà de
+
+msgid  Attributes
+msgstr Attributs
+
+msgid  Attributes column
+msgstr Colonne Attributs
+
+msgid  Automatic
+msgstr Automatique
+
+msgid  Automatic ({language})
+msgstr Automatique ({language})
+
+msgid  Background
+msgstr Fond
+
+msgid  Bar
+msgstr Barre
+
+msgid  Behaviour
+msgstr Comportement
+
+msgid  Binary
+msgstr Binaire
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Fichier binaire. Échap pour revenir.
+
+msgid  Block
+msgstr Bloc
+
+msgid  Bookmarks
+msgstr Signets
+
+msgid  Both panels show the same directory
+msgstr Les deux panneaux montrent le même dossier
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Les deux panneaux montrent le même dossier : rien à synchroniser
+
+msgid  Branches:
+msgstr Branches :
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Fait avec Rust, Ratatui et Crossterm
+
+msgid  Built-in
+msgstr Intégré
+
+msgid  C - Copy
+msgstr C - Copier
+
+msgid  Cancelling
+msgstr Annulation
+
+msgid  Cannot calculate size: {e}
+msgstr Impossible de calculer la taille : {e}
+
+msgid  Cannot change {what}
+msgstr Impossible de modifier {what}
+
+msgid  Cannot copy
+msgstr Copie impossible
+
+msgid  Cannot copy "{path}" into itself
+msgstr Impossible de copier « {path} » dans lui-même
+
+msgid  Cannot copy to {path}
+msgstr Impossible de copier vers {path}
+
+msgid  Cannot delete
+msgstr Suppression impossible
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr Impossible d'éditer {path} : ce n'est pas du texte UTF-8. F3 l'affiche tel quel.
+
+msgid  Cannot extract
+msgstr Extraction impossible
+
+msgid  Cannot link {what}
+msgstr Impossible de lier {what}
+
+msgid  Cannot make room beside {path}
+msgstr Impossible de faire de la place à côté de {path}
+
+msgid  Cannot make room to compare: {e}
+msgstr Impossible de faire de la place pour comparer : {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Impossible de faire de la place pour l'ouvrir : {e}
+
+msgid  Cannot move
+msgstr Déplacement impossible
+
+msgid  Cannot move to the trash: {why}
+msgstr Mise à la corbeille impossible : {why}
+
+msgid  Cannot move to trash
+msgstr Mise à la corbeille impossible
+
+msgid  Cannot open file: {e}
+msgstr Impossible d'ouvrir le fichier : {e}
+
+msgid  Cannot open terminal: {e}
+msgstr Impossible d'ouvrir un terminal : {e}
+
+msgid  Cannot open {path}: {e}
+msgstr Impossible d'ouvrir {path} : {e}
+
+msgid  Cannot pack
+msgstr Compression impossible
+
+msgid  Cannot pack into {path}
+msgstr Impossible de compresser dans {path}
+
+msgid  Cannot reach {target}
+msgstr Impossible d'atteindre {target}
+
+msgid  Cannot read
+msgstr Lecture impossible
+
+msgid  Cannot read file
+msgstr Impossible de lire le fichier
+
+msgid  Cannot read {path}
+msgstr Impossible de lire {path}
+
+msgid  Cannot read {path}: {e}
+msgstr Impossible de lire {path} : {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Impossible de remplacer le dossier {path} par un fichier
+
+msgid  Cannot replace directory {path} with a link
+msgstr Impossible de remplacer le dossier {path} par un lien
+
+msgid  Cannot replace file {path} with a directory
+msgstr Impossible de remplacer le fichier {path} par un dossier
+
+msgid  Cannot run git: {e}
+msgstr Impossible de lancer git : {e}
+
+msgid  Cannot run {label}: {e}
+msgstr Impossible de lancer {label} : {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr Impossible d'enregistrer les signets : {e}
+
+msgid  Cannot save options: {e}
+msgstr Impossible d'enregistrer les options : {e}
+
+msgid  Cannot start {program}: {e}
+msgstr Impossible de lancer {program} : {e}
+
+msgid  Cannot synchronize
+msgstr Synchronisation impossible
+
+msgid  Cannot write {path}: {e}
+msgstr Impossible d'écrire {path} : {e}
+
+msgid  Case
+msgstr Casse
+
+msgid  Case-sensitive sort
+msgstr Tri sensible à la casse
+
+msgid  Changed on disk
+msgstr Modifié sur le disque
+
+msgid  Checked against {file}
+msgstr Vérifié avec {file}
+
+msgid  Checksumming
+msgstr Calcul des sommes de contrôle
+
+msgid  Checksums
+msgstr Sommes de contrôle
+
+msgid  Choose another program
+msgstr Choisir un autre programme
+
+msgid  Classic
+msgstr Classique
+
+msgid  Click the git branch to switch it
+msgstr Cliquer sur la branche git pour en changer
+
+msgid  Clock
+msgstr Horloge
+
+msgid  Compare
+msgstr Comparaison
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Comparaison...    Échap - Arrêter et fermer
+
+msgid  Confirm copy and move
+msgstr Confirmer copie et déplacement
+
+msgid  Confirm delete
+msgstr Confirmer la suppression
+
+msgid  Containing
+msgstr Contenant
+
+msgid  Containing is a regular expression
+msgstr Contenant est une expression régulière
+
+msgid  Copied name: {text}
+msgstr Nom copié : {text}
+
+msgid  Copied path: {text}
+msgstr Chemin copié : {text}
+
+msgid  Copied the report
+msgstr Rapport copié
+
+msgid  Copied: {text}
+msgstr Copié : {text}
+
+msgid  Copy
+msgstr Copier
+
+msgid  Copy "{name}" to:
+msgstr Copier « {name} » vers :
+
+msgid  Copy directory
+msgstr Copier le dossier
+
+msgid  Copy file
+msgstr Copier le fichier
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Copiez-le d'abord hors de l'archive : les sommes de contrôle se calculent sur des fichiers du disque
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Copiez-le d'abord hors de l'archive : ce qui est compressé doit être sur le disque
+
+msgid  Copying
+msgstr Copie
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Échec de la modification de {count} sur {total}. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Échec du lien pour {count} sur {total}. {first}
+
+msgid  Counting...
+msgstr Décompte...
+
+msgid  Create Directory
+msgstr Nouveau dossier
+
+msgid  Create File
+msgstr Nouveau fichier
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Tous les fichiers en dessous, à plat
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Copier chemins/noms
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Signets
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Rechercher
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F rechercher, F3/Maj+F3 suivant/précédent
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Trier nom/ext./date/taille
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G aller à la ligne, Ctrl+R/F4 remplacer
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Aller au chemin (ou cliquer dessus)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Gauche/Droite - Dossier vers ce panneau
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgPréc/PgSuiv, Alt+1..9 changer
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Recharger les deux panneaux
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - Filtrer le panneau par motif
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Nouvel/fermer onglet
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U échanger les panneaux, Alt+I même dossier en face
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z annuler, Ctrl+Y rétablir, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Annuler
+
+msgid  Cursor
+msgstr Curseur
+
+msgid  Cursor blinks
+msgstr Curseur clignotant
+
+msgid  D - Delete permanently
+msgstr D - Supprimer définitivement
+
+msgid  Dashed
+msgstr Pointillée
+
+msgid  Date format
+msgstr Format de date
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Décoder une image de cette taille demande autant de mémoire.
+
+msgid  Delete
+msgstr Suppr.
+
+msgid  Delete "{name}" permanently?
+msgstr Supprimer « {name} » définitivement ?
+
+msgid  Delete to trash (F8)
+msgstr Supprimer vers la corbeille (F8)
+
+msgid  Delete: directory
+msgstr Supprimer : dossier
+
+msgid  Delete: file
+msgstr Supprimer : fichier
+
+msgid  Deleting
+msgstr Suppression
+
+msgid  Descending
+msgstr Décroissant
+
+msgid  Deselect:
+msgstr Désélectionner :
+
+msgid  Destination already exists: {path}
+msgstr La destination existe déjà : {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Différents : {left} à gauche, {right} à droite
+
+msgid  Difference {at}/{count}
+msgstr Différence {at}/{count}
+
+msgid  Directories first
+msgstr Dossiers d'abord
+
+msgid  Directory "{name}"
+msgstr Dossier « {name} »
+
+msgid  Directory History
+msgstr Historique des dossiers
+
+msgid  Double
+msgstr Double
+
+msgid  Edit
+msgstr Éditer
+
+msgid  Edit "{name}" ({size})?
+msgstr Éditer « {name} » ({size}) ?
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr Éditer « {name} » ({width}x{height}, {size}) ?
+
+msgid  Edit:
+msgstr Édition :
+
+msgid  Editor (F4)
+msgstr Éditeur (F4)
+
+msgid  Empty terminal command
+msgstr Commande de terminal vide
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Chiffré : fm84 ne peut pas le lire sans le mot de passe
+
+msgid  Enter - Copy
+msgstr Entrée - Copier
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Entrée - Créer    Échap - Annuler
+
+msgid  Enter - Extract
+msgstr Entrée - Extraire
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Entrée - Aller    F - Dans le panneau    Échap - Fermer
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Entrée - Aller    F - Dans le panneau    Échap - Arrêter et fermer
+
+msgid  Enter - Hard link
+msgstr Entrée - Lien physique
+
+msgid  Enter - Move
+msgstr Entrée - Déplacer
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Entrée - Ouvrir le dossier, ou entrer dans une archive
+
+msgid  Enter - Pack
+msgstr Entrée - Compresser
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Entrée - Enregistrer    Échap - Annuler    {} - dossier
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Entrée - Enregistrer    Échap - Annuler    {} - fichier
+
+msgid  Enter - Symlink
+msgstr Entrée - Lien symbolique
+
+msgid  Enter - Write
+msgstr Entrée - Écrire
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Encore Entrée pour lancer, en supprimant {deleting}    Autre touche - Pas encore
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Entrée/1-9 - Aller    A/Inser - Ajouter ici    D/Suppr - Retirer
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Entrée/1-9 - Ouvrir    E - Modifier les associations    Échap - Fermer
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Entrée/1-9 - Lancer    E - Modifier le menu    Échap - Fermer
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Entrée/Clic - Changer    Échap - Fermer
+
+msgid  Error
+msgstr Erreur
+
+msgid  Esc - Back to editing
+msgstr Échap - Retour à l'édition
+
+msgid  Esc - Cancel
+msgstr Échap - Annuler
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Échap - Annuler    Encore F10 - Quitter
+
+msgid  Esc - Close
+msgstr Échap - Fermer
+
+msgid  Esc Exit
+msgstr Échap Quitter
+
+msgid  Existing
+msgstr Existant
+
+msgid  Ext
+msgstr Ext.
+
+msgid  Ext column
+msgstr Colonne Ext.
+
+msgid  Extension
+msgstr Extension
+
+msgid  Extract "{name}" to:
+msgstr Extraire « {name} » vers :
+
+msgid  Extract archive
+msgstr Extraire l'archive
+
+msgid  Extracting
+msgstr Extraction
+
+msgid  F Fit [Fill]
+msgstr F Ajuster [Remplir]
+
+msgid  F [Fit] Fill
+msgstr F [Ajuster] Remplir
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F ajuster/remplir, +/- zoom, W retour à la ligne
+
+msgid  F on the results feeds them to the panel
+msgstr F sur les résultats les met dans le panneau
+
+msgid  F1 - This help
+msgstr F1 - Cette aide
+
+msgid  F10 - Quit
+msgstr F10 - Quitter
+
+msgid  F10 again - Quit
+msgstr Encore F10 - Quitter
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Options (Alt+F1/F2 lecteurs)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Aperçu dans l'autre panneau
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Renommer dossier/fichier
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Enregistrer
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Voir le fichier (X texte/hex/image)
+
+msgid  F3/N Next
+msgstr F3/N Suivante
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Éditer le fichier (Ctrl+S/F2 enregistre)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Copier (vers l'autre panneau, ou là où c'est tapé)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 copie vers l'extérieur, Alt+F9 (ou Ctrl+F9) tout
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Déplacer (vers l'autre panneau, ou là où c'est tapé)
+
+msgid  F7 - Create directory
+msgstr F7 - Nouveau dossier
+
+msgid  F8 - Move to trash
+msgstr F8 - Mettre à la corbeille
+
+msgid  F9 - Open terminal
+msgstr F9 - Ouvrir un terminal
+
+msgid  File "{name}"
+msgstr Fichier « {name} »
+
+msgid  Fill
+msgstr Remplir
+
+msgid  Filter:
+msgstr Filtre :
+
+msgid  Find
+msgstr Chercher
+
+msgid  Find (regex, Alt+R for text):
+msgstr Rechercher (regex, Alt+R pour du texte) :
+
+msgid  Find files
+msgstr Rechercher des fichiers
+
+msgid  Find files cannot search inside an archive yet
+msgstr La recherche de fichiers ne fouille pas encore les archives
+
+msgid  Find:
+msgstr Rechercher :
+
+msgid  First letter
+msgstr Première lettre en majuscule
+
+msgid  Fit
+msgstr Ajuster
+
+msgid  Git marks
+msgstr Marques git
+
+msgid  Go to line:
+msgstr Aller à la ligne :
+
+msgid  Gone
+msgstr Disparu
+
+msgid  Group
+msgstr Groupe
+
+msgid  Hard link "{name}" at:
+msgstr Lien physique vers « {name} » dans :
+
+msgid  Hard link directory
+msgstr Lien physique vers le dossier
+
+msgid  Hard link file
+msgstr Lien physique vers le fichier
+
+msgid  Heavy
+msgstr Épaisse
+
+msgid  Help
+msgstr Aide
+
+msgid  Help/About
+msgstr Aide/À propos
+
+msgid  High contrast
+msgstr Contraste élevé
+
+msgid  Highlight files up to
+msgstr Coloriser les fichiers jusqu'à
+
+msgid  Icons
+msgstr Icônes
+
+msgid  Image backgrounds
+msgstr Fonds des images
+
+msgid  Images open as
+msgstr Les images s'ouvrent en
+
+msgid  In
+msgstr Dans
+
+msgid  It got shorter while it was being packed
+msgstr Il a raccourci pendant la compression
+
+msgid  Keep both
+msgstr Garder les deux
+
+msgid  Keys
+msgstr Touches
+
+msgid  Language
+msgstr Langue
+
+msgid  Large File
+msgstr Gros fichier
+
+msgid  Large Picture
+msgstr Grande image
+
+msgid  Line numbers
+msgstr Numéros de ligne
+
+msgid  Line {at}/{count}
+msgstr Ligne {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Lig {line}, Col {column}
+
+msgid  Military
+msgstr Militaire
+
+msgid  Mkdir
+msgstr Nv dossier
+
+msgid  Mode
+msgstr Droits
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Droits comme 755 ou u+x,go-w ; propriétaire et groupe par nom ou numéro
+
+msgid  Modified
+msgstr Modifié
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Modifié comme <7d, >1y, 1d..7d, 2026-10-01 ou >2026-10-01, pas {text}
+
+msgid  Modified column
+msgstr Colonne Modifié
+
+msgid  Move
+msgstr Déplacer
+
+msgid  Move "{name}" to the trash?
+msgstr Mettre « {name} » à la corbeille ?
+
+msgid  Move "{name}" to:
+msgstr Déplacer « {name} » vers :
+
+msgid  Move directory
+msgstr Déplacer le dossier
+
+msgid  Move file
+msgstr Déplacer le fichier
+
+msgid  Move to trash: directory
+msgstr Vers la corbeille : dossier
+
+msgid  Move to trash: file
+msgstr Vers la corbeille : fichier
+
+msgid  Moving
+msgstr Déplacement
+
+msgid  Moving to trash
+msgstr Mise à la corbeille
+
+msgid  Name
+msgstr Nom
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Nom comme pour + : *.jpg;*.png, ou */ pour les dossiers. Les minuscules trouvent aussi les majuscules
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Nommez-la comme une archive, en {endings}
+
+msgid  New
+msgstr Nouveau
+
+msgid  New name
+msgstr Nouveau nom
+
+msgid  Next
+msgstr Suivant
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Pas encore de signets - A garde le dossier du panneau
+
+msgid  No branches yet: nothing has been committed
+msgstr Pas encore de branches : aucun commit
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Pas encore de commandes - E les ajoute, comme nom = commande, dans
+
+msgid  No config directory
+msgstr Pas de dossier de configuration
+
+msgid  No config directory to keep a menu in
+msgstr Pas de dossier de configuration pour un menu
+
+msgid  No config directory to keep associations in
+msgstr Pas de dossier de configuration pour les associations
+
+msgid  No such directory: {path}
+msgstr Dossier introuvable : {path}
+
+msgid  No such file or directory: {path}
+msgstr Fichier ou dossier introuvable : {path}
+
+msgid  No such group: {text}
+msgstr Groupe introuvable : {text}
+
+msgid  No such user: {text}
+msgstr Utilisateur introuvable : {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Aucun émulateur de terminal trouvé. Définissez $TERMINAL.
+
+msgid  Not a line number: {text}
+msgstr Pas un numéro de ligne : {text}
+
+msgid  Not a mode: {text}
+msgstr Pas des droits : {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Pas des droits : {text} - 755, ou u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Pas un nom de fichier simple : {name}
+
+msgid  Not a regular expression: {why}
+msgstr Pas une expression régulière : {why}
+
+msgid  Not a regular file
+msgstr Pas un fichier ordinaire
+
+msgid  Not a regular file: {path}
+msgstr Pas un fichier ordinaire : {path}
+
+msgid  Not a time here: {text}
+msgstr Cette heure n'existe pas ici : {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Pas une date : {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Pas une archive : {path}
+
+msgid  Not found: {term}
+msgstr Introuvable : {term}
+
+msgid  Nothing chosen for {label}
+msgstr Rien de choisi pour {label}
+
+msgid  Nothing found
+msgstr Rien trouvé
+
+msgid  Nothing found to feed to the panel
+msgstr Rien trouvé à mettre dans le panneau
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Rien n'est plus petit que 0 octet
+
+msgid  Nothing replaced
+msgstr Rien remplacé
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Rien à comparer : l'autre panneau n'a pas de fichier de ce nom, ni sous son curseur
+
+msgid  Nothing to synchronize
+msgstr Rien à synchroniser
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Rien à écrire : aucune somme de contrôle calculée
+
+msgid  Nothing visited matches
+msgstr Aucun dossier visité ne correspond
+
+msgid  Now
+msgstr Maintenant
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Écraser tous les plus anciens    Échap - Abandonner
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Écraser    R - Recharger, en perdant les modifications
+
+msgid  O - Save it again
+msgstr O - Enregistrer à nouveau
+
+msgid  Off
+msgstr Non
+
+msgid  Old name
+msgstr Ancien nom
+
+msgid  On
+msgstr Oui
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr Le dossier d'un panneau est dans celui de l'autre : rien à synchroniser
+
+msgid  Only the first {count} files are listed
+msgstr Seuls les {count} premiers fichiers sont listés
+
+msgid  Open {name} With
+msgstr Ouvrir {name} avec
+
+msgid  Options
+msgstr Options
+
+msgid  Overwrite
+msgstr Écraser
+
+msgid  Owner
+msgstr Propriétaire
+
+msgid  Pack "{name}" into:
+msgstr Compresser « {name} » dans :
+
+msgid  Pack directory
+msgstr Compresser le dossier
+
+msgid  Pack file
+msgstr Compresser le fichier
+
+msgid  Packing
+msgstr Compression
+
+msgid  Panels
+msgstr Panneaux
+
+msgid  Plain
+msgstr Simples
+
+msgid  Plain Text
+msgstr Texte brut
+
+msgid  Preview
+msgstr Aperçu
+
+msgid  Preview on startup
+msgstr Aperçu au démarrage
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Placez le curseur sur un fichier à comparer, ou sélectionnez-en deux
+
+msgid  Put the cursor on an archive to extract it
+msgstr Placez le curseur sur une archive pour l'extraire
+
+msgid  Quit
+msgstr Quitter
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Réessayer    S - Passer    A - Tout passer    Échap - Abandonner
+
+msgid  Read pictures ahead
+msgstr Lire les images à l'avance
+
+msgid  Reading a file this large may take a while.
+msgstr Lire un fichier aussi gros peut prendre un moment.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr Lecture de {dir}…  Échap pour arrêter
+
+msgid  Refuse
+msgstr Refuser
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Relative
+
+msgid  Released under the {license} License
+msgstr Publié sous licence {license}
+
+msgid  Remember directories
+msgstr Mémoriser les dossiers
+
+msgid  Rename
+msgstr Renommer
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr {done} sur {total} renommés, puis : {e}
+
+msgid  Replace
+msgstr Remplacer
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr Remplacer « {find} » par « {with} » ?   Y - Oui   N - Non   A - Tout   Esc - Arrêter
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Remplacer (regex, Alt+R pour du texte) :
+
+msgid  Replace:
+msgstr Remplacer :
+
+msgid  Row {at}/{count}
+msgstr Ligne {at}/{count}
+
+msgid  Save
+msgstr Enreg.
+
+msgid  Save changes before closing?
+msgstr Enregistrer les modifications avant de fermer ?
+
+msgid  Scroll bars
+msgstr Barres de défilement
+
+msgid  Search:
+msgstr Recherche :
+
+msgid  Select:
+msgstr Sélectionner :
+
+msgid  Shade
+msgstr Ombrée
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Maj+Entrée (ou Ctrl+O) ouvrir comme le système
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Maj+F10 quitter, cd84 reste où il était
+
+msgid  Shift+F2 compare directories
+msgstr Maj+F2 comparer les dossiers
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Maj+F3 (ou =) comparer deux fichiers
+
+msgid  Shift+F3/P Previous
+msgstr Maj+F3/P Précédente
+
+msgid  Shift+F4 - Create file
+msgstr Maj+F4 - Nouveau fichier
+
+msgid  Shift+F8 delete permanently
+msgstr Maj+F8 supprimer définitivement
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Maj+Haut/Bas - Déplacer    Échap - Fermer
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Maj+flèches sélectionne, Ctrl+A tout
+
+msgid  Show hidden files
+msgstr Afficher les fichiers cachés
+
+msgid  Size
+msgstr Taille
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Taille comme >10M, <1K ou 1M..10M, pas {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Taille comme >10M, <1K ou 1M..10M ; Modifié comme <7d, >1y, 1d..7d, 2026-10-01 ou >2026-10-01
+
+msgid  Size column
+msgstr Colonne Taille
+
+msgid  Size units
+msgstr Unités de taille
+
+msgid  Sort by
+msgstr Trier par
+
+msgid  Sort direction
+msgstr Ordre de tri
+
+msgid  Space - Select/deselect file
+msgstr Espace - Sélectionner/désélectionner
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Le passage à {branch} s'est arrêté inopinément
+
+msgid  Symbolic links are not supported here
+msgstr Les liens symboliques ne sont pas pris en charge ici
+
+msgid  Symlink "{name}" at:
+msgstr Lien symbolique vers « {name} » dans :
+
+msgid  Symlink directory
+msgstr Lien symbolique vers le dossier
+
+msgid  Symlink file
+msgstr Lien symbolique vers le fichier
+
+msgid  Synchronize
+msgstr Synchroniser
+
+msgid  Synchronizing
+msgstr Synchronisation
+
+msgid  System default
+msgstr Par défaut du système
+
+msgid  Tab - Algorithm
+msgstr Tab - Algorithme
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Champ   ←/→ - Casse   Entrée - Renommer   Échap - Annuler
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Champ  Espace - Regex  Entrée - Rechercher  Échap - Annuler
+
+msgid  Tab - Format
+msgstr Tab - Format
+
+msgid  Tab - Hard link
+msgstr Tab - Lien physique
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Champ suivant    Entrée - Appliquer    Échap - Annuler
+
+msgid  Tab - Symlink
+msgstr Tab - Lien symbolique
+
+msgid  Tab completes a name
+msgstr Tab complète un nom
+
+msgid  Tab width
+msgstr Largeur des tabulations
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Maj+Tab indenter, Ctrl+/ commenter
+
+msgid  Terminal
+msgstr Terminal
+
+msgid  Terminal (F9)
+msgstr Terminal (F9)
+
+msgid  Terminal too small
+msgstr Terminal trop petit
+
+msgid  The archive ends before it
+msgstr L'archive se termine avant
+
+msgid  The directories hold the same files
+msgstr Les dossiers contiennent les mêmes fichiers
+
+msgid  The files are identical
+msgstr Les fichiers sont identiques
+
+msgid  The files differ from byte {at}
+msgstr Les fichiers diffèrent à partir de l'octet {at}
+
+msgid  The files differ from byte {at}, and in size
+msgstr Les fichiers diffèrent à partir de l'octet {at}, et en taille
+
+msgid  The files differ only in line endings
+msgstr Les fichiers ne diffèrent que par les fins de ligne
+
+msgid  Theme
+msgstr Thème
+
+msgid  This cannot be undone
+msgstr Impossible à annuler
+
+msgid  Title Case
+msgstr Chaque Mot En Majuscule
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr Trop gros pour être comparé : {path} ({size} ; la limite se règle dans F11)
+
+msgid  Transfer stopped unexpectedly
+msgstr Transfert arrêté inopinément
+
+msgid  Trash
+msgstr Corbeille
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Tapez pour filtrer    Haut/Bas - Choisir    Entrée - Aller    Échap - Fermer
+
+msgid  Type to search, Esc to clear
+msgstr Tapez pour chercher, Échap pour effacer
+
+msgid  UPPER CASE
+msgstr MAJUSCULES
+
+msgid  Unchanged
+msgstr Inchangée
+
+msgid  Underline
+msgstr Souligné
+
+msgid  Unsaved Changes
+msgstr Modifications non enregistrées
+
+msgid  User Menu
+msgstr Menu utilisateur
+
+msgid  View
+msgstr Voir
+
+msgid  View "{name}" ({size})?
+msgstr Voir « {name} » ({size}) ?
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr Voir « {name} » ({width}x{height}, {size}) ?
+
+msgid  View:
+msgstr Lecture :
+
+msgid  Viewer and editor
+msgstr Visionneuse et éditeur
+
+msgid  W Wrap
+msgstr W Retour à la ligne
+
+msgid  W [Wrap]
+msgstr W [Retour à la ligne]
+
+msgid  When destination exists
+msgstr Si la destination existe
+
+msgid  When opened
+msgstr À l'ouverture
+
+msgid  With:
+msgstr Par :
+
+msgid  Wrapped to the bottom
+msgstr Reprise à la fin
+
+msgid  Wrapped to the top
+msgstr Reprise au début
+
+msgid  Written: {name}
+msgstr Écrit : {name}
+
+msgid  X Image Text [Hex]
+msgstr X Image Texte [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Image [Texte] Hex
+
+msgid  X Text [Hex]
+msgstr X Texte [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Image] Texte Hex
+
+msgid  X [Text] Hex
+msgstr X [Texte] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Écraser    N - Passer    K - Garder les deux
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Enregistrer    N - Abandonner    Échap - Annuler
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Entrée - Oui    N / Échap - Non
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] lettres 2 à 5   [C10+5:3] dès 10, de 5 en 5, 3 chiffres
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] nom   [E] extension   [C] compteur
+
+msgid  a directory cannot be hard linked
+msgstr un dossier ne peut pas avoir de lien physique
+
+msgid  already exists
+msgstr existe déjà
+
+msgid  by name, text, regex, size, date
+msgstr par nom, texte, regex, taille, date
+
+msgid  del
+msgstr sup
+
+msgid  filter: {pattern}
+msgstr filtre : {pattern}
+
+msgid  flat
+msgstr à plat
+
+msgid  found
+msgstr trouvés
+
+msgid  git did not answer
+msgstr git n'a pas répondu
+
+msgid  given twice
+msgstr donné deux fois
+
+msgid  just now
+msgstr à l'instant
+
+msgid  lower case
+msgstr minuscules
+
+msgid  name not readable as text
+msgstr nom illisible comme texte
+
+msgid  newer
+msgstr plus récent
+
+msgid  not a plain name
+msgstr pas un nom simple
+
+msgid  not readable as an archive ({e})
+msgstr illisible comme archive ({e})
+
+msgid  not there
+msgstr absent
+
+msgid  terminal
+msgstr terminal
+
+msgid  to be replaced by "{name}"
+msgstr à remplacer par « {name} »
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr avec une sélection : tous par [N] [E] [C]
+
+msgid  {count} FAILED
+msgstr échecs : {count}
+
+msgid  {count} OK
+msgstr {count} OK
+
+msgid  {count} could not be read
+msgstr illisibles : {count}
+
+msgid  {count} h ago
+msgstr il y a {count} h
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr {count} éléments ont besoin d'un dossier de destination, et {path} n'en est pas un
+
+msgid  {count} min ago
+msgstr il y a {count} min
+
+msgid  {count} missing
+msgstr manquants : {count}
+
+msgid  {count} mo ago
+msgstr il y a {count} mois
+
+msgid  {count} yr ago
+msgstr il y a {count} an(s)
+
+msgid  {deleting} to delete
+msgstr à supprimer : {deleting}
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} sur {total} à {rate}/s
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title} : annulé après {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr {name} n'est pas un nom qu'un {format} peut contenir : ce n'est pas de l'UTF-8
+
+msgid  {path} already exists
+msgstr {path} existe déjà
+
+msgid  {path} could not be read after all
+msgstr {path} n'a finalement pas pu être lu
+
+msgid  {path} is a directory
+msgstr {path} est un dossier
+
+msgid  {program} exited with {status}
+msgstr {program} s'est terminé avec {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Parcourir    Entrée/←→ - Changer    Échap - Fermer
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Copier  Suppr Supprimer  Espace Laisser  > < Miroir  R Rétablir  Entrée Lancer  Échap Fermer
+
+msgctxt job
+msgid   Checksum
+msgstr  Somme de contrôle
+
+msgctxt job
+msgid   Copy
+msgstr  Copie
+
+msgctxt job
+msgid   Delete
+msgstr  Suppression
+
+msgctxt job
+msgid   Extract
+msgstr  Extraction
+
+msgctxt job
+msgid   Move
+msgstr  Déplacement
+
+msgctxt job
+msgid   Move to trash
+msgstr  Mise à la corbeille
+
+msgctxt job
+msgid   Pack
+msgstr  Compression
+
+msgctxt job
+msgid   Synchronize
+msgstr  Synchronisation
+
+msgid  Copied {count} name
+msgstr[one]   {count} nom copié
+msgstr[other] {count} noms copiés
+
+msgid  Copied {count} path
+msgstr[one]   {count} chemin copié
+msgstr[other] {count} chemins copiés
+
+msgid  Copy {count} item
+msgstr[one]   Copier {count} élément
+msgstr[other] Copier {count} éléments
+
+msgid  Copy {count} item to: {names}
+msgstr[one]   Copier {count} élément ({names}) vers :
+msgstr[other] Copier {count} éléments ({names}) vers :
+
+msgid  Delete {count} item permanently?
+msgstr[one]   Supprimer {count} élément définitivement ?
+msgstr[other] Supprimer {count} éléments définitivement ?
+
+msgid  Delete: {count} item
+msgstr[one]   Supprimer : {count} élément
+msgstr[other] Supprimer : {count} éléments
+
+msgid  Hard link {count} item
+msgstr[one]   Lien physique vers {count} élément
+msgstr[other] Liens physiques vers {count} éléments
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]   Lien physique vers {count} élément ({names}) dans :
+msgstr[other] Liens physiques vers {count} éléments ({names}) dans :
+
+msgid  Move to trash: {count} item
+msgstr[one]   Vers la corbeille : {count} élément
+msgstr[other] Vers la corbeille : {count} éléments
+
+msgid  Move {count} item
+msgstr[one]   Déplacer {count} élément
+msgstr[other] Déplacer {count} éléments
+
+msgid  Move {count} item to the trash?
+msgstr[one]   Mettre {count} élément à la corbeille ?
+msgstr[other] Mettre {count} éléments à la corbeille ?
+
+msgid  Move {count} item to: {names}
+msgstr[one]   Déplacer {count} élément ({names}) vers :
+msgstr[other] Déplacer {count} éléments ({names}) vers :
+
+msgid  Pack {count} item
+msgstr[one]   Compresser {count} élément
+msgstr[other] Compresser {count} éléments
+
+msgid  Pack {count} item into: {names}
+msgstr[one]   Compresser {count} élément ({names}) dans :
+msgstr[other] Compresser {count} éléments ({names}) dans :
+
+msgid  Rename {count} Entry
+msgstr[one]   Renommer {count} élément
+msgstr[other] Renommer {count} éléments
+
+msgid  Replaced {count}
+msgstr[one]   {count} occurrence remplacée
+msgstr[other] {count} occurrences remplacées
+
+msgid  Symlink {count} item
+msgstr[one]   Lien symbolique vers {count} élément
+msgstr[other] Liens symboliques vers {count} éléments
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]   Lien symbolique vers {count} élément ({names}) dans :
+msgstr[other] Liens symboliques vers {count} éléments ({names}) dans :
+
+msgid  {count} day ago
+msgstr[one]   il y a {count} jour
+msgstr[other] il y a {count} jours
+
+msgid  {count} difference
+msgstr[one]   {count} différence
+msgstr[other] {count} différences
+
+msgid  {count} directory could not be read
+msgstr[one]   {count} dossier illisible
+msgstr[other] {count} dossiers illisibles
+
+msgid  {count} file
+msgstr[one]   {count} fichier
+msgstr[other] {count} fichiers
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]   {count} fichier, illisibles : {failed}
+msgstr[other] {count} fichiers, illisibles : {failed}
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]   {count} élément - un champ laissé tel quel, ou vide, ne change rien
+msgstr[other] {count} éléments - un champ laissé tel quel, ou vide, ne change rien
+
+msgid  {count} line
+msgstr[one]   {count} ligne
+msgstr[other] {count} lignes
+
+msgid  {count} line not understood
+msgstr[one]   {count} ligne non comprise
+msgstr[other] {count} lignes non comprises
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]   {count} des nouveaux noms est impossible : {why} - voir le tableau
+msgstr[other] {count} des nouveaux noms sont impossibles : {why} - voir le tableau
+
+msgid  {done} of {total} entry
+msgstr[one]   {done} sur {total} élément
+msgstr[other] {done} sur {total} éléments
+
+msgid  {done} of {total} item
+msgstr[one]   {done} sur {total} élément
+msgstr[other] {done} sur {total} éléments
+
+msgid  {found} differs
+msgstr[one]   {found} différent
+msgstr[other] {found} différents
+
+msgid  {found} differs, comparing
+msgstr[one]   {found} différent, comparaison
+msgstr[other] {found} différents, comparaison
+
+msgid  {found} found
+msgstr[one]   {found} trouvé
+msgstr[other] {found} trouvés
+
+msgid  {found} found, searching
+msgstr[one]   {found} trouvé, recherche
+msgstr[other] {found} trouvés, recherche
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]   {job_title} : annulé après {done} élément
+msgstr[other] {job_title} : annulé après {done} éléments
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]   {job_title} : annulé après {done} élément
+msgstr[other] {job_title} : annulé après {done} éléments
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]   {job_title} : terminé, {count} élément passé
+msgstr[other] {job_title} : terminé, {count} éléments passés
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]   {problems} ne peut pas être renommé ainsi    Échap - Annuler
+msgstr[other] {problems} ne peuvent pas être renommés ainsi    Échap - Annuler
+
+msgid  {skipped} left as it is
+msgstr[one]   {skipped} laissé tel quel
+msgstr[other] {skipped} laissés tels quels

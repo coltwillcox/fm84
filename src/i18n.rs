@@ -24,11 +24,12 @@ pub enum Language {
     German,
     Italian,
     Greek,
+    French,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 7] = [Language::English, Language::Serbian, Language::Turkish, Language::Norwegian, Language::German, Language::Italian, Language::Greek];
+    pub const ALL: [Language; 8] = [Language::English, Language::Serbian, Language::Turkish, Language::Norwegian, Language::German, Language::Italian, Language::Greek, Language::French];
 
     /// How the config file names it.
     pub fn key(self) -> &'static str {
@@ -40,6 +41,7 @@ impl Language {
             Language::German => "de",
             Language::Italian => "it",
             Language::Greek => "el",
+            Language::French => "fr",
         }
     }
 
@@ -54,6 +56,7 @@ impl Language {
             Language::German => "Deutsch",
             Language::Italian => "Italiano",
             Language::Greek => "Ελληνικά",
+            Language::French => "Français",
         }
     }
 
@@ -72,6 +75,7 @@ impl Language {
             Language::German => Some(include_str!("../lang/de.lang")),
             Language::Italian => Some(include_str!("../lang/it.lang")),
             Language::Greek => Some(include_str!("../lang/el.lang")),
+            Language::French => Some(include_str!("../lang/fr.lang")),
         }
     }
 
@@ -82,6 +86,14 @@ impl Language {
             // but a sentence can still say one apart from the rest.
             Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek => {
                 if count == 1 {
+                    Form::One
+                } else {
+                    Form::Other
+                }
+            }
+            // Nothing is one too: "0 fichier", as "1 fichier".
+            Language::French => {
+                if count <= 1 {
                     Form::One
                 } else {
                     Form::Other
@@ -110,6 +122,7 @@ impl Language {
             "de" => Some(Language::German),
             "it" => Some(Language::Italian),
             "el" => Some(Language::Greek),
+            "fr" => Some(Language::French),
             _ => None,
         }
     }

@@ -18,6 +18,10 @@ fn serbian_counts_take_one_few_or_other() {
     assert_eq!(Language::English.plural(0), Form::Other);
     assert_eq!(Language::Turkish.plural(1), Form::One);
     assert_eq!(Language::Turkish.plural(21), Form::Other);
+    // French counts nothing as one.
+    assert_eq!(Language::French.plural(0), Form::One);
+    assert_eq!(Language::French.plural(1), Form::One);
+    assert_eq!(Language::French.plural(2), Form::Other);
 }
 
 #[test]
@@ -35,7 +39,9 @@ fn a_locale_names_its_language() {
     assert_eq!(Language::from_locale("de_AT"), Some(Language::German));
     assert_eq!(Language::from_locale("it_IT.UTF-8"), Some(Language::Italian));
     assert_eq!(Language::from_locale("el_GR.UTF-8"), Some(Language::Greek));
-    assert_eq!(Language::from_locale("fr_FR.UTF-8"), None);
+    assert_eq!(Language::from_locale("fr_FR.UTF-8"), Some(Language::French));
+    assert_eq!(Language::from_locale("fr_CA"), Some(Language::French));
+    assert_eq!(Language::from_locale("es_ES.UTF-8"), None);
     for language in Language::ALL {
         assert_eq!(Language::from_key(language.key()), Some(language));
     }
@@ -228,7 +234,7 @@ fn places(text: &str) -> BTreeSet<String> {
 /// The languages that have words for everything, and are to keep it so:
 /// one of these missing a sentence fails the test. Any other shipped one
 /// shows what it lacks in English.
-const COMPLETE: &[Language] = &[Language::Serbian, Language::Turkish, Language::Norwegian, Language::German, Language::Italian, Language::Greek];
+const COMPLETE: &[Language] = &[Language::Serbian, Language::Turkish, Language::Norwegian, Language::German, Language::Italian, Language::Greek, Language::French];
 
 #[test]
 fn the_scan_finds_each_kind_of_sentence() {
@@ -280,7 +286,7 @@ fn every_catalog_is_whole_and_up_to_date() {
         };
         let whole = COMPLETE.contains(&language);
         let forms: &[Form] = match language {
-            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek => &[Form::One, Form::Other],
+            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek | Language::French => &[Form::One, Form::Other],
             Language::Serbian => &[Form::One, Form::Few, Form::Other],
         };
         for sentence in &sentences {
