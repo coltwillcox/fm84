@@ -22,11 +22,12 @@ pub enum Language {
     /// Bokmål.
     Norwegian,
     German,
+    Italian,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 5] = [Language::English, Language::Serbian, Language::Turkish, Language::Norwegian, Language::German];
+    pub const ALL: [Language; 6] = [Language::English, Language::Serbian, Language::Turkish, Language::Norwegian, Language::German, Language::Italian];
 
     /// How the config file names it.
     pub fn key(self) -> &'static str {
@@ -36,6 +37,7 @@ impl Language {
             Language::Turkish => "tr",
             Language::Norwegian => "nb",
             Language::German => "de",
+            Language::Italian => "it",
         }
     }
 
@@ -48,6 +50,7 @@ impl Language {
             Language::Turkish => "Türkçe",
             Language::Norwegian => "Norsk bokmål",
             Language::German => "Deutsch",
+            Language::Italian => "Italiano",
         }
     }
 
@@ -64,6 +67,7 @@ impl Language {
             Language::Turkish => Some(include_str!("../lang/tr.lang")),
             Language::Norwegian => Some(include_str!("../lang/nb.lang")),
             Language::German => Some(include_str!("../lang/de.lang")),
+            Language::Italian => Some(include_str!("../lang/it.lang")),
         }
     }
 
@@ -72,7 +76,7 @@ impl Language {
         match self {
             // A noun after a number stays as it is in Turkish - "5 dosya" -
             // but a sentence can still say one apart from the rest.
-            Language::English | Language::Turkish | Language::Norwegian | Language::German => {
+            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian => {
                 if count == 1 {
                     Form::One
                 } else {
@@ -100,6 +104,7 @@ impl Language {
             // its own.
             "nb" | "no" => Some(Language::Norwegian),
             "de" => Some(Language::German),
+            "it" => Some(Language::Italian),
             _ => None,
         }
     }
