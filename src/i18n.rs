@@ -26,11 +26,12 @@ pub enum Language {
     Greek,
     French,
     Slovenian,
+    Croatian,
 }
 
 impl Language {
     /// In the order F11 steps through them.
-    pub const ALL: [Language; 9] = [
+    pub const ALL: [Language; 10] = [
         Language::English,
         Language::Serbian,
         Language::Turkish,
@@ -40,6 +41,7 @@ impl Language {
         Language::Greek,
         Language::French,
         Language::Slovenian,
+        Language::Croatian,
     ];
 
     /// How the config file names it.
@@ -54,6 +56,7 @@ impl Language {
             Language::Greek => "el",
             Language::French => "fr",
             Language::Slovenian => "sl",
+            Language::Croatian => "hr",
         }
     }
 
@@ -70,6 +73,7 @@ impl Language {
             Language::Greek => "Ελληνικά",
             Language::French => "Français",
             Language::Slovenian => "Slovenščina",
+            Language::Croatian => "Hrvatski",
         }
     }
 
@@ -90,6 +94,7 @@ impl Language {
             Language::Greek => Some(include_str!("../lang/el.lang")),
             Language::French => Some(include_str!("../lang/fr.lang")),
             Language::Slovenian => Some(include_str!("../lang/sl.lang")),
+            Language::Croatian => Some(include_str!("../lang/hr.lang")),
         }
     }
 
@@ -122,7 +127,7 @@ impl Language {
                 _ => Form::Other,
             },
             // 1, 21, 101 one; 2-4, 22-24 few; the rest, and 11-14, other.
-            Language::Serbian => match (count % 10, count % 100) {
+            Language::Serbian | Language::Croatian => match (count % 10, count % 100) {
                 (1, tens) if tens != 11 => Form::One,
                 (2..=4, tens) if !(12..=14).contains(&tens) => Form::Few,
                 _ => Form::Other,
@@ -146,6 +151,7 @@ impl Language {
             "el" => Some(Language::Greek),
             "fr" => Some(Language::French),
             "sl" => Some(Language::Slovenian),
+            "hr" => Some(Language::Croatian),
             _ => None,
         }
     }

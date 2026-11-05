@@ -48,7 +48,8 @@ fn a_locale_names_its_language() {
     assert_eq!(Language::from_locale("fr_FR.UTF-8"), Some(Language::French));
     assert_eq!(Language::from_locale("fr_CA"), Some(Language::French));
     assert_eq!(Language::from_locale("sl_SI.UTF-8"), Some(Language::Slovenian));
-    assert_eq!(Language::from_locale("es_ES.UTF-8"), None);
+    assert_eq!(Language::from_locale("hr_HR.UTF-8"), Some(Language::Croatian));
+    assert_eq!(Language::from_locale("ja_JP.UTF-8"), None);
     for language in Language::ALL {
         assert_eq!(Language::from_key(language.key()), Some(language));
     }
@@ -242,7 +243,17 @@ fn places(text: &str) -> BTreeSet<String> {
 /// The languages that have words for everything, and are to keep it so:
 /// one of these missing a sentence fails the test. Any other shipped one
 /// shows what it lacks in English.
-const COMPLETE: &[Language] = &[Language::Serbian, Language::Turkish, Language::Norwegian, Language::German, Language::Italian, Language::Greek, Language::French, Language::Slovenian];
+const COMPLETE: &[Language] = &[
+    Language::Serbian,
+    Language::Turkish,
+    Language::Norwegian,
+    Language::German,
+    Language::Italian,
+    Language::Greek,
+    Language::French,
+    Language::Slovenian,
+    Language::Croatian,
+];
 
 #[test]
 fn the_scan_finds_each_kind_of_sentence() {
@@ -293,17 +304,20 @@ fn every_catalog_is_whole_and_up_to_date() {
             }
         };
         let whole = COMPLETE.contains(&language);
-        let forms: &[Form] = match language {
-            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek | Language::French => &[Form::One, Form::Other],
-            Language::Serbian => &[Form::One, Form::Few, Form::Other],
-            Language::Slovenian => &[Form::One, Form::Two, Form::Few, Form::Other],
-        };
+        // Every form the language's own rule gives a count.
+        let mut forms: Vec<Form> = Vec::new();
+        for count in 0..1000 {
+            let form = language.plural(count);
+            if !forms.contains(&form) {
+                forms.push(form);
+            }
+        }
         for sentence in &sentences {
             let english = &sentence.english;
             let mut wanted = places(english);
             if let Some(other) = &sentence.other {
                 wanted.extend(places(other));
-                for &form in forms {
+                for &form in &forms {
                     match catalog.forms.get(&(english.clone(), form)) {
                         None if whole => problems.push(format!("{}: no {form:?} form in {} for {english:?}", sentence.at, language.key())),
                         None => {}
