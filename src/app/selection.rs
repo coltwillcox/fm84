@@ -179,11 +179,11 @@ impl AppState {
     /// Work out a directory's size - next, ahead of any waiting, since it was
     /// asked for on its own - unless that is already under way.
     pub fn start_dir_size(&mut self, path: PathBuf) {
-        if self.dir_sizing.iter().any(|sizing| sizing.path == path) {
+        if self.workers.dir_sizing.iter().any(|sizing| sizing.path == path) {
             return;
         }
-        self.dir_size_queue.retain(|queued| *queued != path);
-        self.dir_size_queue.push_front(path);
+        self.workers.dir_size_queue.retain(|queued| *queued != path);
+        self.workers.dir_size_queue.push_front(path);
         self.start_queued_sizes();
     }
 
@@ -197,8 +197,8 @@ impl AppState {
         let (children, dir) = (&panel.children, &panel.dir);
         let paths: Vec<PathBuf> = children.iter().filter(|item| item.is_dir && !item.is_symlink && !item.is_parent()).map(|item| item.path_in(dir)).collect();
         for path in paths {
-            if !self.dir_sizing.iter().any(|sizing| sizing.path == path) && !self.dir_size_queue.contains(&path) {
-                self.dir_size_queue.push_back(path);
+            if !self.workers.dir_sizing.iter().any(|sizing| sizing.path == path) && !self.workers.dir_size_queue.contains(&path) {
+                self.workers.dir_size_queue.push_back(path);
             }
         }
         self.start_queued_sizes();
@@ -206,8 +206,8 @@ impl AppState {
 
     /// Start what is waiting, as far as there are workers free.
     fn start_queued_sizes(&mut self) {
-        while self.dir_sizing.len() < crate::constants::SIZE_WORKERS
-            && let Some(path) = self.dir_size_queue.pop_front()
+        while self.workers.dir_sizing.len() < crate::constants::SIZE_WORKERS
+            && let Some(path) = self.workers.dir_size_queue.pop_front()
         {
             self.spawn_dir_size(path);
         }
@@ -229,14 +229,14 @@ impl AppState {
             });
             let _ = sender.send(SizeUpdate::Finished(result.map_err(|e| e.to_string())));
         });
-        self.dir_sizing.push(DirSizing { path, found: 0, cancel, updates });
+        self.workers.dir_sizing.push(DirSizing { path, found: 0, cancel, updates });
     }
 
     /// Take what the sizing threads have sent since the last frame, keeping
     /// each size that is finished.
     pub fn poll_dir_sizes(&mut self) {
         let mut finished = Vec::new();
-        self.dir_sizing.retain_mut(|sizing| {
+        self.workers.dir_sizing.retain_mut(|sizing| {
             loop {
                 match sizing.updates.try_recv() {
                     Ok(SizeUpdate::Found(found)) => sizing.found = found,
@@ -268,8 +268,8 @@ impl AppState {
     /// entries; one stuck in a read on a dead mount is simply forgotten, and
     /// whatever it finds is never asked for.
     pub fn cancel_dir_sizes(&mut self) {
-        self.dir_size_queue.clear();
-        for sizing in self.dir_sizing.drain(..) {
+        self.workers.dir_size_queue.clear();
+        for sizing in self.workers.dir_sizing.drain(..) {
             sizing.cancel.store(true, Ordering::Relaxed);
         }
     }
@@ -283,8 +283,8 @@ impl AppState {
             return;
         }
         let inside = |path: &Path| path.parent() == Some(dir);
-        self.dir_size_queue.retain(|path| !inside(path));
-        self.dir_sizing.retain(|sizing| {
+        self.workers.dir_size_queue.retain(|path| !inside(path));
+        self.workers.dir_sizing.retain(|sizing| {
             let stop = inside(&sizing.path);
             if stop {
                 sizing.cancel.store(true, Ordering::Relaxed);
@@ -297,8 +297,8 @@ impl AppState {
     /// The running total for a directory still being sized - nothing yet,
     /// for one waiting its turn.
     pub fn dir_size_so_far(&self, path: &Path) -> Option<u64> {
-        let waiting = || self.dir_size_queue.iter().any(|queued| queued == path).then_some(0);
-        self.dir_sizing.iter().find(|sizing| sizing.path == path).map(|sizing| sizing.found).or_else(waiting)
+        let waiting = || self.workers.dir_size_queue.iter().any(|queued| queued == path).then_some(0);
+        self.workers.dir_sizing.iter().find(|sizing| sizing.path == path).map(|sizing| sizing.found).or_else(waiting)
     }
 
     pub fn clear_active_selections(&mut self) {

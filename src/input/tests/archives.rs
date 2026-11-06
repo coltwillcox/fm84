@@ -209,7 +209,7 @@ fn preview_detail_and_size_inside_an_archive() {
     on(&mut app_state, "2024");
     press(&mut app_state, KeyCode::Char(' '));
     let started = std::time::Instant::now();
-    while !app_state.dir_sizing.is_empty() {
+    while !app_state.workers.dir_sizing.is_empty() {
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "never sized");
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_dir_sizes();

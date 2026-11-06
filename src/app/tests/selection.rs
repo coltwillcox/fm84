@@ -15,10 +15,10 @@ fn space_sizes_a_directory_off_the_ui_thread() {
     app_state.options = Options::default();
     app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
     app_state.toggle_selection();
-    assert_eq!(app_state.dir_sizing.len(), 1);
+    assert_eq!(app_state.workers.dir_sizing.len(), 1);
 
     let started = std::time::Instant::now();
-    while !app_state.dir_sizing.is_empty() {
+    while !app_state.workers.dir_sizing.is_empty() {
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "sizing never finished");
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_dir_sizes();
@@ -29,7 +29,7 @@ fn space_sizes_a_directory_off_the_ui_thread() {
     app_state.dir_sizes.clear();
     app_state.start_dir_size(dir.join("sub"));
     app_state.cancel_dir_sizes();
-    assert!(app_state.dir_sizing.is_empty());
+    assert!(app_state.workers.dir_sizing.is_empty());
     app_state.poll_dir_sizes();
     assert!(app_state.dir_sizes.is_empty());
 
@@ -51,7 +51,7 @@ fn space_selects_a_link_to_a_directory_without_sizing_it() {
     app_state.open_dir(true, dir.clone(), Some("link".as_ref()));
     app_state.toggle_selection();
     assert!(app_state.left.selected.contains(std::ffi::OsStr::new("link")));
-    assert!(app_state.dir_sizing.is_empty());
+    assert!(app_state.workers.dir_sizing.is_empty());
 
     std::fs::remove_dir_all(&dir).unwrap();
 }

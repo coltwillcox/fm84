@@ -256,10 +256,6 @@ pub struct AppState {
     pub drive_strip_right: Strip,
     /// `user@host`, for the top border, and whether that is root.
     pub user_at_host: (String, bool),
-    /// Directories Space is working out the size of, each on its own thread.
-    pub dir_sizing: Vec<DirSizing>,
-    /// Directories waiting for a sizing worker to come free, next first.
-    pub dir_size_queue: std::collections::VecDeque<PathBuf>,
     /// Pictures read around the one on screen, while F11 leaves it on.
     pub image_cache: ImageCache,
     /// The entry under the cursor, spelled out under the panels.
@@ -429,6 +425,10 @@ pub struct Workers {
     pub watch_interval: Duration,
     /// Set while a copy, move or delete is running on its own thread.
     pub job: Option<TransferJob>,
+    /// Directories Space is working out the size of, each on its own thread.
+    pub dir_sizing: Vec<DirSizing>,
+    /// Directories waiting for a sizing worker to come free, next first.
+    pub dir_size_queue: std::collections::VecDeque<PathBuf>,
 }
 
 impl AppState {
@@ -514,6 +514,8 @@ impl AppState {
                 detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },
                 watch_interval: crate::constants::REFRESH_INTERVAL,
                 job: None,
+                dir_sizing: Vec::new(),
+                dir_size_queue: std::collections::VecDeque::new(),
             },
             filter_before: String::new(),
             search_input: String::new(),
@@ -532,8 +534,6 @@ impl AppState {
             branch_switch: None,
             bar_drag: None,
             user_at_host: crate::fs_ops::user_at_host(),
-            dir_sizing: Vec::new(),
-            dir_size_queue: std::collections::VecDeque::new(),
             image_cache: ImageCache::default(),
             cursor_detail: None,
             quit_armed: false,

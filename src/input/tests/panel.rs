@@ -241,14 +241,14 @@ fn alt_shift_enter_sizes_every_directory() {
         assert_eq!(app_state.left.dir, dir, "it sizes, and does not go in");
 
         // A few at once, the rest waiting, and shown as waiting.
-        assert_eq!(app_state.dir_sizing.len(), crate::constants::SIZE_WORKERS);
-        assert_eq!(app_state.dir_size_queue.len(), count - crate::constants::SIZE_WORKERS);
-        assert_eq!(app_state.dir_size_so_far(app_state.dir_size_queue.back().unwrap()), Some(0));
+        assert_eq!(app_state.workers.dir_sizing.len(), crate::constants::SIZE_WORKERS);
+        assert_eq!(app_state.workers.dir_size_queue.len(), count - crate::constants::SIZE_WORKERS);
+        assert_eq!(app_state.dir_size_so_far(app_state.workers.dir_size_queue.back().unwrap()), Some(0));
 
         let started = std::time::Instant::now();
-        while !app_state.dir_sizing.is_empty() || !app_state.dir_size_queue.is_empty() {
+        while !app_state.workers.dir_sizing.is_empty() || !app_state.workers.dir_size_queue.is_empty() {
             assert!(started.elapsed() < std::time::Duration::from_secs(10), "sizing never finished");
-            assert!(app_state.dir_sizing.len() <= crate::constants::SIZE_WORKERS);
+            assert!(app_state.workers.dir_sizing.len() <= crate::constants::SIZE_WORKERS);
             std::thread::sleep(std::time::Duration::from_millis(2));
             app_state.poll_dir_sizes();
         }
@@ -264,7 +264,7 @@ fn alt_shift_enter_sizes_every_directory() {
     app_state.open_dir(true, dir.clone(), None);
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT | KeyModifiers::SHIFT));
     press(&mut app_state, KeyCode::Esc);
-    assert!(app_state.dir_sizing.is_empty() && app_state.dir_size_queue.is_empty());
+    assert!(app_state.workers.dir_sizing.is_empty() && app_state.workers.dir_size_queue.is_empty());
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -278,10 +278,10 @@ fn a_directory_sized_on_its_own_goes_ahead_of_those_waiting() {
         app_state.start_dir_size(std::path::PathBuf::from(format!("/nonexistent/fm84/busy{n}")));
     }
     let waiting: Vec<std::path::PathBuf> = (0..3).map(|n| std::path::PathBuf::from(format!("/nonexistent/fm84/{n}"))).collect();
-    app_state.dir_size_queue.extend(waiting.iter().cloned());
+    app_state.workers.dir_size_queue.extend(waiting.iter().cloned());
     app_state.start_dir_size(waiting[2].clone());
-    assert_eq!(app_state.dir_size_queue.front(), Some(&waiting[2]));
-    assert_eq!(app_state.dir_size_queue.len(), 3, "moved, not added again");
+    assert_eq!(app_state.workers.dir_size_queue.front(), Some(&waiting[2]));
+    assert_eq!(app_state.workers.dir_size_queue.len(), 3, "moved, not added again");
     app_state.cancel_dir_sizes();
 }
 
@@ -304,10 +304,10 @@ fn leaving_a_directory_stops_sizing_what_is_in_it() {
     app_state.open_dir(false, elsewhere.clone(), None);
     app_state.dir_sizes.insert(dir.join("d0"), 42);
     size_all(&mut app_state);
-    assert!(!app_state.dir_sizing.is_empty() && !app_state.dir_size_queue.is_empty());
+    assert!(!app_state.workers.dir_sizing.is_empty() && !app_state.workers.dir_size_queue.is_empty());
     app_state.open_dir(true, elsewhere.clone(), None);
-    assert!(app_state.dir_sizing.is_empty(), "running ones stopped");
-    assert!(app_state.dir_size_queue.is_empty(), "waiting ones dropped");
+    assert!(app_state.workers.dir_sizing.is_empty(), "running ones stopped");
+    assert!(app_state.workers.dir_size_queue.is_empty(), "waiting ones dropped");
     assert_eq!(app_state.dir_sizes.get(&dir.join("d0")), Some(&42), "a size counted before is kept");
 
     // The other panel still in it: they go on, for that panel to show.
@@ -316,9 +316,9 @@ fn leaving_a_directory_stops_sizing_what_is_in_it() {
     app_state.open_dir(true, dir.clone(), None);
     app_state.open_dir(false, dir.clone(), None);
     size_all(&mut app_state);
-    let asked = app_state.dir_sizing.len() + app_state.dir_size_queue.len();
+    let asked = app_state.workers.dir_sizing.len() + app_state.workers.dir_size_queue.len();
     app_state.open_dir(true, elsewhere.clone(), None);
-    assert_eq!(app_state.dir_sizing.len() + app_state.dir_size_queue.len(), asked);
+    assert_eq!(app_state.workers.dir_sizing.len() + app_state.workers.dir_size_queue.len(), asked);
     app_state.cancel_dir_sizes();
     std::fs::remove_dir_all(&dir).unwrap();
 }
