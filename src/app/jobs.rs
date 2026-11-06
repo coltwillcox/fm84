@@ -224,10 +224,12 @@ struct JobProgress<'a> {
     /// Set once the answer was Abort, so the error it ends the job with is
     /// reported as the cancel it was rather than as a failure all over again.
     aborted: bool,
+    /// F11's Verify copies, as it was when the job started.
+    verify: bool,
 }
 
 impl<'a> JobProgress<'a> {
-    fn new(updates: &'a Sender<JobUpdate>, cancel: &'a AtomicBool, answers: &'a Receiver<Answer>, clashes: Clashes) -> Self {
+    fn new(updates: &'a Sender<JobUpdate>, cancel: &'a AtomicBool, answers: &'a Receiver<Answer>, clashes: Clashes, verify: bool) -> Self {
         JobProgress {
             updates,
             cancel,
@@ -235,7 +237,14 @@ impl<'a> JobProgress<'a> {
             skip_all: false,
             clashes,
             aborted: false,
+            verify,
         }
+    }
+
+    /// What the bar counts for `bytes` copied: each byte again as it is read
+    /// back, when copies are verified.
+    fn to_count(&self, bytes: u64) -> u64 {
+        if self.verify { bytes.saturating_mul(2) } else { bytes }
     }
 
     /// Before anything is written: when a filesystem has not the room for
@@ -315,6 +324,10 @@ impl Progress for JobProgress<'_> {
             // Answers to other questions, which a failure is never asked.
             Answer::Overwrite | Answer::OverwriteAll | Answer::OverwriteOlder | Answer::KeepBoth | Answer::KeepBothAll | Answer::GoOn => Reply::Skip,
         }
+    }
+
+    fn verify(&self) -> bool {
+        self.verify
     }
 
     fn exists(&mut self, source: &Path, dest: &Path) -> Clash {
@@ -512,7 +525,7 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, mut progres
     // Only what is actually going to be copied needs counting, and the
     // room for it is looked for before any of it goes.
     let sizes: Vec<u64> = remaining.iter().map(|item| measure(std::slice::from_ref(item))).collect();
-    let _ = progress.updates.send(JobUpdate::Total(sizes.iter().sum()));
+    let _ = progress.updates.send(JobUpdate::Total(progress.to_count(sizes.iter().sum())));
     if !progress.room_for(&crate::fs_ops::writes(&remaining, &sizes, is_copy)) {
         return;
     }
@@ -540,7 +553,7 @@ fn run_sync_steps(steps: Vec<crate::app::SyncStep>, to_trash: bool, mut progress
         })
         .collect();
     let sizes: Vec<u64> = copies.iter().map(|item| measure(std::slice::from_ref(item))).collect();
-    let _ = progress.updates.send(JobUpdate::Total(sizes.iter().sum()));
+    let _ = progress.updates.send(JobUpdate::Total(progress.to_count(sizes.iter().sum())));
     if !progress.room_for(&crate::fs_ops::writes(&copies, &sizes, true)) {
         return;
     }
@@ -573,7 +586,8 @@ impl AppState {
         let (sender, updates) = mpsc::channel();
         let (answers, worker_answers) = mpsc::channel();
         let worker_cancel = Arc::clone(&cancel);
-        std::thread::spawn(move || work(JobProgress::new(&sender, &worker_cancel, &worker_answers, clashes)));
+        let verify = self.options.verify_copies;
+        std::thread::spawn(move || work(JobProgress::new(&sender, &worker_cancel, &worker_answers, clashes, verify)));
 
         self.workers.job = Some(TransferJob {
             kind,

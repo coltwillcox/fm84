@@ -1177,6 +1177,9 @@ msgstr Терминал је премали
 msgid  The archive ends before it
 msgstr Архива се завршава пре тога
 
+msgid  The copy reads back differently from the original
+msgstr Копија се чита другачије од оригинала
+
 msgid  The directories hold the same files
 msgstr Директоријуми садрже исте датотеке
 
@@ -1230,6 +1233,9 @@ msgstr Несачуване измене
 
 msgid  User Menu
 msgstr Кориснички мени
+
+msgid  Verify copies
+msgstr Провери копије
 
 msgid  View
 msgstr Преглед

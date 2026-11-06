@@ -1190,6 +1190,9 @@ msgstr Terminál je příliš malý
 msgid  The archive ends before it
 msgstr Archiv končí dřív
 
+msgid  The copy reads back differently from the original
+msgstr Kopie se čte jinak než originál
+
 msgid  The directories hold the same files
 msgstr Složky obsahují stejné soubory
 
@@ -1243,6 +1246,9 @@ msgstr Neuložené změny
 
 msgid  User Menu
 msgstr Uživatelská nabídka
+
+msgid  Verify copies
+msgstr Ověřovat kopie
 
 msgid  View
 msgstr Zobrazit

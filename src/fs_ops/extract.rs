@@ -114,7 +114,7 @@ pub fn extract(archive: &Path, items: &[(PathBuf, PathBuf)], report: Report<'_>)
                 make_link(&crate::archive::link_target(&points_to), &target)?;
                 return Ok(Transfer::Done);
             }
-            write_beside(&target, reader, &mut *report, &|file, temp| finish_file(file, temp, entry))
+            write_beside(&target, reader, &mut *report, &|file, temp| finish_file(file, temp, entry), None)
         });
         match written {
             Ok(Transfer::Done) => Next::Go,

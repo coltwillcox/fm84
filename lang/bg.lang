@@ -1189,6 +1189,9 @@ msgstr Терминалът е твърде малък
 msgid  The archive ends before it
 msgstr Архивът свършва преди него
 
+msgid  The copy reads back differently from the original
+msgstr Копието се прочита различно от оригинала
+
 msgid  The directories hold the same files
 msgstr Директориите съдържат едни и същи файлове
 
@@ -1242,6 +1245,9 @@ msgstr Незапазени промени
 
 msgid  User Menu
 msgstr Потребителско меню
+
+msgid  Verify copies
+msgstr Проверка на копията
 
 msgid  View
 msgstr Преглед

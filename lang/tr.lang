@@ -1190,6 +1190,9 @@ msgstr Uçbirim çok küçük
 msgid  The archive ends before it
 msgstr Arşiv ondan önce bitiyor
 
+msgid  The copy reads back differently from the original
+msgstr Kopya özgün dosyadan farklı okunuyor
+
 msgid  The directories hold the same files
 msgstr Dizinler aynı dosyaları içeriyor
 
@@ -1243,6 +1246,9 @@ msgstr Kaydedilmemiş Değişiklikler
 
 msgid  User Menu
 msgstr Kullanıcı Menüsü
+
+msgid  Verify copies
+msgstr Kopyaları doğrula
 
 msgid  View
 msgstr Göster

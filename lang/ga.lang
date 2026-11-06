@@ -1190,6 +1190,9 @@ msgstr Tá an teirminéal róbheag
 msgid  The archive ends before it
 msgstr Críochnaíonn an chartlann roimhe
 
+msgid  The copy reads back differently from the original
+msgstr Léitear an chóip ar ais difriúil ón mbunleagan
+
 msgid  The directories hold the same files
 msgstr Tá na comhaid chéanna sna comhadlanna
 
@@ -1243,6 +1246,9 @@ msgstr Athruithe Gan Sábháil
 
 msgid  User Menu
 msgstr Roghchlár Úsáideora
+
+msgid  Verify copies
+msgstr Fíoraigh cóipeanna
 
 msgid  View
 msgstr Amharc

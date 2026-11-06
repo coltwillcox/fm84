@@ -1191,6 +1191,9 @@ msgstr Túl kicsi a terminál
 msgid  The archive ends before it
 msgstr Az archívum előbb véget ér
 
+msgid  The copy reads back differently from the original
+msgstr A másolat másképp olvasható vissza, mint az eredeti
+
 msgid  The directories hold the same files
 msgstr A mappákban ugyanazok a fájlok vannak
 
@@ -1244,6 +1247,9 @@ msgstr Mentetlen módosítások
 
 msgid  User Menu
 msgstr Felhasználói menü
+
+msgid  Verify copies
+msgstr Másolatok ellenőrzése
 
 msgid  View
 msgstr Nézet

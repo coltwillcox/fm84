@@ -1190,6 +1190,9 @@ msgstr Πολύ μικρό τερματικό
 msgid  The archive ends before it
 msgstr Η αρχειοθήκη τελειώνει πριν από αυτό
 
+msgid  The copy reads back differently from the original
+msgstr Το αντίγραφο διαβάζεται διαφορετικά από το πρωτότυπο
+
 msgid  The directories hold the same files
 msgstr Οι φάκελοι έχουν τα ίδια αρχεία
 
@@ -1243,6 +1246,9 @@ msgstr Μη αποθηκευμένες αλλαγές
 
 msgid  User Menu
 msgstr Μενού χρήστη
+
+msgid  Verify copies
+msgstr Επαλήθευση αντιγράφων
 
 msgid  View
 msgstr Προβολή

@@ -1189,6 +1189,9 @@ msgstr Terminalen er for liten
 msgid  The archive ends before it
 msgstr Arkivet slutter før det
 
+msgid  The copy reads back differently from the original
+msgstr Kopien leses annerledes enn originalen
+
 msgid  The directories hold the same files
 msgstr Mappene har de samme filene
 
@@ -1242,6 +1245,9 @@ msgstr Ulagrede endringer
 
 msgid  User Menu
 msgstr Brukermeny
+
+msgid  Verify copies
+msgstr Kontroller kopier
 
 msgid  View
 msgstr Vis

@@ -1191,6 +1191,9 @@ msgstr Terminal trop petit
 msgid  The archive ends before it
 msgstr L'archive se termine avant
 
+msgid  The copy reads back differently from the original
+msgstr La copie se relit différemment de l'original
+
 msgid  The directories hold the same files
 msgstr Les dossiers contiennent les mêmes fichiers
 
@@ -1244,6 +1247,9 @@ msgstr Modifications non enregistrées
 
 msgid  User Menu
 msgstr Menu utilisateur
+
+msgid  Verify copies
+msgstr Vérifier les copies
 
 msgid  View
 msgstr Voir

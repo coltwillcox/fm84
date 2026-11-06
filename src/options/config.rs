@@ -104,6 +104,7 @@ impl Options {
                 "confirm_delete" => options.confirm_delete = flag(options.confirm_delete),
                 "delete_to_trash" => options.delete_to_trash = flag(options.delete_to_trash),
                 "confirm_copy_move" => options.confirm_copy_move = flag(options.confirm_copy_move),
+                "verify_copies" => options.verify_copies = flag(options.verify_copies),
                 "on_existing" => {
                     options.on_existing = match value {
                         "ask" => OnExisting::Ask,
@@ -237,6 +238,8 @@ impl Options {
              confirm_copy_move = {}\n\
              # ask, overwrite or refuse, when a copy or move finds its name taken.\n\
              on_existing = {}\n\
+             # Read each copied file back and compare its checksum with the original's.\n\
+             verify_copies = {}\n\
              # Empty picks one automatically. {{}} stands for the directory.\n\
              terminal = {}\n\
              # Empty is the built-in editor. {{}} stands for the file, which otherwise goes last.\n\
@@ -289,6 +292,7 @@ impl Options {
                 OnExisting::Refuse => "refuse",
                 OnExisting::KeepBoth => "keep-both",
             },
+            self.verify_copies,
             self.terminal,
             self.editor,
             self.remember_dirs,

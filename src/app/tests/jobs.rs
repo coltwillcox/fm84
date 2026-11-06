@@ -218,3 +218,32 @@ fn a_copy_without_the_room_asks_before_it_starts() {
     assert!(!dir.join("onto").join("huge").exists(), "something was written");
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// With F11's Verify copies on, a copy job reads each file back: the bar's
+/// total counts every byte twice, and reaches it.
+#[test]
+fn verify_copies_reads_back_what_a_job_copies() {
+    let dir = std::env::temp_dir().join(format!("fm84-verify-job-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("tree")).unwrap();
+    std::fs::write(dir.join("tree").join("a"), vec![7u8; 5000]).unwrap();
+    std::fs::write(dir.join("tree").join("b"), vec![9u8; 3000]).unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options { verify_copies: true, ..Options::default() };
+    app_state.start_transfer(vec![(dir.join("tree"), dir.join("copy"), true)], true, crate::app::Clashes::Ask);
+    let started = std::time::Instant::now();
+    let (mut total, mut done) = (None, 0);
+    while let Some(job) = &app_state.workers.job {
+        (total, done) = (job.total, job.done);
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never ended");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert_eq!(app_state.error, None);
+    assert_eq!(total, Some(16000));
+    assert!(done <= 16000);
+    assert_eq!(std::fs::read(dir.join("copy").join("a")).unwrap(), vec![7u8; 5000]);
+    assert_eq!(std::fs::read(dir.join("copy").join("b")).unwrap(), vec![9u8; 3000]);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

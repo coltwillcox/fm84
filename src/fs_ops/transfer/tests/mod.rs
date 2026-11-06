@@ -6,6 +6,7 @@ mod moving;
 mod paths;
 mod room;
 mod save;
+mod verify;
 
 fn scratch(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("fm84-{name}-{}", std::process::id()));

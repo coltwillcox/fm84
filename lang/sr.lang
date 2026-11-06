@@ -1177,6 +1177,9 @@ msgstr Terminal je premali
 msgid  The archive ends before it
 msgstr Arhiva se završava pre toga
 
+msgid  The copy reads back differently from the original
+msgstr Kopija se čita drugačije od originala
+
 msgid  The directories hold the same files
 msgstr Direktorijumi sadrže iste datoteke
 
@@ -1230,6 +1233,9 @@ msgstr Nesačuvane izmene
 
 msgid  User Menu
 msgstr Korisnički meni
+
+msgid  Verify copies
+msgstr Proveri kopije
 
 msgid  View
 msgstr Pregled

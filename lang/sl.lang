@@ -1191,6 +1191,9 @@ msgstr Terminal je premajhen
 msgid  The archive ends before it
 msgstr Arhiv se konča prej
 
+msgid  The copy reads back differently from the original
+msgstr Kopija se prebere drugače kot izvirnik
+
 msgid  The directories hold the same files
 msgstr Mapi vsebujeta enake datoteke
 
@@ -1244,6 +1247,9 @@ msgstr Neshranjene spremembe
 
 msgid  User Menu
 msgstr Uporabniški meni
+
+msgid  Verify copies
+msgstr Preveri kopije
 
 msgid  View
 msgstr Ogled

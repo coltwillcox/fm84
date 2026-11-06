@@ -19,6 +19,7 @@ fn a_saved_file_reads_back_the_same() {
         delete_to_trash: false,
         confirm_copy_move: false,
         on_existing: OnExisting::KeepBoth,
+        verify_copies: true,
         terminal: "kitty --directory {}".to_string(),
         editor: "nvim".to_string(),
         remember_dirs: true,

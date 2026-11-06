@@ -1190,6 +1190,9 @@ msgstr Terminal pequeno demais
 msgid  The archive ends before it
 msgstr O arquivo compactado termina antes
 
+msgid  The copy reads back differently from the original
+msgstr A cópia é lida diferente do original
+
 msgid  The directories hold the same files
 msgstr As pastas têm os mesmos arquivos
 
@@ -1243,6 +1246,9 @@ msgstr Alterações não salvas
 
 msgid  User Menu
 msgstr Menu do usuário
+
+msgid  Verify copies
+msgstr Verificar cópias
 
 msgid  View
 msgstr Ver

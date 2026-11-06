@@ -1190,6 +1190,9 @@ msgstr Терминалот е премал
 msgid  The archive ends before it
 msgstr Архивата завршува пред тоа
 
+msgid  The copy reads back differently from the original
+msgstr Копијата се чита поинаку од оригиналот
+
 msgid  The directories hold the same files
 msgstr Папките ги имаат истите датотеки
 
@@ -1243,6 +1246,9 @@ msgstr Незачувани промени
 
 msgid  User Menu
 msgstr Кориснично мени
+
+msgid  Verify copies
+msgstr Провери ги копиите
 
 msgid  View
 msgstr Преглед

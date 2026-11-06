@@ -76,6 +76,12 @@ pub trait Progress {
     fn exists(&mut self, _source: &Path, _dest: &Path) -> Clash {
         Clash::Replace
     }
+
+    /// Whether each file copied is read back from where it went and its
+    /// checksum compared with the original's, before it takes its place.
+    fn verify(&self) -> bool {
+        false
+    }
 }
 
 /// The answer to a name already taken.
@@ -355,11 +361,91 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
     }
 
     let mut src_file = File::open(source)?;
-    write_beside(dest, &mut src_file, report, &|dst_file, temp| {
+    let finish = |dst_file: &File, temp: &Path| {
         keep_times(dst_file, &metadata);
         let _ = fs::set_permissions(temp, metadata.permissions());
-    })
+    };
+    if !report.verify() {
+        return write_beside(dest, &mut src_file, report, &finish, None);
+    }
+    // The source hashed as it is read for the copy, so it is read once; the
+    // copy then read back and hashed on its own.
+    let hasher = std::cell::RefCell::new(sha2::Sha256::default());
+    let mut hashing = Hashing { inner: src_file, hasher: &hasher };
+    write_beside(dest, &mut hashing, report, &finish, Some(&|temp, report| read_back(temp, &hasher, report)))
 }
+
+/// A reader that hashes what passes through it.
+struct Hashing<'a, R> {
+    inner: R,
+    hasher: &'a std::cell::RefCell<sha2::Sha256>,
+}
+
+impl<R: Read> Read for Hashing<'_, R> {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        let read = self.inner.read(buffer)?;
+        sha2::Digest::update(&mut *self.hasher.borrow_mut(), &buffer[..read]);
+        Ok(read)
+    }
+}
+
+/// Read a copy back, written whole beside where it goes, and say whether it
+/// holds what `source` hashed: Done when it does, an error when it does not.
+/// Flushed to the device first and its pages let go of, so what is read is
+/// what the device kept, not what the system still has in memory from
+/// writing it. Counted on the bar as the copy was.
+fn read_back(temp: &Path, source: &std::cell::RefCell<sha2::Sha256>, report: Report<'_>) -> Result<Transfer, Error> {
+    use sha2::Digest;
+    let mut file = File::open(temp)?;
+    file.sync_all()?;
+    forget_cached(&file);
+    let mut hasher = sha2::Sha256::default();
+    let mut buffer = vec![0u8; 256 * 1024];
+    loop {
+        let read = match file.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(read) => read,
+            Err(error) if error.kind() == ErrorKind::Interrupted => continue,
+            Err(error) => return Err(error),
+        };
+        hasher.update(&buffer[..read]);
+        if !report.step(Step::Advanced(read as u64)) {
+            return Ok(Transfer::Cancelled);
+        }
+    }
+    if hasher.finalize() != source.borrow().clone().finalize() {
+        return Err(Error::other(t!("The copy reads back differently from the original")));
+    }
+    Ok(Transfer::Done)
+}
+
+/// Let go of what the system holds of `file` in memory, so the next read
+/// goes to the device. Where there is no saying so, the read may come from
+/// memory; the flush before it has still made the device take the bytes.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd"))]
+fn forget_cached(file: &File) {
+    use std::os::fd::AsRawFd;
+    // SAFETY: a valid descriptor, and advice the kernel is free to ignore.
+    unsafe {
+        libc::posix_fadvise(file.as_raw_fd(), 0, 0, libc::POSIX_FADV_DONTNEED);
+    }
+}
+
+#[cfg(target_vendor = "apple")]
+fn forget_cached(file: &File) {
+    use std::os::fd::AsRawFd;
+    // SAFETY: a valid descriptor; reads through it then skip the cache.
+    unsafe {
+        libc::fcntl(file.as_raw_fd(), libc::F_NOCACHE, 1);
+    }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_vendor = "apple")))]
+fn forget_cached(_file: &File) {}
+
+/// A look at a file written whole, before it takes its place: Done to let
+/// it, Cancelled or an error to throw it away.
+pub(super) type Check<'a> = &'a dyn Fn(&Path, Report<'_>) -> Result<Transfer, Error>;
 
 /// Write what `reader` holds to `dest`, reporting each chunk as it goes, and
 /// `finish` the file - its times, its mode - before it takes its place.
@@ -374,7 +460,11 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
 /// own name would still be half a file whenever the copy stopped short of
 /// the end - fm84 quit partway, or killed - and would pass for a whole one.
 /// A temporary that is left behind is plainly not one.
-pub(super) fn write_beside<R: Read + ?Sized>(dest: &Path, reader: &mut R, report: Report<'_>, finish: &dyn Fn(&File, &Path)) -> Result<Transfer, Error> {
+///
+/// `check`, when there is one, looks at the temporary once it is finished
+/// and before it takes its place: an error from it leaves nothing behind,
+/// as a failed write does.
+pub(super) fn write_beside<R: Read + ?Sized>(dest: &Path, reader: &mut R, report: Report<'_>, finish: &dyn Fn(&File, &Path), check: Option<Check<'_>>) -> Result<Transfer, Error> {
     let replacing = dest.symlink_metadata().is_ok();
     let (temp, mut dst_file) = temp_beside(dest)?;
     // What a failure or a cancel partway leaves: nothing, of ours.
@@ -395,6 +485,15 @@ pub(super) fn write_beside<R: Read + ?Sized>(dest: &Path, reader: &mut R, report
         if copied == 0 {
             finish(&dst_file, &temp);
             drop(dst_file);
+            if let Some(check) = check {
+                match check(&temp, &mut *report) {
+                    Ok(Transfer::Done) => {}
+                    outcome => {
+                        let _ = remove_file(&temp);
+                        return outcome;
+                    }
+                }
+            }
             place(&temp, dest, replacing)?;
             return Ok(Transfer::Done);
         }

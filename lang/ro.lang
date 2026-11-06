@@ -1190,6 +1190,9 @@ msgstr Terminalul este prea mic
 msgid  The archive ends before it
 msgstr Arhiva se termină înaintea lui
 
+msgid  The copy reads back differently from the original
+msgstr Copia se citește altfel decât originalul
+
 msgid  The directories hold the same files
 msgstr Directoarele conțin aceleași fișiere
 
@@ -1243,6 +1246,9 @@ msgstr Modificări nesalvate
 
 msgid  User Menu
 msgstr Meniul utilizatorului
+
+msgid  Verify copies
+msgstr Verifică copiile
 
 msgid  View
 msgstr Vezi

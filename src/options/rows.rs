@@ -21,6 +21,7 @@ pub enum OptionRow {
     DeleteToTrash,
     ConfirmCopyMove,
     OnExisting,
+    VerifyCopies,
     Terminal,
     Editor,
     RememberDirs,
@@ -42,7 +43,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 35] = [
+pub const OPTION_ROWS: [OptionRow; 36] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -59,6 +60,7 @@ pub const OPTION_ROWS: [OptionRow; 35] = [
     OptionRow::DeleteToTrash,
     OptionRow::ConfirmCopyMove,
     OptionRow::OnExisting,
+    OptionRow::VerifyCopies,
     OptionRow::Terminal,
     OptionRow::Editor,
     OptionRow::RememberDirs,
@@ -99,6 +101,7 @@ impl OptionRow {
             OptionRow::DeleteToTrash => t!("Delete to trash (F8)"),
             OptionRow::ConfirmCopyMove => t!("Confirm copy and move"),
             OptionRow::OnExisting => t!("When destination exists"),
+            OptionRow::VerifyCopies => t!("Verify copies"),
             OptionRow::Terminal => t!("Terminal (F9)"),
             OptionRow::Editor => t!("Editor (F4)"),
             OptionRow::RememberDirs => t!("Remember directories"),
@@ -188,6 +191,7 @@ impl Options {
                 OnExisting::KeepBoth => t!("Keep both"),
             }
             .to_string(),
+            OptionRow::VerifyCopies => on_off(self.verify_copies),
             OptionRow::Terminal if self.terminal.is_empty() => t!("Automatic").to_string(),
             OptionRow::Terminal => self.terminal.clone(),
             OptionRow::Editor if self.editor.is_empty() => t!("Built-in").to_string(),
@@ -293,6 +297,7 @@ impl Options {
                 let policies = [OnExisting::Ask, OnExisting::Overwrite, OnExisting::KeepBoth, OnExisting::Refuse];
                 self.on_existing = step(&policies, self.on_existing, forward);
             }
+            OptionRow::VerifyCopies => self.verify_copies = !self.verify_copies,
             OptionRow::RememberDirs => self.remember_dirs = !self.remember_dirs,
             OptionRow::PreviewOnStart => self.preview_on_start = !self.preview_on_start,
             OptionRow::Language => {

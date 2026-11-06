@@ -1189,6 +1189,9 @@ msgstr Terminal te klein
 msgid  The archive ends before it
 msgstr Het archief eindigt ervoor
 
+msgid  The copy reads back differently from the original
+msgstr De kopie leest anders terug dan het origineel
+
 msgid  The directories hold the same files
 msgstr De mappen bevatten dezelfde bestanden
 
@@ -1242,6 +1245,9 @@ msgstr Niet-opgeslagen wijzigingen
 
 msgid  User Menu
 msgstr Gebruikersmenu
+
+msgid  Verify copies
+msgstr Kopieën controleren
 
 msgid  View
 msgstr Bekijken

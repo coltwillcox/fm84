@@ -262,6 +262,10 @@ pub struct Options {
     pub delete_to_trash: bool,
     pub confirm_copy_move: bool,
     pub on_existing: OnExisting,
+    /// Read each file a copy or move writes back from where it went, and
+    /// compare its checksum with the source's - for a USB stick or a
+    /// network mount that may not keep what it is given.
+    pub verify_copies: bool,
     /// The F9 command. Empty means pick one per platform, as before there was
     /// a choice; `{}` in it stands for the panel's directory.
     pub terminal: String,
@@ -325,6 +329,7 @@ impl Default for Options {
             delete_to_trash: true,
             confirm_copy_move: true,
             on_existing: OnExisting::Ask,
+            verify_copies: false,
             terminal: String::new(),
             editor: String::new(),
             remember_dirs: false,
