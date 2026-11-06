@@ -263,7 +263,7 @@ impl AppState {
         // Each filter goes with its directory, and is kept once there.
         std::mem::swap(&mut self.left.filter, &mut self.right.filter);
         std::mem::swap(&mut self.left.flat, &mut self.right.flat);
-        std::mem::swap(&mut self.git_left, &mut self.git_right);
+        std::mem::swap(&mut self.left.git, &mut self.right.git);
         for is_left in [true, false] {
             let active = self.tabs_mut(is_left).active;
             self.show_tab(is_left, TabUndo::Active(active));

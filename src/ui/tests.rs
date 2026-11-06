@@ -838,7 +838,7 @@ fn git_marks_sit_at_the_end_of_the_name() {
     // Off in F11: gone with the reread that follows, and git not asked.
     app_state.options.git_marks = false;
     app_state.reload_panel(true, None);
-    assert!(app_state.git_status(true).is_none() && app_state.git_left.dir == dir);
+    assert!(app_state.git_status(true).is_none() && app_state.left.git.dir == dir);
     render_ui(&mut terminal, &mut app_state);
     let buffer = terminal.backend().buffer();
     let marked = (0..buffer.area.height).any(|y| {
