@@ -136,7 +136,7 @@ fn wide_characters_take_their_columns_in_the_editor() {
 
     press(&mut app_state, KeyCode::End);
     crate::ui::render_ui(&mut terminal, &mut app_state);
-    let area = app_state.editor_content_area;
+    let area = app_state.drawn.editor_content_area;
     let state = app_state.editor().unwrap();
     assert_eq!(state.cursor_col, 60);
     let cursor = crate::utils::display_column(&state.lines[0], state.cursor_col);
@@ -150,7 +150,7 @@ fn wide_characters_take_their_columns_in_the_editor() {
     press(&mut app_state, KeyCode::Home);
     crate::ui::render_ui(&mut terminal, &mut app_state);
     assert_eq!(app_state.editor().unwrap().horizontal_offset, 0);
-    let area = app_state.editor_content_area;
+    let area = app_state.drawn.editor_content_area;
     crate::input::handle_mouse(
         &mut app_state,
         MouseEvent {

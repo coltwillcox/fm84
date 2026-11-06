@@ -361,7 +361,7 @@ fn handle_viewer_click(app_state: &mut AppState, column: u16, row: u16, extend: 
 fn handle_editor_click(app_state: &mut AppState, column: u16, row: u16, extend: bool) {
     // The content area as drawn, so the border and gutter widths don't have to
     // be worked out again here.
-    let area = app_state.editor_content_area;
+    let area = app_state.drawn.editor_content_area;
     if !area.contains(Position::new(column, row)) {
         return;
     }
