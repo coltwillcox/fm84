@@ -246,9 +246,6 @@ pub struct AppState {
     pub last_click_pos: (u16, u16),
     // Where the last frame actually drew things. Mouse handling reads these
     // instead of recomputing the layout from hardcoded row numbers.
-    /// Each panel's git branch on the path bar, left then right, as last
-    /// drawn - a click there lists the repository's branches.
-    pub branch_hits: [Option<Rect>; 2],
     /// The rows of the branch list as last drawn, and the branch on each.
     pub branch_rows: Vec<(Rect, usize)>,
     /// A branch git is still switching to.
@@ -423,6 +420,9 @@ pub struct Drawn {
     pub attribute_rows: Vec<(Rect, u16)>,
     /// The F-key labels along the bottom, as last drawn, and their keys.
     pub fkey_hits: Vec<(Rect, u8)>,
+    /// Each panel's git branch on the path bar, left then right, as last
+    /// drawn - a click there lists the repository's branches.
+    pub branch_hits: [Option<Rect>; 2],
 }
 
 impl AppState {
@@ -512,7 +512,6 @@ impl AppState {
             visited: Vec::new(),
             last_click_time: None,
             last_click_pos: (0, 0),
-            branch_hits: [None, None],
             branch_rows: Vec::new(),
             branch_switch: None,
             sort_headers: Vec::new(),

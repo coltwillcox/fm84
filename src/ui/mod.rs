@@ -192,7 +192,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input),
             _ => None,
         };
-        app_state.branch_hits = render_path_bar(f, chunks_main[1], app_state, going_to);
+        app_state.drawn.branch_hits = render_path_bar(f, chunks_main[1], app_state, going_to);
         app_state.drawn.path_bar_area = chunks_main[1];
         // Only the viewer and the editor have bars, and they put theirs back.
         app_state.scroll_bars.clear();
