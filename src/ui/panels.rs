@@ -197,8 +197,9 @@ fn lay_strip(strip: &mut Strip, area: Rect, items: Vec<Span<'static>>, focus: Op
 /// One panel's row of drive icons: the mount it is on sits in a block of colour, and while
 /// that panel is choosing, the candidate is highlighted and named. The window
 /// onto them, when they do not all fit, follows the candidate while choosing
-/// and the panel's own drive otherwise.
-pub(super) fn drive_strip(app_state: &mut AppState, side: Side, area: Rect) -> Line<'static> {
+/// and the panel's own drive otherwise. Gives back the strip as laid out,
+/// for the state to keep after the frame.
+pub(super) fn drive_strip(app_state: &AppState, side: Side, area: Rect) -> (Line<'static>, Strip) {
     let current = app_state.current_mount(side);
     let picking = match app_state.dialog {
         Some(Dialog::DrivePicker { side: picking, index }) if picking == side => Some(index),
@@ -231,14 +232,14 @@ pub(super) fn drive_strip(app_state: &mut AppState, side: Side, area: Rect) -> L
         })
         .collect();
 
-    let strip = &mut app_state.drive_strips[side];
-    let mut spans = lay_strip(strip, area, items, picking.or(current));
+    let mut strip = app_state.drive_strips[side].clone();
+    let mut spans = lay_strip(&mut strip, area, items, picking.or(current));
 
     // Name whichever is under consideration, else the one this panel is on.
     if let Some(mount) = picking.or(current).and_then(|index| app_state.mounts.get(index)) {
         spans.push(Span::styled(format!(" {}", printable_name(&mount.label)), style_columns()));
     }
-    Line::from(spans)
+    (Line::from(spans), strip)
 }
 
 /// A tab is named for its directory, cut short past a point so a few fit
@@ -263,7 +264,8 @@ pub(super) fn tab_label(dir: &Path) -> String {
 
 /// One panel's row of tabs, under its drives. The tab it shows sits in a
 /// block of colour, the brighter one in the active panel, as the drives do.
-pub(super) fn tab_strip(app_state: &mut AppState, side: Side, area: Rect) -> Line<'static> {
+/// Gives back the strip as laid out, as `drive_strip` does.
+pub(super) fn tab_strip(app_state: &AppState, side: Side, area: Rect) -> (Line<'static>, Strip) {
     let (dirs, active) = app_state.tab_dirs(side);
     let panel_active = app_state.active_side == side;
     let items = dirs
@@ -281,11 +283,14 @@ pub(super) fn tab_strip(app_state: &mut AppState, side: Side, area: Rect) -> Lin
         })
         .collect();
 
-    let tabs = &mut app_state.panel_mut(side).tabs;
-    Line::from(lay_strip(&mut tabs.strip, area, items, Some(active)))
+    let mut strip = app_state.panel(side).tabs.strip.clone();
+    let line = Line::from(lay_strip(&mut strip, area, items, Some(active)));
+    (line, strip)
 }
 
-pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState, drawn: &Drawn) {
+/// Gives back the drive strips and the tab strips as laid out, left then
+/// right, for the state to keep after the frame.
+pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, drawn: &Drawn) -> ([Strip; 2], [Strip; 2]) {
     let cached_clock = drawn.cached_clock.as_str();
     let logo = Span::styled(format!(" {} ", logo_icon(app_state.options.icon_style)), style_title());
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), style_title());
@@ -315,27 +320,32 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
 
     // Each strip hands its real geometry to the mouse handler, as the panels
     // do. One not drawn this frame has nothing to click either.
-    for strip in &mut app_state.drive_strips {
+    let unplaced = |strip: &Strip| {
+        let mut strip = strip.clone();
         strip.area = Rect::default();
-    }
-    app_state.left.tabs.strip.area = Rect::default();
-    app_state.right.tabs.strip.area = Rect::default();
+        strip
+    };
+    let mut drives = app_state.drive_strips.each_ref().map(unplaced);
+    let mut tabs = [unplaced(&app_state.left.tabs.strip), unplaced(&app_state.right.tabs.strip)];
 
     if inner.height > 0 && !app_state.mounts.is_empty() {
         let halves = panel_split(Rect { height: 1, ..inner });
-        let left = drive_strip(app_state, Side::Left, halves[0]);
-        let right = drive_strip(app_state, Side::Right, halves[2]);
-        f.render_widget(Paragraph::new(left), halves[0]);
-        f.render_widget(Paragraph::new(right), halves[2]);
+        for (side, half) in [(Side::Left, halves[0]), (Side::Right, halves[2])] {
+            let (line, strip) = drive_strip(app_state, side, half);
+            f.render_widget(Paragraph::new(line), half);
+            drives[side] = strip;
+        }
     }
     // The tabs take the row under the drives.
     if inner.height > 1 {
         let halves = panel_split(Rect { y: inner.y + 1, height: 1, ..inner });
-        let left = tab_strip(app_state, Side::Left, halves[0]);
-        let right = tab_strip(app_state, Side::Right, halves[2]);
-        f.render_widget(Paragraph::new(left), halves[0]);
-        f.render_widget(Paragraph::new(right), halves[2]);
+        for (side, half) in [(Side::Left, halves[0]), (Side::Right, halves[2])] {
+            let (line, strip) = tab_strip(app_state, side, half);
+            f.render_widget(Paragraph::new(line), half);
+            tabs[side] = strip;
+        }
     }
+    (drives, tabs)
 }
 
 /// The directory each panel is in, along the line over them. Ctrl+L edits

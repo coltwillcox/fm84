@@ -40,7 +40,7 @@ fn tabs_are_drawn_and_clicked_where_they_are() {
     app_state.active_side = Side::Left;
     app_state.left.dir = "/tmp/b".into();
     app_state.left.tabs = crate::app::Tabs::new(vec!["/a".into(), "/tmp/b".into()], 1);
-    tab_strip(&mut app_state, Side::Left, Rect::new(0, 1, 40, 1));
+    app_state.left.tabs.strip = tab_strip(&app_state, Side::Left, Rect::new(0, 1, 40, 1)).1;
 
     // " " then " a " then " b ".
     assert_eq!(app_state.tab_at(0, 1), None);
@@ -68,9 +68,10 @@ fn a_crowded_drive_strip_scrolls() {
         })
         .collect();
     let area = Rect::new(0, 0, 30, 1);
+    let lay = |app_state: &mut AppState, area: Rect| app_state.drive_strips[Side::Left] = drive_strip(app_state, Side::Left, area).1;
 
     // Plain icons are five columns a slot: 30, less 4 for arrows, holds 5.
-    drive_strip(&mut app_state, Side::Left, area);
+    lay(&mut app_state, area);
     let strip = &app_state.drive_strips[Side::Left];
     assert_eq!((strip.first, strip.visible), (0, 5));
     assert_eq!(strip.hits.first(), Some(&StripHit::Item(0)));
@@ -81,18 +82,18 @@ fn a_crowded_drive_strip_scrolls() {
 
     // A page along, and the back arrow appears with the icons where they were.
     app_state.scroll_drive_strip(Side::Left, true);
-    drive_strip(&mut app_state, Side::Left, area);
+    lay(&mut app_state, area);
     assert_eq!(app_state.drive_at(0, 0), Some((Side::Left, StripHit::Back)));
     assert_eq!(app_state.drive_at(2, 0), Some((Side::Left, StripHit::Item(5))));
 
     // At the end, no forward arrow.
     app_state.scroll_drive_strip(Side::Left, true);
-    drive_strip(&mut app_state, Side::Left, area);
+    lay(&mut app_state, area);
     assert_eq!(app_state.drive_strips[Side::Left].first, 7);
     assert!(!app_state.drive_strips[Side::Left].hits.contains(&StripHit::Forward));
 
     // Room for all: no arrows and the old layout.
-    drive_strip(&mut app_state, Side::Left, Rect::new(0, 0, 80, 1));
+    lay(&mut app_state, Rect::new(0, 0, 80, 1));
     assert_eq!(app_state.drive_strips[Side::Left].first, 0);
     assert_eq!(app_state.drive_at(1, 0), Some((Side::Left, StripHit::Item(0))));
 }

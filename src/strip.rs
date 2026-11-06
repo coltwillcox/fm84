@@ -9,7 +9,7 @@ pub const ARROW: usize = 2;
 
 /// One strip as last drawn. When its items do not all fit, it shows a window
 /// onto them, with an arrow at either end that has more beyond it.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Strip {
     pub area: Rect,
     /// The first item shown.

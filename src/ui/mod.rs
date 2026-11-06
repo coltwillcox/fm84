@@ -121,6 +121,9 @@ struct Settled {
     diff_scroll: Option<usize>,
     /// The editor's scroll down and across, kept with the cursor in view.
     editor_scroll: Option<(usize, usize)>,
+    /// The drive strips and the tab strips, left then right, as laid out:
+    /// which items they show, and where each was drawn.
+    strips: Option<([Strip; 2], [Strip; 2])>,
 }
 
 impl Settled {
@@ -142,6 +145,10 @@ impl Settled {
         }
         if let (Some((down, across)), Screen::Editor(state)) = (self.editor_scroll, &mut app_state.screen) {
             (state.scroll_offset, state.horizontal_offset) = (down, across);
+        }
+        if let Some((drives, [left, right])) = self.strips {
+            app_state.drive_strips = drives;
+            (app_state.left.tabs.strip, app_state.right.tabs.strip) = (left, right);
         }
     }
 }
@@ -235,7 +242,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut 
 
         let chunks_main = screen_layout(area);
 
-        render_top_panel(f, chunks_main[0], app_state, drawn);
+        settled.strips = Some(render_top_panel(f, chunks_main[0], app_state, drawn));
         let going_to = match &app_state.dialog {
             Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input),
             _ => None,
