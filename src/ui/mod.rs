@@ -114,12 +114,18 @@ struct Settled {
     /// F1's list, kept to its room, so a screen that has grown does not
     /// leave the keys scrolling through lines past the end.
     help_scroll: Option<usize>,
+    /// The checksums popup's room, and its scroll kept to it.
+    checksums: Option<(usize, usize)>,
 }
 
 impl Settled {
     fn apply(self, app_state: &mut AppState) {
         if let Some(scroll) = self.help_scroll {
             app_state.help_scroll = scroll;
+        }
+        if let (Some((room, scroll)), Some(Dialog::Checksums(view))) = (self.checksums, &mut app_state.dialog) {
+            view.room = room;
+            view.scroll = scroll;
         }
     }
 }
@@ -262,11 +268,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut 
                 render_destination_popup(f, area, sources, kind, input, Some(other));
             }
             Some(Dialog::Extract { archive, input }) => render_destination_popup(f, area, &[(archive.clone(), false)], Destination::Extract, input, None),
-            Some(Dialog::Checksums(_)) => {
-                if let Some(Dialog::Checksums(view)) = &mut app_state.dialog {
-                    render_checksums_popup(f, area, view);
-                }
-            }
+            Some(Dialog::Checksums(view)) => settled.checksums = Some(render_checksums_popup(f, area, view)),
             Some(Dialog::Sync(_)) => {
                 let date_format = app_state.options.date_format;
                 if let Some(Dialog::Sync(plan)) = &mut app_state.dialog {

@@ -22,7 +22,8 @@ fn rows_of(line: &str, width: usize) -> Vec<String> {
     rows
 }
 
-pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, view: &mut ChecksumView) {
+/// Returns the rows the list had room for, and its scroll kept to them.
+pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, view: &ChecksumView) -> (usize, usize) {
     // One size whatever it holds, and whichever algorithm is shown: as wide
     // as every popup, and as tall as the larger ones. What does not fit
     // wraps, and scrolls.
@@ -55,24 +56,24 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
 
     // The head above, a blank row and the keys below.
     let room = (inner.height as usize).saturating_sub(head.len() + 1 + keys.len()).max(1);
-    view.room = room;
-    view.scroll = view.scroll.min(rows.len().saturating_sub(room));
+    let scroll = view.scroll.min(rows.len().saturating_sub(room));
 
     let mut block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
     if room < rows.len() {
-        let shown = format!(" {}-{}/{} ", view.scroll + 1, (view.scroll + room).min(rows.len()), rows.len());
+        let shown = format!(" {}-{}/{} ", scroll + 1, (scroll + room).min(rows.len()), rows.len());
         block = block.title_bottom(Line::from(Span::styled(shown, style_columns())).right_aligned());
     }
     clear(f, popup_area);
     f.render_widget(block, popup_area);
 
     let mut shown = head;
-    shown.extend(rows.into_iter().skip(view.scroll).take(room).map(|row| Line::from(Span::styled(row, style_file()))));
+    shown.extend(rows.into_iter().skip(scroll).take(room).map(|row| Line::from(Span::styled(row, style_file()))));
     f.render_widget(Paragraph::new(shown), inner);
     // The keys on the bottom rows, wherever the list ends.
     let height = (keys.len() as u16).min(inner.height);
     let bottom = Rect { y: inner.bottom() - height, height, ..inner };
     f.render_widget(Paragraph::new(keys.into_iter().map(|row| Line::from(Span::styled(row, style_columns()))).collect::<Vec<_>>()), bottom);
+    (room, scroll)
 }
 
 /// Keys laid out as rows of `width` columns, apart as every popup sets them
