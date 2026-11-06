@@ -218,9 +218,6 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    /// Whether W last left the viewer wrapping lines, which the next file
-    /// opened takes up.
-    pub viewer_wrap: bool,
     /// Whether the matches of find_term are marked on screen. On from the
     /// first search until the viewer or editor closes.
     pub find_shown: bool,
@@ -434,6 +431,9 @@ pub struct Recall {
     pub find_term: String,
     /// Alt+R in the find prompt: the term is a regular expression.
     pub find_regex: bool,
+    /// Whether W last left the viewer wrapping lines, which the next file
+    /// opened takes up.
+    pub viewer_wrap: bool,
 }
 
 impl AppState {
@@ -515,6 +515,7 @@ impl AppState {
                 replace_with: String::new(),
                 find_term: String::new(),
                 find_regex: false,
+                viewer_wrap: false,
             },
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
@@ -532,7 +533,6 @@ impl AppState {
             },
             filter_before: String::new(),
             search_input: String::new(),
-            viewer_wrap: false,
             find_shown: false,
             find_note: None,
             dir_sizes: HashMap::new(),

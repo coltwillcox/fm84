@@ -196,7 +196,7 @@ impl AppState {
         let decoded = if self.options.image_prefetch { self.image_cache.take(&file_path) } else { None };
         let mut state = crate::viewer::load_file_content(&file_path, decoded).map_err(|e| e.to_string())?;
         state.image_fill = self.options.image_fill;
-        state.wrap = self.viewer_wrap;
+        state.wrap = self.recall.viewer_wrap;
 
         // Only once the new one is in hand: a load that failed used to leave
         // what was open alone, and should go on doing so. The picture being
@@ -286,7 +286,7 @@ impl AppState {
             return;
         }
         state.wrap = !state.wrap;
-        self.viewer_wrap = state.wrap;
+        self.recall.viewer_wrap = state.wrap;
         if state.wrap && width > 0 {
             state.rewrap(width);
         } else {
