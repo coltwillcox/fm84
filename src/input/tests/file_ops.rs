@@ -501,7 +501,7 @@ fn a_copy_goes_where_the_other_panel_is_going() {
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.join("from"), Some("a.txt".as_ref()));
     app_state.open_dir(false, dir.join("leaving"), None);
-    app_state.listing_right = Some(crate::app::PendingListing::going_to(dir.join("going")));
+    app_state.right.listing = Some(crate::app::PendingListing::going_to(dir.join("going")));
 
     press(&mut app_state, KeyCode::F(5));
     assert_eq!(std::path::PathBuf::from(&app_state.dialog_input().unwrap().text), dir.join("going").join("a.txt"));

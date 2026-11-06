@@ -350,7 +350,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     let listed = app_state.left.children.len();
 
     let (sender, answer) = std::sync::mpsc::channel();
-    app_state.listing_left = Some(crate::app::PendingListing {
+    app_state.left.listing = Some(crate::app::PendingListing {
         dir: dir.join("far"),
         navigate: true,
         select: None,
@@ -367,7 +367,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     assert_eq!((app_state.left.dir.clone(), app_state.left.children.len()), (dir.clone(), listed));
     // Nor does a reread of where it was get in the way of where it is going.
     app_state.reload_panel(true, None);
-    assert!(app_state.listing_left.as_ref().is_some_and(|pending| pending.dir == dir.join("far")));
+    assert!(app_state.left.listing.as_ref().is_some_and(|pending| pending.dir == dir.join("far")));
     app_state.poll_listings();
     assert!(app_state.panel_busy(true), "nothing has landed yet");
 
@@ -398,7 +398,7 @@ fn a_late_refusal_or_esc_puts_the_tab_back() {
             selected: HashSet::new(),
             undo: crate::app::TabUndo::Active(0),
         };
-        app_state.listing_left = Some(crate::app::PendingListing {
+        app_state.left.listing = Some(crate::app::PendingListing {
             dir: dir.join("locked"),
             navigate: true,
             select: None,
@@ -527,7 +527,7 @@ fn a_slower_older_listing_does_not_land_over_a_newer_one() {
     // A reread held up on a slow disk, which saw only "old".
     let older = read_listing(&dir, &app_state.options, None);
     let (sender, answer) = std::sync::mpsc::channel();
-    app_state.listing_left = Some(PendingListing {
+    app_state.left.listing = Some(PendingListing {
         dir: dir.clone(),
         navigate: false,
         select: None,
@@ -540,7 +540,7 @@ fn a_slower_older_listing_does_not_land_over_a_newer_one() {
 
     std::fs::write(dir.join("new"), "").unwrap();
     app_state.reload_panel(true, None);
-    assert!(app_state.listing_left.is_none(), "the older one is no longer waited for");
+    assert!(app_state.left.listing.is_none(), "the older one is no longer waited for");
 
     let _ = sender.send(older);
     app_state.poll_listings();
@@ -562,7 +562,7 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
 
     let (_sender, answer) = std::sync::mpsc::channel();
     app_state.left.flat = Some(crate::app::Flat { dir: dir.clone(), feed: None });
-    app_state.listing_left = Some(crate::app::PendingListing {
+    app_state.left.listing = Some(crate::app::PendingListing {
         dir: dir.clone(),
         navigate: false,
         select: None,
@@ -579,7 +579,7 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
     app_state.listing_wait = std::time::Duration::ZERO;
     app_state.toggle_flat();
     if app_state.panel_busy(true) {
-        assert_eq!(app_state.listing_left.as_ref().and_then(|pending| pending.restore_flat.clone()), Some(None));
+        assert_eq!(app_state.left.listing.as_ref().and_then(|pending| pending.restore_flat.clone()), Some(None));
         app_state.cancel_listing(true);
         assert!(app_state.left.flat.is_none());
     }

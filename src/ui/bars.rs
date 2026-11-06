@@ -152,7 +152,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             }
             render_segmented_status_bar(f, area, &segments);
         }
-    } else if let Some(listing) = if app_state.is_left_active { &app_state.listing_left } else { &app_state.listing_right } {
+    } else if let Some(listing) = &app_state.panel(app_state.is_left_active).listing {
         // A directory that has not answered yet - a network mount gone quiet.
         // The panel shows what it did until it does.
         let text = format!(" {} ", t!("Reading {dir}…  Esc to stop", dir = printable_name(&listing.dir.to_string_lossy())));

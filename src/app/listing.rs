@@ -203,11 +203,11 @@ pub(super) fn prune_selection(selected: &mut HashSet<OsString>, items: &[Item]) 
 
 impl AppState {
     pub(super) fn listing(&self, is_left: bool) -> &Option<PendingListing> {
-        if is_left { &self.listing_left } else { &self.listing_right }
+        &self.panel(is_left).listing
     }
 
     pub(super) fn listing_mut(&mut self, is_left: bool) -> &mut Option<PendingListing> {
-        if is_left { &mut self.listing_left } else { &mut self.listing_right }
+        &mut self.panel_mut(is_left).listing
     }
 
     /// The directory a panel is in - or, while it is on its way somewhere

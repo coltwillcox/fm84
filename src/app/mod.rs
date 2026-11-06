@@ -290,10 +290,6 @@ pub struct AppState {
     // The drive strips as drawn, and which of the drives each one shows.
     pub drive_strip_left: Strip,
     pub drive_strip_right: Strip,
-    // A panel's directory still being read, past the moment the UI waits for
-    // it. The panel goes on showing what it did until it lands.
-    pub listing_left: Option<PendingListing>,
-    pub listing_right: Option<PendingListing>,
     /// How long the UI waits on a listing before going on without it.
     /// Without limit under test, which wants each answer in hand before it
     /// looks; the same goes for `detail_wait`.
@@ -413,6 +409,9 @@ pub struct Panel {
     pub viewport_start: usize,
     // The panel's tabs, and its tab strip as drawn.
     pub tabs: Tabs,
+    // The panel's directory still being read, past the moment the UI waits for
+    // it. The panel goes on showing what it did until it lands.
+    pub listing: Option<PendingListing>,
 }
 
 impl AppState {
@@ -464,6 +463,7 @@ impl AppState {
                 selected: HashSet::new(),
                 viewport_start: 0,
                 tabs: Tabs::new(vec![dir_root.clone()], 0),
+                listing: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -475,6 +475,7 @@ impl AppState {
                 selected: HashSet::new(),
                 viewport_start: 0,
                 tabs: Tabs::new(vec![dir_root], 0),
+                listing: None,
             },
             page_size: 0,
             filter_before: String::new(),
@@ -513,8 +514,6 @@ impl AppState {
             viewer_content_area: Rect::default(),
             scroll_bars: Vec::new(),
             bar_drag: None,
-            listing_left: None,
-            listing_right: None,
             listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
             detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },
             watch_left: None,
