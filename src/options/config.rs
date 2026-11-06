@@ -245,7 +245,7 @@ impl Options {
              preview_on_start = {}\n\
              \n\
              # Appearance\n\
-             # auto follows LANG; or en, cs, da, de, el, es, fr, ga, hr, it, hu, mk, nl, nb, pl, pt, ro, sk, sl, sr, sv, tr.\n\
+             # auto follows LANG; or en, bg, cs, da, de, el, es, fr, ga, hr, it, hu, mk, nl, nb, pl, pt, ro, sk, sl, sr, sv, tr.\n\
              language = {}\n\
              theme = {}\n\
              # theme paints the theme's own background; terminal keeps the terminal's.\n\

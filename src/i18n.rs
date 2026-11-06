@@ -40,14 +40,16 @@ pub enum Language {
     Danish,
     Irish,
     Romanian,
+    Bulgarian,
 }
 
 impl Language {
     /// In the order F11 steps through them: English, then the rest by their
     /// own names, as the alphabet has them - a Greek or Cyrillic one by how
     /// it is spelt in Latin letters.
-    pub const ALL: [Language; 22] = [
+    pub const ALL: [Language; 23] = [
         Language::English,
+        Language::Bulgarian,
         Language::Czech,
         Language::Danish,
         Language::German,
@@ -96,6 +98,7 @@ impl Language {
             Language::Danish => "da",
             Language::Irish => "ga",
             Language::Romanian => "ro",
+            Language::Bulgarian => "bg",
         }
     }
 
@@ -125,6 +128,7 @@ impl Language {
             Language::Danish => "Dansk",
             Language::Irish => "Gaeilge",
             Language::Romanian => "Română",
+            Language::Bulgarian => "Български",
         }
     }
 
@@ -158,6 +162,7 @@ impl Language {
             Language::Danish => Some(include_str!("../lang/da.lang")),
             Language::Irish => Some(include_str!("../lang/ga.lang")),
             Language::Romanian => Some(include_str!("../lang/ro.lang")),
+            Language::Bulgarian => Some(include_str!("../lang/bg.lang")),
         }
     }
 
@@ -166,7 +171,7 @@ impl Language {
         match self {
             // A noun after a number stays as it is in Turkish - "5 dosya" -
             // but a sentence can still say one apart from the rest.
-            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek | Language::Hungarian | Language::Swedish | Language::Spanish | Language::Dutch | Language::Danish => {
+            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek | Language::Hungarian | Language::Swedish | Language::Spanish | Language::Dutch | Language::Danish | Language::Bulgarian => {
                 if count == 1 {
                     Form::One
                 } else {
@@ -266,6 +271,7 @@ impl Language {
             "da" => Some(Language::Danish),
             "ga" => Some(Language::Irish),
             "ro" => Some(Language::Romanian),
+            "bg" => Some(Language::Bulgarian),
             _ => None,
         }
     }
