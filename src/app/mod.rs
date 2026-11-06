@@ -305,10 +305,6 @@ pub struct AppState {
     /// How often a watcher looks. Shortened under test, so a change is seen
     /// inside it.
     pub watch_interval: Duration,
-    // Changed on disk since it was read, to be read again once nothing is
-    // open over it.
-    stale_left: bool,
-    stale_right: bool,
     /// Where the detail lines are gathered.
     detail_worker: Latest<(PathBuf, bool), Option<Description>>,
     /// Where the preview is gathered.
@@ -412,6 +408,9 @@ pub struct Panel {
     // Watching the directory for changes and its filesystem for free space.
     // Dropping it stops it.
     watch: Option<Watch>,
+    // Changed on disk since it was read, to be read again once nothing is
+    // open over it.
+    stale: bool,
 }
 
 impl AppState {
@@ -465,6 +464,7 @@ impl AppState {
                 tabs: Tabs::new(vec![dir_root.clone()], 0),
                 listing: None,
                 watch: None,
+                stale: false,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -478,6 +478,7 @@ impl AppState {
                 tabs: Tabs::new(vec![dir_root], 0),
                 listing: None,
                 watch: None,
+                stale: false,
             },
             page_size: 0,
             filter_before: String::new(),
@@ -522,8 +523,6 @@ impl AppState {
             watch_sender,
             watch_events,
             watch_interval: crate::constants::REFRESH_INTERVAL,
-            stale_left: false,
-            stale_right: false,
             detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
             preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
             disk_left: None,

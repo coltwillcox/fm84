@@ -622,11 +622,7 @@ impl AppState {
             match event {
                 WatchEvent::Changed { is_left, dir } => {
                     if dir == self.panel(is_left).dir {
-                        if is_left {
-                            self.stale_left = true;
-                        } else {
-                            self.stale_right = true;
-                        }
+                        self.panel_mut(is_left).stale = true;
                     }
                 }
                 // Free space moves without the directory changing - a copy
@@ -653,13 +649,9 @@ impl AppState {
             return;
         }
         for is_left in [true, false] {
-            let stale = if is_left { self.stale_left } else { self.stale_right };
+            let stale = self.panel(is_left).stale;
             if stale && !self.panel_busy(is_left) {
-                if is_left {
-                    self.stale_left = false;
-                } else {
-                    self.stale_right = false;
-                }
+                self.panel_mut(is_left).stale = false;
                 self.reload_panel(is_left, None);
             }
         }
