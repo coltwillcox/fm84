@@ -215,8 +215,6 @@ pub struct AppState {
     pub left: Panel,
     pub right: Panel,
     pub page_size: u16,
-    pub children_left: Vec<Item>,
-    pub children_right: Vec<Item>,
     /// Ctrl+S: what each panel is narrowed to, if anything.
     pub filter_left: Option<PanelFilter>,
     pub filter_right: Option<PanelFilter>,
@@ -420,6 +418,7 @@ impl Item {
 pub struct Panel {
     pub dir: PathBuf,
     pub state: TableState,
+    pub children: Vec<Item>,
 }
 
 impl AppState {
@@ -461,11 +460,17 @@ impl AppState {
             clipboard: String::new(),
             mounts: Vec::new(),
             is_left_active: true,
-            left: Panel { dir: dir_root.clone(), state: state_left },
-            right: Panel { dir: dir_root.clone(), state: state_right },
+            left: Panel {
+                dir: dir_root.clone(),
+                state: state_left,
+                children: Vec::new(),
+            },
+            right: Panel {
+                dir: dir_root.clone(),
+                state: state_right,
+                children: Vec::new(),
+            },
             page_size: 0,
-            children_left: Vec::new(),
-            children_right: Vec::new(),
             filter_left: None,
             filter_right: None,
             filter_before: String::new(),

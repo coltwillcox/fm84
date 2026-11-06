@@ -62,7 +62,7 @@ fn swap_the_panels_and_send_the_other_one_here() {
     app_state.is_left_active = true;
     let chord = |app_state: &mut AppState, c, modifiers| handle_key(app_state, KeyEvent::new(KeyCode::Char(c), modifiers));
     let cursor = |app_state: &AppState, is_left: bool| {
-        let (children, state) = if is_left { (&app_state.children_left, &app_state.left.state) } else { (&app_state.children_right, &app_state.right.state) };
+        let (children, state) = if is_left { (&app_state.left.children, &app_state.left.state) } else { (&app_state.right.children, &app_state.right.state) };
         children[state.selected().unwrap()].name_full.clone()
     };
 
@@ -99,7 +99,7 @@ fn sort_from_the_keys_and_the_headings() {
     app_state.options = Options::default();
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), Some("b.rs".as_ref()));
-    let names = |app_state: &AppState| app_state.children_left.iter().skip(1).map(|item| item.name_full.clone()).collect::<Vec<_>>();
+    let names = |app_state: &AppState| app_state.left.children.iter().skip(1).map(|item| item.name_full.clone()).collect::<Vec<_>>();
     let control = |app_state: &mut AppState, n| handle_key(app_state, KeyEvent::new(KeyCode::F(n), KeyModifiers::CONTROL));
 
     // Ctrl+F3 sorts by name, and again turns it round, the cursor
@@ -113,7 +113,7 @@ fn sort_from_the_keys_and_the_headings() {
     assert_eq!((app_state.options.sort_key, app_state.options.sort_descending), (SortKey::Extension, false));
     assert_eq!(names(&app_state), ["c.md", "b.rs", "a.txt"]);
     let cursor = app_state.left.state.selected().unwrap();
-    assert_eq!(app_state.children_left[cursor].name_full, "b.rs");
+    assert_eq!(app_state.left.children[cursor].name_full, "b.rs");
 
     // A click on the Size heading sorts by size, arrow and all.
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
@@ -151,7 +151,7 @@ fn go_to_a_path_and_back_and_forward() {
     let ctrl_l = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL));
     let cursor = |app_state: &AppState| {
         let index = app_state.left.state.selected().unwrap();
-        app_state.children_left[index].name.clone()
+        app_state.left.children[index].name.clone()
     };
     let type_in = |app_state: &mut AppState, text: &str| {
         let Some(Dialog::Prompt(PromptKind::GoTo, input)) = &mut app_state.dialog else { panic!("no prompt") };
@@ -342,7 +342,7 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     app_state.selected_left.insert("report.txt".into());
     // In order of name, whatever F11 sorts by.
     let names = |app_state: &AppState| {
-        let mut names: Vec<String> = app_state.children_left.iter().map(|item| item.name_full.clone()).collect();
+        let mut names: Vec<String> = app_state.left.children.iter().map(|item| item.name_full.clone()).collect();
         names.sort();
         names
     };
@@ -357,7 +357,7 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     assert_eq!(names(&app_state), ["..", "report.txt", "reports"]);
     // The cursor's entry went, so it is on the first match.
     assert_eq!(app_state.left.state.selected(), Some(1));
-    assert!(!app_state.children_left[1].is_parent());
+    assert!(!app_state.left.children[1].is_parent());
     assert_eq!(app_state.selected_left, std::collections::HashSet::from(["report.txt".into()]));
 
     // Esc puts back what there was before: nothing.
@@ -390,7 +390,7 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     app_state.open_dir(true, dir.join("reports"), None);
     assert!(app_state.filter_left.is_none());
     app_state.open_dir(true, dir.clone(), None);
-    assert_eq!(app_state.children_left.len(), shown.len() + 2);
+    assert_eq!(app_state.left.children.len(), shown.len() + 2);
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -476,15 +476,15 @@ fn ctrl_b_lists_every_file_below() {
     app_state.options.sort_key = crate::options::SortKey::Name;
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
-    let names = |app_state: &AppState| app_state.children_left.iter().map(|item| item.name_full.clone()).collect::<Vec<_>>();
-    let cursor = |app_state: &AppState| app_state.children_left[app_state.left.state.selected().unwrap()].name_full.clone();
+    let names = |app_state: &AppState| app_state.left.children.iter().map(|item| item.name_full.clone()).collect::<Vec<_>>();
+    let cursor = |app_state: &AppState| app_state.left.children[app_state.left.state.selected().unwrap()].name_full.clone();
     let ctrl_b = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
     let sep = std::path::MAIN_SEPARATOR;
 
     ctrl_b(&mut app_state);
     assert_eq!(app_state.flat_left.as_ref().map(|flat| &flat.dir), Some(&dir));
     assert_eq!(names(&app_state), ["..".to_string(), "a.txt".to_string(), format!("sub{sep}b.bin"), format!("sub{sep}deep{sep}c.txt")]);
-    let deep = app_state.children_left.iter().find(|item| item.name_full.ends_with("c.txt")).unwrap();
+    let deep = app_state.left.children.iter().find(|item| item.name_full.ends_with("c.txt")).unwrap();
     assert_eq!((deep.name.as_str(), deep.extension.as_str()), (format!("sub{sep}deep{sep}c").as_str(), "txt"));
 
     // Sorted by size, the biggest last.
@@ -493,7 +493,7 @@ fn ctrl_b_lists_every_file_below() {
     assert!(app_state.flat_left.is_some(), "a reread keeps it");
 
     // F2 offers the file's own name, and renames it where it is.
-    let at = app_state.children_left.iter().position(|item| item.name_full.ends_with("c.txt")).unwrap();
+    let at = app_state.left.children.iter().position(|item| item.name_full.ends_with("c.txt")).unwrap();
     app_state.left.state.select(Some(at));
     press(&mut app_state, KeyCode::F(2));
     assert_eq!(app_state.dialog_input().unwrap().text, "c.txt");

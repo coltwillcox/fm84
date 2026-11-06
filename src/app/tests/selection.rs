@@ -105,15 +105,15 @@ fn compare_selects_what_differs() {
     let mut app_state = AppState::new();
     app_state.left.dir = "/left".into();
     app_state.right.dir = "/right".into();
-    app_state.children_left = left;
-    app_state.children_right = right;
+    app_state.left.children = left;
+    app_state.right.children = right;
     app_state.selected_left.insert("same.txt".into());
     app_state.compare_dirs();
     assert!(!app_state.selected_left.contains(std::ffi::OsStr::new("same.txt")));
     assert_eq!((app_state.selected_left.len(), app_state.selected_right.len()), (6, 5));
     assert_eq!(app_state.find_note.as_deref(), Some("Differ: 6 on the left, 5 on the right"));
 
-    app_state.children_right = app_state.children_left.clone();
+    app_state.right.children = app_state.left.children.clone();
     app_state.compare_dirs();
     assert!(app_state.selected_left.is_empty() && app_state.selected_right.is_empty());
     assert_eq!(app_state.find_note.as_deref(), Some("The directories hold the same files"));
@@ -128,7 +128,7 @@ fn plus_minus_and_star_select_by_pattern() {
     let mut app_state = AppState::new();
     app_state.is_left_active = true;
     let directory = Item { is_dir: true, ..row("photos") };
-    app_state.children_left = vec![row(".."), directory, row("a.jpg"), row("B.JPG"), row("c.png"), row("notes.txt")];
+    app_state.left.children = vec![row(".."), directory, row("a.jpg"), row("B.JPG"), row("c.png"), row("notes.txt")];
     let selected = |app_state: &AppState| {
         let mut names: Vec<String> = app_state.selected_left.iter().map(|name| name.to_string_lossy().into_owned()).collect();
         names.sort();
@@ -210,11 +210,11 @@ fn names_that_read_alike_are_selected_apart() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.open_dir(true, dir.clone(), None);
-    let rows: Vec<Item> = app_state.children_left.iter().filter(|item| item.name != "..").cloned().collect();
+    let rows: Vec<Item> = app_state.left.children.iter().filter(|item| item.name != "..").cloned().collect();
     assert_eq!(rows.len(), 2);
     assert_eq!(rows[0].name_full, rows[1].name_full);
 
-    let index = app_state.children_left.iter().position(|row| row.name_os == rows[0].name_os).unwrap();
+    let index = app_state.left.children.iter().position(|row| row.name_os == rows[0].name_os).unwrap();
     app_state.left.state.select(Some(index));
     app_state.toggle_selection_no_size();
     assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&rows[0].name_os]);

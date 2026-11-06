@@ -82,9 +82,9 @@ impl AppState {
     /// Full path of the entry under the cursor, unless that is the parent entry.
     pub(super) fn cursor_target(&self) -> Option<(PathBuf, String, bool)> {
         let (children, state, dir) = if self.is_left_active {
-            (&self.children_left, &self.left.state, &self.left.dir)
+            (&self.left.children, &self.left.state, &self.left.dir)
         } else {
-            (&self.children_right, &self.right.state, &self.right.dir)
+            (&self.right.children, &self.right.state, &self.right.dir)
         };
         let item = children.get(state.selected()?)?;
         if item.is_parent() {

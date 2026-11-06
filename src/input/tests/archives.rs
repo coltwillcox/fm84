@@ -7,16 +7,16 @@ use std::path::PathBuf;
 /// Put the active panel's cursor on `name`.
 fn on(app_state: &mut AppState, name: &str) {
     let (children, state) = if app_state.is_left_active {
-        (&app_state.children_left, &mut app_state.left.state)
+        (&app_state.left.children, &mut app_state.left.state)
     } else {
-        (&app_state.children_right, &mut app_state.right.state)
+        (&app_state.right.children, &mut app_state.right.state)
     };
     let index = children.iter().position(|item| item.name_os == name).unwrap_or_else(|| panic!("no {name} in the panel"));
     state.select(Some(index));
 }
 
 fn shown(app_state: &AppState) -> Vec<String> {
-    app_state.children_left.iter().map(|item| item.name_full.clone()).collect()
+    app_state.left.children.iter().map(|item| item.name_full.clone()).collect()
 }
 
 fn finish(app_state: &mut AppState) {
@@ -63,11 +63,11 @@ fn enter_goes_into_an_archive_and_backspace_comes_out() {
 
     press(&mut app_state, KeyCode::Backspace);
     assert_eq!(app_state.left.dir, archive);
-    assert_eq!(app_state.children_left[app_state.left.state.selected().unwrap()].name_full, "2024");
+    assert_eq!(app_state.left.children[app_state.left.state.selected().unwrap()].name_full, "2024");
     press(&mut app_state, KeyCode::Backspace);
     assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.archive_left, None);
-    assert_eq!(app_state.children_left[app_state.left.state.selected().unwrap()].name_full, "photos.zip");
+    assert_eq!(app_state.left.children[app_state.left.state.selected().unwrap()].name_full, "photos.zip");
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -349,7 +349,7 @@ fn alt_p_packs_into_the_other_panel() {
     assert_eq!(app_state.error, None);
     let index = crate::archive::index(&out.join("photos.7z")).unwrap();
     assert!(index.find(std::path::Path::new("photos/beach.txt")).is_some());
-    let landed = &app_state.children_right[app_state.right.state.selected().unwrap()];
+    let landed = &app_state.right.children[app_state.right.state.selected().unwrap()];
     assert_eq!(landed.name_full, "photos.7z");
 
     // Not again over it, unless F11 says to overwrite.

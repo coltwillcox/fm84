@@ -93,7 +93,7 @@ impl AppState {
 
     /// Returns (&children, &mut state) for the active panel.
     fn active_panel_mut(&mut self) -> (&[Item], &mut TableState) {
-        if self.is_left_active { (&self.children_left, &mut self.left.state) } else { (&self.children_right, &mut self.right.state) }
+        if self.is_left_active { (&self.left.children, &mut self.left.state) } else { (&self.right.children, &mut self.right.state) }
     }
 
     /// + and - in a panel: ask for a pattern, starting from the last one.
@@ -108,9 +108,9 @@ impl AppState {
     /// Space is there for the one that is wanted.
     pub fn select_by(&mut self, glob: &crate::glob::Glob, select: bool) {
         let (children, selected) = if self.is_left_active {
-            (&self.children_left, &mut self.selected_left)
+            (&self.left.children, &mut self.selected_left)
         } else {
-            (&self.children_right, &mut self.selected_right)
+            (&self.right.children, &mut self.selected_right)
         };
         for item in children.iter().filter(|item| !item.is_parent() && glob.matches(&item.name_full, item.is_dir)) {
             if select {
@@ -127,9 +127,9 @@ impl AppState {
     /// them into the next delete. Alt+* asks, and inverts them too.
     pub fn invert_selection(&mut self, with_dirs: bool) {
         let (children, selected) = if self.is_left_active {
-            (&self.children_left, &mut self.selected_left)
+            (&self.left.children, &mut self.selected_left)
         } else {
-            (&self.children_right, &mut self.selected_right)
+            (&self.right.children, &mut self.selected_right)
         };
         for item in children.iter().filter(|item| (with_dirs || !item.is_dir) && !item.is_parent()) {
             if !selected.remove(&item.name_os) {
@@ -151,9 +151,9 @@ impl AppState {
 
         {
             let (state, children, selected_set, current_dir) = if self.is_left_active {
-                (&mut self.left.state, &self.children_left, &mut self.selected_left, &self.left.dir)
+                (&mut self.left.state, &self.left.children, &mut self.selected_left, &self.left.dir)
             } else {
-                (&mut self.right.state, &self.children_right, &mut self.selected_right, &self.right.dir)
+                (&mut self.right.state, &self.right.children, &mut self.selected_right, &self.right.dir)
             };
 
             if let Some(index) = state.selected() {
@@ -201,7 +201,7 @@ impl AppState {
     /// go in turn, top to bottom, a few at once, and each shows in the Size
     /// column as it is counted.
     pub fn size_all_dirs(&mut self) {
-        let (children, dir) = if self.is_left_active { (&self.children_left, &self.left.dir) } else { (&self.children_right, &self.right.dir) };
+        let (children, dir) = if self.is_left_active { (&self.left.children, &self.left.dir) } else { (&self.right.children, &self.right.dir) };
         let paths: Vec<PathBuf> = children.iter().filter(|item| item.is_dir && !item.is_symlink && !item.is_parent()).map(|item| item.path_in(dir)).collect();
         for path in paths {
             if !self.dir_sizing.iter().any(|sizing| sizing.path == path) && !self.dir_size_queue.contains(&path) {

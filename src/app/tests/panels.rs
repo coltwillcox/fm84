@@ -21,11 +21,11 @@ fn a_name_that_is_not_utf8_still_names_its_file() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.open_dir(true, dir.clone(), None);
-    let item = app_state.children_left.iter().find(|item| item.name_full != "..").unwrap().clone();
+    let item = app_state.left.children.iter().find(|item| item.name_full != "..").unwrap().clone();
     // Blank until the stem was read lossily too, which left the column empty.
     assert!(!item.name.is_empty());
 
-    let index = app_state.children_left.iter().position(|row| row.name_full == item.name_full).unwrap();
+    let index = app_state.left.children.iter().position(|row| row.name_full == item.name_full).unwrap();
     app_state.left.state.select(Some(index));
     let (path, _, _) = app_state.cursor_target().unwrap();
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "contents");
@@ -49,10 +49,10 @@ fn a_file_called_three_dots_is_not_the_parent_entry() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.open_dir(true, dir.clone(), Some("...".as_ref()));
-    let item = &app_state.children_left[app_state.left.state.selected().unwrap()];
+    let item = &app_state.left.children[app_state.left.state.selected().unwrap()];
     assert_eq!(item.name, "..");
     assert!(!item.is_parent());
-    assert!(app_state.children_left[0].is_parent());
+    assert!(app_state.left.children[0].is_parent());
 
     let (path, _, _) = app_state.cursor_target().unwrap();
     assert_eq!(path, dir.join("..."));
@@ -117,12 +117,12 @@ fn an_unreadable_directory_is_refused_once() {
     // refresh would answer come round inside the test.
     app_state.watch_interval = std::time::Duration::from_millis(5);
     app_state.open_dir(true, dir.clone(), None);
-    let listed = app_state.children_left.len();
+    let listed = app_state.left.children.len();
 
     app_state.open_dir(true, locked.clone(), None);
     assert!(app_state.error.is_some());
     assert_eq!(app_state.left.dir, dir);
-    assert_eq!(app_state.children_left.len(), listed);
+    assert_eq!(app_state.left.children.len(), listed);
 
     // Closed, and a refresh comes round: it stays closed.
     app_state.reset_error();
@@ -190,8 +190,8 @@ fn ctrl_arrows_send_the_entry_under_the_cursor_to_a_panel() {
     app_state.open_dir(true, dir.clone(), None);
     app_state.open_dir(false, std::env::temp_dir(), None);
     app_state.is_left_active = true;
-    let at = |app_state: &AppState, name: &str| app_state.children_left.iter().position(|item| item.name_full == name);
-    let cursor_right = |app_state: &AppState| app_state.right.state.selected().and_then(|index| app_state.children_right.get(index)).map(|item| item.name_full.clone());
+    let at = |app_state: &AppState, name: &str| app_state.left.children.iter().position(|item| item.name_full == name);
+    let cursor_right = |app_state: &AppState| app_state.right.state.selected().and_then(|index| app_state.right.children.get(index)).map(|item| item.name_full.clone());
 
     // A directory: the other panel goes into it, and the focus stays.
     app_state.left.state.select(at(&app_state, "inner"));
@@ -234,8 +234,8 @@ fn tabs_keep_where_each_was_left() {
     app_state.options = Options::default();
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), None);
-    let at = |app_state: &AppState, name: &str| app_state.children_left.iter().position(|item| item.name_full == name);
-    let cursor = |app_state: &AppState| app_state.left.state.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone());
+    let at = |app_state: &AppState, name: &str| app_state.left.children.iter().position(|item| item.name_full == name);
+    let cursor = |app_state: &AppState| app_state.left.state.selected().and_then(|index| app_state.left.children.get(index)).map(|item| item.name_full.clone());
 
     // Something selected and the cursor on two.txt in the first tab.
     app_state.selected_left.insert("one.txt".into());
@@ -347,7 +347,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     let mut app_state = AppState::new();
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), None);
-    let listed = app_state.children_left.len();
+    let listed = app_state.left.children.len();
 
     let (sender, answer) = std::sync::mpsc::channel();
     app_state.listing_left = Some(crate::app::PendingListing {
@@ -364,7 +364,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     // The panel is as it was, and its tabs cannot be touched.
     app_state.new_tab();
     assert_eq!(app_state.tabs_left.list.len(), 1);
-    assert_eq!((app_state.left.dir.clone(), app_state.children_left.len()), (dir.clone(), listed));
+    assert_eq!((app_state.left.dir.clone(), app_state.left.children.len()), (dir.clone(), listed));
     // Nor does a reread of where it was get in the way of where it is going.
     app_state.reload_panel(true, None);
     assert!(app_state.listing_left.as_ref().is_some_and(|pending| pending.dir == dir.join("far")));
@@ -375,7 +375,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     app_state.poll_listings();
     assert!(!app_state.panel_busy(true));
     assert_eq!(app_state.left.dir, dir.join("far"));
-    assert!(app_state.children_left.iter().any(|item| item.name_full == "there.txt"));
+    assert!(app_state.left.children.iter().any(|item| item.name_full == "there.txt"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -450,7 +450,7 @@ fn changes_and_details_arrive_from_their_threads() {
     // Made behind fm84's back, and found without anything being pressed.
     std::fs::write(dir.join("new.txt"), "").unwrap();
     let started = std::time::Instant::now();
-    while !app_state.children_left.iter().any(|item| item.name_full == "new.txt") {
+    while !app_state.left.children.iter().any(|item| item.name_full == "new.txt") {
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "the change was never seen");
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_watchers();
@@ -460,7 +460,7 @@ fn changes_and_details_arrive_from_their_threads() {
     // Without waiting on them: the name at once, the rest when it comes.
     app_state.detail_wait = std::time::Duration::ZERO;
     app_state.show_preview = true;
-    let at = app_state.children_left.iter().position(|item| item.name_full == "notes.txt");
+    let at = app_state.left.children.iter().position(|item| item.name_full == "notes.txt");
     app_state.left.state.select(at);
     app_state.cursor_detail = None;
     app_state.refresh_cursor_detail();
@@ -544,7 +544,7 @@ fn a_slower_older_listing_does_not_land_over_a_newer_one() {
 
     let _ = sender.send(older);
     app_state.poll_listings();
-    let names: Vec<&str> = app_state.children_left.iter().map(|item| item.name.as_str()).collect();
+    let names: Vec<&str> = app_state.left.children.iter().map(|item| item.name.as_str()).collect();
     assert_eq!(names, ["..", "new", "old"]);
     std::fs::remove_dir_all(&dir).unwrap();
 }

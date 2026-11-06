@@ -335,13 +335,13 @@ fn saving_updates_the_size_the_panels_show() {
     app_state.reload_panel(true, None);
     app_state.reload_panel(false, None);
     let size = |children: &[super::Item]| children.iter().find(|item| item.name_full == "notes.txt").unwrap().size_bytes;
-    assert_eq!(size(&app_state.children_left), 2);
+    assert_eq!(size(&app_state.left.children), 2);
 
     app_state.open_editor(path.clone()).unwrap();
     app_state.editor_insert_text("more text");
     app_state.editor_save().unwrap();
-    assert_eq!(size(&app_state.children_left), 11);
-    assert_eq!(size(&app_state.children_right), 11);
+    assert_eq!(size(&app_state.left.children), 11);
+    assert_eq!(size(&app_state.right.children), 11);
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

@@ -301,7 +301,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
 
     app_state.is_left_active = clicked_left;
 
-    let children = if clicked_left { &app_state.children_left } else { &app_state.children_right };
+    let children = &app_state.panel(clicked_left).children;
     let total = children.len();
     if total == 0 {
         return;
@@ -318,7 +318,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
 
         // Double-click on directory: enter it
         if is_double_click {
-            let children = if clicked_left { &app_state.children_left } else { &app_state.children_right };
+            let children = &app_state.panel(clicked_left).children;
             if actual_index < children.len() {
                 if children[actual_index].is_dir {
                     enter_directory_panel(app_state);

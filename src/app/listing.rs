@@ -244,9 +244,9 @@ impl AppState {
     /// stays where it is. Pointed at the active panel itself, it simply goes in.
     pub fn open_in_panel(&mut self, is_left: bool) {
         let (children, state, dir) = if self.is_left_active {
-            (&self.children_left, &self.left.state, &self.left.dir)
+            (&self.left.children, &self.left.state, &self.left.dir)
         } else {
-            (&self.children_right, &self.right.state, &self.right.dir)
+            (&self.right.children, &self.right.state, &self.right.dir)
         };
         let item = state.selected().and_then(|index| children.get(index));
         let (target, select) = match item {
@@ -416,7 +416,7 @@ impl AppState {
             }
         }
 
-        let (children, state) = if is_left { (&self.children_left, &self.left.state) } else { (&self.children_right, &self.right.state) };
+        let (children, state) = if is_left { (&self.left.children, &self.left.state) } else { (&self.right.children, &self.right.state) };
         let previous_index = state.selected().unwrap_or(0);
         let wanted = if to_file {
             pending.dir.file_name().map(std::ffi::OsStr::to_os_string)
@@ -437,10 +437,10 @@ impl AppState {
                 prune_selection(selected, &items);
                 let index = wanted.and_then(|name| items.iter().position(|item| item.name_os == name)).unwrap_or(previous_index).min(items.len().saturating_sub(1));
                 if is_left {
-                    self.children_left = items;
+                    self.left.children = items;
                     self.left.state.select(Some(index));
                 } else {
-                    self.children_right = items;
+                    self.right.children = items;
                     self.right.state.select(Some(index));
                 }
             }
@@ -478,7 +478,7 @@ impl AppState {
         // A tab brings back what was selected in it - when the panel got to
         // where the tab was, and not to some parent of it.
         if let Some(tab) = pending.tab {
-            let (children, selected) = if is_left { (&self.children_left, &mut self.selected_left) } else { (&self.children_right, &mut self.selected_right) };
+            let (children, selected) = if is_left { (&self.left.children, &mut self.selected_left) } else { (&self.right.children, &mut self.selected_right) };
             if relocated {
                 selected.clear();
             } else {

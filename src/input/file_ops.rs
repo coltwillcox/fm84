@@ -16,7 +16,7 @@ pub(super) fn open_rename(app_state: &mut AppState) {
         app_state.open_multi_rename(items);
         return;
     }
-    let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };
+    let children = &app_state.panel(app_state.is_left_active).children;
     let state = &app_state.panel(app_state.is_left_active).state;
     let Some(item) = state.selected().and_then(|index| children.get(index)) else {
         return;
@@ -51,7 +51,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
         return;
     };
     let parent_path = &app_state.panel(app_state.is_left_active).dir;
-    let children = if app_state.is_left_active { &app_state.children_left } else { &app_state.children_right };
+    let children = &app_state.panel(app_state.is_left_active).children;
     let state = &app_state.panel(app_state.is_left_active).state;
     let Some(item) = state.selected().and_then(|index| children.get(index)) else {
         return;
@@ -298,9 +298,9 @@ pub(super) fn open_extract_all(app_state: &mut AppState) {
         Some(archive) => archive.clone(),
         None => {
             let (children, state, dir) = if is_left {
-                (&app_state.children_left, &app_state.left.state, &app_state.left.dir)
+                (&app_state.left.children, &app_state.left.state, &app_state.left.dir)
             } else {
-                (&app_state.children_right, &app_state.right.state, &app_state.right.dir)
+                (&app_state.right.children, &app_state.right.state, &app_state.right.dir)
             };
             let item = state.selected().and_then(|index| children.get(index));
             match item.map(|item| item.path_in(dir)).filter(|path| item.is_some_and(|item| !item.is_dir) && crate::archive::kind_of(path).is_some()) {
@@ -527,17 +527,17 @@ pub(super) fn open_compare(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
     let file_at_cursor = |app_state: &AppState, is_left: bool| {
         let (children, state, dir) = if is_left {
-            (&app_state.children_left, &app_state.left.state, &app_state.left.dir)
+            (&app_state.left.children, &app_state.left.state, &app_state.left.dir)
         } else {
-            (&app_state.children_right, &app_state.right.state, &app_state.right.dir)
+            (&app_state.right.children, &app_state.right.state, &app_state.right.dir)
         };
         state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_dir).map(|item| (item.name_os.clone(), item.path_in(dir)))
     };
 
     let (children, selected, dir) = if is_left {
-        (&app_state.children_left, &app_state.selected_left, &app_state.left.dir)
+        (&app_state.left.children, &app_state.selected_left, &app_state.left.dir)
     } else {
-        (&app_state.children_right, &app_state.selected_right, &app_state.right.dir)
+        (&app_state.right.children, &app_state.selected_right, &app_state.right.dir)
     };
     let selected_files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir && selected.contains(&item.name_os)).map(|item| item.path_in(dir)).collect();
     if let [first, second] = &selected_files[..] {
@@ -549,7 +549,7 @@ pub(super) fn open_compare(app_state: &mut AppState) {
         app_state.display_error(t!("Put the cursor on a file to compare, or select two").to_string());
         return;
     };
-    let (other_children, other_dir) = if is_left { (&app_state.children_right, &app_state.right.dir) } else { (&app_state.children_left, &app_state.left.dir) };
+    let (other_children, other_dir) = if is_left { (&app_state.right.children, &app_state.right.dir) } else { (&app_state.left.children, &app_state.left.dir) };
     let namesake = other_children.iter().find(|item| !item.is_dir && item.name_os == name).map(|item| item.path_in(other_dir));
     let Some(there) = namesake.or_else(|| file_at_cursor(app_state, !is_left).map(|(_, path)| path)) else {
         app_state.display_error(t!("Nothing to compare with: the other panel has no file of that name, nor one under its cursor").to_string());

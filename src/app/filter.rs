@@ -54,15 +54,15 @@ impl AppState {
     /// should not take what cannot be seen.
     pub fn set_filter(&mut self, is_left: bool, text: &str) {
         let (dir, children, state) = if is_left {
-            (&self.left.dir, &self.children_left, &self.left.state)
+            (&self.left.dir, &self.left.children, &self.left.state)
         } else {
-            (&self.right.dir, &self.children_right, &self.right.state)
+            (&self.right.dir, &self.right.children, &self.right.state)
         };
         let cursor = state.selected().and_then(|index| children.get(index)).map(|item| item.name_os.clone());
         let dir = dir.clone();
         let all = match self.filter_mut(is_left).take() {
             Some(filter) => filter.all,
-            None => std::mem::take(if is_left { &mut self.children_left } else { &mut self.children_right }),
+            None => std::mem::take(&mut self.panel_mut(is_left).children),
         };
         let items = match crate::glob::Glob::filter(text) {
             Some(glob) => {
@@ -75,9 +75,9 @@ impl AppState {
         };
         let index = cursor.and_then(|name| items.iter().position(|item| item.name_os == name)).or_else(|| items.iter().position(|item| !item.is_parent())).unwrap_or(0);
         let (children, state, selected) = if is_left {
-            (&mut self.children_left, &mut self.left.state, &mut self.selected_left)
+            (&mut self.left.children, &mut self.left.state, &mut self.selected_left)
         } else {
-            (&mut self.children_right, &mut self.right.state, &mut self.selected_right)
+            (&mut self.right.children, &mut self.right.state, &mut self.selected_right)
         };
         *children = items;
         state.select(Some(index));

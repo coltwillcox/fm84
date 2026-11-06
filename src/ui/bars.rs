@@ -179,8 +179,8 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             }
         };
 
-        let (left_count, left_size) = panel_stat(&app_state.children_left, &app_state.selected_left, &app_state.left.dir, &app_state.dir_sizes);
-        let (right_count, right_size) = panel_stat(&app_state.children_right, &app_state.selected_right, &app_state.right.dir, &app_state.dir_sizes);
+        let (left_count, left_size) = panel_stat(&app_state.left.children, &app_state.selected_left, &app_state.left.dir, &app_state.dir_sizes);
+        let (right_count, right_size) = panel_stat(&app_state.right.children, &app_state.selected_right, &app_state.right.dir, &app_state.dir_sizes);
 
         // " count - size " → len = 1 + count + 3 + size + 1
         let left_stat_len = 1 + left_count.len() + 3 + left_size.len() + 1;

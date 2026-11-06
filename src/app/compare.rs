@@ -99,7 +99,7 @@ impl AppState {
             self.find_note = Some(t!("Both panels show the same directory").to_string());
             return;
         }
-        let (left, right) = differences(&self.children_left, &self.children_right);
+        let (left, right) = differences(&self.left.children, &self.right.children);
         self.find_note = Some(if left.is_empty() && right.is_empty() {
             t!("The directories hold the same files").to_string()
         } else {

@@ -514,7 +514,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 
 /// Build only the rows visible in the viewport, returns (rows, start_offset)
 fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: &[Column], name_width: u16) -> (Vec<Row<'static>>, usize) {
-    let children = if is_left { &app_state.children_left } else { &app_state.children_right };
+    let children = &app_state.panel(is_left).children;
     let state = &app_state.panel(is_left).state;
     let selected_set = if is_left { &app_state.selected_left } else { &app_state.selected_right };
     let current_dir = &app_state.panel(is_left).dir;
