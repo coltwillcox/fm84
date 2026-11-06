@@ -82,7 +82,7 @@ impl AppState {
             self.display_error(t!("Find files cannot search inside an archive yet").to_string());
             return;
         }
-        let mut form = self.find_files_last.clone();
+        let mut form = self.recall.find_files_last.clone();
         form.focus = 0;
         self.dialog = Some(Dialog::FindFiles(Box::new(FindFiles::Asking(form))));
     }
@@ -120,7 +120,7 @@ impl AppState {
             return;
         };
         let form = form.clone();
-        self.find_files_last = form.clone();
+        self.recall.find_files_last = form.clone();
         let (name, containing, size, modified) = (form.text(0), form.text(1), form.text(2), form.text(3));
         let parsed = (|| -> Result<_, String> { Ok((crate::search::Text::new(containing, form.regex)?, crate::search::SizeRange::parse(size)?, crate::search::TimeRange::parse(modified, chrono::Local::now())?)) })();
         let (text, size_range, time_range) = match parsed {

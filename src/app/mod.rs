@@ -218,9 +218,6 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    /// What Find files last looked for - the name pattern and the text -
-    /// offered again the next time.
-    pub find_files_last: FindForm,
     /// What Ctrl+R last replaced with, offered again the next time.
     pub replace_with: String,
     /// Whether W last left the viewer wrapping lines, which the next file
@@ -434,6 +431,9 @@ pub struct Workers {
 pub struct Recall {
     /// What + or - last selected by, offered again the next time.
     pub select_pattern: String,
+    /// What Find files last looked for - the name pattern and the text -
+    /// offered again the next time.
+    pub find_files_last: FindForm,
 }
 
 impl AppState {
@@ -509,7 +509,10 @@ impl AppState {
                 archive: None,
             },
             drawn: Drawn { find_files_page: 10, ..Drawn::default() },
-            recall: Recall { select_pattern: "*".to_string() },
+            recall: Recall {
+                select_pattern: "*".to_string(),
+                find_files_last: FindForm::default(),
+            },
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
                 preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
@@ -526,7 +529,6 @@ impl AppState {
             },
             filter_before: String::new(),
             search_input: String::new(),
-            find_files_last: FindForm::default(),
             find_term: String::new(),
             find_regex: false,
             replace_with: String::new(),
