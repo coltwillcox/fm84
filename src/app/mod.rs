@@ -260,12 +260,6 @@ pub struct AppState {
     pub listing_wait: Duration,
     /// How long the UI waits on the detail lines and the preview.
     pub detail_wait: Duration,
-    // Watching the mounts for drives coming and going. Dropping it stops it.
-    _watch_mounts: Watch,
-    /// Handed to each watcher as it starts; what they report arrives on
-    /// `watch_events`.
-    watch_sender: Sender<WatchEvent>,
-    watch_events: Receiver<WatchEvent>,
     /// How often a watcher looks. Shortened under test, so a change is seen
     /// inside it.
     pub watch_interval: Duration,
@@ -429,6 +423,12 @@ pub struct Workers {
     detail_worker: Latest<(PathBuf, bool), Option<Description>>,
     /// Where the preview is gathered.
     preview_worker: Latest<(PathBuf, bool), Preview>,
+    /// Watching the mounts for drives coming and going. Dropping it stops it.
+    _watch_mounts: Watch,
+    /// Handed to each watcher as it starts; what they report arrives on
+    /// `watch_events`.
+    watch_sender: Sender<WatchEvent>,
+    watch_events: Receiver<WatchEvent>,
 }
 
 impl AppState {
@@ -507,6 +507,9 @@ impl AppState {
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
                 preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
+                _watch_mounts: crate::background::watch_mounts(crate::constants::REFRESH_INTERVAL, watch_sender.clone()),
+                watch_sender,
+                watch_events,
             },
             filter_before: String::new(),
             search_input: String::new(),
@@ -526,9 +529,6 @@ impl AppState {
             bar_drag: None,
             listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
             detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },
-            _watch_mounts: crate::background::watch_mounts(crate::constants::REFRESH_INTERVAL, watch_sender.clone()),
-            watch_sender,
-            watch_events,
             watch_interval: crate::constants::REFRESH_INTERVAL,
             user_at_host: crate::fs_ops::user_at_host(),
             job: None,

@@ -457,7 +457,7 @@ impl AppState {
         }
         let watch = &self.panel(is_left).watch;
         if watch.as_ref().is_none_or(|watch| watch.dir != found) {
-            let watch = crate::background::watch_dir(is_left, found.clone(), probe, listed.stamp, listed.disk, self.watch_interval, self.watch_sender.clone());
+            let watch = crate::background::watch_dir(is_left, found.clone(), probe, listed.stamp, listed.disk, self.watch_interval, self.workers.watch_sender.clone());
             self.panel_mut(is_left).watch = Some(watch);
         }
 
@@ -609,7 +609,7 @@ impl AppState {
 
     /// Take in what the watchers have seen since the last frame.
     pub fn poll_watchers(&mut self) {
-        while let Ok(event) = self.watch_events.try_recv() {
+        while let Ok(event) = self.workers.watch_events.try_recv() {
             match event {
                 WatchEvent::Changed { is_left, dir } => {
                     if dir == self.panel(is_left).dir {
