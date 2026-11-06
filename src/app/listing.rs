@@ -202,20 +202,12 @@ pub(super) fn prune_selection(selected: &mut HashSet<OsString>, items: &[Item]) 
 }
 
 impl AppState {
-    pub(super) fn listing(&self, is_left: bool) -> &Option<PendingListing> {
-        &self.panel(is_left).listing
-    }
-
-    pub(super) fn listing_mut(&mut self, is_left: bool) -> &mut Option<PendingListing> {
-        &mut self.panel_mut(is_left).listing
-    }
-
     /// The directory a panel is in - or, while it is on its way somewhere
     /// slow to read, the one it is going to, which is the one meant. Asked of
     /// by what reaches into the panel from outside: a copy to it, or a search
     /// from it.
     pub fn panel_dir(&self, is_left: bool) -> PathBuf {
-        match self.listing(is_left) {
+        match &self.panel(is_left).listing {
             Some(pending) if pending.navigate => pending.dir.clone(),
             _ => self.panel(is_left).dir.clone(),
         }
@@ -225,7 +217,7 @@ impl AppState {
     /// the UI waits. Until it lands the panel shows what it did before, and
     /// only Tab and Esc mean anything there.
     pub fn panel_busy(&self, is_left: bool) -> bool {
-        self.listing(is_left).is_some()
+        self.panel(is_left).listing.is_some()
     }
 
     /// Point a panel at `dir` and read it. The single way a panel's directory
@@ -265,7 +257,7 @@ impl AppState {
     /// A panel on its way somewhere else is left to get there: what it lands
     /// on is read fresh anyway.
     pub fn reload_panel(&mut self, is_left: bool, prefer: Option<&std::ffi::OsStr>) {
-        if self.listing(is_left).as_ref().is_some_and(|pending| pending.navigate) {
+        if self.panel(is_left).listing.as_ref().is_some_and(|pending| pending.navigate) {
             return;
         }
         let dir = self.panel(is_left).dir.clone();
@@ -308,11 +300,11 @@ impl AppState {
                 // One asked for earlier and still on its way read the
                 // directory as it was before this one did. Left waiting, it
                 // would land on top of this and take back what it shows.
-                *self.listing_mut(is_left) = None;
+                self.panel_mut(is_left).listing = None;
                 Some(self.apply_listing(is_left, pending, listed))
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {
-                *self.listing_mut(is_left) = Some(pending);
+                self.panel_mut(is_left).listing = Some(pending);
                 None
             }
             // Gone without a word, which only happens if it panicked.
@@ -327,18 +319,18 @@ impl AppState {
     /// Take in whichever listings have landed since the last frame.
     pub fn poll_listings(&mut self) {
         for is_left in [true, false] {
-            let Some(pending) = self.listing_mut(is_left).take() else {
+            let Some(pending) = self.panel_mut(is_left).listing.take() else {
                 continue;
             };
             match pending.answer.try_recv() {
                 Ok(listed) => {
                     self.apply_listing(is_left, pending, listed);
                 }
-                Err(TryRecvError::Empty) => *self.listing_mut(is_left) = Some(pending),
+                Err(TryRecvError::Empty) => self.panel_mut(is_left).listing = Some(pending),
                 Err(TryRecvError::Disconnected) => {
                     self.display_error(t!("Cannot read {path}", path = pending.dir.display()));
                     if let Some(flat) = pending.restore_flat.clone() {
-                        *self.flat_mut(is_left) = flat;
+                        self.panel_mut(is_left).flat = flat;
                     }
                     self.undo_tab(is_left, pending.tab);
                 }
@@ -350,9 +342,9 @@ impl AppState {
     /// where it was, and a tab it was switching to is switched back. Whatever
     /// the thread finds is never asked for.
     pub fn cancel_listing(&mut self, is_left: bool) {
-        if let Some(pending) = self.listing_mut(is_left).take() {
+        if let Some(pending) = self.panel_mut(is_left).listing.take() {
             if let Some(flat) = pending.restore_flat.clone() {
-                *self.flat_mut(is_left) = flat;
+                self.panel_mut(is_left).flat = flat;
             }
             self.undo_tab(is_left, pending.tab);
         }
@@ -390,7 +382,7 @@ impl AppState {
         let leaving = self.panel_as_tab(is_left);
         // Flat for the directory Ctrl+B was pressed in, and no other.
         if self.flat(is_left).is_some_and(|flat| flat.dir != found) {
-            *self.flat_mut(is_left) = None;
+            self.panel_mut(is_left).flat = None;
         }
 
         // Gone from under it, and climbed out of to `found`.
@@ -510,7 +502,7 @@ impl AppState {
     fn record_travel(&mut self, is_left: bool, travel: Travel, leaving: Tab, found: &Path) -> bool {
         let moved = leaving.dir != found;
         let visit = Visit { dir: leaving.dir, cursor: leaving.cursor };
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         let tab = &mut tabs.list[tabs.active];
         match travel {
             Travel::Stay => return moved,
@@ -544,7 +536,7 @@ impl AppState {
     /// A step back or forward to a directory that could not be shown: it is
     /// dropped, so the next press goes on past it.
     fn forget_travel(&mut self, is_left: bool, travel: Travel) {
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         let tab = &mut tabs.list[tabs.active];
         match travel {
             Travel::Back => {
@@ -565,7 +557,7 @@ impl AppState {
         if self.panel_busy(is_left) {
             return;
         }
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         let tab = &tabs.list[tabs.active];
         let Some(visit) = (if back { tab.back.last() } else { tab.forward.last() }).cloned() else {
             return;

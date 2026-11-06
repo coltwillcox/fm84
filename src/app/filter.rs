@@ -26,10 +26,6 @@ impl AppState {
         self.panel(is_left).filter.as_ref()
     }
 
-    fn filter_mut(&mut self, is_left: bool) -> &mut Option<PanelFilter> {
-        &mut self.panel_mut(is_left).filter
-    }
-
     /// Ctrl+S in a panel: ask for the pattern, starting from the one in
     /// place. Esc puts that one back.
     pub fn open_filter_prompt(&mut self) {
@@ -57,7 +53,7 @@ impl AppState {
         let (dir, children, state) = (&panel.dir, &panel.children, &panel.state);
         let cursor = state.selected().and_then(|index| children.get(index)).map(|item| item.name_os.clone());
         let dir = dir.clone();
-        let all = match self.filter_mut(is_left).take() {
+        let all = match self.panel_mut(is_left).filter.take() {
             Some(filter) => filter.all,
             None => std::mem::take(&mut self.panel_mut(is_left).children),
         };
@@ -65,7 +61,7 @@ impl AppState {
             Some(glob) => {
                 let filter = PanelFilter { dir, text: text.to_string(), glob, all };
                 let items = filter.keep(&filter.all);
-                *self.filter_mut(is_left) = Some(filter);
+                self.panel_mut(is_left).filter = Some(filter);
                 items
             }
             None => all,
@@ -84,7 +80,7 @@ impl AppState {
     /// A fresh reading of the directory `found`, narrowed by the panel's
     /// filter if it is still there; the filter goes if the panel has moved.
     pub(super) fn filter_listing(&mut self, is_left: bool, found: &Path, items: Vec<Item>) -> Vec<Item> {
-        let slot = self.filter_mut(is_left);
+        let slot = &mut self.panel_mut(is_left).filter;
         match slot {
             Some(filter) if filter.dir == found => {
                 let kept = filter.keep(&items);

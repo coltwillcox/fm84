@@ -40,10 +40,6 @@ impl AppState {
         self.panel(is_left).flat.as_ref()
     }
 
-    pub(super) fn flat_mut(&mut self, is_left: bool) -> &mut Option<Flat> {
-        &mut self.panel_mut(is_left).flat
-    }
-
     /// Ctrl+B: list every file under the active panel's directory, or go
     /// back to listing it as a directory. It belongs to that directory, and
     /// the panel lists as usual once it goes anywhere else. Back from it,
@@ -54,16 +50,16 @@ impl AppState {
         let (children, state) = (&panel.children, &panel.state);
         let cursor = state.selected().and_then(|index| children.get(index)).map(|item| item.name_os.clone());
         let before = self.flat(is_left).cloned();
-        let landing = match self.flat_mut(is_left).take() {
+        let landing = match self.panel_mut(is_left).flat.take() {
             Some(_) => cursor.and_then(|name| Path::new(&name).components().next().map(|first| first.as_os_str().to_os_string())),
             None => {
-                *self.flat_mut(is_left) = Some(Flat { dir: self.panel_dir(is_left), feed: None });
+                self.panel_mut(is_left).flat = Some(Flat { dir: self.panel_dir(is_left), feed: None });
                 cursor
             }
         };
         self.reload_panel(is_left, landing.as_deref());
         // Still being read - a big tree - and Esc should leave it as it was.
-        if let Some(pending) = self.listing_mut(is_left) {
+        if let Some(pending) = &mut self.panel_mut(is_left).listing {
             pending.restore_flat = Some(before);
         }
     }

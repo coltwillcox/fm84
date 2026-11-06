@@ -81,7 +81,7 @@ impl AppState {
         let Some(tab) = tab else {
             return;
         };
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         match tab.undo {
             TabUndo::Active(previous) => tabs.active = previous,
             TabUndo::Reopen(index, closed) => {
@@ -150,10 +150,6 @@ impl AppState {
         tabs.strip.scroll(forward);
     }
 
-    pub(super) fn tabs_mut(&mut self, is_left: bool) -> &mut Tabs {
-        &mut self.panel_mut(is_left).tabs
-    }
-
     /// The panel as it stands, as a tab to come back to.
     pub(super) fn panel_as_tab(&self, is_left: bool) -> Tab {
         let panel = self.panel(is_left);
@@ -188,7 +184,7 @@ impl AppState {
             return;
         }
         let here = self.panel_as_tab(is_left);
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         tabs.list[tabs.active] = here.clone();
         // A history of its own, starting here.
         tabs.list.insert(
@@ -213,7 +209,7 @@ impl AppState {
         if self.panel_busy(is_left) {
             return;
         }
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         if tabs.list.len() <= 1 || index >= tabs.list.len() {
             return;
         }
@@ -237,7 +233,7 @@ impl AppState {
             return;
         }
         let here = self.panel_as_tab(is_left);
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         if index >= tabs.list.len() || index == tabs.active {
             return;
         }
@@ -263,7 +259,7 @@ impl AppState {
         std::mem::swap(&mut self.left.flat, &mut self.right.flat);
         std::mem::swap(&mut self.left.git, &mut self.right.git);
         for is_left in [true, false] {
-            let active = self.tabs_mut(is_left).active;
+            let active = self.panel_mut(is_left).tabs.active;
             self.show_tab(is_left, TabUndo::Active(active));
         }
         self.is_left_active = !self.is_left_active;
@@ -281,7 +277,7 @@ impl AppState {
     /// one before, round from the end to the start.
     pub fn cycle_tab(&mut self, forward: bool) {
         let is_left = self.is_left_active;
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         let count = tabs.list.len();
         let next = if forward { (tabs.active + 1) % count } else { (tabs.active + count - 1) % count };
         self.select_tab(is_left, next);
@@ -293,7 +289,7 @@ impl AppState {
     /// altogether is climbed out of, as anywhere else, and its selection goes
     /// with it.
     fn show_tab(&mut self, is_left: bool, undo: TabUndo) {
-        let tabs = self.tabs_mut(is_left);
+        let tabs = &mut self.panel_mut(is_left).tabs;
         let tab = tabs.list[tabs.active].clone();
         self.request_listing(is_left, tab.dir, true, tab.cursor, Some(TabSwitch { selected: tab.selected, undo }), Travel::Stay);
     }

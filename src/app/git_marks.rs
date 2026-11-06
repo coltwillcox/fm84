@@ -27,10 +27,6 @@ impl AppState {
         self.panel(is_left).git.status.as_ref()
     }
 
-    fn panel_git(&mut self, is_left: bool) -> &mut PanelGit {
-        &mut self.panel_mut(is_left).git
-    }
-
     /// Ask git again about `dir`, which the panel has just listed: in a
     /// repository, and not inside an archive, where git has nothing to say -
     /// and only while F11 has the marks on.
@@ -38,7 +34,7 @@ impl AppState {
     /// flicker; another directory's go at once.
     pub(super) fn request_git_marks(&mut self, is_left: bool, dir: &Path, in_repository: bool) {
         let wanted = in_repository && self.options.git_marks;
-        let git = self.panel_git(is_left);
+        let git = &mut self.panel_mut(is_left).git;
         if git.dir != dir {
             git.status = None;
             git.dir = dir.to_path_buf();
@@ -61,7 +57,7 @@ impl AppState {
     /// the git waiting for its turn.
     pub fn poll_git_marks(&mut self) {
         for is_left in [true, false] {
-            let git = self.panel_git(is_left);
+            let git = &mut self.panel_mut(is_left).git;
             let Some((asked, answer)) = &git.running else {
                 continue;
             };
