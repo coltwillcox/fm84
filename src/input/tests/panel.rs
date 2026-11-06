@@ -85,6 +85,42 @@ fn swap_the_panels_and_send_the_other_one_here() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// After Ctrl+U each panel still sees its directory change on disk: what is
+/// made there afterwards shows up, on whichever side it went to.
+#[test]
+fn swapped_panels_still_see_changes() {
+    let dir = std::env::temp_dir().join(format!("fm84-swap-watch-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    for name in ["one", "two"] {
+        std::fs::create_dir_all(dir.join(name)).unwrap();
+    }
+    let mut app_state = AppState::new();
+    // Watchers that look every few milliseconds, so a change is seen
+    // inside the test.
+    app_state.workers.watch_interval = std::time::Duration::from_millis(5);
+    app_state.is_left_active = true;
+    app_state.open_dir(true, dir.join("one"), None);
+    app_state.open_dir(false, dir.join("two"), None);
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL));
+    assert_eq!((app_state.left.dir.clone(), app_state.right.dir.clone()), (dir.join("two"), dir.join("one")));
+
+    std::fs::write(dir.join("one").join("new.txt"), "").unwrap();
+    std::fs::write(dir.join("two").join("new.txt"), "").unwrap();
+    let shows = |app_state: &AppState, is_left: bool| app_state.panel(is_left).children.iter().any(|item| item.name_os == "new.txt");
+    for _ in 0..200 {
+        if shows(&app_state, true) && shows(&app_state, false) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_watchers();
+        app_state.refresh_stale_panels();
+    }
+    assert!(shows(&app_state, true), "the left panel missed its change");
+    assert!(shows(&app_state, false), "the right panel missed its change");
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// Ctrl+F3 to Ctrl+F6 and a click on a heading sort both panels.
 #[test]
 fn sort_from_the_keys_and_the_headings() {
