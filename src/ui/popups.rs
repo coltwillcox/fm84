@@ -819,7 +819,9 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
 /// directories, what each side has of it - its size and age - and between
 /// them what is to happen: copied one way or the other, deleted from the
 /// side that has it, or left. The newer side of two files is the brighter.
-pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &mut crate::app::SyncPlan, date_format: crate::options::DateFormat) {
+/// Returns the rows the list had room for, and its scroll kept to them and to
+/// the cursor.
+pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &crate::app::SyncPlan, date_format: crate::options::DateFormat) -> (usize, usize) {
     use crate::app::SyncAction;
     // As wide as the panels: a path and both sides' sizes and ages to fit.
     let panels = screen_layout(area)[2];
@@ -874,12 +876,12 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
     let del = format!("{:<3}", cut_to(t!("del"), 3));
     let (delete_left, delete_right) = (format!(" ✗ {del} "), format!(" {del} ✗ "));
     let rows = (inner.height as usize).saturating_sub(lines.len() + 3);
-    plan.room = rows.max(1);
-    plan.scroll = plan.scroll.min(plan.entries.len().saturating_sub(plan.room)).min(plan.cursor);
-    if rows > 0 && plan.cursor >= plan.scroll + rows {
-        plan.scroll = plan.cursor + 1 - rows;
+    let room = rows.max(1);
+    let mut scroll = plan.scroll.min(plan.entries.len().saturating_sub(room)).min(plan.cursor);
+    if rows > 0 && plan.cursor >= scroll + rows {
+        scroll = plan.cursor + 1 - rows;
     }
-    for (index, entry) in plan.entries.iter().enumerate().skip(plan.scroll).take(rows) {
+    for (index, entry) in plan.entries.iter().enumerate().skip(scroll).take(rows) {
         let difference = &entry.difference;
         let mut path = difference.path.to_string_lossy().into_owned();
         if entry.is_dir() {
@@ -932,6 +934,7 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
     };
     lines.push(keys);
     f.render_widget(Paragraph::new(lines), inner);
+    (room, scroll)
 }
 
 /// `text` no wider than `room` columns, cut from the end with an ellipsis.

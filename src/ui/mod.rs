@@ -114,8 +114,9 @@ struct Settled {
     /// F1's list, kept to its room, so a screen that has grown does not
     /// leave the keys scrolling through lines past the end.
     help_scroll: Option<usize>,
-    /// The checksums popup's room, and its scroll kept to it.
-    checksums: Option<(usize, usize)>,
+    /// The open popup's list - checksums or a sync plan: the rows it had
+    /// room for, and its scroll kept to them.
+    popup_list: Option<(usize, usize)>,
 }
 
 impl Settled {
@@ -123,9 +124,13 @@ impl Settled {
         if let Some(scroll) = self.help_scroll {
             app_state.help_scroll = scroll;
         }
-        if let (Some((room, scroll)), Some(Dialog::Checksums(view))) = (self.checksums, &mut app_state.dialog) {
-            view.room = room;
-            view.scroll = scroll;
+        let list = match &mut app_state.dialog {
+            Some(Dialog::Checksums(view)) => Some((&mut view.room, &mut view.scroll)),
+            Some(Dialog::Sync(plan)) => Some((&mut plan.room, &mut plan.scroll)),
+            _ => None,
+        };
+        if let (Some((room, scroll)), Some((to_room, to_scroll))) = (self.popup_list, list) {
+            (*to_room, *to_scroll) = (room, scroll);
         }
     }
 }
@@ -268,13 +273,8 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut 
                 render_destination_popup(f, area, sources, kind, input, Some(other));
             }
             Some(Dialog::Extract { archive, input }) => render_destination_popup(f, area, &[(archive.clone(), false)], Destination::Extract, input, None),
-            Some(Dialog::Checksums(view)) => settled.checksums = Some(render_checksums_popup(f, area, view)),
-            Some(Dialog::Sync(_)) => {
-                let date_format = app_state.options.date_format;
-                if let Some(Dialog::Sync(plan)) = &mut app_state.dialog {
-                    render_sync_popup(f, area, plan, date_format);
-                }
-            }
+            Some(Dialog::Checksums(view)) => settled.popup_list = Some(render_checksums_popup(f, area, view)),
+            Some(Dialog::Sync(plan)) => settled.popup_list = Some(render_sync_popup(f, area, plan, app_state.options.date_format)),
             Some(Dialog::MultiRename(_)) => {
                 if let Some(Dialog::MultiRename(rename)) = &mut app_state.dialog {
                     render_multi_rename_popup(f, area, rename);
