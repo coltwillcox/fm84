@@ -544,7 +544,7 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             }
         }
         Some(Dialog::FindFiles(_)) => {
-            let page = app_state.find_files_page.max(1) as isize;
+            let page = app_state.drawn.find_files_page.max(1) as isize;
             match code {
                 KeyCode::Esc => app_state.dialog = None,
                 KeyCode::Enter => app_state.find_files_go(),

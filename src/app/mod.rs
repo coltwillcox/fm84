@@ -221,9 +221,6 @@ pub struct AppState {
     /// What Find files last looked for - the name pattern and the text -
     /// offered again the next time.
     pub find_files_last: FindForm,
-    /// How many results the Find files list showed when it was last drawn,
-    /// which is how far PageUp and PageDown go.
-    pub find_files_page: usize,
     /// What Ctrl+R last replaced with, offered again the next time.
     pub replace_with: String,
     /// Whether W last left the viewer wrapping lines, which the next file
@@ -422,6 +419,9 @@ pub struct Drawn {
     /// Rows the diff shows, and the width of each side's text.
     pub diff_viewport_height: usize,
     pub diff_viewport_width: usize,
+    /// How many results the Find files list showed when it was last drawn,
+    /// which is how far PageUp and PageDown go.
+    pub find_files_page: usize,
 }
 
 impl AppState {
@@ -496,12 +496,11 @@ impl AppState {
                 branch: None,
                 archive: None,
             },
-            drawn: Drawn::default(),
+            drawn: Drawn { find_files_page: 10, ..Drawn::default() },
             filter_before: String::new(),
             search_input: String::new(),
             select_pattern: "*".to_string(),
             find_files_last: FindForm::default(),
-            find_files_page: 10,
             find_term: String::new(),
             find_regex: false,
             replace_with: String::new(),

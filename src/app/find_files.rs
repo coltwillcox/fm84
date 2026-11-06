@@ -203,7 +203,7 @@ impl AppState {
     /// Move the Find files cursor `by` results, stopping at either end, and
     /// scroll the list only as far as it takes to keep it showing.
     pub fn find_files_move(&mut self, by: isize) {
-        let page = self.find_files_page.max(1);
+        let page = self.drawn.find_files_page.max(1);
         if let Some(Dialog::FindFiles(find)) = &mut self.dialog
             && let FindFiles::Found(search) = find.as_mut()
         {

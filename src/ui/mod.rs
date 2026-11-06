@@ -274,7 +274,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {
-            app_state.find_files_page = page;
+            app_state.drawn.find_files_page = page;
         }
         app_state.attribute_rows = attribute_rows;
         app_state.branch_rows = branch_rows;
