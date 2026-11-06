@@ -216,8 +216,6 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    pub viewer_viewport_height: usize,
-    pub viewer_viewport_width: usize,
     pub editor_viewport_height: usize,
     /// Rows the diff shows, and the width of each side's text.
     pub diff_viewport_height: usize,
@@ -420,6 +418,9 @@ pub struct Drawn {
     /// The line between the panels, and the height it was made for.
     pub cached_separator_height: u16,
     pub cached_separator: String,
+    /// Rows and columns the viewer's text had room for.
+    pub viewer_viewport_height: usize,
+    pub viewer_viewport_width: usize,
 }
 
 impl AppState {
@@ -497,8 +498,6 @@ impl AppState {
             drawn: Drawn::default(),
             filter_before: String::new(),
             search_input: String::new(),
-            viewer_viewport_height: 0,
-            viewer_viewport_width: 0,
             editor_viewport_height: 0,
             diff_viewport_height: 0,
             diff_viewport_width: 0,

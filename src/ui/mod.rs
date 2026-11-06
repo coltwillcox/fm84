@@ -199,8 +199,8 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
         match app_state.screen {
             Screen::Viewer(_) => {
                 let (height, width, content_area, bars) = render_viewer(f, chunks_main[2], app_state);
-                app_state.viewer_viewport_height = height;
-                app_state.viewer_viewport_width = width;
+                app_state.drawn.viewer_viewport_height = height;
+                app_state.drawn.viewer_viewport_width = width;
                 app_state.viewer_content_area = content_area;
                 app_state.scroll_bars = bars;
             }

@@ -218,7 +218,7 @@ impl AppState {
     /// asks for a different width than it was drawn at. Returns true if it did,
     /// so the caller can draw again.
     pub fn fit_viewer_image(&mut self) -> bool {
-        let (width, height) = (self.viewer_viewport_width, self.viewer_viewport_height);
+        let (width, height) = (self.drawn.viewer_viewport_width, self.drawn.viewer_viewport_height);
         let backgrounds = self.options.image_backgrounds;
         let Screen::Viewer(state) = &mut self.screen else {
             return false;
@@ -259,7 +259,7 @@ impl AppState {
     /// it has stopped - X to a hexdump, or W. True if it did either, so the
     /// caller can draw again.
     pub fn fit_viewer_wrap(&mut self) -> bool {
-        let width = self.viewer_viewport_width;
+        let width = self.drawn.viewer_viewport_width;
         let Screen::Viewer(state) = &mut self.screen else {
             return false;
         };
@@ -278,7 +278,7 @@ impl AppState {
     /// W in the viewer: wrap long lines, or stop. Only for text; the next
     /// file opened wraps or not as this one was left.
     pub fn viewer_toggle_wrap(&mut self) {
-        let width = self.viewer_viewport_width;
+        let width = self.drawn.viewer_viewport_width;
         let Screen::Viewer(state) = &mut self.screen else {
             return;
         };
@@ -332,7 +332,7 @@ impl AppState {
 
     pub fn viewer_scroll_down(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
-            let max = state.total_lines.saturating_sub(self.viewer_viewport_height);
+            let max = state.total_lines.saturating_sub(self.drawn.viewer_viewport_height);
             state.scroll_offset = (state.scroll_offset + 1).min(max);
         }
     }
@@ -345,14 +345,14 @@ impl AppState {
 
     pub fn viewer_page_down(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
-            let max = state.total_lines.saturating_sub(self.viewer_viewport_height);
-            state.scroll_offset = (state.scroll_offset + self.viewer_viewport_height).min(max);
+            let max = state.total_lines.saturating_sub(self.drawn.viewer_viewport_height);
+            state.scroll_offset = (state.scroll_offset + self.drawn.viewer_viewport_height).min(max);
         }
     }
 
     pub fn viewer_page_up(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
-            state.scroll_offset = state.scroll_offset.saturating_sub(self.viewer_viewport_height);
+            state.scroll_offset = state.scroll_offset.saturating_sub(self.drawn.viewer_viewport_height);
         }
     }
 
@@ -505,7 +505,7 @@ impl AppState {
     /// to the left into view, so the offset goes the other way. Both offsets
     /// move at once, which is the whole point of doing this with the mouse.
     pub fn viewer_pan_to(&mut self, column: u16, row: u16) {
-        let (width, height) = (self.viewer_viewport_width, self.viewer_viewport_height);
+        let (width, height) = (self.drawn.viewer_viewport_width, self.drawn.viewer_viewport_height);
         if let Screen::Viewer(state) = &mut self.screen
             && let Some(((from_column, from_row), (from_horizontal, from_vertical))) = state.pan_from
         {
@@ -523,7 +523,7 @@ impl AppState {
             && !state.wrapping()
         {
             // Stop once the longest line's end reaches the right edge.
-            let max = state.content_width().saturating_sub(self.viewer_viewport_width);
+            let max = state.content_width().saturating_sub(self.drawn.viewer_viewport_width);
             state.horizontal_offset = (state.horizontal_offset + 1).min(max);
         }
     }
@@ -531,7 +531,7 @@ impl AppState {
     /// Start the view at `offset`, from a scroll bar: a line down, or a
     /// column along. No further than the keys go.
     pub fn viewer_scroll_to(&mut self, vertical: bool, offset: usize) {
-        let (height, width) = (self.viewer_viewport_height, self.viewer_viewport_width);
+        let (height, width) = (self.drawn.viewer_viewport_height, self.drawn.viewer_viewport_width);
         if let Screen::Viewer(state) = &mut self.screen {
             if vertical {
                 state.scroll_offset = offset.min(state.total_lines.saturating_sub(height));
@@ -543,7 +543,7 @@ impl AppState {
 
     pub fn viewer_end(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
-            state.scroll_offset = state.total_lines.saturating_sub(self.viewer_viewport_height);
+            state.scroll_offset = state.total_lines.saturating_sub(self.drawn.viewer_viewport_height);
         }
     }
 }

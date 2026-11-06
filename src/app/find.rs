@@ -304,7 +304,7 @@ impl AppState {
     }
 
     fn viewer_find(&mut self, needle: &crate::find::Needle, forward: bool, fresh: bool) -> Option<bool> {
-        let (height, width) = (self.viewer_viewport_height.max(1), self.viewer_viewport_width.max(1));
+        let (height, width) = (self.drawn.viewer_viewport_height.max(1), self.drawn.viewer_viewport_width.max(1));
         let state = self.viewer_mut()?;
         // From the match on screen when there is one, and otherwise from the
         // top of what is showing.
@@ -355,7 +355,7 @@ impl AppState {
             }
         } else if let Screen::Viewer(state) = &mut self.screen {
             let line = number.clamp(1, state.line_count().max(1)) - 1;
-            state.scroll_offset = state.row_of(line, 0).min(state.total_lines.saturating_sub(self.viewer_viewport_height));
+            state.scroll_offset = state.row_of(line, 0).min(state.total_lines.saturating_sub(self.drawn.viewer_viewport_height));
         }
     }
 }

@@ -90,8 +90,8 @@ fn the_viewer_finds_and_goes_to_lines_too() {
     let mut app_state = AppState::new();
     app_state.options = crate::options::Options::default();
     app_state.open_viewer(path.clone()).unwrap();
-    app_state.viewer_viewport_height = 10;
-    app_state.viewer_viewport_width = 40;
+    app_state.drawn.viewer_viewport_height = 10;
+    app_state.drawn.viewer_viewport_width = 40;
 
     answer_prompt(&mut app_state, super::PromptKind::Find, "needle");
     let state = app_state.viewer().unwrap();
@@ -263,7 +263,7 @@ fn the_viewer_wraps_long_lines_onto_rows() {
     std::fs::write(&path, "short\none two three four five six seven needle eight\nlast").unwrap();
     let mut app_state = AppState::new();
     app_state.open_viewer(path.clone()).unwrap();
-    (app_state.viewer_viewport_width, app_state.viewer_viewport_height) = (10, 3);
+    (app_state.drawn.viewer_viewport_width, app_state.drawn.viewer_viewport_height) = (10, 3);
 
     app_state.viewer_toggle_wrap();
     let state = app_state.viewer().unwrap();
