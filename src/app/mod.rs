@@ -213,12 +213,11 @@ pub struct AppState {
     pub left: Panel,
     pub right: Panel,
     pub drawn: Drawn,
+    pub recall: Recall,
     pub workers: Workers,
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    /// What + or - last selected by, offered again the next time.
-    pub select_pattern: String,
     /// What Find files last looked for - the name pattern and the text -
     /// offered again the next time.
     pub find_files_last: FindForm,
@@ -431,6 +430,12 @@ pub struct Workers {
     pub branch_switch: Option<PendingSwitch>,
 }
 
+/// What was last typed or chosen, offered again the next time.
+pub struct Recall {
+    /// What + or - last selected by, offered again the next time.
+    pub select_pattern: String,
+}
+
 impl AppState {
     /// The left panel, or the right.
     pub fn panel(&self, is_left: bool) -> &Panel {
@@ -504,6 +509,7 @@ impl AppState {
                 archive: None,
             },
             drawn: Drawn { find_files_page: 10, ..Drawn::default() },
+            recall: Recall { select_pattern: "*".to_string() },
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
                 preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
@@ -520,7 +526,6 @@ impl AppState {
             },
             filter_before: String::new(),
             search_input: String::new(),
-            select_pattern: "*".to_string(),
             find_files_last: FindForm::default(),
             find_term: String::new(),
             find_regex: false,

@@ -100,7 +100,7 @@ impl AppState {
     /// + and - in a panel: ask for a pattern, starting from the last one.
     pub fn open_select_prompt(&mut self, select: bool) {
         let mut input = TextInput::new();
-        input.set(self.select_pattern.clone());
+        input.set(self.recall.select_pattern.clone());
         self.dialog = Some(Dialog::Prompt(if select { PromptKind::Select } else { PromptKind::Deselect }, input));
     }
 

@@ -140,7 +140,7 @@ fn plus_minus_and_star_select_by_pattern() {
     app_state.dialog_input().unwrap().set("*.jpg;*.png".to_string());
     app_state.confirm_prompt();
     assert_eq!(selected(&app_state), ["B.JPG", "a.jpg", "c.png"]);
-    assert_eq!(app_state.select_pattern, "*.jpg;*.png");
+    assert_eq!(app_state.recall.select_pattern, "*.jpg;*.png");
 
     app_state.open_select_prompt(false);
     app_state.dialog_input().unwrap().set("?.png".to_string());
@@ -167,7 +167,7 @@ fn plus_minus_and_star_select_by_pattern() {
     app_state.dialog_input().unwrap().set(String::new());
     app_state.confirm_prompt();
     assert_eq!(selected(&app_state).len(), 5);
-    assert_eq!(app_state.select_pattern, "?.png");
+    assert_eq!(app_state.recall.select_pattern, "?.png");
 }
 
 #[test]

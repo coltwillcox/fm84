@@ -84,7 +84,7 @@ impl AppState {
                 let Some(glob) = crate::glob::Glob::new(&input.text) else {
                     return;
                 };
-                self.select_pattern = input.text;
+                self.recall.select_pattern = input.text;
                 self.select_by(&glob, kind == PromptKind::Select);
             }
             // What to replace, and then what with. Nothing to replace is a
