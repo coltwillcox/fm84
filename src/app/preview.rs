@@ -156,7 +156,7 @@ impl AppState {
         if self.preview.as_ref().is_none_or(|preview| preview.path != path) {
             let (label, awaiting) = match target {
                 Some((path, name, is_dir)) => {
-                    self.preview_worker.ask((path, is_dir));
+                    self.workers.preview_worker.ask((path, is_dir));
                     wait = self.detail_wait;
                     (name, true)
                 }
@@ -174,7 +174,7 @@ impl AppState {
         if !self.preview.as_ref().is_some_and(|preview| preview.awaiting) {
             return;
         }
-        let Some(((path, _), content)) = self.preview_worker.answer(wait) else {
+        let Some(((path, _), content)) = self.workers.preview_worker.answer(wait) else {
             return;
         };
         let Some(preview) = self.preview.as_mut().filter(|preview| preview.path.as_ref() == Some(&path)) else {

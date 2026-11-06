@@ -269,8 +269,6 @@ pub struct AppState {
     /// How often a watcher looks. Shortened under test, so a change is seen
     /// inside it.
     pub watch_interval: Duration,
-    /// Where the preview is gathered.
-    preview_worker: Latest<(PathBuf, bool), Preview>,
     /// `user@host`, for the top border, and whether that is root.
     pub user_at_host: (String, bool),
     /// Set while a copy, move or delete is running on its own thread.
@@ -429,6 +427,8 @@ pub struct Drawn {
 pub struct Workers {
     /// Where the detail lines are gathered.
     detail_worker: Latest<(PathBuf, bool), Option<Description>>,
+    /// Where the preview is gathered.
+    preview_worker: Latest<(PathBuf, bool), Preview>,
 }
 
 impl AppState {
@@ -506,6 +506,7 @@ impl AppState {
             drawn: Drawn { find_files_page: 10, ..Drawn::default() },
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
+                preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
             },
             filter_before: String::new(),
             search_input: String::new(),
@@ -529,7 +530,6 @@ impl AppState {
             watch_sender,
             watch_events,
             watch_interval: crate::constants::REFRESH_INTERVAL,
-            preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
             user_at_host: crate::fs_ops::user_at_host(),
             job: None,
             dir_sizing: Vec::new(),
