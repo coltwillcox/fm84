@@ -292,7 +292,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // The table draws its header on the first row of its area, and a click
     // on a heading sorts by it.
     if row <= area.y {
-        if let Some(&(_, key)) = app_state.sort_headers.iter().find(|(cell, _)| cell.contains(position)) {
+        if let Some(&(_, key)) = app_state.drawn.sort_headers.iter().find(|(cell, _)| cell.contains(position)) {
             app_state.sort_panels_by(key);
         }
         return;

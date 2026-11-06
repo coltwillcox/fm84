@@ -248,8 +248,6 @@ pub struct AppState {
     // instead of recomputing the layout from hardcoded row numbers.
     /// A branch git is still switching to.
     pub branch_switch: Option<PendingSwitch>,
-    /// The column headings a click sorts by, both panels', as last drawn.
-    pub sort_headers: Vec<(Rect, SortKey)>,
     pub editor_content_area: Rect,
     pub viewer_content_area: Rect,
     /// The viewer's or the editor's scroll bars, as last drawn.
@@ -423,6 +421,8 @@ pub struct Drawn {
     pub branch_hits: [Option<Rect>; 2],
     /// The rows of the branch list as last drawn, and the branch on each.
     pub branch_rows: Vec<(Rect, usize)>,
+    /// The column headings a click sorts by, both panels', as last drawn.
+    pub sort_headers: Vec<(Rect, SortKey)>,
 }
 
 impl AppState {
@@ -513,7 +513,6 @@ impl AppState {
             last_click_time: None,
             last_click_pos: (0, 0),
             branch_switch: None,
-            sort_headers: Vec::new(),
             editor_content_area: Rect::default(),
             viewer_content_area: Rect::default(),
             scroll_bars: Vec::new(),

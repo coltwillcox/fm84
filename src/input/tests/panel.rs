@@ -119,7 +119,7 @@ fn sort_from_the_keys_and_the_headings() {
     // A click on the Size heading sorts by size, arrow and all.
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
-    let (cell, _) = *app_state.sort_headers.iter().find(|(_, key)| *key == SortKey::Size).unwrap();
+    let (cell, _) = *app_state.drawn.sort_headers.iter().find(|(_, key)| *key == SortKey::Size).unwrap();
     let click = MouseEvent {
         kind: MouseEventKind::Down(MouseButton::Left),
         column: cell.x,

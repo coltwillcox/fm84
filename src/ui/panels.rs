@@ -460,7 +460,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     let block_right = Block::default().borders(Borders::RIGHT).border_style(style_border());
     // Where each heading lands, laid out as the table lays out its columns,
     // for a click to sort by. Not under the preview, which covers one panel.
-    app_state.sort_headers.clear();
+    app_state.drawn.sort_headers.clear();
     for (area, block, is_left) in [(chunks[0], &block_left, true), (chunks[2], &block_right, false)] {
         if app_state.preview.is_some() && is_left != app_state.is_left_active {
             continue;
@@ -469,10 +469,10 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
         let cells = Layout::horizontal(widths.clone()).spacing(1).split(Rect { height: 1, ..inner });
         // The icon and Name both sort by name; then a spacer and a column each.
         let name = cells[0].union(cells[1]);
-        app_state.sort_headers.push((name, SortKey::Name));
+        app_state.drawn.sort_headers.push((name, SortKey::Name));
         for (index, column) in columns.iter().enumerate() {
             if let Some(key) = column.sort_key() {
-                app_state.sort_headers.push((cells[3 + 2 * index], key));
+                app_state.drawn.sort_headers.push((cells[3 + 2 * index], key));
             }
         }
     }
