@@ -470,8 +470,8 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                 KeyCode::Left => app_state.sync_set(SyncAction::ToLeft),
                 KeyCode::Delete | KeyCode::Char('d') | KeyCode::Char('D') => app_state.sync_set(SyncAction::DeleteLeft),
                 KeyCode::Char(' ') | KeyCode::Char('=') => app_state.sync_set(SyncAction::Skip),
-                KeyCode::Char('>') => app_state.sync_mirror(Some(true)),
-                KeyCode::Char('<') => app_state.sync_mirror(Some(false)),
+                KeyCode::Char('>') => app_state.sync_mirror(Some(Side::Right)),
+                KeyCode::Char('<') => app_state.sync_mirror(Some(Side::Left)),
                 KeyCode::Char('r') | KeyCode::Char('R') => app_state.sync_mirror(None),
                 _ => {}
             }

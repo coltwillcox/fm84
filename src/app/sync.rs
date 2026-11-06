@@ -225,21 +225,21 @@ impl AppState {
         self.sync_move(1);
     }
 
-    /// The > and < keys: make one side as the other is - everything copied
-    /// onto it, and what only it has deleted. R puts back what the
-    /// comparing said.
-    pub fn sync_mirror(&mut self, onto_right: Option<bool>) {
+    /// The > and < keys: make `onto` as the other side is - everything copied
+    /// onto it, and what only it has deleted. R, with no side, puts back what
+    /// the comparing said.
+    pub fn sync_mirror(&mut self, onto: Option<Side>) {
         let Some(plan) = self.sync_plan() else {
             return;
         };
         plan.armed = false;
         for entry in &mut plan.entries {
-            let wanted = match onto_right {
+            let wanted = match onto {
                 None => default_action(&entry.difference),
-                Some(true) if entry.difference.left.is_none() => SyncAction::DeleteRight,
-                Some(true) => SyncAction::ToRight,
-                Some(false) if entry.difference.right.is_none() => SyncAction::DeleteLeft,
-                Some(false) => SyncAction::ToLeft,
+                Some(Side::Right) if entry.difference.left.is_none() => SyncAction::DeleteRight,
+                Some(Side::Right) => SyncAction::ToRight,
+                Some(Side::Left) if entry.difference.right.is_none() => SyncAction::DeleteLeft,
+                Some(Side::Left) => SyncAction::ToLeft,
             };
             entry.action = if entry.allows(wanted) { wanted } else { SyncAction::Skip };
         }
