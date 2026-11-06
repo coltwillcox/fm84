@@ -41,13 +41,15 @@ pub enum Language {
     Irish,
     Romanian,
     Bulgarian,
+    /// Serbian in the Cyrillic alphabet.
+    SerbianCyrillic,
 }
 
 impl Language {
     /// In the order F11 steps through them: English, then the rest by their
     /// own names, as the alphabet has them - a Greek or Cyrillic one by how
     /// it is spelt in Latin letters.
-    pub const ALL: [Language; 23] = [
+    pub const ALL: [Language; 24] = [
         Language::English,
         Language::Bulgarian,
         Language::Czech,
@@ -68,6 +70,7 @@ impl Language {
         Language::Romanian,
         Language::Slovak,
         Language::Slovenian,
+        Language::SerbianCyrillic,
         Language::Serbian,
         Language::Swedish,
         Language::Turkish,
@@ -99,6 +102,7 @@ impl Language {
             Language::Irish => "ga",
             Language::Romanian => "ro",
             Language::Bulgarian => "bg",
+            Language::SerbianCyrillic => "sr-cyrl",
         }
     }
 
@@ -129,6 +133,7 @@ impl Language {
             Language::Irish => "Gaeilge",
             Language::Romanian => "Română",
             Language::Bulgarian => "Български",
+            Language::SerbianCyrillic => "Српски (ћирилица)",
         }
     }
 
@@ -163,6 +168,7 @@ impl Language {
             Language::Irish => Some(include_str!("../lang/ga.lang")),
             Language::Romanian => Some(include_str!("../lang/ro.lang")),
             Language::Bulgarian => Some(include_str!("../lang/bg.lang")),
+            Language::SerbianCyrillic => Some(include_str!("../lang/sr-cyrl.lang")),
         }
     }
 
@@ -216,7 +222,7 @@ impl Language {
                 _ => Form::Other,
             },
             // 1, 21, 101 one; 2-4, 22-24 few; the rest, and 11-14, other.
-            Language::Serbian | Language::Croatian => match (count % 10, count % 100) {
+            Language::Serbian | Language::SerbianCyrillic | Language::Croatian => match (count % 10, count % 100) {
                 (1, tens) if tens != 11 => Form::One,
                 (2..=4, tens) if !(12..=14).contains(&tens) => Form::Few,
                 _ => Form::Other,
@@ -244,10 +250,15 @@ impl Language {
 
     /// The language a locale names - `sr_RS.UTF-8`, `sr@latin`, `en-GB` -
     /// or None for one fm84 has no words for. `C` and `POSIX` are English.
+    /// Serbian is in the Latin alphabet unless the locale asks for Cyrillic,
+    /// as `sr@cyrillic` or `sr-Cyrl` does.
     pub fn from_locale(locale: &str) -> Option<Language> {
-        let code = locale.split(['_', '-', '.', '@']).next().unwrap_or("").to_ascii_lowercase();
-        match code.as_str() {
+        let lower = locale.to_ascii_lowercase();
+        let mut parts = lower.split(['_', '-', '.', '@']);
+        let code = parts.next().unwrap_or("");
+        match code {
             "c" | "posix" | "en" => Some(Language::English),
+            "sr" if parts.any(|part| part == "cyrillic" || part == "cyrl") => Some(Language::SerbianCyrillic),
             "sr" => Some(Language::Serbian),
             "tr" => Some(Language::Turkish),
             // Bokmål, and the older code for it; Nynorsk is a language of

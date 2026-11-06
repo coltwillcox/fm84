@@ -14,6 +14,10 @@ fn serbian_counts_take_one_few_or_other() {
     for other in [0, 5, 10, 11, 12, 13, 14, 15, 20, 111, 112, 114] {
         assert_eq!(form(other), Form::Other, "{other}");
     }
+    // Cyrillic or Latin, Serbian counts the same.
+    for count in 0..200 {
+        assert_eq!(Language::SerbianCyrillic.plural(count), form(count), "{count}");
+    }
     assert_eq!(Language::English.plural(1), Form::One);
     assert_eq!(Language::English.plural(0), Form::Other);
     assert_eq!(Language::Turkish.plural(1), Form::One);
@@ -84,6 +88,10 @@ fn a_locale_names_its_language() {
     assert_eq!(Language::from_locale("ga_IE.UTF-8"), Some(Language::Irish));
     assert_eq!(Language::from_locale("ro_RO.UTF-8"), Some(Language::Romanian));
     assert_eq!(Language::from_locale("bg_BG.UTF-8"), Some(Language::Bulgarian));
+    assert_eq!(Language::from_locale("sr@cyrillic"), Some(Language::SerbianCyrillic));
+    assert_eq!(Language::from_locale("sr_RS.UTF-8@cyrillic"), Some(Language::SerbianCyrillic));
+    assert_eq!(Language::from_locale("sr-Cyrl-RS"), Some(Language::SerbianCyrillic));
+    assert_eq!(Language::from_locale("sr_RS@latin"), Some(Language::Serbian));
     assert_eq!(Language::from_locale("ja_JP.UTF-8"), None);
     for language in Language::ALL {
         assert_eq!(Language::from_key(language.key()), Some(language));
@@ -302,6 +310,7 @@ const COMPLETE: &[Language] = &[
     Language::Irish,
     Language::Romanian,
     Language::Bulgarian,
+    Language::SerbianCyrillic,
 ];
 
 #[test]
@@ -406,6 +415,7 @@ fn sort_name(language: Language) -> String {
         "Ελληνικά" => "Ellinika",
         "Македонски" => "Makedonski",
         "Български" => "Balgarski",
+        "Српски (ћирилица)" => "Srpski (cirilica)",
         label => label,
     };
     label

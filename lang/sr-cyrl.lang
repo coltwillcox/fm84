@@ -1,0 +1,1640 @@
+# fm84 на српском, ћирилицом.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, 21, 31..., [few] for 2-4, 22-24...,
+# [other] for the rest. A msgctxt sets one use of a word apart from the
+# same word elsewhere. {name} is a place the program fills, kept as it is.
+# The keys to press - Y, N, A and the like - stay as they are.
+
+msgid  "{name}" has changed since it was opened
+msgstr „{name}“ се променио откако је отворен
+
+msgid  "{name}" is already in {folder}
+msgstr „{name}“ већ постоји у {folder}
+
+msgid  "{name}" is no longer there
+msgstr „{name}“ више не постоји
+
+msgid  "{path}" is already there
+msgstr „{path}“ је већ тамо
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Увећање {zoom}%
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- избор/поништавање по обрасцу, * обрни
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): само за читање
+
+msgid  12-hour
+msgstr 12-часовни
+
+msgid  24-hour
+msgstr 24-часовни
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Препиши све    S - Прескочи све    B - Задржи оба за све
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr Чврста веза на {path}, које се не копира напоље
+
+msgid  A root directory cannot go to the trash
+msgstr Коренски директоријум не може у корпу
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr Synthwave управљач датотекама са два панела, за терминал
+
+msgid  About
+msgstr О програму
+
+msgid  Already exists: {name}
+msgstr Већ постоји: {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Већ постоји: {path} - Препиши или Задржи оба у F11
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Већ постоји: {path} - друго име, или Препиши или Задржи оба у F11
+
+msgid  Already there
+msgstr Већ постоји
+
+msgid  Alt+* invert with directories
+msgstr Alt+* обрни са директоријумима
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Права, власник, време
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Доле сви посећени директоријуми
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (или Ctrl+Shift+F5) веза, Tab чврста
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (или Ctrl+F7) тражи датотеке
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Контролни збирови (Tab алгоритам); провера датотеке
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Лево/Десно назад/напред
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Кориснички мени (E га уређује)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O отвори помоћу... (E по екстензији)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Спакуј у архиву (Tab формат)
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Shift+Enter величина свих директоријума
+
+msgid  Appearance
+msgstr Изглед
+
+msgid  Archives are read-only
+msgstr Архиве су само за читање
+
+msgid  Ascending
+msgstr Растуће
+
+msgid  Ask
+msgstr Питај
+
+msgid  Ask before opening over
+msgstr Питај пре отварања преко
+
+msgid  Attributes
+msgstr Атрибути
+
+msgid  Attributes column
+msgstr Колона Атрибути
+
+msgid  Automatic
+msgstr Аутоматски
+
+msgid  Automatic ({language})
+msgstr Аутоматски ({language})
+
+msgid  Background
+msgstr Позадина
+
+msgid  Bar
+msgstr Црта
+
+msgid  Behaviour
+msgstr Понашање
+
+msgid  Binary
+msgstr Бинарно
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Бинарна датотека. Притисни Esc за повратак.
+
+msgid  Block
+msgstr Блок
+
+msgid  Bookmarks
+msgstr Обележивачи
+
+msgid  Both panels show the same directory
+msgstr Оба панела приказују исти директоријум
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Оба панела приказују исти директоријум: нема шта да се синхронизује
+
+msgid  Branches:
+msgstr Гране:
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Направљено уз Rust, Ratatui и Crossterm
+
+msgid  Built-in
+msgstr Уграђени
+
+msgid  C - Copy
+msgstr C - Копирај
+
+msgid  Cancelling
+msgstr Отказујем
+
+msgid  Cannot calculate size: {e}
+msgstr Не могу да израчунам величину: {e}
+
+msgid  Cannot change {what}
+msgstr Не могу да променим {what}
+
+msgid  Cannot copy
+msgstr Не могу да копирам
+
+msgid  Cannot copy "{path}" into itself
+msgstr Не могу да копирам „{path}“ у самог себе
+
+msgid  Cannot copy to {path}
+msgstr Не могу да копирам у {path}
+
+msgid  Cannot delete
+msgstr Не могу да обришем
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr Не могу да уредим {path}: није UTF-8 текст. F3 је приказује каква јесте.
+
+msgid  Cannot extract
+msgstr Не могу да распакујем
+
+msgid  Cannot link {what}
+msgstr Не могу да направим везу {what}
+
+msgid  Cannot make room beside {path}
+msgstr Не могу да направим места поред {path}
+
+msgid  Cannot make room to compare: {e}
+msgstr Не могу да направим места за поређење: {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Не могу да направим места да је отворим: {e}
+
+msgid  Cannot move
+msgstr Не могу да преместим
+
+msgid  Cannot move to the trash: {why}
+msgstr Не могу да преместим у корпу: {why}
+
+msgid  Cannot move to trash
+msgstr Не могу да преместим у корпу
+
+msgid  Cannot open file: {e}
+msgstr Не могу да отворим датотеку: {e}
+
+msgid  Cannot open terminal: {e}
+msgstr Не могу да отворим терминал: {e}
+
+msgid  Cannot open {path}: {e}
+msgstr Не могу да отворим {path}: {e}
+
+msgid  Cannot pack
+msgstr Не могу да спакујем
+
+msgid  Cannot pack into {path}
+msgstr Не могу да пакујем у {path}
+
+msgid  Cannot reach {target}
+msgstr Не могу да приступим {target}
+
+msgid  Cannot read
+msgstr Не могу да прочитам
+
+msgid  Cannot read file
+msgstr Не могу да прочитам датотеку
+
+msgid  Cannot read {path}
+msgstr Не могу да прочитам {path}
+
+msgid  Cannot read {path}: {e}
+msgstr Не могу да прочитам {path}: {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Не могу да заменим директоријум {path} датотеком
+
+msgid  Cannot replace directory {path} with a link
+msgstr Не могу да заменим директоријум {path} везом
+
+msgid  Cannot replace file {path} with a directory
+msgstr Не могу да заменим датотеку {path} директоријумом
+
+msgid  Cannot run git: {e}
+msgstr Не могу да покренем git: {e}
+
+msgid  Cannot run {label}: {e}
+msgstr Не могу да покренем {label}: {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr Не могу да сачувам обележиваче: {e}
+
+msgid  Cannot save options: {e}
+msgstr Не могу да сачувам подешавања: {e}
+
+msgid  Cannot start {program}: {e}
+msgstr Не могу да покренем {program}: {e}
+
+msgid  Cannot synchronize
+msgstr Не могу да синхронизујем
+
+msgid  Cannot write {path}: {e}
+msgstr Не могу да запишем {path}: {e}
+
+msgid  Case
+msgstr Слова
+
+msgid  Case-sensitive sort
+msgstr Разликуј велика и мала слова
+
+msgid  Changed on disk
+msgstr Промењено на диску
+
+msgid  Checked against {file}
+msgstr Проверено према {file}
+
+msgid  Checksumming
+msgstr Рачунање контролних збирова
+
+msgid  Checksums
+msgstr Контролни збирови
+
+msgid  Choose another program
+msgstr Изабери други програм
+
+msgid  Classic
+msgstr Класични
+
+msgid  Click the git branch to switch it
+msgstr Клик на git грану је мења
+
+msgid  Clock
+msgstr Сат
+
+msgid  Compare
+msgstr Поређење
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Упоређујем...    Esc - Прекини и затвори
+
+msgid  Confirm copy and move
+msgstr Потврди копирање и премештање
+
+msgid  Confirm delete
+msgstr Потврди брисање
+
+msgid  Containing
+msgstr Садржи
+
+msgid  Containing is a regular expression
+msgstr Садржи је регуларни израз
+
+msgid  Copied name: {text}
+msgstr Копирано име: {text}
+
+msgid  Copied path: {text}
+msgstr Копирана путања: {text}
+
+msgid  Copied the report
+msgstr Извештај је копиран
+
+msgid  Copied: {text}
+msgstr Копирано: {text}
+
+msgid  Copy
+msgstr Копирај
+
+msgid  Copy "{name}" to:
+msgstr Копирај „{name}“ у:
+
+msgid  Copy directory
+msgstr Копирај директоријум
+
+msgid  Copy file
+msgstr Копирај датотеку
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Прво је копирај из архиве: контролни збирови се рачунају за датотеке на диску
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Прво је копирај из архиве: оно што се пакује мора да буде на диску
+
+msgid  Copying
+msgstr Копирање
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Није промењено {count} од {total}. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Није повезано {count} од {total}. {first}
+
+msgid  Counting...
+msgstr Бројим...
+
+msgid  Create Directory
+msgstr Нови директоријум
+
+msgid  Create File
+msgstr Нова датотека
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Све датотеке испод, равно
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Копирај путање/имена
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Обележивачи
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Нађи
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F нађи, F3/Shift+F3 следеће/претходно
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Сортирај име/екст/датум/величина
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G иди на ред, Ctrl+R/F4 замени
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Иди на путању (или кликни на њу)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Лево/Десно - Директоријум у тај панел
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgUp/PgDn, Alt+1..9 пребацивање
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Поново учитај оба панела
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - Филтрирај панел по обрасцу
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Нова/затвори картицу
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U замени панеле, Alt+I исти директоријум тамо
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z опозови, Ctrl+Y понови, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Опозови
+
+msgid  Cursor
+msgstr Курсор
+
+msgid  Cursor blinks
+msgstr Курсор трепери
+
+msgid  D - Delete permanently
+msgstr D - Обриши трајно
+
+msgid  Dashed
+msgstr Испрекидана
+
+msgid  Date format
+msgstr Формат датума
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Декодирање овако велике слике тражи толико меморије.
+
+msgid  Delete
+msgstr Обриши
+
+msgid  Delete "{name}" permanently?
+msgstr Трајно обрисати „{name}“?
+
+msgid  Delete to trash (F8)
+msgstr Бриши у корпу (F8)
+
+msgid  Delete: directory
+msgstr Брисање: директоријум
+
+msgid  Delete: file
+msgstr Брисање: датотека
+
+msgid  Deleting
+msgstr Брисање
+
+msgid  Descending
+msgstr Опадајуће
+
+msgid  Deselect:
+msgstr Поништи избор:
+
+msgid  Destination already exists: {path}
+msgstr Одредиште већ постоји: {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Разликује се: {left} лево, {right} десно
+
+msgid  Difference {at}/{count}
+msgstr Разлика {at}/{count}
+
+msgid  Directories first
+msgstr Директоријуми први
+
+msgid  Directory "{name}"
+msgstr Директоријум „{name}“
+
+msgid  Directory History
+msgstr Историја директоријума
+
+msgid  Double
+msgstr Двострука
+
+msgid  Edit
+msgstr Уреди
+
+msgid  Edit "{name}" ({size})?
+msgstr Уредити „{name}“ ({size})?
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr Уредити „{name}“ ({width}x{height}, {size})?
+
+msgid  Edit:
+msgstr Уређивање:
+
+msgid  Editor (F4)
+msgstr Уређивач (F4)
+
+msgid  Empty terminal command
+msgstr Празна команда терминала
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Шифровано: fm84 не може да је прочита без лозинке
+
+msgid  Enter - Copy
+msgstr Enter - Копирај
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Enter - Направи    Esc - Откажи
+
+msgid  Enter - Extract
+msgstr Enter - Распакуј
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Enter - Иди    F - У панел    Esc - Затвори
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Enter - Иди    F - У панел    Esc - Прекини и затвори
+
+msgid  Enter - Hard link
+msgstr Enter - Чврста веза
+
+msgid  Enter - Move
+msgstr Enter - Премести
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Enter - Отвори директоријум, или уђи у архиву
+
+msgid  Enter - Pack
+msgstr Enter - Спакуј
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Enter - Сачувај    Esc - Откажи    {} - директоријум
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Enter - Сачувај    Esc - Откажи    {} - датотека
+
+msgid  Enter - Symlink
+msgstr Enter - Симболичка веза
+
+msgid  Enter - Write
+msgstr Enter - Запиши
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Поново Enter за покретање, брише се {deleting}    Било који други тастер - Не још
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Enter/1-9 - Иди    A/Ins - Додај овај    D/Del - Уклони
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Enter/1-9 - Отвори    E - Уреди придруживања    Esc - Затвори
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Enter/1-9 - Покрени    E - Уреди мени    Esc - Затвори
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Enter/клик - Пребаци    Esc - Затвори
+
+msgid  Error
+msgstr Грешка
+
+msgid  Esc - Back to editing
+msgstr Esc - Назад на уређивање
+
+msgid  Esc - Cancel
+msgstr Esc - Откажи
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Esc - Откажи    Поново F10 - Излаз
+
+msgid  Esc - Close
+msgstr Esc - Затвори
+
+msgid  Esc Exit
+msgstr Esc Излаз
+
+msgid  Existing
+msgstr Постојеће
+
+msgid  Ext
+msgstr Екст
+
+msgid  Ext column
+msgstr Колона Екст
+
+msgid  Extension
+msgstr Екстензија
+
+msgid  Extract "{name}" to:
+msgstr Распакуј „{name}“ у:
+
+msgid  Extract archive
+msgstr Распакуј архиву
+
+msgid  Extracting
+msgstr Распакивање
+
+msgid  F Fit [Fill]
+msgstr F Уклопи [Попуни]
+
+msgid  F [Fit] Fill
+msgstr F [Уклопи] Попуни
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F уклопи/попуни, +/- увећање, W прелом
+
+msgid  F1 - This help
+msgstr F1 - Ова помоћ
+
+msgid  F10 - Quit
+msgstr F10 - Излаз
+
+msgid  F10 again - Quit
+msgstr Поново F10 - Излаз
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Опције (Alt+F1/F2 дискови)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Приказ у другом панелу
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Преименуј директоријум/датотеку
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Сачувај
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Преглед датотеке (X текст/hex/слика)
+
+msgid  F3/N Next
+msgstr F3/N Следећа
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Уреди датотеку (Ctrl+S/F2 чува)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Копирај (у други панел, или где је уписано)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 копира напоље, Alt+F9 (или Ctrl+F9) целу
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Премести (у други панел, или где је уписано)
+
+msgid  F7 - Create directory
+msgstr F7 - Направи директоријум
+
+msgid  F8 - Move to trash
+msgstr F8 - Премести у корпу
+
+msgid  F9 - Open terminal
+msgstr F9 - Отвори терминал
+
+msgid  File "{name}"
+msgstr Датотека „{name}“
+
+msgid  Fill
+msgstr Попуни
+
+msgid  Filter:
+msgstr Филтер:
+
+msgid  Find
+msgstr Нађи
+
+msgid  Find (regex, Alt+R for text):
+msgstr Нађи (regex, Alt+R за текст):
+
+msgid  Find files
+msgstr Тражење датотека
+
+msgid  Find files cannot search inside an archive yet
+msgstr Тражење датотека још не може да тражи унутар архиве
+
+msgid  Find:
+msgstr Нађи:
+
+msgid  First letter
+msgstr Прво слово велико
+
+msgid  Fit
+msgstr Уклопи
+
+msgid  Git marks
+msgstr Git ознаке
+
+msgid  Go to line:
+msgstr Иди на ред:
+
+msgid  Gone
+msgstr Нема је
+
+msgid  Group
+msgstr Група
+
+msgid  Hard link "{name}" at:
+msgstr Чврста веза на „{name}“ у:
+
+msgid  Hard link directory
+msgstr Чврста веза на директоријум
+
+msgid  Hard link file
+msgstr Чврста веза на датотеку
+
+msgid  Heavy
+msgstr Дебела
+
+msgid  Help
+msgstr Помоћ
+
+msgid  Help/About
+msgstr Помоћ/О програму
+
+msgid  High contrast
+msgstr Висок контраст
+
+msgid  Highlight files up to
+msgstr Истицање синтаксе до
+
+msgid  Icons
+msgstr Иконе
+
+msgid  Image backgrounds
+msgstr Позадине слика
+
+msgid  Images open as
+msgstr Слике се отварају
+
+msgid  In
+msgstr У
+
+msgid  It got shorter while it was being packed
+msgstr Скратила се док је пакована
+
+msgid  Keep both
+msgstr Задржи оба
+
+msgid  Keys
+msgstr Тастери
+
+msgid  Language
+msgstr Језик
+
+msgid  Large File
+msgstr Велика датотека
+
+msgid  Large Picture
+msgstr Велика слика
+
+msgid  Line numbers
+msgstr Бројеви редова
+
+msgid  Line {at}/{count}
+msgstr Ред {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Ред {line}, кол. {column}
+
+msgid  Military
+msgstr Војничка
+
+msgid  Mkdir
+msgstr Нов дир
+
+msgid  Mode
+msgstr Права
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Права као 755 или u+x,go-w; власник и група по имену или броју
+
+msgid  Modified
+msgstr Измењено
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Измењено као <7d, >1y, 1d..7d, 2026-10-01 или >2026-10-01, а не {text}
+
+msgid  Modified column
+msgstr Колона Измењено
+
+msgid  Move
+msgstr Премести
+
+msgid  Move "{name}" to the trash?
+msgstr Преместити „{name}“ у корпу?
+
+msgid  Move "{name}" to:
+msgstr Премести „{name}“ у:
+
+msgid  Move directory
+msgstr Премести директоријум
+
+msgid  Move file
+msgstr Премести датотеку
+
+msgid  Move to trash: directory
+msgstr У корпу: директоријум
+
+msgid  Move to trash: file
+msgstr У корпу: датотека
+
+msgid  Moving
+msgstr Премештање
+
+msgid  Moving to trash
+msgstr Премештање у корпу
+
+msgid  Name
+msgstr Име
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Име као за +: *.jpg;*.png, или */ за директоријуме. Мала слова налазе и мала и велика
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Назови је као архиву, са наставком {endings}
+
+msgid  New
+msgstr Ново
+
+msgid  New name
+msgstr Ново име
+
+msgid  Next
+msgstr Следеће
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Још нема обележивача - A чува директоријум панела
+
+msgid  No branches yet: nothing has been committed
+msgstr Још нема грана: ништа није комитовано
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Још нема команди - E их додаје, као назив = команда, у
+
+msgid  No config directory
+msgstr Нема директоријума за подешавања
+
+msgid  No config directory to keep a menu in
+msgstr Нема директоријума за подешавања у ком би се чувао мени
+
+msgid  No config directory to keep associations in
+msgstr Нема директоријума за подешавања у ком би се чувала придруживања
+
+msgid  No such directory: {path}
+msgstr Нема таквог директоријума: {path}
+
+msgid  No such file or directory: {path}
+msgstr Нема такве датотеке или директоријума: {path}
+
+msgid  No such group: {text}
+msgstr Нема такве групе: {text}
+
+msgid  No such user: {text}
+msgstr Нема таквог корисника: {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Није пронађен емулатор терминала. Постави $TERMINAL.
+
+msgid  Not a line number: {text}
+msgstr Није број реда: {text}
+
+msgid  Not a mode: {text}
+msgstr Нису права: {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Нису права: {text} - 755, или u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Није обично име датотеке: {name}
+
+msgid  Not a regular expression: {why}
+msgstr Није регуларни израз: {why}
+
+msgid  Not a regular file
+msgstr Није обична датотека
+
+msgid  Not a regular file: {path}
+msgstr Није обична датотека: {path}
+
+msgid  Not a time here: {text}
+msgstr Ово време не постоји овде: {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Није време: {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Није архива: {path}
+
+msgid  Not found: {term}
+msgstr Није пронађено: {term}
+
+msgid  Nothing chosen for {label}
+msgstr Ништа није изабрано за {label}
+
+msgid  Nothing found
+msgstr Ништа није пронађено
+
+msgid  Nothing found to feed to the panel
+msgstr Није пронађено ништа за панел
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Ништа није мање од 0 бајтова
+
+msgid  Nothing replaced
+msgstr Ништа није замењено
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Нема с чим да се пореди: други панел нема датотеку тог имена, нити једну под курсором
+
+msgid  Nothing to synchronize
+msgstr Нема шта да се синхронизује
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Нема шта да се запише: ниједан контролни збир није израчунат
+
+msgid  Nothing visited matches
+msgstr Ниједан посећен не одговара
+
+msgid  Now
+msgstr Сада
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Препиши све старије    Esc - Прекини
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Препиши    R - Учитај поново, уз губитак измена
+
+msgid  O - Save it again
+msgstr O - Сачувај поново
+
+msgid  Off
+msgstr Искључено
+
+msgid  Old name
+msgstr Старо име
+
+msgid  On
+msgstr Укључено
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr Директоријум једног панела је унутар другог: нема шта да се синхронизује
+
+msgid  Only the first {count} files are listed
+msgstr Приказано је само првих {count} датотека
+
+msgid  Open {name} With
+msgstr Отвори {name} помоћу
+
+msgid  Options
+msgstr Опције
+
+msgid  Overwrite
+msgstr Препиши
+
+msgid  Owner
+msgstr Власник
+
+msgid  Pack "{name}" into:
+msgstr Спакуј „{name}“ у:
+
+msgid  Pack directory
+msgstr Спакуј директоријум
+
+msgid  Pack file
+msgstr Спакуј датотеку
+
+msgid  Packing
+msgstr Паковање
+
+msgid  Panels
+msgstr Панели
+
+msgid  Plain
+msgstr Обичне
+
+msgid  Plain Text
+msgstr Обичан текст
+
+msgid  Preview
+msgstr Приказ
+
+msgid  Preview on startup
+msgstr Приказ при покретању
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Постави курсор на датотеку за поређење, или изабери две
+
+msgid  Put the cursor on an archive to extract it
+msgstr Постави курсор на архиву да је распакујеш
+
+msgid  Quit
+msgstr Излаз
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Поново    S - Прескочи    A - Прескочи све    Esc - Прекини
+
+msgid  Read pictures ahead
+msgstr Учитавај слике унапред
+
+msgid  Reading a file this large may take a while.
+msgstr Читање овако велике датотеке може да потраје.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr Читам {dir}…  Esc за прекид
+
+msgid  Refuse
+msgstr Одбиј
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Релативно
+
+msgid  Released under the {license} License
+msgstr Објављено под лиценцом {license}
+
+msgid  Remember directories
+msgstr Памти директоријуме
+
+msgid  Rename
+msgstr Именуј
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr Преименовано {done} од {total}, затим: {e}
+
+msgid  Replace
+msgstr Замени
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr Заменити „{find}“ са „{with}“?   Y - Да   N - Не   A - Све   Esc - Стани
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Замени (regex, Alt+R за текст):
+
+msgid  Replace:
+msgstr Замени:
+
+msgid  Row {at}/{count}
+msgstr Ред {at}/{count}
+
+msgid  Save
+msgstr Сачувај
+
+msgid  Save changes before closing?
+msgstr Сачувати измене пре затварања?
+
+msgid  Scroll bars
+msgstr Траке за померање
+
+msgid  Search:
+msgstr Тражи:
+
+msgid  Select:
+msgstr Изабери:
+
+msgid  Shade
+msgstr Сенка
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Shift+Enter (или Ctrl+O) отвори као систем
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Shift+F10 излаз, cd84 остаје где је
+
+msgid  Shift+F2 compare directories
+msgstr Shift+F2 упореди директоријуме
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Shift+F3 (или =) упореди две датотеке
+
+msgid  Shift+F3/P Previous
+msgstr Shift+F3/P Претходна
+
+msgid  Shift+F4 - Create file
+msgstr Shift+F4 - Направи датотеку
+
+msgid  Shift+F8 delete permanently
+msgstr Shift+F8 обриши трајно
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Shift+Горе/Доле - Помери    Esc - Затвори
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Shift+стрелице бирају, Ctrl+A све
+
+msgid  Show hidden files
+msgstr Прикажи скривене датотеке
+
+msgid  Size
+msgstr Величина
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Величина као >10M, <1K или 1M..10M, а не {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Величина као >10M, <1K или 1M..10M; Измењено као <7d, >1y, 1d..7d, 2026-10-01 или >2026-10-01
+
+msgid  Size column
+msgstr Колона Величина
+
+msgid  Size units
+msgstr Јединице величине
+
+msgid  Sort by
+msgstr Сортирај по
+
+msgid  Sort direction
+msgstr Смер сортирања
+
+msgid  Space - Select/deselect file
+msgstr Space - Изабери/поништи датотеку
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Прелазак на {branch} се неочекивано прекинуо
+
+msgid  Symbolic links are not supported here
+msgstr Симболичке везе овде нису подржане
+
+msgid  Symlink "{name}" at:
+msgstr Симболичка веза на „{name}“ у:
+
+msgid  Symlink directory
+msgstr Симболичка веза на директоријум
+
+msgid  Symlink file
+msgstr Симболичка веза на датотеку
+
+msgid  Synchronize
+msgstr Синхронизација
+
+msgid  Synchronizing
+msgstr Синхронизација
+
+msgid  System default
+msgstr Системски подразумевано
+
+msgid  Tab - Algorithm
+msgstr Tab - Алгоритам
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Поље   ←/→ - Слова   Enter - Преименуј   Esc - Откажи
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Поље  Space - Regex  Enter - Нађи  Esc - Откажи
+
+msgid  Tab - Format
+msgstr Tab - Формат
+
+msgid  Tab - Hard link
+msgstr Tab - Чврста веза
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Следеће поље    Enter - Примени    Esc - Откажи
+
+msgid  Tab - Symlink
+msgstr Tab - Симболичка веза
+
+msgid  Tab completes a name
+msgstr Tab допуњује име
+
+msgid  Tab width
+msgstr Ширина таба
+
+msgid  Terminal
+msgstr Терминал
+
+msgid  Terminal (F9)
+msgstr Терминал (F9)
+
+msgid  Terminal too small
+msgstr Терминал је премали
+
+msgid  The archive ends before it
+msgstr Архива се завршава пре тога
+
+msgid  The directories hold the same files
+msgstr Директоријуми садрже исте датотеке
+
+msgid  The files are identical
+msgstr Датотеке су исте
+
+msgid  The files differ from byte {at}
+msgstr Датотеке се разликују од бајта {at}
+
+msgid  The files differ from byte {at}, and in size
+msgstr Датотеке се разликују од бајта {at}, и по величини
+
+msgid  The files differ only in line endings
+msgstr Датотеке се разликују само по крајевима редова
+
+msgid  Theme
+msgstr Тема
+
+msgid  This cannot be undone
+msgstr Ово не може да се опозове
+
+msgid  Title Case
+msgstr Свака Реч Великим
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr Превелико за поређење: {path} ({size}; границу поставља F11)
+
+msgid  Transfer stopped unexpectedly
+msgstr Пренос се неочекивано прекинуо
+
+msgid  Trash
+msgstr Корпа
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Куцај за сужење    Горе/Доле - Изабери    Enter - Иди    Esc - Затвори
+
+msgid  Type to search, Esc to clear
+msgstr Куцај за тражење, Esc брише
+
+msgid  UPPER CASE
+msgstr ВЕЛИКА СЛОВА
+
+msgid  Unchanged
+msgstr Без промене
+
+msgid  Underline
+msgstr Подвлака
+
+msgid  Unsaved Changes
+msgstr Несачуване измене
+
+msgid  User Menu
+msgstr Кориснички мени
+
+msgid  View
+msgstr Преглед
+
+msgid  View "{name}" ({size})?
+msgstr Прегледати „{name}“ ({size})?
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr Прегледати „{name}“ ({width}x{height}, {size})?
+
+msgid  View:
+msgstr Преглед:
+
+msgid  Viewer and editor
+msgstr Прегледач и уређивач
+
+msgid  W Wrap
+msgstr W Прелом
+
+msgid  W [Wrap]
+msgstr W [Прелом]
+
+msgid  When destination exists
+msgstr Кад одредиште постоји
+
+msgid  When opened
+msgstr Кад је отворено
+
+msgid  With:
+msgstr Са:
+
+msgid  Wrapped to the bottom
+msgstr Настављено од дна
+
+msgid  Wrapped to the top
+msgstr Настављено од врха
+
+msgid  Written: {name}
+msgstr Записано: {name}
+
+msgid  X Image Text [Hex]
+msgstr X Слика Текст [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Слика [Текст] Hex
+
+msgid  X Text [Hex]
+msgstr X Текст [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Слика] Текст Hex
+
+msgid  X [Text] Hex
+msgstr X [Текст] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Препиши    N - Прескочи    K - Задржи оба
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Сачувај    N - Одбаци    Esc - Откажи
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Enter - Да    N / Esc - Не
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] слова од 2 до 5   [C10+5:3] од 10, по 5, 3 цифре
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] име   [E] екстензија   [C] бројач
+
+msgid  a directory cannot be hard linked
+msgstr на директоријум не може да се направи чврста веза
+
+msgid  already exists
+msgstr већ постоји
+
+msgid  del
+msgstr обр
+
+msgid  filter: {pattern}
+msgstr филтер: {pattern}
+
+msgid  flat
+msgstr равно
+
+msgid  found
+msgstr пронађено
+
+msgid  git did not answer
+msgstr git није одговорио
+
+msgid  given twice
+msgstr дато двапут
+
+msgid  just now
+msgstr управо сада
+
+msgid  lower case
+msgstr мала слова
+
+msgid  name not readable as text
+msgstr име није читљиво као текст
+
+msgid  newer
+msgstr новије
+
+msgid  not a plain name
+msgstr није обично име
+
+msgid  not readable as an archive ({e})
+msgstr не чита се као архива ({e})
+
+msgid  not there
+msgstr не постоји
+
+msgid  terminal
+msgstr терминал
+
+msgid  to be replaced by "{name}"
+msgstr заменило би га „{name}“
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr са избором: све по [N] [E] [C]
+
+msgid  {count} FAILED
+msgstr {count} НЕИСПРАВНО
+
+msgid  {count} OK
+msgstr {count} у реду
+
+msgid  {count} could not be read
+msgstr {count} нечитљиво
+
+msgid  {count} h ago
+msgstr пре {count} х
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr За {count} ставки треба директоријум, а {path} то није
+
+msgid  {count} min ago
+msgstr пре {count} мин
+
+msgid  {count} missing
+msgstr {count} недостаје
+
+msgid  {count} mo ago
+msgstr пре {count} мес
+
+msgid  {count} yr ago
+msgstr пре {count} год
+
+msgid  {deleting} to delete
+msgstr за брисање: {deleting}
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} од {total}, {rate}/с
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title}: отказано после {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr {name} није име које {format} може да садржи: није UTF-8
+
+msgid  {path} already exists
+msgstr {path} већ постоји
+
+msgid  {path} could not be read after all
+msgstr {path} ипак није могао да се прочита
+
+msgid  {path} is a directory
+msgstr {path} је директоријум
+
+msgid  {program} exited with {status}
+msgstr {program} је завршио са {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Помери    Enter/←→ - Промени    Esc - Затвори
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Копирај  Del Обриши  Space Остави  > < Пресликај  R Врати  Enter Покрени  Esc Затвори
+
+msgctxt job
+msgid   Checksum
+msgstr  Контролни збир
+
+msgctxt job
+msgid   Copy
+msgstr  Копирање
+
+msgctxt job
+msgid   Delete
+msgstr  Брисање
+
+msgctxt job
+msgid   Extract
+msgstr  Распакивање
+
+msgctxt job
+msgid   Move
+msgstr  Премештање
+
+msgctxt job
+msgid   Move to trash
+msgstr  Премештање у корпу
+
+msgctxt job
+msgid   Pack
+msgstr  Паковање
+
+msgctxt job
+msgid   Synchronize
+msgstr  Синхронизација
+
+msgid  Copied {count} name
+msgstr[one]   Копирано {count} име
+msgstr[few]   Копирана {count} имена
+msgstr[other] Копирано {count} имена
+
+msgid  Copied {count} path
+msgstr[one]   Копирана {count} путања
+msgstr[few]   Копиране {count} путање
+msgstr[other] Копирано {count} путања
+
+msgid  Copy {count} item
+msgstr[one]   Копирај {count} ставку
+msgstr[few]   Копирај {count} ставке
+msgstr[other] Копирај {count} ставки
+
+msgid  Copy {count} item to: {names}
+msgstr[one]   Копирај {count} ставку ({names}) у:
+msgstr[few]   Копирај {count} ставке ({names}) у:
+msgstr[other] Копирај {count} ставки ({names}) у:
+
+msgid  Delete {count} item permanently?
+msgstr[one]   Трајно обрисати {count} ставку?
+msgstr[few]   Трајно обрисати {count} ставке?
+msgstr[other] Трајно обрисати {count} ставки?
+
+msgid  Delete: {count} item
+msgstr[one]   Брисање: {count} ставка
+msgstr[few]   Брисање: {count} ставке
+msgstr[other] Брисање: {count} ставки
+
+msgid  Hard link {count} item
+msgstr[one]   Чврста веза за {count} ставку
+msgstr[few]   Чврсте везе за {count} ставке
+msgstr[other] Чврсте везе за {count} ставки
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]   Чврста веза за {count} ставку ({names}) у:
+msgstr[few]   Чврсте везе за {count} ставке ({names}) у:
+msgstr[other] Чврсте везе за {count} ставки ({names}) у:
+
+msgid  Move to trash: {count} item
+msgstr[one]   У корпу: {count} ставка
+msgstr[few]   У корпу: {count} ставке
+msgstr[other] У корпу: {count} ставки
+
+msgid  Move {count} item
+msgstr[one]   Премести {count} ставку
+msgstr[few]   Премести {count} ставке
+msgstr[other] Премести {count} ставки
+
+msgid  Move {count} item to the trash?
+msgstr[one]   Преместити {count} ставку у корпу?
+msgstr[few]   Преместити {count} ставке у корпу?
+msgstr[other] Преместити {count} ставки у корпу?
+
+msgid  Move {count} item to: {names}
+msgstr[one]   Премести {count} ставку ({names}) у:
+msgstr[few]   Премести {count} ставке ({names}) у:
+msgstr[other] Премести {count} ставки ({names}) у:
+
+msgid  Pack {count} item
+msgstr[one]   Спакуј {count} ставку
+msgstr[few]   Спакуј {count} ставке
+msgstr[other] Спакуј {count} ставки
+
+msgid  Pack {count} item into: {names}
+msgstr[one]   Спакуј {count} ставку ({names}) у:
+msgstr[few]   Спакуј {count} ставке ({names}) у:
+msgstr[other] Спакуј {count} ставки ({names}) у:
+
+msgid  Rename {count} Entry
+msgstr[one]   Преименуј {count} ставку
+msgstr[few]   Преименуј {count} ставке
+msgstr[other] Преименуј {count} ставки
+
+msgid  Replaced {count}
+msgstr[one]   Замењена {count} појава
+msgstr[few]   Замењене {count} појаве
+msgstr[other] Замењено {count} појава
+
+msgid  Symlink {count} item
+msgstr[one]   Симболичка веза за {count} ставку
+msgstr[few]   Симболичке везе за {count} ставке
+msgstr[other] Симболичке везе за {count} ставки
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]   Симболичка веза за {count} ставку ({names}) у:
+msgstr[few]   Симболичке везе за {count} ставке ({names}) у:
+msgstr[other] Симболичке везе за {count} ставки ({names}) у:
+
+msgid  {count} day ago
+msgstr[one]   пре {count} дан
+msgstr[few]   пре {count} дана
+msgstr[other] пре {count} дана
+
+msgid  {count} difference
+msgstr[one]   {count} разлика
+msgstr[few]   {count} разлике
+msgstr[other] {count} разлика
+
+msgid  {count} directory could not be read
+msgstr[one]   {count} директоријум није прочитан
+msgstr[few]   {count} директоријума нису прочитана
+msgstr[other] {count} директоријума није прочитано
+
+msgid  {count} file
+msgstr[one]   {count} датотека
+msgstr[few]   {count} датотеке
+msgstr[other] {count} датотека
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]   {count} датотека, нечитљивих: {failed}
+msgstr[few]   {count} датотеке, нечитљивих: {failed}
+msgstr[other] {count} датотека, нечитљивих: {failed}
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]   {count} ставка - поље остављено какво јесте, или празно, не мења ништа
+msgstr[few]   {count} ставке - поље остављено какво јесте, или празно, не мења ништа
+msgstr[other] {count} ставки - поље остављено какво јесте, или празно, не мења ништа
+
+msgid  {count} line
+msgstr[one]   {count} ред
+msgstr[few]   {count} реда
+msgstr[other] {count} редова
+
+msgid  {count} line not understood
+msgstr[one]   {count} ред није разумљив
+msgstr[few]   {count} реда нису разумљива
+msgstr[other] {count} редова није разумљиво
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]   {count} ново име не може да се добије: {why} - погледај табелу
+msgstr[few]   {count} нова имена не могу да се добију: {why} - погледај табелу
+msgstr[other] {count} нових имена не може да се добије: {why} - погледај табелу
+
+msgid  {done} of {total} entry
+msgstr[one]   {done} од {total} ставке
+msgstr[few]   {done} од {total} ставке
+msgstr[other] {done} од {total} ставки
+
+msgid  {done} of {total} item
+msgstr[one]   {done} од {total} ставке
+msgstr[few]   {done} од {total} ставке
+msgstr[other] {done} од {total} ставки
+
+msgid  {found} differs
+msgstr[one]   {found} се разликује
+msgstr[few]   {found} се разликују
+msgstr[other] {found} се разликује
+
+msgid  {found} differs, comparing
+msgstr[one]   {found} се разликује, упоређујем
+msgstr[few]   {found} се разликују, упоређујем
+msgstr[other] {found} се разликује, упоређујем
+
+msgid  {found} found
+msgstr[one]   {found} пронађен
+msgstr[few]   {found} пронађена
+msgstr[other] {found} пронађено
+
+msgid  {found} found, searching
+msgstr[one]   {found} пронађен, тражим
+msgstr[few]   {found} пронађена, тражим
+msgstr[other] {found} пронађено, тражим
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]   {job_title}: отказано после {done} ставке
+msgstr[few]   {job_title}: отказано после {done} ставке
+msgstr[other] {job_title}: отказано после {done} ставки
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]   {job_title}: отказано после {done} ставке
+msgstr[few]   {job_title}: отказано после {done} ставке
+msgstr[other] {job_title}: отказано после {done} ставки
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]   {job_title}: готово, прескочена {count} ставка
+msgstr[few]   {job_title}: готово, прескочене {count} ставке
+msgstr[other] {job_title}: готово, прескочено {count} ставки
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]   {problems} не може да се преименује овако    Esc - Откажи
+msgstr[few]   {problems} не могу да се преименују овако    Esc - Откажи
+msgstr[other] {problems} не може да се преименује овако    Esc - Откажи
+
+msgid  {skipped} left as it is
+msgstr[one]   {skipped} остаје како јесте
+msgstr[few]   {skipped} остају како јесу
+msgstr[other] {skipped} остаје како јесте
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab увлачење, Ctrl+/ коментар
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R у тражењу или замени: regex
+
+msgid  by name, text, regex, size, date
+msgstr по имену, тексту, регексу, величини, датуму
+
+msgid  F on the results feeds them to the panel
+msgstr F у резултатима их ставља у панел
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - Синхронизуј два директоријума
