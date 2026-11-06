@@ -37,15 +37,17 @@ pub enum Language {
     /// As Brazil writes it.
     Portuguese,
     Dutch,
+    Danish,
 }
 
 impl Language {
     /// In the order F11 steps through them: English, then the rest by their
     /// own names, as the alphabet has them - a Greek or Cyrillic one by how
     /// it is spelt in Latin letters.
-    pub const ALL: [Language; 19] = [
+    pub const ALL: [Language; 20] = [
         Language::English,
         Language::Czech,
+        Language::Danish,
         Language::German,
         Language::Greek,
         Language::Spanish,
@@ -87,6 +89,7 @@ impl Language {
             Language::Spanish => "es",
             Language::Portuguese => "pt",
             Language::Dutch => "nl",
+            Language::Danish => "da",
         }
     }
 
@@ -113,6 +116,7 @@ impl Language {
             Language::Spanish => "Español",
             Language::Portuguese => "Português (Brasil)",
             Language::Dutch => "Nederlands",
+            Language::Danish => "Dansk",
         }
     }
 
@@ -143,6 +147,7 @@ impl Language {
             Language::Spanish => Some(include_str!("../lang/es.lang")),
             Language::Portuguese => Some(include_str!("../lang/pt.lang")),
             Language::Dutch => Some(include_str!("../lang/nl.lang")),
+            Language::Danish => Some(include_str!("../lang/da.lang")),
         }
     }
 
@@ -151,7 +156,7 @@ impl Language {
         match self {
             // A noun after a number stays as it is in Turkish - "5 dosya" -
             // but a sentence can still say one apart from the rest.
-            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek | Language::Hungarian | Language::Swedish | Language::Spanish | Language::Dutch => {
+            Language::English | Language::Turkish | Language::Norwegian | Language::German | Language::Italian | Language::Greek | Language::Hungarian | Language::Swedish | Language::Spanish | Language::Dutch | Language::Danish => {
                 if count == 1 {
                     Form::One
                 } else {
@@ -230,6 +235,7 @@ impl Language {
             "es" => Some(Language::Spanish),
             "pt" => Some(Language::Portuguese),
             "nl" => Some(Language::Dutch),
+            "da" => Some(Language::Danish),
             _ => None,
         }
     }
