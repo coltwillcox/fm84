@@ -406,7 +406,7 @@ fn ctrl_b_lists_every_file_in_an_archive() {
     let (dir, archive, mut app_state) = setup("flat");
     press(&mut app_state, KeyCode::Enter);
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
-    assert_eq!(app_state.flat_left.as_ref().map(|flat| &flat.dir), Some(&archive));
+    assert_eq!(app_state.left.flat.as_ref().map(|flat| &flat.dir), Some(&archive));
     let mut names = shown(&app_state);
     names[1..].sort();
     assert_eq!(names, ["..", "2024/june/beach.txt", "2024/notes.txt", "readme.txt"]);

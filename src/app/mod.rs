@@ -217,9 +217,6 @@ pub struct AppState {
     pub page_size: u16,
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
-    /// Ctrl+B: the directory each panel lists every file under, if any.
-    pub flat_left: Option<Flat>,
-    pub flat_right: Option<Flat>,
     /// What git says of each panel's entries.
     pub git_left: PanelGit,
     pub git_right: PanelGit,
@@ -418,6 +415,8 @@ pub struct Panel {
     pub children: Vec<Item>,
     /// Ctrl+S: what the panel is narrowed to, if anything.
     pub filter: Option<PanelFilter>,
+    /// Ctrl+B: the directory the panel lists every file under, if any.
+    pub flat: Option<Flat>,
 }
 
 impl AppState {
@@ -464,17 +463,17 @@ impl AppState {
                 state: state_left,
                 children: Vec::new(),
                 filter: None,
+                flat: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
                 state: state_right,
                 children: Vec::new(),
                 filter: None,
+                flat: None,
             },
             page_size: 0,
             filter_before: String::new(),
-            flat_left: None,
-            flat_right: None,
             git_left: PanelGit::default(),
             git_right: PanelGit::default(),
             search_input: String::new(),

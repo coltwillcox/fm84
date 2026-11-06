@@ -561,7 +561,7 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
     app_state.is_left_active = true;
 
     let (_sender, answer) = std::sync::mpsc::channel();
-    app_state.flat_left = Some(crate::app::Flat { dir: dir.clone(), feed: None });
+    app_state.left.flat = Some(crate::app::Flat { dir: dir.clone(), feed: None });
     app_state.listing_left = Some(crate::app::PendingListing {
         dir: dir.clone(),
         navigate: false,
@@ -573,7 +573,7 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
         restore_flat: Some(None),
     });
     app_state.cancel_listing(true);
-    assert!(app_state.flat_left.is_none());
+    assert!(app_state.left.flat.is_none());
 
     // As Ctrl+B leaves it when the walk has not come back yet.
     app_state.listing_wait = std::time::Duration::ZERO;
@@ -581,7 +581,7 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
     if app_state.panel_busy(true) {
         assert_eq!(app_state.listing_left.as_ref().and_then(|pending| pending.restore_flat.clone()), Some(None));
         app_state.cancel_listing(true);
-        assert!(app_state.flat_left.is_none());
+        assert!(app_state.left.flat.is_none());
     }
     std::fs::remove_dir_all(&dir).unwrap();
 }

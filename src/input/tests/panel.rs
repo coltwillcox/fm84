@@ -482,7 +482,7 @@ fn ctrl_b_lists_every_file_below() {
     let sep = std::path::MAIN_SEPARATOR;
 
     ctrl_b(&mut app_state);
-    assert_eq!(app_state.flat_left.as_ref().map(|flat| &flat.dir), Some(&dir));
+    assert_eq!(app_state.left.flat.as_ref().map(|flat| &flat.dir), Some(&dir));
     assert_eq!(names(&app_state), ["..".to_string(), "a.txt".to_string(), format!("sub{sep}b.bin"), format!("sub{sep}deep{sep}c.txt")]);
     let deep = app_state.left.children.iter().find(|item| item.name_full.ends_with("c.txt")).unwrap();
     assert_eq!((deep.name.as_str(), deep.extension.as_str()), (format!("sub{sep}deep{sep}c").as_str(), "txt"));
@@ -490,7 +490,7 @@ fn ctrl_b_lists_every_file_below() {
     // Sorted by size, the biggest last.
     handle_key(&mut app_state, KeyEvent::new(KeyCode::F(6), KeyModifiers::CONTROL));
     assert_eq!(names(&app_state)[1..], ["a.txt".to_string(), format!("sub{sep}deep{sep}c.txt"), format!("sub{sep}b.bin")]);
-    assert!(app_state.flat_left.is_some(), "a reread keeps it");
+    assert!(app_state.left.flat.is_some(), "a reread keeps it");
 
     // F2 offers the file's own name, and renames it where it is.
     let at = app_state.left.children.iter().position(|item| item.name_full.ends_with("c.txt")).unwrap();
@@ -504,13 +504,13 @@ fn ctrl_b_lists_every_file_below() {
 
     // Back to the directory, on what holds that file.
     ctrl_b(&mut app_state);
-    assert!(app_state.flat_left.is_none());
+    assert!(app_state.left.flat.is_none());
     assert_eq!(cursor(&app_state), "sub");
 
     // Somewhere else and back, and it is not flat any more.
     ctrl_b(&mut app_state);
     press(&mut app_state, KeyCode::Backspace);
-    assert!(app_state.flat_left.is_none());
+    assert!(app_state.left.flat.is_none());
     app_state.open_dir(true, dir.clone(), None);
     assert!(names(&app_state).contains(&"sub".to_string()));
     std::fs::remove_dir_all(&dir).unwrap();

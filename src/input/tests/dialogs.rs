@@ -289,7 +289,7 @@ fn find_files_filters_and_feeds_the_panel() {
     assert_eq!(results(&mut app_state).len(), 3);
     press(&mut app_state, KeyCode::Char('f'));
     assert!(app_state.dialog.is_none());
-    assert!(app_state.flat_left.as_ref().is_some_and(|flat| flat.dir == dir && flat.feed.is_some()));
+    assert!(app_state.left.flat.as_ref().is_some_and(|flat| flat.dir == dir && flat.feed.is_some()));
     let mut names: Vec<String> = app_state.left.children.iter().filter(|item| !item.is_parent()).map(|item| item.name_full.clone()).collect();
     names.sort();
     assert_eq!(names, [format!("src{sep}big.rs"), format!("src{sep}deep{sep}lib.rs"), format!("src{sep}main.rs")]);
@@ -298,7 +298,7 @@ fn find_files_filters_and_feeds_the_panel() {
     std::fs::remove_file(dir.join("src").join("big.rs")).unwrap();
     app_state.reload_panel(true, None);
     assert_eq!(app_state.left.children.iter().filter(|item| !item.is_parent()).count(), 2);
-    assert!(app_state.flat_left.as_ref().is_some_and(|flat| flat.feed.is_some()), "a reread keeps it");
+    assert!(app_state.left.flat.as_ref().is_some_and(|flat| flat.feed.is_some()), "a reread keeps it");
 
     // One renamed stays in the list, under its new name.
     let at = app_state.left.children.iter().position(|item| item.name_full == format!("src{sep}main.rs")).unwrap();
@@ -312,7 +312,7 @@ fn find_files_filters_and_feeds_the_panel() {
 
     // Ctrl+B goes back to the directory as it is.
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
-    assert!(app_state.flat_left.is_none());
+    assert!(app_state.left.flat.is_none());
     assert!(app_state.left.children.iter().any(|item| item.name_full == "notes.txt"));
     std::fs::remove_dir_all(&dir).unwrap();
 }

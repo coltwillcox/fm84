@@ -20,7 +20,7 @@ impl AppState {
     /// list holds paths, and at the next reread one no longer there is
     /// taken to be gone.
     pub fn feed_follow(&mut self, moves: &[(PathBuf, PathBuf)]) {
-        for flat in [&mut self.flat_left, &mut self.flat_right].into_iter().flatten() {
+        for flat in [&mut self.left.flat, &mut self.right.flat].into_iter().flatten() {
             let Some(feed) = &flat.feed else { continue };
             let dir = &flat.dir;
             let followed: Vec<(PathBuf, bool)> = feed
@@ -37,11 +37,11 @@ impl AppState {
     }
 
     pub fn flat(&self, is_left: bool) -> Option<&Flat> {
-        if is_left { self.flat_left.as_ref() } else { self.flat_right.as_ref() }
+        self.panel(is_left).flat.as_ref()
     }
 
     pub(super) fn flat_mut(&mut self, is_left: bool) -> &mut Option<Flat> {
-        if is_left { &mut self.flat_left } else { &mut self.flat_right }
+        &mut self.panel_mut(is_left).flat
     }
 
     /// Ctrl+B: list every file under the active panel's directory, or go
