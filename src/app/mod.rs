@@ -216,8 +216,6 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    pub cached_separator_height: u16,
-    pub cached_separator: String,
     pub viewer_viewport_height: usize,
     pub viewer_viewport_width: usize,
     pub editor_viewport_height: usize,
@@ -419,6 +417,9 @@ pub struct Drawn {
     pub page_size: u16,
     /// The clock in the top border, as last drawn.
     pub cached_clock: String,
+    /// The line between the panels, and the height it was made for.
+    pub cached_separator_height: u16,
+    pub cached_separator: String,
 }
 
 impl AppState {
@@ -496,8 +497,6 @@ impl AppState {
             drawn: Drawn::default(),
             filter_before: String::new(),
             search_input: String::new(),
-            cached_separator_height: 0,
-            cached_separator: String::new(),
             viewer_viewport_height: 0,
             viewer_viewport_width: 0,
             editor_viewport_height: 0,

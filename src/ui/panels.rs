@@ -482,11 +482,11 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 
     // Cache the separator string based on height
     let separator_height = chunks[0].height;
-    if app_state.cached_separator_height != separator_height {
-        app_state.cached_separator_height = separator_height;
-        app_state.cached_separator = "│\n".repeat(separator_height.saturating_sub(1) as usize) + "│";
+    if app_state.drawn.cached_separator_height != separator_height {
+        app_state.drawn.cached_separator_height = separator_height;
+        app_state.drawn.cached_separator = "│\n".repeat(separator_height.saturating_sub(1) as usize) + "│";
     }
-    let separator_vertical = Paragraph::new(Text::raw(&app_state.cached_separator)).style(style_border());
+    let separator_vertical = Paragraph::new(Text::raw(&app_state.drawn.cached_separator)).style(style_border());
     f.render_widget(separator_vertical, chunks[1]);
 
     // Build only visible rows for right panel
