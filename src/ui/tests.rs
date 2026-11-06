@@ -37,16 +37,16 @@ fn tabs_are_drawn_and_clicked_where_they_are() {
     assert_eq!(tab_label(Path::new("/tmp/a-rather-long-directory-name")), "a-rather-long-d…");
 
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
+    app_state.active_side = Side::Left;
     app_state.left.dir = "/tmp/b".into();
     app_state.left.tabs = crate::app::Tabs::new(vec!["/a".into(), "/tmp/b".into()], 1);
-    tab_strip(&mut app_state, true, Rect::new(0, 1, 40, 1));
+    tab_strip(&mut app_state, Side::Left, Rect::new(0, 1, 40, 1));
 
     // " " then " a " then " b ".
     assert_eq!(app_state.tab_at(0, 1), None);
-    assert_eq!(app_state.tab_at(1, 1), Some((true, StripHit::Item(0))));
-    assert_eq!(app_state.tab_at(3, 1), Some((true, StripHit::Item(0))));
-    assert_eq!(app_state.tab_at(4, 1), Some((true, StripHit::Item(1))));
+    assert_eq!(app_state.tab_at(1, 1), Some((Side::Left, StripHit::Item(0))));
+    assert_eq!(app_state.tab_at(3, 1), Some((Side::Left, StripHit::Item(0))));
+    assert_eq!(app_state.tab_at(4, 1), Some((Side::Left, StripHit::Item(1))));
     assert_eq!(app_state.tab_at(7, 1), None);
     assert_eq!(app_state.tab_at(4, 0), None);
 }
@@ -70,31 +70,31 @@ fn a_crowded_drive_strip_scrolls() {
     let area = Rect::new(0, 0, 30, 1);
 
     // Plain icons are five columns a slot: 30, less 4 for arrows, holds 5.
-    drive_strip(&mut app_state, true, area);
+    drive_strip(&mut app_state, Side::Left, area);
     let strip = &app_state.drive_strip_left;
     assert_eq!((strip.first, strip.visible), (0, 5));
     assert_eq!(strip.hits.first(), Some(&StripHit::Item(0)));
     assert_eq!(strip.hits.last(), Some(&StripHit::Forward));
     assert_eq!(app_state.drive_at(1, 0), None); // no back arrow yet
-    assert_eq!(app_state.drive_at(2, 0), Some((true, StripHit::Item(0))));
-    assert_eq!(app_state.drive_at(27, 0), Some((true, StripHit::Forward)));
+    assert_eq!(app_state.drive_at(2, 0), Some((Side::Left, StripHit::Item(0))));
+    assert_eq!(app_state.drive_at(27, 0), Some((Side::Left, StripHit::Forward)));
 
     // A page along, and the back arrow appears with the icons where they were.
-    app_state.scroll_drive_strip(true, true);
-    drive_strip(&mut app_state, true, area);
-    assert_eq!(app_state.drive_at(0, 0), Some((true, StripHit::Back)));
-    assert_eq!(app_state.drive_at(2, 0), Some((true, StripHit::Item(5))));
+    app_state.scroll_drive_strip(Side::Left, true);
+    drive_strip(&mut app_state, Side::Left, area);
+    assert_eq!(app_state.drive_at(0, 0), Some((Side::Left, StripHit::Back)));
+    assert_eq!(app_state.drive_at(2, 0), Some((Side::Left, StripHit::Item(5))));
 
     // At the end, no forward arrow.
-    app_state.scroll_drive_strip(true, true);
-    drive_strip(&mut app_state, true, area);
+    app_state.scroll_drive_strip(Side::Left, true);
+    drive_strip(&mut app_state, Side::Left, area);
     assert_eq!(app_state.drive_strip_left.first, 7);
     assert!(!app_state.drive_strip_left.hits.contains(&StripHit::Forward));
 
     // Room for all: no arrows and the old layout.
-    drive_strip(&mut app_state, true, Rect::new(0, 0, 80, 1));
+    drive_strip(&mut app_state, Side::Left, Rect::new(0, 0, 80, 1));
     assert_eq!(app_state.drive_strip_left.first, 0);
-    assert_eq!(app_state.drive_at(1, 0), Some((true, StripHit::Item(0))));
+    assert_eq!(app_state.drive_at(1, 0), Some((Side::Left, StripHit::Item(0))));
 }
 
 /// A file name can hold anything but '/' and NUL - an escape sequence, a
@@ -111,7 +111,7 @@ fn a_hostile_name_never_reaches_the_terminal() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.show_preview = true;
-    app_state.open_dir(true, dir.clone(), Some(nasty.as_ref()));
+    app_state.open_dir(Side::Left, dir.clone(), Some(nasty.as_ref()));
     app_state.refresh_cursor_detail();
     app_state.refresh_preview();
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
@@ -162,8 +162,8 @@ fn every_input_field_wears_the_rename_colours() {
     std::fs::write(dir.join("file.txt"), "").unwrap();
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("file.txt".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("file.txt".as_ref()));
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
     let typed = || {
         let mut input = TextInput::new();
@@ -372,8 +372,8 @@ fn nothing_is_added_past_the_end_for_the_cursor() {
     std::fs::create_dir_all(dir.join("doc")).unwrap();
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("doc".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("doc".as_ref()));
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
     let screen = |terminal: &Terminal<ratatui::backend::TestBackend>| terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect::<String>();
     let typed = |text: &str| {
@@ -444,17 +444,17 @@ fn go_to_is_typed_over_the_panels_own_path() {
         (0..buffer.area.width).map(|x| buffer[(x, y)].symbol().to_string()).collect()
     };
 
-    for (is_left, typed) in [(true, "/typed/here"), (false, "/somewhere/else"), (true, &format!("/{}/end", "long".repeat(30))[..])] {
-        app_state.is_left_active = is_left;
+    for (side, typed) in [(Side::Left, "/typed/here"), (Side::Right, "/somewhere/else"), (Side::Left, &format!("/{}/end", "long".repeat(30))[..])] {
+        app_state.active_side = side;
         let mut input = TextInput::new();
         input.set(typed.to_string());
         app_state.dialog = Some(Dialog::Prompt(PromptKind::GoTo, input));
         render_ui(&mut terminal, &mut app_state);
         let bar = row(&terminal, 3);
         let (left, right) = bar.split_at(bar.find('┬').unwrap());
-        let (typed_in, other) = if is_left { (left, right) } else { (right, left) };
+        let (typed_in, other) = if side.is_left() { (left, right) } else { (right, left) };
         assert!(typed_in.contains(if typed.len() > 40 { "long/end" } else { typed }), "{bar}");
-        assert!(other.contains(if is_left { "/right/dir" } else { "/left/dir" }), "{bar}");
+        assert!(other.contains(if side.is_left() { "/right/dir" } else { "/left/dir" }), "{bar}");
         assert!(bar.starts_with("├──") && bar.ends_with("─┤") && bar.chars().count() == 80, "{bar}");
         assert!(!row(&terminal, 19).contains("Go to"));
     }
@@ -813,9 +813,9 @@ fn git_marks_sit_at_the_end_of_the_name() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.options.column_ext = false;
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let started = std::time::Instant::now();
-    while app_state.git_status(true).is_none() {
+    while app_state.git_status(Side::Left).is_none() {
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "git never answered");
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_git_marks();
@@ -837,8 +837,8 @@ fn git_marks_sit_at_the_end_of_the_name() {
 
     // Off in F11: gone with the reread that follows, and git not asked.
     app_state.options.git_marks = false;
-    app_state.reload_panel(true, None);
-    assert!(app_state.git_status(true).is_none() && app_state.left.git.dir == dir);
+    app_state.reload_panel(Side::Left, None);
+    assert!(app_state.git_status(Side::Left).is_none() && app_state.left.git.dir == dir);
     render_ui(&mut terminal, &mut app_state);
     let buffer = terminal.backend().buffer();
     let marked = (0..buffer.area.height).any(|y| {

@@ -7,17 +7,17 @@ use crate::fs_ops::PackFormat;
 /// F2 on the entry under the cursor, typed into in place of its name - or,
 /// with a selection, on every name selected at once, by a pattern.
 pub(super) fn open_rename(app_state: &mut AppState) {
-    if app_state.refuse_in_archive(app_state.is_left_active) {
+    if app_state.refuse_in_archive(app_state.active_side) {
         return;
     }
-    let selected = &app_state.panel(app_state.is_left_active).selected;
+    let selected = &app_state.panel(app_state.active_side).selected;
     if !selected.is_empty() {
         let items = chosen_items(app_state).into_iter().map(|(path, _)| path).collect();
         app_state.open_multi_rename(items);
         return;
     }
-    let children = &app_state.panel(app_state.is_left_active).children;
-    let state = &app_state.panel(app_state.is_left_active).state;
+    let children = &app_state.panel(app_state.active_side).children;
+    let state = &app_state.panel(app_state.active_side).state;
     let Some(item) = state.selected().and_then(|index| children.get(index)) else {
         return;
     };
@@ -40,7 +40,7 @@ pub(super) fn toggle_create(app_state: &mut AppState, is_dir: bool) {
         app_state.dialog = None;
         return;
     }
-    if app_state.refuse_in_archive(app_state.is_left_active) {
+    if app_state.refuse_in_archive(app_state.active_side) {
         return;
     }
     app_state.dialog = Some(Dialog::Create { is_dir, input: TextInput::new() });
@@ -50,9 +50,9 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
     let Some(Dialog::Rename(input)) = app_state.dialog.take() else {
         return;
     };
-    let parent_path = &app_state.panel(app_state.is_left_active).dir;
-    let children = &app_state.panel(app_state.is_left_active).children;
-    let state = &app_state.panel(app_state.is_left_active).state;
+    let parent_path = &app_state.panel(app_state.active_side).dir;
+    let children = &app_state.panel(app_state.active_side).children;
+    let state = &app_state.panel(app_state.active_side).state;
     let Some(item) = state.selected().and_then(|index| children.get(index)) else {
         return;
     };
@@ -98,7 +98,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
                 app_state.dir_sizes.insert(new_path.clone(), size);
             }
             app_state.feed_follow(&[(original_path, new_path)]);
-            app_state.reload_panel(app_state.is_left_active, Some(landing.as_os_str()));
+            app_state.reload_panel(app_state.active_side, Some(landing.as_os_str()));
         }
         Err(e) => app_state.display_error(e.to_string()),
     }
@@ -109,7 +109,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
 /// is set to: there is no getting it back.
 pub(super) fn open_delete(app_state: &mut AppState, permanently: bool) {
     let items = chosen_items(app_state);
-    if items.is_empty() || app_state.refuse_in_archive(app_state.is_left_active) {
+    if items.is_empty() || app_state.refuse_in_archive(app_state.active_side) {
         return;
     }
     let to_trash = app_state.options.delete_to_trash && !permanently;
@@ -146,11 +146,11 @@ pub(super) fn handle_create_confirm(app_state: &mut AppState) {
         return;
     }
 
-    let parent_path = &app_state.panel(app_state.is_left_active).dir;
+    let parent_path = &app_state.panel(app_state.active_side).dir;
     let path = parent_path.join(&name);
     let result = if is_dir { create_directory(path) } else { create_file(path) };
     match result {
-        Ok(_) => app_state.reload_panel(app_state.is_left_active, Some(name.as_ref())),
+        Ok(_) => app_state.reload_panel(app_state.active_side, Some(name.as_ref())),
         Err(e) => app_state.display_error(e.to_string()),
     }
 }
@@ -166,11 +166,11 @@ pub(super) fn open_transfer(app_state: &mut AppState, is_copy: bool) {
         return;
     }
     // Out of an archive is a copy; a move would take entries out of it.
-    if !is_copy && app_state.refuse_in_archive(app_state.is_left_active) {
+    if !is_copy && app_state.refuse_in_archive(app_state.active_side) {
         return;
     }
     // Where the other panel is going, should it be on its way somewhere.
-    let other = app_state.panel_dir(!app_state.is_left_active);
+    let other = app_state.panel_dir(!app_state.active_side);
     if !app_state.options.confirm_copy_move {
         go_transfer(app_state, &sources, &other, true, is_copy);
         return;
@@ -209,7 +209,7 @@ pub(super) fn handle_transfer_confirm(app_state: &mut AppState) {
     if input.text.trim().is_empty() {
         return;
     }
-    let base = &app_state.panel(app_state.is_left_active).dir;
+    let base = &app_state.panel(app_state.active_side).dir;
     let destination = typed_path(&input.text, base);
     go_transfer(app_state, &sources, &destination, input.text.ends_with(std::path::is_separator), is_copy);
 }
@@ -240,7 +240,7 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
     if items.iter().any(|(_, dest, _)| dest.parent().is_some_and(|dir| crate::archive::locate(dir).is_some())) {
         return app_state.display_error(read_only().to_string());
     }
-    if let Some(archive) = app_state.panel_archive(app_state.is_left_active).cloned() {
+    if let Some(archive) = app_state.panel_archive(app_state.active_side).cloned() {
         return submit_extract(app_state, archive, items);
     }
     let taken = match check_destinations(&items) {
@@ -293,11 +293,11 @@ fn submit_extract(app_state: &mut AppState, archive: PathBuf, items: Vec<(PathBu
 /// the other panel's directory. Without the dialog, when F11 turns off
 /// confirming copies, straight there.
 pub(super) fn open_extract_all(app_state: &mut AppState) {
-    let is_left = app_state.is_left_active;
-    let archive = match app_state.panel_archive(is_left) {
+    let side = app_state.active_side;
+    let archive = match app_state.panel_archive(side) {
         Some(archive) => archive.clone(),
         None => {
-            let panel = app_state.panel(is_left);
+            let panel = app_state.panel(side);
             let (children, state, dir) = (&panel.children, &panel.state, &panel.dir);
             let item = state.selected().and_then(|index| children.get(index));
             match item.map(|item| item.path_in(dir)).filter(|path| item.is_some_and(|item| !item.is_dir) && crate::archive::kind_of(path).is_some()) {
@@ -306,7 +306,7 @@ pub(super) fn open_extract_all(app_state: &mut AppState) {
             }
         }
     };
-    let other = app_state.panel_dir(!is_left);
+    let other = app_state.panel_dir(!side);
     if !app_state.options.confirm_copy_move {
         return go_extract_all(app_state, archive, &other);
     }
@@ -329,7 +329,7 @@ pub(super) fn handle_extract_confirm(app_state: &mut AppState) {
     if input.text.trim().is_empty() {
         return;
     }
-    let base = app_state.panel_real_dir(app_state.is_left_active);
+    let base = app_state.panel_real_dir(app_state.active_side);
     let destination = typed_path(&input.text, &base);
     go_extract_all(app_state, archive, &destination);
 }
@@ -357,8 +357,8 @@ fn go_extract_all(app_state: &mut AppState, archive: PathBuf, destination: &Path
 /// its ending, a directory's, or for several the name of the directory they
 /// are in. A zip unless Tab says otherwise.
 pub(super) fn open_pack(app_state: &mut AppState) {
-    let is_left = app_state.is_left_active;
-    if app_state.panel_archive(is_left).is_some() {
+    let side = app_state.active_side;
+    if app_state.panel_archive(side).is_some() {
         return app_state.display_error(t!("Copy it out of the archive first: what is packed has to be on the disk").to_string());
     }
     let sources = chosen_items(app_state);
@@ -368,12 +368,12 @@ pub(super) fn open_pack(app_state: &mut AppState) {
     let base = match &sources[..] {
         [(path, true)] => path.file_name().map(std::ffi::OsStr::to_os_string),
         [(path, false)] => path.file_stem().map(std::ffi::OsStr::to_os_string),
-        _ => app_state.panel_dir(is_left).file_name().map(std::ffi::OsStr::to_os_string),
+        _ => app_state.panel_dir(side).file_name().map(std::ffi::OsStr::to_os_string),
     };
     let base = base.map_or_else(|| "archive".to_string(), |name| name.to_string_lossy().into_owned());
     let name = format!("{base}{}", PackFormat::Zip.extension());
     let mut input = TextInput::new();
-    input.set(app_state.panel_dir(!is_left).join(name).to_string_lossy().into_owned());
+    input.set(app_state.panel_dir(!side).join(name).to_string_lossy().into_owned());
     app_state.dialog = Some(Dialog::Pack { sources, input });
 }
 
@@ -413,7 +413,7 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
     if input.text.trim().is_empty() {
         return;
     }
-    let dest = typed_path(&input.text, &app_state.panel_dir(app_state.is_left_active));
+    let dest = typed_path(&input.text, &app_state.panel_dir(app_state.active_side));
     let Some(format) = PackFormat::of(&dest) else {
         let endings: Vec<&str> = PackFormat::ALL.iter().map(|format| format.extension()).collect();
         return app_state.display_error(t!("Name it as an archive, ending in {endings}", endings = endings.join(", ")));
@@ -438,8 +438,8 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
 /// Alt+H: the checksums of what is chosen - SHA-256 to start with - or, on
 /// a checksum file alone, the files it names checked against it.
 pub(super) fn open_checksums(app_state: &mut AppState) {
-    let is_left = app_state.is_left_active;
-    if app_state.panel_archive(is_left).is_some() {
+    let side = app_state.active_side;
+    if app_state.panel_archive(side).is_some() {
         return app_state.display_error(t!("Copy it out of the archive first: checksums are worked out of files on the disk").to_string());
     }
     let sources = chosen_items(app_state);
@@ -449,7 +449,7 @@ pub(super) fn open_checksums(app_state: &mut AppState) {
         return app_state.start_check(path.clone());
     }
     if !sources.is_empty() {
-        let base = app_state.panel_dir(is_left);
+        let base = app_state.panel_dir(side);
         app_state.start_checksums(sources, base);
     }
 }
@@ -507,9 +507,9 @@ fn write_checksums(app_state: &mut AppState) {
         return app_state.display_error(t!("Cannot write {path}: {e}", path = dest.display(), e));
     }
     app_state.dialog = None;
-    for is_left in [true, false] {
-        if dest.parent() == Some(app_state.panel_dir(is_left).as_path()) {
-            app_state.reload_panel(is_left, dest.file_name());
+    for side in Side::BOTH {
+        if dest.parent() == Some(app_state.panel_dir(side).as_path()) {
+            app_state.reload_panel(side, dest.file_name());
         }
     }
     app_state.find_note = Some(t!("Written: {name}", name = dest.file_name().unwrap_or_default().to_string_lossy()));
@@ -521,14 +521,14 @@ fn write_checksums(app_state: &mut AppState) {
 /// one under the cursor there. Each side of the comparison is the panel its
 /// file came from.
 pub(super) fn open_compare(app_state: &mut AppState) {
-    let is_left = app_state.is_left_active;
-    let file_at_cursor = |app_state: &AppState, is_left: bool| {
-        let panel = app_state.panel(is_left);
+    let side = app_state.active_side;
+    let file_at_cursor = |app_state: &AppState, side: Side| {
+        let panel = app_state.panel(side);
         let (children, state, dir) = (&panel.children, &panel.state, &panel.dir);
         state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_dir).map(|item| (item.name_os.clone(), item.path_in(dir)))
     };
 
-    let panel = app_state.panel(is_left);
+    let panel = app_state.panel(side);
     let (children, selected, dir) = (&panel.children, &panel.selected, &panel.dir);
     let selected_files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir && selected.contains(&item.name_os)).map(|item| item.path_in(dir)).collect();
     if let [first, second] = &selected_files[..] {
@@ -536,18 +536,18 @@ pub(super) fn open_compare(app_state: &mut AppState) {
         return;
     }
 
-    let Some((name, here)) = file_at_cursor(app_state, is_left) else {
+    let Some((name, here)) = file_at_cursor(app_state, side) else {
         app_state.display_error(t!("Put the cursor on a file to compare, or select two").to_string());
         return;
     };
-    let panel = app_state.panel(!is_left);
+    let panel = app_state.panel(!side);
     let (other_children, other_dir) = (&panel.children, &panel.dir);
     let namesake = other_children.iter().find(|item| !item.is_dir && item.name_os == name).map(|item| item.path_in(other_dir));
-    let Some(there) = namesake.or_else(|| file_at_cursor(app_state, !is_left).map(|(_, path)| path)) else {
+    let Some(there) = namesake.or_else(|| file_at_cursor(app_state, !side).map(|(_, path)| path)) else {
         app_state.display_error(t!("Nothing to compare with: the other panel has no file of that name, nor one under its cursor").to_string());
         return;
     };
-    if is_left {
+    if side.is_left() {
         app_state.compare_anywhere(here, there);
     } else {
         app_state.compare_anywhere(there, here);
@@ -563,10 +563,10 @@ pub(super) fn open_compare(app_state: &mut AppState) {
 pub(super) fn open_symlink(app_state: &mut AppState) {
     let sources = chosen_items(app_state);
     // A link to an entry of an archive would point at nothing on the disk.
-    if sources.is_empty() || app_state.refuse_in_archive(app_state.is_left_active) {
+    if sources.is_empty() || app_state.refuse_in_archive(app_state.active_side) {
         return;
     }
-    let other = app_state.panel_dir(!app_state.is_left_active);
+    let other = app_state.panel_dir(!app_state.active_side);
     let (default, into_dir) = match &sources[..] {
         [(source, _)] => (other.join(source.file_name().unwrap_or_default()), false),
         _ => (other, true),
@@ -602,7 +602,7 @@ pub(super) fn handle_symlink_confirm(app_state: &mut AppState) {
     } else if input.text.trim().is_empty() {
         return;
     } else {
-        let base = &app_state.panel(app_state.is_left_active).dir;
+        let base = &app_state.panel(app_state.active_side).dir;
         transfer_targets(&sources, &typed_path(&input.text, base), input.text.ends_with(std::path::is_separator))
     };
     // Made inside an archive: the other panel in one, or a path typed
@@ -634,9 +634,9 @@ pub(super) fn handle_symlink_confirm(app_state: &mut AppState) {
         [(_, link, _)] if failed.is_empty() => link.parent().zip(link.file_name()),
         _ => None,
     };
-    for is_left in [true, false] {
-        let name = landed.filter(|(parent, _)| app_state.panel_dir(is_left) == *parent).map(|(_, name)| name);
-        app_state.reload_panel(is_left, name);
+    for side in Side::BOTH {
+        let name = landed.filter(|(parent, _)| app_state.panel_dir(side) == *parent).map(|(_, name)| name);
+        app_state.reload_panel(side, name);
     }
     match failed.len() {
         0 => {}

@@ -81,7 +81,7 @@ pub struct PreviewState {
 impl AppState {
     /// Full path of the entry under the cursor, unless that is the parent entry.
     pub(super) fn cursor_target(&self) -> Option<(PathBuf, String, bool)> {
-        let panel = self.panel(self.is_left_active);
+        let panel = self.panel(self.active_side);
         let (children, state, dir) = (&panel.children, &panel.state, &panel.dir);
         let item = children.get(state.selected()?)?;
         if item.is_parent() {

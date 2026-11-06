@@ -43,7 +43,7 @@ pub(crate) fn open_with_default(path: &std::path::Path) -> std::io::Result<()> {
 
 pub(super) fn open_terminal(app_state: &mut AppState) {
     // Inside an archive, in the directory the archive is in.
-    let dir = &app_state.panel_real_dir(app_state.is_left_active);
+    let dir = &app_state.panel_real_dir(app_state.active_side);
     let command = app_state.options.terminal.trim();
     let result = if command.is_empty() { spawn_detached_terminal(dir) } else { spawn_configured_terminal(command, dir) };
     if let Err(e) = result {
@@ -129,13 +129,13 @@ pub(super) fn run_user_menu_entry(app_state: &mut AppState) {
     let Some(entry) = menu.entries.get(menu.index).cloned() else {
         return;
     };
-    let is_left = app_state.is_left_active;
+    let side = app_state.active_side;
     let (needs_file, needs_files) = crate::app::uses_entries(&entry.command);
-    if (needs_file || needs_files) && app_state.refuse_in_archive(is_left) {
+    if (needs_file || needs_files) && app_state.refuse_in_archive(side) {
         return;
     }
     let files: Vec<std::path::PathBuf> = chosen_items(app_state).into_iter().map(|(path, _)| path).collect();
-    let panel = app_state.panel(is_left);
+    let panel = app_state.panel(side);
     let (children, state, dir) = (&panel.children, &panel.state, &panel.dir);
     let file = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()).map(|item| item.path_in(dir));
     if (needs_file && file.is_none()) || (needs_files && files.is_empty()) {
@@ -145,8 +145,8 @@ pub(super) fn run_user_menu_entry(app_state: &mut AppState) {
     let values = crate::app::MenuValues {
         file,
         files,
-        dir: app_state.panel_real_dir(is_left),
-        other: app_state.panel_real_dir(!is_left),
+        dir: app_state.panel_real_dir(side),
+        other: app_state.panel_real_dir(!side),
     };
     app_state.user_command = Some(crate::app::UserCommand {
         process: crate::app::shell_command(&entry.command, &values),

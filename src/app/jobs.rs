@@ -636,8 +636,8 @@ impl AppState {
         if job.kind != TransferKind::Checksum && job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
             // Both panels: a move empties one and fills the other, and a copy
             // into the same directory shows up on the side it came from.
-            self.reload_panel(true, None);
-            self.reload_panel(false, None);
+            self.reload_panel(Side::Left, None);
+            self.reload_panel(Side::Right, None);
             self.clear_active_selections();
             // Any directory size worked out before may now be wrong - the ones
             // copied into, moved out of or deleted from, and every directory
@@ -659,9 +659,9 @@ impl AppState {
             (Ok(Transfer::Done), Some(AfterJob::Open(path))) if job.skipped == 0 => return self.open_outside(&path, false),
             (Ok(Transfer::Done), Some(AfterJob::OpenWith(path, opener))) if job.skipped == 0 => return self.launch(&opener, &path),
             (Ok(Transfer::Done), Some(AfterJob::Land(archive))) => {
-                for is_left in [true, false] {
-                    if archive.parent() == Some(self.panel_dir(is_left).as_path()) {
-                        self.reload_panel(is_left, archive.file_name());
+                for side in Side::BOTH {
+                    if archive.parent() == Some(self.panel_dir(side).as_path()) {
+                        self.reload_panel(side, archive.file_name());
                     }
                 }
             }

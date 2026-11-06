@@ -23,8 +23,8 @@ pub struct PanelGit {
 }
 
 impl AppState {
-    pub fn git_status(&self, is_left: bool) -> Option<&crate::git::Status> {
-        self.panel(is_left).git.status.as_ref()
+    pub fn git_status(&self, side: Side) -> Option<&crate::git::Status> {
+        self.panel(side).git.status.as_ref()
     }
 
     /// Ask git again about `dir`, which the panel has just listed: in a
@@ -32,9 +32,9 @@ impl AppState {
     /// and only while F11 has the marks on.
     /// The marks there are kept until the new ones come, so a reread does not
     /// flicker; another directory's go at once.
-    pub(super) fn request_git_marks(&mut self, is_left: bool, dir: &Path, in_repository: bool) {
+    pub(super) fn request_git_marks(&mut self, side: Side, dir: &Path, in_repository: bool) {
         let wanted = in_repository && self.options.git_marks;
-        let git = &mut self.panel_mut(is_left).git;
+        let git = &mut self.panel_mut(side).git;
         if git.dir != dir {
             git.status = None;
             git.dir = dir.to_path_buf();
@@ -56,8 +56,8 @@ impl AppState {
     /// Take in whichever marks have come since the last frame, and start
     /// the git waiting for its turn.
     pub fn poll_git_marks(&mut self) {
-        for is_left in [true, false] {
-            let git = &mut self.panel_mut(is_left).git;
+        for side in Side::BOTH {
+            let git = &mut self.panel_mut(side).git;
             let Some((asked, answer)) = &git.running else {
                 continue;
             };
@@ -107,7 +107,7 @@ mod tests {
         let mut app_state = AppState::new();
         let other = dir.join("other");
         for _ in 0..3 {
-            app_state.request_git_marks(true, &dir, true);
+            app_state.request_git_marks(Side::Left, &dir, true);
         }
         assert!(app_state.left.git.running.is_some() && app_state.left.git.queued);
         // The queued one runs once the first is in, and then nothing more.
@@ -128,9 +128,9 @@ mod tests {
         assert!(app_state.left.git.status.is_some() && !app_state.left.git.queued);
 
         // An answer about a directory the panel has left is not taken.
-        app_state.request_git_marks(true, &dir, true);
+        app_state.request_git_marks(Side::Left, &dir, true);
         std::fs::create_dir_all(&other).unwrap();
-        app_state.request_git_marks(true, &other, true);
+        app_state.request_git_marks(Side::Left, &other, true);
         assert!(app_state.left.git.status.is_none());
         let start = Instant::now();
         while app_state.left.git.queued && start.elapsed() < Duration::from_secs(10) {

@@ -1,7 +1,7 @@
 //! Keys, pastes and the mouse, each to whatever is on top: a running job, an
 //! error, the dialog that is open, then the screen.
 
-use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, TextInput, TransferKind, read_only};
+use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, Side, TextInput, TransferKind, read_only};
 use crate::fs_ops::{check_destinations, create_directory, create_file, create_hard_link, create_symlink, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets, typed_path};
 use crate::options::{OnExisting, SortKey};
 use crate::strip::StripHit;
@@ -99,7 +99,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
     let clear = app_state.dialog.is_none() && app_state.error.is_none();
     let in_editor = clear && app_state.is_editing();
     let in_viewer = clear && app_state.is_viewing();
-    let in_panel = clear && app_state.workers.job.is_none() && matches!(app_state.screen, Screen::Panels) && !app_state.panel_busy(app_state.is_left_active);
+    let in_panel = clear && app_state.workers.job.is_none() && matches!(app_state.screen, Screen::Panels) && !app_state.panel_busy(app_state.active_side);
 
     // Alt+* inverts the directories as well as the files. Ctrl is an alias
     // for the terminals that can report it; most send Ctrl+* as a bare * or
@@ -114,16 +114,16 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         // Alt+1 to Alt+8 go to that tab, and Alt+9 to the last, however
         // many there are - as browsers have it.
         if in_panel && let Some(digit) = c.to_digit(10).filter(|&digit| digit > 0) {
-            let is_left = app_state.is_left_active;
-            let count = app_state.panel(is_left).tabs.list.len();
+            let side = app_state.active_side;
+            let count = app_state.panel(side).tabs.list.len();
             let index = if digit == 9 { count - 1 } else { digit as usize - 1 };
-            app_state.select_tab(is_left, index);
+            app_state.select_tab(side, index);
         }
         // Alt+A changes the attributes of what is chosen, as in Total
         // Commander.
         if in_panel && c == 'a' {
             let items = chosen_items(app_state);
-            if !items.is_empty() && !app_state.refuse_in_archive(app_state.is_left_active) {
+            if !items.is_empty() && !app_state.refuse_in_archive(app_state.active_side) {
                 app_state.open_attributes(items);
             }
         }
@@ -179,8 +179,8 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             'v' if in_editor => app_state.editor_paste(),
             // Ctrl+R rereads both panels from disk.
             'r' if !app_state.is_modal_open() => {
-                app_state.reload_panel(true, None);
-                app_state.reload_panel(false, None);
+                app_state.reload_panel(Side::Left, None);
+                app_state.reload_panel(Side::Right, None);
             }
             // Ctrl+L, as a browser's address bar.
             'l' if in_panel => app_state.open_go_to(),
@@ -198,9 +198,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             'u' if in_panel => app_state.swap_panels(),
             't' if in_panel => app_state.new_tab(),
             'w' if in_panel => {
-                let is_left = app_state.is_left_active;
-                let active = app_state.panel(is_left).tabs.active;
-                app_state.close_tab(is_left, active);
+                let side = app_state.active_side;
+                let active = app_state.panel(side).tabs.active;
+                app_state.close_tab(side, active);
             }
             _ => {}
         }

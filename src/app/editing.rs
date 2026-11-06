@@ -822,8 +822,8 @@ impl AppState {
             // that watches it never notices, and the panels would go on showing
             // the size from before the edit. Either of them may be showing the
             // file, and a link to it may be in a directory neither is watching.
-            self.reload_panel(true, None);
-            self.reload_panel(false, None);
+            self.reload_panel(Side::Left, None);
+            self.reload_panel(Side::Right, None);
         }
         Ok(())
     }

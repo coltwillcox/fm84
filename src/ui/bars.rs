@@ -152,7 +152,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             }
             render_segmented_status_bar(f, area, &segments);
         }
-    } else if let Some(listing) = &app_state.panel(app_state.is_left_active).listing {
+    } else if let Some(listing) = &app_state.panel(app_state.active_side).listing {
         // A directory that has not answered yet - a network mount gone quiet.
         // The panel shows what it did until it does.
         let text = format!(" {} ", t!("Reading {dir}…  Esc to stop", dir = printable_name(&listing.dir.to_string_lossy())));
@@ -190,7 +190,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
         let left_pad = (total_width.saturating_sub(3) / 2).saturating_sub(left_stat_len + 1);
         let right_pad = (total_width.saturating_sub(2) / 2).saturating_sub(right_stat_len + 1);
 
-        let (left_style, right_style) = if app_state.is_left_active { (style_title(), style_dir_dark()) } else { (style_dir_dark(), style_title()) };
+        let (left_style, right_style) = if app_state.active_side.is_left() { (style_title(), style_dir_dark()) } else { (style_dir_dark(), style_title()) };
 
         // Disk usage sits at the far end of each panel's dash run, dropping to a
         // shorter form and then out entirely as the terminal narrows.

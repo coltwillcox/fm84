@@ -93,7 +93,7 @@ impl AppState {
 
     /// Returns (&children, &mut state) for the active panel.
     fn active_panel_mut(&mut self) -> (&[Item], &mut TableState) {
-        let panel = self.panel_mut(self.is_left_active);
+        let panel = self.panel_mut(self.active_side);
         (&panel.children, &mut panel.state)
     }
 
@@ -108,7 +108,7 @@ impl AppState {
     /// matches. No directory is sized: a pattern can take dozens at once, and
     /// Space is there for the one that is wanted.
     pub fn select_by(&mut self, glob: &crate::glob::Glob, select: bool) {
-        let panel = self.panel_mut(self.is_left_active);
+        let panel = self.panel_mut(self.active_side);
         let (children, selected) = (&panel.children, &mut panel.selected);
         for item in children.iter().filter(|item| !item.is_parent() && glob.matches(&item.name_full, item.is_dir)) {
             if select {
@@ -124,7 +124,7 @@ impl AppState {
     /// asked: inverting a few picked files should not sweep every tree beside
     /// them into the next delete. Alt+* asks, and inverts them too.
     pub fn invert_selection(&mut self, with_dirs: bool) {
-        let panel = self.panel_mut(self.is_left_active);
+        let panel = self.panel_mut(self.active_side);
         let (children, selected) = (&panel.children, &mut panel.selected);
         for item in children.iter().filter(|item| (with_dirs || !item.is_dir) && !item.is_parent()) {
             if !selected.remove(&item.name_os) {
@@ -145,7 +145,7 @@ impl AppState {
         let mut to_size: Option<PathBuf> = None;
 
         {
-            let panel = self.panel_mut(self.is_left_active);
+            let panel = self.panel_mut(self.active_side);
             let (state, children, selected_set, current_dir) = (&mut panel.state, &panel.children, &mut panel.selected, &panel.dir);
 
             if let Some(index) = state.selected() {
@@ -193,7 +193,7 @@ impl AppState {
     /// go in turn, top to bottom, a few at once, and each shows in the Size
     /// column as it is counted.
     pub fn size_all_dirs(&mut self) {
-        let panel = self.panel(self.is_left_active);
+        let panel = self.panel(self.active_side);
         let (children, dir) = (&panel.children, &panel.dir);
         let paths: Vec<PathBuf> = children.iter().filter(|item| item.is_dir && !item.is_symlink && !item.is_parent()).map(|item| item.path_in(dir)).collect();
         for path in paths {
@@ -302,6 +302,6 @@ impl AppState {
     }
 
     pub fn clear_active_selections(&mut self) {
-        self.panel_mut(self.is_left_active).selected.clear();
+        self.panel_mut(self.active_side).selected.clear();
     }
 }

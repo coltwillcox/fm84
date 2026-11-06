@@ -78,7 +78,7 @@ impl Drop for Search {
 impl AppState {
     /// Alt+F7: ask what to look for, offering the last search again.
     pub fn open_find_files(&mut self) {
-        if self.panel_archive(self.is_left_active).is_some() {
+        if self.panel_archive(self.active_side).is_some() {
             self.display_error(t!("Find files cannot search inside an archive yet").to_string());
             return;
         }
@@ -142,7 +142,7 @@ impl AppState {
         if !modified.trim().is_empty() {
             label.push_str(&format!(", modified {}", modified.trim()));
         }
-        let start = self.panel_dir(self.is_left_active);
+        let start = self.panel_dir(self.active_side);
         let query = crate::search::Query {
             start: start.clone(),
             name: crate::glob::Glob::new(pattern).unwrap_or_else(|| crate::glob::Glob::new("*").expect("* is a pattern")),
@@ -238,12 +238,12 @@ impl AppState {
         }
         let first = feed[0].0.clone().into_os_string();
         self.dialog = None;
-        let is_left = self.is_left_active;
-        self.panel_mut(is_left).flat = Some(Flat { dir: start.clone(), feed: Some(Arc::new(feed)) });
-        if self.panel_dir(is_left) == start {
-            self.reload_panel(is_left, Some(&first));
+        let side = self.active_side;
+        self.panel_mut(side).flat = Some(Flat { dir: start.clone(), feed: Some(Arc::new(feed)) });
+        if self.panel_dir(side) == start {
+            self.reload_panel(side, Some(&first));
         } else {
-            self.open_dir(is_left, start, Some(&first));
+            self.open_dir(side, start, Some(&first));
         }
     }
 
@@ -263,6 +263,6 @@ impl AppState {
             return;
         };
         self.dialog = None;
-        self.open_dir(self.is_left_active, dir, Some(&name));
+        self.open_dir(self.active_side, dir, Some(&name));
     }
 }

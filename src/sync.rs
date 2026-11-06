@@ -15,7 +15,7 @@ const SAME_TIME: Duration = Duration::from_secs(2);
 
 /// An entry on one side, as it was when compared.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Side {
+pub struct Entry {
     pub is_dir: bool,
     pub size: u64,
     pub modified: Option<SystemTime>,
@@ -27,8 +27,8 @@ pub struct Side {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Difference {
     pub path: PathBuf,
-    pub left: Option<Side>,
-    pub right: Option<Side>,
+    pub left: Option<Entry>,
+    pub right: Option<Entry>,
 }
 
 impl Difference {
@@ -109,7 +109,7 @@ pub fn compare(left: &Path, right: &Path, show_hidden: bool, cancel: &AtomicBool
 }
 
 /// Two files alike: the same size, and the same age or no age to tell by.
-fn same(left: Side, right: Side) -> bool {
+fn same(left: Entry, right: Entry) -> bool {
     left.size == right.size
         && match (left.modified, right.modified) {
             (Some(mine), Some(theirs)) => mine.max(theirs) <= mine.min(theirs) + SAME_TIME,
@@ -119,7 +119,7 @@ fn same(left: Side, right: Side) -> bool {
 
 /// A directory's entries by name, as the entries themselves - a link as a
 /// link. None when it cannot be read.
-fn entries(dir: &Path, show_hidden: bool) -> Option<BTreeMap<OsString, Side>> {
+fn entries(dir: &Path, show_hidden: bool) -> Option<BTreeMap<OsString, Entry>> {
     let mut found = BTreeMap::new();
     for entry in fs::read_dir(dir).ok()?.flatten() {
         let Ok(metadata) = entry.metadata() else { continue };
@@ -130,7 +130,7 @@ fn entries(dir: &Path, show_hidden: bool) -> Option<BTreeMap<OsString, Side>> {
         let is_dir = metadata.is_dir();
         found.insert(
             name,
-            Side {
+            Entry {
                 is_dir,
                 size: if is_dir { 0 } else { metadata.len() },
                 modified: metadata.modified().ok(),

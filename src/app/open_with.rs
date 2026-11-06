@@ -18,7 +18,7 @@ impl AppState {
     /// Alt+O on the entry under the cursor. A directory inside an archive
     /// has nowhere on the disk to be opened from.
     pub fn open_with_menu(&mut self, path: PathBuf, is_dir: bool) {
-        if is_dir && self.panel_archive(self.is_left_active).is_some() {
+        if is_dir && self.panel_archive(self.active_side).is_some() {
             return;
         }
         let associations = crate::options::load_associations();
@@ -55,7 +55,7 @@ impl AppState {
         let Some(opener) = menu.openers.get(menu.index).cloned() else {
             return;
         };
-        if self.panel_archive(self.is_left_active).is_some() {
+        if self.panel_archive(self.active_side).is_some() {
             self.extract_then(&menu.path, |dest| AfterJob::OpenWith(dest, Box::new(opener)));
             return;
         }
@@ -98,7 +98,7 @@ impl AppState {
                     file: Some(path.to_path_buf()),
                     files: vec![path.to_path_buf()],
                     dir: dir.clone(),
-                    other: self.panel_real_dir(!self.is_left_active),
+                    other: self.panel_real_dir(!self.active_side),
                 };
                 shell_command(&command, &values)
             }

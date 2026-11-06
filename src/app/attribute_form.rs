@@ -163,8 +163,8 @@ impl AppState {
                 failed.push(format!("{}: {}", path.display(), e));
             }
         }
-        self.reload_panel(true, None);
-        self.reload_panel(false, None);
+        self.reload_panel(Side::Left, None);
+        self.reload_panel(Side::Right, None);
         match failed.len() {
             0 => {}
             1 if form.items.len() == 1 => self.display_error(t!("Cannot change {what}", what = failed[0])),

@@ -198,10 +198,10 @@ fn lay_strip(strip: &mut Strip, area: Rect, items: Vec<Span<'static>>, focus: Op
 /// that panel is choosing, the candidate is highlighted and named. The window
 /// onto them, when they do not all fit, follows the candidate while choosing
 /// and the panel's own drive otherwise.
-pub(super) fn drive_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> Line<'static> {
-    let current = app_state.current_mount(is_left);
+pub(super) fn drive_strip(app_state: &mut AppState, side: Side, area: Rect) -> Line<'static> {
+    let current = app_state.current_mount(side);
     let picking = match app_state.dialog {
-        Some(Dialog::DrivePicker { is_left: side, index }) if side == is_left => Some(index),
+        Some(Dialog::DrivePicker { side: picking, index }) if picking == side => Some(index),
         _ => None,
     };
 
@@ -231,7 +231,7 @@ pub(super) fn drive_strip(app_state: &mut AppState, is_left: bool, area: Rect) -
         })
         .collect();
 
-    let strip = if is_left { &mut app_state.drive_strip_left } else { &mut app_state.drive_strip_right };
+    let strip = if side.is_left() { &mut app_state.drive_strip_left } else { &mut app_state.drive_strip_right };
     let mut spans = lay_strip(strip, area, items, picking.or(current));
 
     // Name whichever is under consideration, else the one this panel is on.
@@ -263,9 +263,9 @@ pub(super) fn tab_label(dir: &Path) -> String {
 
 /// One panel's row of tabs, under its drives. The tab it shows sits in a
 /// block of colour, the brighter one in the active panel, as the drives do.
-pub(super) fn tab_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> Line<'static> {
-    let (dirs, active) = app_state.tab_dirs(is_left);
-    let panel_active = app_state.is_left_active == is_left;
+pub(super) fn tab_strip(app_state: &mut AppState, side: Side, area: Rect) -> Line<'static> {
+    let (dirs, active) = app_state.tab_dirs(side);
+    let panel_active = app_state.active_side == side;
     let items = dirs
         .iter()
         .enumerate()
@@ -281,7 +281,7 @@ pub(super) fn tab_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> 
         })
         .collect();
 
-    let tabs = &mut app_state.panel_mut(is_left).tabs;
+    let tabs = &mut app_state.panel_mut(side).tabs;
     Line::from(lay_strip(&mut tabs.strip, area, items, Some(active)))
 }
 
@@ -322,16 +322,16 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
 
     if inner.height > 0 && !app_state.mounts.is_empty() {
         let halves = panel_split(Rect { height: 1, ..inner });
-        let left = drive_strip(app_state, true, halves[0]);
-        let right = drive_strip(app_state, false, halves[2]);
+        let left = drive_strip(app_state, Side::Left, halves[0]);
+        let right = drive_strip(app_state, Side::Right, halves[2]);
         f.render_widget(Paragraph::new(left), halves[0]);
         f.render_widget(Paragraph::new(right), halves[2]);
     }
     // The tabs take the row under the drives.
     if inner.height > 1 {
         let halves = panel_split(Rect { y: inner.y + 1, height: 1, ..inner });
-        let left = tab_strip(app_state, true, halves[0]);
-        let right = tab_strip(app_state, false, halves[2]);
+        let left = tab_strip(app_state, Side::Left, halves[0]);
+        let right = tab_strip(app_state, Side::Right, halves[2]);
         f.render_widget(Paragraph::new(left), halves[0]);
         f.render_widget(Paragraph::new(right), halves[2]);
     }
@@ -345,13 +345,13 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
 /// each side's branch was drawn, left then right, for a click to find.
 pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, going_to: Option<&TextInput>) -> [Option<Rect>; 2] {
     let total_width = area.width;
-    let is_left_active = app_state.is_left_active;
+    let active_side = app_state.active_side;
     let length_left = ((total_width as usize).saturating_sub(3)) / 2;
     let length_right = ((total_width as usize).saturating_sub(2)) / 2;
     // Fewer columns than this for the path, and the branch is left off.
     const PATH_ROOM: usize = 12;
 
-    let (color_left, color_right) = if is_left_active { (style_dir(), style_dir_dark()) } else { (style_dir_dark(), style_dir()) };
+    let (color_left, color_right) = if active_side.is_left() { (style_dir(), style_dir_dark()) } else { (style_dir_dark(), style_dir()) };
     let branch_label = |branch: &Option<String>| {
         branch.as_ref().map(|branch| match app_state.options.icon_style {
             IconStyle::Plain => format!(" git:{} ", printable_name(branch)),
@@ -394,10 +394,10 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
     let mut branches = [None, None];
     // How the panel is narrowed or widened: Ctrl+B's flat list, Ctrl+S's
     // pattern - kept short, as a long one would push the path off the line.
-    let filter_label = |is_left: bool| {
+    let filter_label = |side: Side| {
         let parts: Vec<String> = [
-            app_state.flat(is_left).map(|flat| if flat.feed.is_some() { t!("found") } else { t!("flat") }.to_string()),
-            app_state.filter(is_left).map(|filter| t!("filter: {pattern}", pattern = tail_of(&filter.text, 24))),
+            app_state.flat(side).map(|flat| if flat.feed.is_some() { t!("found") } else { t!("flat") }.to_string()),
+            app_state.filter(side).map(|filter| t!("filter: {pattern}", pattern = tail_of(&filter.text, 24))),
         ]
         .into_iter()
         .flatten()
@@ -405,8 +405,8 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
         (!parts.is_empty()).then(|| format!(" {} ", parts.join(", ")))
     };
     let sides = [
-        (&app_state.left.dir, filter_label(true), &app_state.left.branch, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
-        (&app_state.right.dir, filter_label(false), &app_state.right.branch, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),
+        (&app_state.left.dir, filter_label(Side::Left), &app_state.left.branch, length_left, color_left, going_to.filter(|_| active_side.is_left()), "─┬──"),
+        (&app_state.right.dir, filter_label(Side::Right), &app_state.right.branch, length_right, color_right, going_to.filter(|_| !active_side.is_left()), "─┤"),
     ];
     for (branch, (dir, filter, label, length, style, editing, end)) in branches.iter_mut().zip(sides) {
         let (spans, label_at) = side(dir, filter, branch_label(label), length, style, editing, end);
@@ -452,7 +452,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 
     // Build only visible rows for left panel
     let field = name_width(&app_state.options, chunks[0].width);
-    let (rows_left, offset_left) = build_viewport_rows(app_state, true, viewport_height, &columns, field);
+    let (rows_left, offset_left) = build_viewport_rows(app_state, Side::Left, viewport_height, &columns, field);
     let mut state_left_view = TableState::default();
     state_left_view.select(app_state.left.state.selected().map(|s| s.saturating_sub(offset_left)));
 
@@ -461,8 +461,8 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     // Where each heading lands, laid out as the table lays out its columns,
     // for a click to sort by. Not under the preview, which covers one panel.
     app_state.drawn.sort_headers.clear();
-    for (area, block, is_left) in [(chunks[0], &block_left, true), (chunks[2], &block_right, false)] {
-        if app_state.preview.is_some() && is_left != app_state.is_left_active {
+    for (area, block, side) in [(chunks[0], &block_left, Side::Left), (chunks[2], &block_right, Side::Right)] {
+        if app_state.preview.is_some() && side != app_state.active_side {
             continue;
         }
         let inner = block.inner(area);
@@ -477,7 +477,11 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
         }
     }
 
-    let table_left = Table::new(rows_left, widths.clone()).block(block_left).header(header.clone()).row_highlight_style(table_style(app_state.is_left_active)).column_spacing(1);
+    let table_left = Table::new(rows_left, widths.clone())
+        .block(block_left)
+        .header(header.clone())
+        .row_highlight_style(table_style(app_state.active_side.is_left()))
+        .column_spacing(1);
     f.render_stateful_widget(table_left, chunks[0], &mut state_left_view);
 
     // Cache the separator string based on height
@@ -490,17 +494,17 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     f.render_widget(separator_vertical, chunks[1]);
 
     // Build only visible rows for right panel
-    let (rows_right, offset_right) = build_viewport_rows(app_state, false, viewport_height, &columns, field);
+    let (rows_right, offset_right) = build_viewport_rows(app_state, Side::Right, viewport_height, &columns, field);
     let mut state_right_view = TableState::default();
     state_right_view.select(app_state.right.state.selected().map(|s| s.saturating_sub(offset_right)));
 
-    let table_right = Table::new(rows_right, widths).block(block_right).header(header).row_highlight_style(table_style(!app_state.is_left_active)).column_spacing(1);
+    let table_right = Table::new(rows_right, widths).block(block_right).header(header).row_highlight_style(table_style(!app_state.active_side.is_left())).column_spacing(1);
     f.render_stateful_widget(table_right, chunks[2], &mut state_right_view);
 
     // Preview takes over the panel the cursor is not in.
     if let Some(preview) = &app_state.preview {
-        let (area, is_left) = if app_state.is_left_active { (chunks[2], false) } else { (chunks[0], true) };
-        render_preview(f, area, preview, is_left);
+        let area = if app_state.active_side.is_left() { chunks[2] } else { chunks[0] };
+        render_preview(f, area, preview, !app_state.active_side);
     }
 
     // Hand the real geometry to the mouse handlers.
@@ -513,11 +517,11 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 }
 
 /// Build only the rows visible in the viewport, returns (rows, start_offset)
-fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: &[Column], name_width: u16) -> (Vec<Row<'static>>, usize) {
-    let children = &app_state.panel(is_left).children;
-    let state = &app_state.panel(is_left).state;
-    let selected_set = &app_state.panel(is_left).selected;
-    let current_dir = &app_state.panel(is_left).dir;
+fn build_viewport_rows(app_state: &AppState, side: Side, viewport_height: usize, columns: &[Column], name_width: u16) -> (Vec<Row<'static>>, usize) {
+    let children = &app_state.panel(side).children;
+    let state = &app_state.panel(side).state;
+    let selected_set = &app_state.panel(side).selected;
+    let current_dir = &app_state.panel(side).dir;
     let selected = state.selected().unwrap_or(0);
     let total = children.len();
 
@@ -537,7 +541,7 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
     let end = (start + viewport_height).min(total);
 
     let rename_input = match &app_state.dialog {
-        Some(Dialog::Rename(input)) if app_state.is_left_active == is_left => Some(input),
+        Some(Dialog::Rename(input)) if app_state.active_side == side => Some(input),
         _ => None,
     };
     let is_renaming_current_side = rename_input.is_some();
@@ -551,7 +555,7 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
     // given up to a narrow panel - it shows the whole name, or Cargo.lock and
     // Cargo.toml would read the same.
     let has_ext_column = columns.contains(&Column::Ext);
-    let git = app_state.git_status(is_left);
+    let git = app_state.git_status(side);
 
     for (index, child) in children.iter().enumerate().take(end).skip(start) {
         let is_renaming_current_item = is_renaming_current_side && (index == selected);
@@ -660,8 +664,8 @@ fn cut_to_width(text: &str, room: usize) -> String {
         .collect()
 }
 
-fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::PreviewState, is_left: bool) {
-    let block = Block::default().borders(if is_left { Borders::LEFT } else { Borders::RIGHT }).border_style(style_border());
+fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::PreviewState, side: Side) {
+    let block = Block::default().borders(if side.is_left() { Borders::LEFT } else { Borders::RIGHT }).border_style(style_border());
     let inner = block.inner(area);
 
     clear(f, area);

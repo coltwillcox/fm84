@@ -1,4 +1,4 @@
-use super::AppState;
+use super::{AppState, Side};
 
 fn editor_with(name: &str, text: &str) -> (AppState, std::path::PathBuf) {
     let path = std::env::temp_dir().join(format!("fm84-{name}-{}.txt", std::process::id()));
@@ -332,8 +332,8 @@ fn saving_updates_the_size_the_panels_show() {
     app_state.options = crate::options::Options::default();
     app_state.left.dir = dir.clone();
     app_state.right.dir = dir.clone();
-    app_state.reload_panel(true, None);
-    app_state.reload_panel(false, None);
+    app_state.reload_panel(Side::Left, None);
+    app_state.reload_panel(Side::Right, None);
     let size = |children: &[super::Item]| children.iter().find(|item| item.name_full == "notes.txt").unwrap().size_bytes;
     assert_eq!(size(&app_state.left.children), 2);
 

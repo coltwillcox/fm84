@@ -65,8 +65,8 @@ impl AppState {
         // format is one of the things they are written in.
         self.cursor_detail = None;
         if row.affects_listing() {
-            self.reload_panel(true, None);
-            self.reload_panel(false, None);
+            self.reload_panel(Side::Left, None);
+            self.reload_panel(Side::Right, None);
         }
         if let Err(e) = self.options.save() {
             self.display_error(t!("Cannot save options: {e}", e));

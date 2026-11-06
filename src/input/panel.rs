@@ -7,11 +7,11 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
     // A panel still being read shows what it did before, and a key acting on
     // that would act on the wrong directory. Esc stops waiting for it, and Tab
     // goes over to the other panel, which works as ever.
-    let is_left = app_state.is_left_active;
-    if app_state.panel_busy(is_left) {
+    let side = app_state.active_side;
+    if app_state.panel_busy(side) {
         match key.code {
-            KeyCode::Esc => app_state.cancel_listing(is_left),
-            KeyCode::Tab => app_state.is_left_active = !is_left,
+            KeyCode::Esc => app_state.cancel_listing(side),
+            KeyCode::Tab => app_state.active_side = !side,
             _ => {}
         }
         return;
@@ -25,8 +25,8 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         }
         // Alt+F1/F2 choose a drive per panel. Ctrl is an alias, because
         // window managers commonly eat Alt+F1 and Alt+F2.
-        KeyCode::F(1) if drive_chord => app_state.open_drive_picker(true),
-        KeyCode::F(2) if drive_chord => app_state.open_drive_picker(false),
+        KeyCode::F(1) if drive_chord => app_state.open_drive_picker(Side::Left),
+        KeyCode::F(2) if drive_chord => app_state.open_drive_picker(Side::Right),
         KeyCode::F(1) => {
             app_state.help_scroll = 0;
             app_state.dialog = Some(Dialog::Help);
@@ -71,8 +71,8 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::Right if key.modifiers.contains(KeyModifiers::ALT) => app_state.travel(false),
         // Anywhere that has been, across the tabs, as Total Commander's.
         KeyCode::Down if key.modifiers.contains(KeyModifiers::ALT) => app_state.open_history(),
-        KeyCode::Left if control => app_state.open_in_panel(true),
-        KeyCode::Right if control => app_state.open_in_panel(false),
+        KeyCode::Left if control => app_state.open_in_panel(Side::Left),
+        KeyCode::Right if control => app_state.open_in_panel(Side::Right),
         // Space toggles the selection and moves on, working out the size of a
         // directory; Insert does the same without.
         KeyCode::Char(' ') => app_state.toggle_selection(),
@@ -86,7 +86,7 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::Char(c) if c.is_alphanumeric() || ".-_".contains(c) => app_state.search_add_char(c),
         KeyCode::Backspace if app_state.search_input.is_empty() => navigate_up_panel(app_state),
         KeyCode::Backspace => app_state.search_backspace(),
-        KeyCode::Tab => app_state.is_left_active = !app_state.is_left_active,
+        KeyCode::Tab => app_state.active_side = !app_state.active_side,
         KeyCode::Down if !app_state.search_input.is_empty() => app_state.jump_to_next_match(),
         KeyCode::Up if !app_state.search_input.is_empty() => app_state.jump_to_prev_match(),
         KeyCode::Down => move_cursor(app_state, |state, len| {
@@ -126,17 +126,17 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
 /// Move the active panel's cursor - not over one still being read, whose
 /// rows are about to be replaced.
 pub(super) fn move_cursor(app_state: &mut AppState, move_fn: impl Fn(&mut TableState, usize)) {
-    if app_state.panel_busy(app_state.is_left_active) {
+    if app_state.panel_busy(app_state.active_side) {
         return;
     }
-    let panel = app_state.panel_mut(app_state.is_left_active);
+    let panel = app_state.panel_mut(app_state.active_side);
     let (state, len) = (&mut panel.state, panel.children.len());
     move_fn(state, len);
 }
 
 fn navigate_up_panel(app_state: &mut AppState) {
-    let is_left = app_state.is_left_active;
-    let dir = &app_state.panel(is_left).dir;
+    let side = app_state.active_side;
+    let dir = &app_state.panel(side).dir;
 
     // Land on the directory we just came out of.
     let leaving = dir.file_name().map(std::ffi::OsStr::to_os_string);
@@ -144,12 +144,12 @@ fn navigate_up_panel(app_state: &mut AppState) {
         return;
     };
 
-    app_state.open_dir(is_left, parent, leaving.as_deref());
+    app_state.open_dir(side, parent, leaving.as_deref());
 }
 
 pub(super) fn enter_directory_panel(app_state: &mut AppState) {
-    let is_left = app_state.is_left_active;
-    let panel = app_state.panel(is_left);
+    let side = app_state.active_side;
+    let panel = app_state.panel(side);
     let (state, children, dir) = (&panel.state, &panel.children, &panel.dir);
 
     let Some(item) = state.selected().and_then(|index| children.get(index)).cloned() else {
@@ -163,7 +163,7 @@ pub(super) fn enter_directory_panel(app_state: &mut AppState) {
 
     if item.is_dir {
         let target = item.path_in(dir);
-        app_state.open_dir(is_left, target, None);
+        app_state.open_dir(side, target, None);
         return;
     }
 
@@ -176,9 +176,9 @@ pub(super) fn enter_directory_panel(app_state: &mut AppState) {
 /// inside an archive is opened from there, archive or not: archives within
 /// archives are not gone into.
 pub(super) fn open_file(app_state: &mut AppState, path: PathBuf) {
-    let is_left = app_state.is_left_active;
-    if app_state.panel_archive(is_left).is_none() && crate::archive::kind_of(&path).is_some() {
-        app_state.open_dir(is_left, path, None);
+    let side = app_state.active_side;
+    if app_state.panel_archive(side).is_none() && crate::archive::kind_of(&path).is_some() {
+        app_state.open_dir(side, path, None);
         return;
     }
     open_externally(app_state, path, false);
@@ -187,8 +187,8 @@ pub(super) fn open_file(app_state: &mut AppState, path: PathBuf) {
 /// Shift+Enter or Ctrl+O: the entry under the cursor, opened as the system
 /// opens it - what Enter did before it went into archives.
 pub(super) fn open_cursor_externally(app_state: &mut AppState) {
-    let is_left = app_state.is_left_active;
-    let panel = app_state.panel(is_left);
+    let side = app_state.active_side;
+    let panel = app_state.panel(side);
     let (state, children, dir) = (&panel.state, &panel.children, &panel.dir);
     let Some(item) = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()) else {
         return;
@@ -199,8 +199,8 @@ pub(super) fn open_cursor_externally(app_state: &mut AppState) {
 
 /// Alt+O: the chooser of programs for the entry under the cursor.
 pub(super) fn open_cursor_with(app_state: &mut AppState) {
-    let is_left = app_state.is_left_active;
-    let panel = app_state.panel(is_left);
+    let side = app_state.active_side;
+    let panel = app_state.panel(side);
     let (state, children, dir) = (&panel.state, &panel.children, &panel.dir);
     let Some(item) = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()) else {
         return;
@@ -213,7 +213,7 @@ pub(super) fn open_cursor_with(app_state: &mut AppState) {
 /// with. From inside an archive it is copied out first, and a directory
 /// there has nowhere on the disk to be opened from.
 fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
-    if app_state.panel_archive(app_state.is_left_active).is_some() {
+    if app_state.panel_archive(app_state.active_side).is_some() {
         if !is_dir {
             app_state.open_archive_entry(&path, false);
         }
@@ -225,7 +225,7 @@ fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
 /// What F5, F6 and F8 work on in the active panel: what is selected, or the
 /// entry under the cursor when nothing is. Never the parent entry.
 pub(super) fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
-    let panel = app_state.panel(app_state.is_left_active);
+    let panel = app_state.panel(app_state.active_side);
     let (children, selected, state, dir) = (&panel.children, &panel.selected, &panel.state, &panel.dir);
     let chosen: Vec<&crate::app::Item> = if selected.is_empty() {
         state.selected().and_then(|index| children.get(index)).into_iter().collect()
@@ -242,7 +242,7 @@ pub(super) fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
 pub(super) fn copy_names(app_state: &mut AppState, full: bool) {
     let mut items: Vec<PathBuf> = chosen_items(app_state).into_iter().map(|(path, _)| path).collect();
     if items.is_empty() {
-        items.push(app_state.panel_dir(app_state.is_left_active));
+        items.push(app_state.panel_dir(app_state.active_side));
     }
     let text = items
         .iter()
@@ -265,8 +265,8 @@ pub(super) fn copy_names(app_state: &mut AppState, full: bool) {
 
 fn handle_f3_view(app_state: &mut AppState) {
     // Get selected item from active panel
-    let state = &app_state.panel(app_state.is_left_active).state;
-    let children = &app_state.panel(app_state.is_left_active).children;
+    let state = &app_state.panel(app_state.active_side).state;
+    let children = &app_state.panel(app_state.active_side).children;
     let selected_item = state.selected().and_then(|index| children.get(index));
 
     if let Some(item) = selected_item {
@@ -276,12 +276,12 @@ fn handle_f3_view(app_state: &mut AppState) {
         }
 
         // Build file path
-        let parent_path = &app_state.panel(app_state.is_left_active).dir;
+        let parent_path = &app_state.panel(app_state.active_side).dir;
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_os);
 
         // Out of an archive first, into a scratch directory.
-        if app_state.panel_archive(app_state.is_left_active).is_some() {
+        if app_state.panel_archive(app_state.active_side).is_some() {
             app_state.open_archive_entry(&file_path, true);
             return;
         }
@@ -291,8 +291,8 @@ fn handle_f3_view(app_state: &mut AppState) {
 
 fn handle_f4_edit(app_state: &mut AppState) {
     // Get selected item from active panel
-    let state = &app_state.panel(app_state.is_left_active).state;
-    let children = &app_state.panel(app_state.is_left_active).children;
+    let state = &app_state.panel(app_state.active_side).state;
+    let children = &app_state.panel(app_state.active_side).children;
     let selected_item = state.selected().and_then(|index| children.get(index));
 
     if let Some(item) = selected_item {
@@ -302,12 +302,12 @@ fn handle_f4_edit(app_state: &mut AppState) {
         }
 
         // Build file path
-        let parent_path = &app_state.panel(app_state.is_left_active).dir;
+        let parent_path = &app_state.panel(app_state.active_side).dir;
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_os);
 
         // Nothing saved could go back into the archive. F3 shows it.
-        if app_state.refuse_in_archive(app_state.is_left_active) {
+        if app_state.refuse_in_archive(app_state.active_side) {
             return;
         }
         // An external editor, when F11 names one; otherwise the built-in.

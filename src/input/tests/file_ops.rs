@@ -17,9 +17,9 @@ fn compare_files_from_the_keys() {
     std::fs::write(two.join("a.txt"), "same\nright\nsame\nextra\n").unwrap();
     std::fs::write(two.join("copy.txt"), "same\nleft\nsame\n").unwrap();
     let mut app_state = AppState::new();
-    app_state.open_dir(false, two.clone(), Some("copy.txt".as_ref()));
-    app_state.is_left_active = true;
-    app_state.open_dir(true, one.clone(), Some("a.txt".as_ref()));
+    app_state.open_dir(Side::Right, two.clone(), Some("copy.txt".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, one.clone(), Some("a.txt".as_ref()));
     let compare = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::F(3), KeyModifiers::SHIFT));
     let sides = |app_state: &AppState| match &app_state.screen {
         Screen::Diff(state) => (state.left_path.clone(), state.right_path.clone()),
@@ -51,20 +51,20 @@ fn compare_files_from_the_keys() {
     press(&mut app_state, KeyCode::Esc);
 
     // From the right panel, the left file is still on the left.
-    app_state.is_left_active = false;
-    app_state.open_dir(false, two.clone(), Some("a.txt".as_ref()));
+    app_state.active_side = Side::Right;
+    app_state.open_dir(Side::Right, two.clone(), Some("a.txt".as_ref()));
     compare(&mut app_state);
     assert_eq!(sides(&app_state), (one.join("a.txt"), two.join("a.txt")));
     press(&mut app_state, KeyCode::Esc);
 
     // No namesake: the other panel's cursor, here a file the same.
-    app_state.open_dir(false, two.clone(), Some("copy.txt".as_ref()));
+    app_state.open_dir(Side::Right, two.clone(), Some("copy.txt".as_ref()));
     compare(&mut app_state);
     assert!(matches!(app_state.screen, Screen::Panels));
     assert_eq!(app_state.find_note.as_deref(), Some("The files are identical"));
 
     // Two selected in one panel.
-    app_state.is_left_active = true;
+    app_state.active_side = Side::Left;
     app_state.left.selected.insert("a.txt".into());
     app_state.left.selected.insert("b.txt".into());
     compare(&mut app_state);
@@ -73,7 +73,7 @@ fn compare_files_from_the_keys() {
     app_state.left.selected.clear();
 
     // A directory is not a file to compare.
-    app_state.open_dir(true, one.clone(), Some("sub".as_ref()));
+    app_state.open_dir(Side::Left, one.clone(), Some("sub".as_ref()));
     compare(&mut app_state);
     assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Put the cursor on a file")));
     let _ = std::fs::remove_dir_all(&dir);
@@ -94,9 +94,9 @@ fn symlinks_from_the_keys() {
         std::fs::write(src.join(name), name).unwrap();
     }
     let mut app_state = AppState::new();
-    app_state.open_dir(false, dst.clone(), None);
-    app_state.is_left_active = true;
-    app_state.open_dir(true, src.clone(), Some("a.txt".as_ref()));
+    app_state.open_dir(Side::Right, dst.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, src.clone(), Some("a.txt".as_ref()));
     let link = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::F(5), KeyModifiers::CONTROL | KeyModifiers::SHIFT));
     let typed = |app_state: &mut AppState| app_state.dialog_input().unwrap().text.clone();
 
@@ -121,7 +121,7 @@ fn symlinks_from_the_keys() {
     assert_eq!(std::fs::read_link(src.join("alias")).unwrap(), src.join("a.txt"));
 
     // A lone directory is named, not gone into.
-    app_state.open_dir(true, src.clone(), Some("sub".as_ref()));
+    app_state.open_dir(Side::Left, src.clone(), Some("sub".as_ref()));
     link(&mut app_state);
     assert_eq!(typed(&mut app_state), dst.join("sub").to_string_lossy());
     press(&mut app_state, KeyCode::Enter);
@@ -139,7 +139,7 @@ fn symlinks_from_the_keys() {
     // Esc leaves it be.
     app_state.error = None;
     app_state.left.selected.clear();
-    app_state.open_dir(true, src.clone(), Some("b.txt".as_ref()));
+    app_state.open_dir(Side::Left, src.clone(), Some("b.txt".as_ref()));
     link(&mut app_state);
     app_state.dialog_input().unwrap().set("never".to_string());
     press(&mut app_state, KeyCode::Esc);
@@ -172,9 +172,9 @@ fn tab_makes_a_hard_link_instead() {
         std::fs::write(src.join(name), name).unwrap();
     }
     let mut app_state = AppState::new();
-    app_state.open_dir(false, dst.clone(), None);
-    app_state.is_left_active = true;
-    app_state.open_dir(true, src.clone(), Some("a.txt".as_ref()));
+    app_state.open_dir(Side::Right, dst.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, src.clone(), Some("a.txt".as_ref()));
     let link = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::F(5), KeyModifiers::ALT));
     let hard = |app_state: &AppState| matches!(app_state.dialog, Some(Dialog::Symlink { hard: true, .. }));
     let inode = |path: &std::path::Path| std::fs::symlink_metadata(path).unwrap().ino();
@@ -198,7 +198,7 @@ fn tab_makes_a_hard_link_instead() {
     press(&mut app_state, KeyCode::Esc);
 
     // A directory among files: passed over and named.
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     app_state.left.selected.insert("b.txt".into());
     app_state.left.selected.insert("sub".into());
     link(&mut app_state);
@@ -237,8 +237,8 @@ fn attributes_change_from_the_keys() {
     }
     let mode = |name: &str| std::fs::metadata(dir.join(name)).unwrap().permissions().mode() & 0o7777;
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("a.txt".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("a.txt".as_ref()));
     let alt_a = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('a'), KeyModifiers::ALT));
     let fields = |app_state: &AppState| match &app_state.dialog {
         Some(Dialog::Attributes(form)) => form.fields.iter().map(|field| field.input.text.clone()).collect::<Vec<_>>(),
@@ -349,10 +349,10 @@ fn copy_and_move_go_where_the_destination_says() {
     std::fs::create_dir(left.join("sub")).unwrap();
 
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(false, right.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Right, right.clone(), None);
     let on_a = |app_state: &mut AppState| {
-        app_state.open_dir(true, left.clone(), Some("a.txt".as_ref()));
+        app_state.open_dir(Side::Left, left.clone(), Some("a.txt".as_ref()));
     };
     let finish = |app_state: &mut AppState| {
         let started = std::time::Instant::now();
@@ -457,7 +457,7 @@ fn copy_and_move_go_where_the_destination_says() {
     // A directory in the way of a file is refused, not copied into, when
     // the field is left as it opened.
     std::fs::create_dir(right.join("z.txt")).unwrap();
-    app_state.open_dir(true, left.clone(), Some("z.txt".as_ref()));
+    app_state.open_dir(Side::Left, left.clone(), Some("z.txt".as_ref()));
     press(&mut app_state, KeyCode::F(5));
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.error.as_deref().is_some_and(|error| error.contains("Cannot replace directory")), "{:?}", app_state.error);
@@ -470,11 +470,11 @@ fn copy_and_move_go_where_the_destination_says() {
         let text = app_state.dialog_input().unwrap().text.clone();
         std::path::Path::new(&text) == right && text.ends_with(std::path::MAIN_SEPARATOR)
     };
-    app_state.open_dir(true, left.clone(), Some("sub".as_ref()));
+    app_state.open_dir(Side::Left, left.clone(), Some("sub".as_ref()));
     press(&mut app_state, KeyCode::F(5));
     assert!(opened_on_directory(&mut app_state));
     press(&mut app_state, KeyCode::Esc);
-    app_state.open_dir(true, left.clone(), None);
+    app_state.open_dir(Side::Left, left.clone(), None);
     app_state.left.selected.extend(["dup.txt".into(), "z.txt".into()]);
     press(&mut app_state, KeyCode::F(5));
     assert!(opened_on_directory(&mut app_state));
@@ -498,9 +498,9 @@ fn a_copy_goes_where_the_other_panel_is_going() {
     }
     std::fs::write(dir.join("from").join("a.txt"), "").unwrap();
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.join("from"), Some("a.txt".as_ref()));
-    app_state.open_dir(false, dir.join("leaving"), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.join("from"), Some("a.txt".as_ref()));
+    app_state.open_dir(Side::Right, dir.join("leaving"), None);
     app_state.right.listing = Some(crate::app::PendingListing::going_to(dir.join("going")));
 
     press(&mut app_state, KeyCode::F(5));
@@ -536,8 +536,8 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     std::fs::write(dir.join("notes.txt"), "abc").unwrap();
     std::fs::write(dir.join("photos/a.jpg"), "a").unwrap();
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("notes.txt".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("notes.txt".as_ref()));
     let alt_h = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('h'), KeyModifiers::ALT));
     let finish = |app_state: &mut AppState| {
         let started = std::time::Instant::now();
@@ -658,9 +658,9 @@ fn user_menu_commands_get_every_name_whole() {
         std::fs::write(here.join(name), "").unwrap();
     }
     let mut app_state = AppState::new();
-    app_state.open_dir(false, other.clone(), None);
-    app_state.is_left_active = true;
-    app_state.open_dir(true, here.clone(), Some(awkward[0].as_ref()));
+    app_state.open_dir(Side::Right, other.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, here.clone(), Some(awkward[0].as_ref()));
     let menu = |command: &str| {
         Dialog::UserMenu(Box::new(crate::app::UserMenu {
             entries: vec![crate::options::MenuEntry {
@@ -732,8 +732,8 @@ fn alt_o_opens_a_file_with_the_program_picked() {
     std::fs::write(&file, "").unwrap();
     let out = dir.join("out");
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some(name.as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some(name.as_ref()));
     let alt_o = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('o'), KeyModifiers::ALT));
 
     // The chooser ends with the system's own choice.
@@ -808,8 +808,8 @@ fn f2_on_a_selection_renames_every_name_by_a_pattern() {
         std::fs::write(dir.join(name), body).unwrap();
     }
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("2.txt".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("2.txt".as_ref()));
     let select = |app_state: &mut AppState, names: &[&str]| {
         app_state.left.selected = names.iter().map(|name| std::ffi::OsString::from(*name)).collect();
     };
@@ -914,9 +914,9 @@ fn alt_s_synchronizes_the_panels() {
         confirm_delete: true,
         ..crate::options::Options::default()
     };
-    app_state.open_dir(false, right.clone(), None);
-    app_state.is_left_active = true;
-    app_state.open_dir(true, left.clone(), None);
+    app_state.open_dir(Side::Right, right.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, left.clone(), None);
     let alt_s = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('s'), KeyModifiers::ALT));
     let wait = |app_state: &mut AppState| {
         let started = std::time::Instant::now();
@@ -999,7 +999,7 @@ fn alt_s_synchronizes_the_panels() {
     press(&mut app_state, KeyCode::Esc);
 
     // Not with one directory inside the other.
-    app_state.open_dir(false, left.join("sub"), None);
+    app_state.open_dir(Side::Right, left.join("sub"), None);
     alt_s(&mut app_state);
     assert!(app_state.dialog.is_none() && app_state.error.as_deref().is_some_and(|error| error.contains("inside")));
     // Nor when it is only through a link that it is.
@@ -1007,7 +1007,7 @@ fn alt_s_synchronizes_the_panels() {
     {
         app_state.error = None;
         std::os::unix::fs::symlink(left.join("sub"), root.join("link")).unwrap();
-        app_state.open_dir(false, root.join("link"), None);
+        app_state.open_dir(Side::Right, root.join("link"), None);
         alt_s(&mut app_state);
         assert!(app_state.dialog.is_none() && app_state.error.as_deref().is_some_and(|error| error.contains("inside")));
     }

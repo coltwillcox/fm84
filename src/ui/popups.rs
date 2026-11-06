@@ -859,7 +859,7 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
     let dated = width >= 2 * (9 + 1 + 16) + 7 + 16;
     let side_width = if dated { 9 + 1 + 16 } else { 9 };
     let path_width = width.saturating_sub(2 * side_width + 7);
-    let side = |side: Option<crate::sync::Side>| match side {
+    let side = |side: Option<crate::sync::Entry>| match side {
         None => format!("{:side_width$}", ""),
         Some(side) => {
             let size = if side.is_dir { "<DIR>".to_string() } else { crate::utils::format_size(side.size) };

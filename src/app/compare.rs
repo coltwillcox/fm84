@@ -92,7 +92,7 @@ impl AppState {
     /// is replaced, ready for F5 to copy across. Directories both have are
     /// not gone into. What the status bar says is how many differ.
     pub fn compare_dirs(&mut self) {
-        if self.panel_busy(true) || self.panel_busy(false) {
+        if self.panel_busy(Side::Left) || self.panel_busy(Side::Right) {
             return;
         }
         if self.left.dir == self.right.dir {

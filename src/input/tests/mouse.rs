@@ -45,8 +45,8 @@ fn a_click_on_the_key_bar_is_the_key() {
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("a.txt"), "text").unwrap();
-    app_state.open_dir(true, dir.clone(), Some("a.txt".as_ref()));
-    app_state.is_left_active = true;
+    app_state.open_dir(Side::Left, dir.clone(), Some("a.txt".as_ref()));
+    app_state.active_side = Side::Left;
     press(&mut app_state, KeyCode::F(3));
     assert!(app_state.is_viewing());
     let keys = |terminal: &mut ratatui::Terminal<ratatui::backend::TestBackend>, app_state: &mut AppState| {
@@ -74,7 +74,7 @@ fn a_click_on_the_key_bar_is_the_key() {
 fn a_click_on_a_path_edits_it() {
     use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
+    app_state.active_side = Side::Left;
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let bar = app_state.drawn.path_bar_area;
@@ -96,7 +96,7 @@ fn a_click_on_a_path_edits_it() {
     };
 
     click(&mut app_state, bar.x + bar.width - 10);
-    assert!(!app_state.is_left_active);
+    assert_eq!(app_state.active_side, Side::Right);
     assert!(going_to(&app_state).unwrap().starts_with(&*app_state.right.dir.to_string_lossy()));
     // Typed into, a click on the same path leaves it be.
     press(&mut app_state, KeyCode::Char('x'));
@@ -105,7 +105,7 @@ fn a_click_on_a_path_edits_it() {
     assert_eq!(going_to(&app_state), typed);
     // The other one starts again, there.
     click(&mut app_state, bar.x + 5);
-    assert!(app_state.is_left_active);
+    assert_eq!(app_state.active_side, Side::Left);
     assert!(going_to(&app_state).unwrap().starts_with(&*app_state.left.dir.to_string_lossy()));
 
     // A click anywhere else puts it away and is a click there too: on a
@@ -113,7 +113,7 @@ fn a_click_on_a_path_edits_it() {
     let right = app_state.drawn.table_area_right;
     click_at(&mut app_state, right.x + 3, right.y + 1);
     assert!(going_to(&app_state).is_none());
-    assert!(!app_state.is_left_active);
+    assert_eq!(app_state.active_side, Side::Right);
     // As does one on the top bar, which has nothing of its own there.
     click(&mut app_state, bar.x + bar.width - 10);
     click_at(&mut app_state, bar.x + 1, 0);
@@ -286,7 +286,7 @@ fn a_click_on_the_branch_lists_branches_to_switch_to() {
 
     let mut app_state = AppState::new();
     app_state.options = crate::options::Options::default();
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(140, 30)).unwrap();
     let mut draw = |app_state: &mut AppState| crate::ui::render_ui(&mut terminal, app_state);
     let click = |app_state: &mut AppState, cell: ratatui::layout::Rect| {
@@ -411,7 +411,7 @@ fn a_double_click_enters_a_directory() {
     std::fs::create_dir_all(dir.join("inner")).unwrap();
     std::fs::create_dir_all(dir.join("other")).unwrap();
     let mut app_state = AppState::new();
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(160, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let row_of = |app_state: &AppState, name: &str| {

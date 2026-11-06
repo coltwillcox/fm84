@@ -11,8 +11,8 @@ fn a_key_reaches_only_what_is_on_top() {
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("a.txt"), "text").unwrap();
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("a.txt".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("a.txt".as_ref()));
 
     // Space behind an error selects nothing, and Enter puts the error away.
     app_state.display_error("in the way".to_string());
@@ -115,8 +115,8 @@ fn bookmarks_are_kept_moved_forgotten_and_gone_to() {
     std::fs::create_dir_all(dir.join("one")).unwrap();
     std::fs::create_dir_all(dir.join("two")).unwrap();
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.join("one"), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.join("one"), None);
     // Opened on an empty list rather than the bookmarks of whoever runs this.
     app_state.dialog = Some(Dialog::Bookmarks { list: Vec::new(), index: 0 });
     let list = |app_state: &AppState| match &app_state.dialog {
@@ -128,7 +128,7 @@ fn bookmarks_are_kept_moved_forgotten_and_gone_to() {
     press(&mut app_state, KeyCode::Char('a'));
     assert_eq!(list(&app_state), (vec![dir.join("one")], 0));
     app_state.dialog = None;
-    app_state.open_dir(true, dir.join("two"), None);
+    app_state.open_dir(Side::Left, dir.join("two"), None);
     app_state.dialog = Some(Dialog::Bookmarks { list: vec![dir.join("one")], index: 0 });
     press(&mut app_state, KeyCode::Insert);
     assert_eq!(list(&app_state), (vec![dir.join("one"), dir.join("two")], 1));
@@ -179,8 +179,8 @@ fn find_files_finds_and_goes_there() {
     std::fs::write(dir.join("top.txt"), "needle").unwrap();
 
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let alt_f7 = KeyEvent::new(KeyCode::F(7), KeyModifiers::ALT);
     handle_key(&mut app_state, alt_f7);
     assert_eq!(app_state.dialog_input().unwrap().text, "*", "everything, the first time");
@@ -235,8 +235,8 @@ fn find_files_filters_and_feeds_the_panel() {
     std::fs::write(dir.join("notes.txt"), "fn in prose\n").unwrap();
 
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let alt_f7 = KeyEvent::new(KeyCode::F(7), KeyModifiers::ALT);
     let form = |app_state: &mut AppState, rows: [&str; 4], regex: bool| {
         handle_key(app_state, alt_f7);
@@ -296,7 +296,7 @@ fn find_files_filters_and_feeds_the_panel() {
 
     // One deleted since is gone from the list at the reread.
     std::fs::remove_file(dir.join("src").join("big.rs")).unwrap();
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     assert_eq!(app_state.left.children.iter().filter(|item| !item.is_parent()).count(), 2);
     assert!(app_state.left.flat.as_ref().is_some_and(|flat| flat.feed.is_some()), "a reread keeps it");
 

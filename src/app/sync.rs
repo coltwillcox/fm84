@@ -115,14 +115,14 @@ impl AppState {
     /// inside an archive, which cannot be written to, nor with one directory
     /// inside the other, where copying across would copy into itself.
     pub fn open_sync(&mut self) {
-        if self.panel_busy(true) || self.panel_busy(false) {
+        if self.panel_busy(Side::Left) || self.panel_busy(Side::Right) {
             return;
         }
-        if self.panel_archive(true).is_some() || self.panel_archive(false).is_some() {
+        if self.panel_archive(Side::Left).is_some() || self.panel_archive(Side::Right).is_some() {
             self.display_error(crate::app::read_only().to_string());
             return;
         }
-        let (left, right) = (self.panel_dir(true), self.panel_dir(false));
+        let (left, right) = (self.panel_dir(Side::Left), self.panel_dir(Side::Right));
         // As the directories really are: one reached through a link may be
         // inside the other all the same.
         let real = |dir: &Path| dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());

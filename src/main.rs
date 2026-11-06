@@ -25,7 +25,7 @@ mod ui;
 mod utils;
 mod viewer;
 
-use app::AppState;
+use app::{AppState, Side};
 use color_eyre::Result;
 use crossterm::{
     cursor::{SetCursorStyle, Show},
@@ -225,8 +225,8 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     }
     app_state.show_preview = app_state.options.preview_on_start;
 
-    app_state.reload_panel(true, None);
-    app_state.reload_panel(false, None);
+    app_state.reload_panel(Side::Left, None);
+    app_state.reload_panel(Side::Right, None);
 
     loop {
         // Both before the draw, so the frame shows the newest it could: a cursor
@@ -268,7 +268,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     // starting point.
     if app_state.options.remember_dirs {
         let panel = |(tabs, active)| options::PanelSession { tabs, active };
-        let _ = options::save_session(&panel(app_state.tab_dirs(true)), &panel(app_state.tab_dirs(false)));
+        let _ = options::save_session(&panel(app_state.tab_dirs(Side::Left)), &panel(app_state.tab_dirs(Side::Right)));
     }
 
     crate::archive::clean_scratch();
@@ -279,10 +279,10 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     {
         // Inside an archive, which a shell cannot cd into: the directory the
         // archive is in.
-        let dir = if app_state.panel_archive(app_state.is_left_active).is_some() {
-            app_state.panel_real_dir(app_state.is_left_active)
+        let dir = if app_state.panel_archive(app_state.active_side).is_some() {
+            app_state.panel_real_dir(app_state.active_side)
         } else {
-            app_state.panel(app_state.is_left_active).dir.clone()
+            app_state.panel(app_state.active_side).dir.clone()
         };
         write_chosen_dir(&file, &dir)?;
     }
@@ -327,8 +327,8 @@ fn run_user_command(terminal: &mut Tui, app_state: &mut AppState, mut command: a
     if let Err(e) = result {
         app_state.display_error(t!("Cannot run {label}: {e}", label = command.label, e));
     }
-    app_state.reload_panel(true, None);
-    app_state.reload_panel(false, None);
+    app_state.reload_panel(Side::Left, None);
+    app_state.reload_panel(Side::Right, None);
     Ok(())
 }
 
@@ -353,7 +353,7 @@ fn run_external_editor(terminal: &mut Tui, app_state: &mut AppState, path: &std:
     }
     // The file has likely changed size, and the editor may have left a backup
     // or swap file beside it.
-    app_state.reload_panel(true, None);
-    app_state.reload_panel(false, None);
+    app_state.reload_panel(Side::Left, None);
+    app_state.reload_panel(Side::Right, None);
     Ok(())
 }

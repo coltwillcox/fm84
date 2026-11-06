@@ -24,12 +24,12 @@ impl AppState {
     /// run on a thread and waited for only so long, as a listing is: on a
     /// repository on a mount that has stopped answering, the click says so
     /// rather than hold up the screen.
-    pub fn open_branches(&mut self, is_left: bool) {
+    pub fn open_branches(&mut self, side: Side) {
         if self.workers.branch_switch.is_some() {
             return;
         }
         // Inside an archive, the repository the archive is in.
-        let dir = self.panel_real_dir(is_left);
+        let dir = self.panel_real_dir(side);
         let (sender, answer) = mpsc::channel();
         let worker_dir = dir.clone();
         std::thread::spawn(move || {
@@ -115,8 +115,8 @@ impl AppState {
     /// in the repository, and a switch changes its files as well as its
     /// branch.
     fn finish_switch(&mut self, result: Result<(), String>) {
-        self.reload_panel(true, None);
-        self.reload_panel(false, None);
+        self.reload_panel(Side::Left, None);
+        self.reload_panel(Side::Right, None);
         if let Err(e) = result {
             self.display_error(e);
         }

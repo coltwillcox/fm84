@@ -142,7 +142,7 @@ pub enum Dialog {
     /// what the save was on its way to, done once it is answered with a save.
     DiskChanged { then: AfterSave, opened: Option<DiskStamp>, now: Option<DiskStamp> },
     /// Alt+F1 or Alt+F2: which panel is choosing, and the mount highlighted.
-    DrivePicker { is_left: bool, index: usize },
+    DrivePicker { side: Side, index: usize },
     /// The line at the foot of the screen, asking for something to find, a
     /// line to go to or a pattern to select by - or, for Ctrl+L, the panel's
     /// path, edited where it is shown.
@@ -207,7 +207,7 @@ pub struct AppState {
     pub clipboard: String,
     /// Mounts offered in the drive strips, kept current by a watcher thread.
     pub mounts: Vec<Mount>,
-    pub is_left_active: bool,
+    pub active_side: Side,
     /// What each panel is showing, everything that goes with it to the other
     /// side when Ctrl+U swaps them.
     pub left: Panel,
@@ -292,6 +292,40 @@ impl Item {
     /// called `...` is `..`.
     pub fn is_parent(&self) -> bool {
         self.name_os == ".."
+    }
+}
+
+/// Which of the two panels.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Side {
+    Left,
+    Right,
+}
+
+impl Side {
+    /// Both, left first.
+    pub const BOTH: [Side; 2] = [Side::Left, Side::Right];
+
+    /// The left when `left` holds, the right otherwise: for a side worked out
+    /// from where something is, such as a click.
+    pub fn left_if(left: bool) -> Side {
+        if left { Side::Left } else { Side::Right }
+    }
+
+    pub fn is_left(self) -> bool {
+        self == Side::Left
+    }
+}
+
+/// `!side` is the other panel.
+impl std::ops::Not for Side {
+    type Output = Side;
+
+    fn not(self) -> Side {
+        match self {
+            Side::Left => Side::Right,
+            Side::Right => Side::Left,
+        }
     }
 }
 
@@ -438,12 +472,18 @@ pub struct Recall {
 
 impl AppState {
     /// The left panel, or the right.
-    pub fn panel(&self, is_left: bool) -> &Panel {
-        if is_left { &self.left } else { &self.right }
+    pub fn panel(&self, side: Side) -> &Panel {
+        match side {
+            Side::Left => &self.left,
+            Side::Right => &self.right,
+        }
     }
 
-    pub fn panel_mut(&mut self, is_left: bool) -> &mut Panel {
-        if is_left { &mut self.left } else { &mut self.right }
+    pub fn panel_mut(&mut self, side: Side) -> &mut Panel {
+        match side {
+            Side::Left => &mut self.left,
+            Side::Right => &mut self.right,
+        }
     }
 
     pub fn new() -> Self {
@@ -473,7 +513,7 @@ impl AppState {
             preview: None,
             clipboard: String::new(),
             mounts: Vec::new(),
-            is_left_active: true,
+            active_side: Side::Left,
             left: Panel {
                 dir: dir_root.clone(),
                 state: state_left,

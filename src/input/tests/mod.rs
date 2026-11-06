@@ -1,5 +1,5 @@
 use super::{handle_key, request_quit};
-use crate::app::{AppState, Dialog, FindFiles, PromptKind, Screen};
+use crate::app::{AppState, Dialog, FindFiles, PromptKind, Screen, Side};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 mod archives;

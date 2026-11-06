@@ -49,8 +49,8 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     // away, as one off the name being renamed does, and then goes on to be
     // the click it was.
     if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::GoTo, _))) {
-        let on_left = column < app_state.drawn.table_area_right.x;
-        if !app_state.drawn.path_bar_area.contains(Position::new(column, row)) || on_left != app_state.is_left_active {
+        let on = Side::left_if(column < app_state.drawn.table_area_right.x);
+        if !app_state.drawn.path_bar_area.contains(Position::new(column, row)) || on != app_state.active_side {
             app_state.dialog = None;
         }
     }
@@ -86,8 +86,8 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     match mouse_event.kind {
         // A middle click closes the tab under it, as in a browser.
         MouseEventKind::Down(MouseButton::Middle) if !viewing && !editing => {
-            if let Some((is_left, StripHit::Item(index))) = app_state.tab_at(column, row) {
-                app_state.close_tab(is_left, index);
+            if let Some((side, StripHit::Item(index))) = app_state.tab_at(column, row) {
+                app_state.close_tab(side, index);
             }
         }
         // The left button only. The right one has nothing to offer yet, and
@@ -125,11 +125,11 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
                 if down { app_state.viewer_scroll_down() } else { app_state.viewer_scroll_up() }
             } else if editing {
                 if down { app_state.editor_scroll_down() } else { app_state.editor_scroll_up() }
-            } else if let Some(is_left) = app_state.drive_strip_at(column, row) {
+            } else if let Some(side) = app_state.drive_strip_at(column, row) {
                 // Over a drive or tab strip, the wheel moves it along.
-                app_state.scroll_drive_strip(is_left, down);
-            } else if let Some(is_left) = app_state.tab_strip_at(column, row) {
-                app_state.scroll_tab_strip(is_left, down);
+                app_state.scroll_drive_strip(side, down);
+            } else if let Some(side) = app_state.tab_strip_at(column, row) {
+                app_state.scroll_tab_strip(side, down);
             } else if down {
                 move_cursor(app_state, |state, len| {
                     state.select(state.selected().map_or(Some(0), |i| Some((i + 1).min(len.saturating_sub(1)))));
@@ -146,7 +146,7 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
             } else if editing {
                 app_state.editor_scroll_left();
             } else {
-                app_state.is_left_active = true;
+                app_state.active_side = Side::Left;
             }
         }
         MouseEventKind::ScrollRight => {
@@ -155,7 +155,7 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
             } else if editing {
                 app_state.editor_scroll_right();
             } else {
-                app_state.is_left_active = false;
+                app_state.active_side = Side::Right;
             }
         }
         _ => {}
@@ -217,29 +217,29 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // Alt+F1 or Alt+F2. Checked before the panels, since the strip sits above
     // them and a click there is never a click on a file.
     // The arrows at its ends move it along when not every drive fits.
-    if let Some((is_left, hit)) = app_state.drive_at(column, row) {
+    if let Some((side, hit)) = app_state.drive_at(column, row) {
         match hit {
             StripHit::Item(index) => {
                 if let Some(path) = app_state.mounts.get(index).map(|mount| mount.path.clone()) {
-                    app_state.is_left_active = is_left;
-                    app_state.open_dir(is_left, path, None);
+                    app_state.active_side = side;
+                    app_state.open_dir(side, path, None);
                 }
             }
-            StripHit::Back => app_state.scroll_drive_strip(is_left, false),
-            StripHit::Forward => app_state.scroll_drive_strip(is_left, true),
+            StripHit::Back => app_state.scroll_drive_strip(side, false),
+            StripHit::Forward => app_state.scroll_drive_strip(side, true),
         }
         return;
     }
 
     // A tab shows it in that panel, which becomes the active one.
-    if let Some((is_left, hit)) = app_state.tab_at(column, row) {
+    if let Some((side, hit)) = app_state.tab_at(column, row) {
         match hit {
             StripHit::Item(index) => {
-                app_state.is_left_active = is_left;
-                app_state.select_tab(is_left, index);
+                app_state.active_side = side;
+                app_state.select_tab(side, index);
             }
-            StripHit::Back => app_state.scroll_tab_strip(is_left, false),
-            StripHit::Forward => app_state.scroll_tab_strip(is_left, true),
+            StripHit::Back => app_state.scroll_tab_strip(side, false),
+            StripHit::Forward => app_state.scroll_tab_strip(side, true),
         }
         return;
     }
@@ -247,10 +247,10 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // A panel's git branch, after its path, lists the repository's branches
     // to change to; the panel becomes the active one. Checked before the
     // path, which the branch is drawn along with.
-    if let Some(is_left) = [true, false].into_iter().find(|&is_left| app_state.drawn.branch_hits[usize::from(!is_left)].is_some_and(|cell| cell.contains(Position::new(column, row)))) {
-        if app_state.workers.job.is_none() && !app_state.panel_busy(is_left) {
-            app_state.is_left_active = is_left;
-            app_state.open_branches(is_left);
+    if let Some((side, _)) = Side::BOTH.into_iter().zip(app_state.drawn.branch_hits).find(|(_, cell)| cell.is_some_and(|cell| cell.contains(Position::new(column, row)))) {
+        if app_state.workers.job.is_none() && !app_state.panel_busy(side) {
+            app_state.active_side = side;
+            app_state.open_branches(side);
         }
         return;
     }
@@ -259,10 +259,10 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // edits it; the panel becomes the active one. The split between the two
     // is where the right panel starts.
     if app_state.drawn.path_bar_area.contains(Position::new(column, row)) {
-        let is_left = column < app_state.drawn.table_area_right.x;
+        let side = Side::left_if(column < app_state.drawn.table_area_right.x);
         let editing = matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::GoTo, _)));
-        if app_state.workers.job.is_none() && !app_state.panel_busy(is_left) && !(editing && is_left == app_state.is_left_active) {
-            app_state.is_left_active = is_left;
+        if app_state.workers.job.is_none() && !app_state.panel_busy(side) && !(editing && side == app_state.active_side) {
+            app_state.active_side = side;
             app_state.open_go_to();
         }
         return;
@@ -276,15 +276,15 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // Hit-test the panels the last frame actually drew, rather than deriving
     // their position from the layout constants a second time.
     let position = Position::new(column, row);
-    let clicked_left = app_state.drawn.table_area_left.contains(position);
-    if !clicked_left && !app_state.drawn.table_area_right.contains(position) {
+    let clicked = Side::left_if(app_state.drawn.table_area_left.contains(position));
+    if clicked == Side::Right && !app_state.drawn.table_area_right.contains(position) {
         return;
     }
-    let area = if clicked_left { app_state.drawn.table_area_left } else { app_state.drawn.table_area_right };
+    let area = if clicked.is_left() { app_state.drawn.table_area_left } else { app_state.drawn.table_area_right };
     // A click on a panel still being read makes it the active one, and does
     // nothing to rows about to be replaced.
-    if app_state.panel_busy(clicked_left) {
-        app_state.is_left_active = clicked_left;
+    if app_state.panel_busy(clicked) {
+        app_state.active_side = clicked;
         return;
     }
 
@@ -298,31 +298,31 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     }
     let clicked_table_row = (row - area.y - 1) as usize;
 
-    app_state.is_left_active = clicked_left;
+    app_state.active_side = clicked;
 
-    let children = &app_state.panel(clicked_left).children;
+    let children = &app_state.panel(clicked).children;
     let total = children.len();
     if total == 0 {
         return;
     }
 
     // The offset the panel was rendered with, not a second guess at it.
-    let start = app_state.panel(clicked_left).viewport_start;
+    let start = app_state.panel(clicked).viewport_start;
     let actual_index = start + clicked_table_row;
 
     // Select the row if within bounds
     if actual_index < total {
-        let state = &mut app_state.panel_mut(clicked_left).state;
+        let state = &mut app_state.panel_mut(clicked).state;
         state.select(Some(actual_index));
 
         // Double-click on directory: enter it
         if is_double_click {
-            let children = &app_state.panel(clicked_left).children;
+            let children = &app_state.panel(clicked).children;
             if actual_index < children.len() {
                 if children[actual_index].is_dir {
                     enter_directory_panel(app_state);
                 } else {
-                    let dir = &app_state.panel(clicked_left).dir;
+                    let dir = &app_state.panel(clicked).dir;
                     let file_path = children[actual_index].path_in(dir);
                     open_file(app_state, file_path);
                 }

@@ -1,7 +1,7 @@
 //! Drawing: the screen laid out from top to bottom, the styles everything is
 //! drawn in, and the cursor placed once a frame is done.
 
-use crate::app::{AppState, AttributeKind, AttributesForm, BranchList, Dialog, FindFiles, PromptKind, Screen, TextInput, TransferKind};
+use crate::app::{AppState, AttributeKind, AttributesForm, BranchList, Dialog, FindFiles, PromptKind, Screen, Side, TextInput, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
 use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options, ScrollBarStyle, SortKey};
@@ -260,15 +260,15 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::DiskChanged { opened, now, .. }) => render_disk_changed_popup(f, area, app_state, *opened, *now),
             Some(Dialog::FindFiles(find)) => match find.as_ref() {
                 FindFiles::Asking(form) => {
-                    let start = &app_state.panel(app_state.is_left_active).dir;
+                    let start = &app_state.panel(app_state.active_side).dir;
                     render_find_files_form(f, area, start, form);
                 }
                 FindFiles::Found(search) => find_files_page = Some(render_find_files_results(f, area, search)),
             },
             Some(Dialog::Attributes(form)) => attribute_rows = render_attributes_popup(f, area, form),
             Some(Dialog::Branches(list)) => branch_rows = render_branches_popup(f, area, list),
-            Some(Dialog::Bookmarks { list, index }) => render_bookmarks_popup(f, area, list, *index, &app_state.panel_dir(app_state.is_left_active)),
-            Some(Dialog::History(list)) => render_history_popup(f, area, list, &app_state.panel_dir(app_state.is_left_active)),
+            Some(Dialog::Bookmarks { list, index }) => render_bookmarks_popup(f, area, list, *index, &app_state.panel_dir(app_state.active_side)),
+            Some(Dialog::History(list)) => render_history_popup(f, area, list, &app_state.panel_dir(app_state.active_side)),
             Some(Dialog::UserMenu(menu)) => render_user_menu_popup(f, area, menu),
             Some(Dialog::OpenWith(menu)) => render_open_with_popup(f, area, menu),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}

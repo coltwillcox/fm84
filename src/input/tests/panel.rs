@@ -13,8 +13,8 @@ fn copy_paths_and_names_from_a_panel() {
     std::fs::write(dir.join("b.txt"), "").unwrap();
     let mut app_state = AppState::new();
     app_state.options = crate::options::Options::default();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("b.txt".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("b.txt".as_ref()));
     let chord = |app_state: &mut AppState, modifiers| handle_key(app_state, KeyEvent::new(KeyCode::Char('c'), modifiers));
 
     chord(&mut app_state, KeyModifiers::CONTROL);
@@ -52,17 +52,17 @@ fn swap_the_panels_and_send_the_other_one_here() {
     std::fs::write(dir.join("one").join("a.txt"), "").unwrap();
     std::fs::write(dir.join("one").join("b.txt"), "").unwrap();
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.join("one"), Some("b.txt".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.join("one"), Some("b.txt".as_ref()));
     app_state.left.selected.insert("a.txt".into());
-    app_state.open_dir(false, dir.join("two"), None);
-    app_state.is_left_active = false;
+    app_state.open_dir(Side::Right, dir.join("two"), None);
+    app_state.active_side = Side::Right;
     app_state.new_tab();
-    app_state.open_dir(false, dir.join("three"), None);
-    app_state.is_left_active = true;
+    app_state.open_dir(Side::Right, dir.join("three"), None);
+    app_state.active_side = Side::Left;
     let chord = |app_state: &mut AppState, c, modifiers| handle_key(app_state, KeyEvent::new(KeyCode::Char(c), modifiers));
-    let cursor = |app_state: &AppState, is_left: bool| {
-        let panel = app_state.panel(is_left);
+    let cursor = |app_state: &AppState, side: Side| {
+        let panel = app_state.panel(side);
         let (children, state) = (&panel.children, &panel.state);
         children[state.selected().unwrap()].name_full.clone()
     };
@@ -70,17 +70,17 @@ fn swap_the_panels_and_send_the_other_one_here() {
     chord(&mut app_state, 'u', KeyModifiers::CONTROL);
     assert_eq!((app_state.left.dir.clone(), app_state.right.dir.clone()), (dir.join("three"), dir.join("one")));
     assert_eq!((app_state.left.tabs.list.len(), app_state.left.tabs.active, app_state.right.tabs.list.len()), (2, 1, 1));
-    assert!(!app_state.is_left_active);
-    assert_eq!(cursor(&app_state, false), "b.txt");
+    assert_eq!(app_state.active_side, Side::Right);
+    assert_eq!(cursor(&app_state, Side::Right), "b.txt");
     assert!(app_state.right.selected.contains(std::ffi::OsStr::new("a.txt")) && app_state.left.selected.is_empty());
     // The other tab went across too, as it was.
-    app_state.select_tab(true, 0);
+    app_state.select_tab(Side::Left, 0);
     assert_eq!(app_state.left.dir, dir.join("two"));
 
     chord(&mut app_state, 'i', KeyModifiers::ALT);
     assert_eq!(app_state.left.dir, dir.join("one"));
-    assert_eq!(cursor(&app_state, true), "b.txt");
-    assert!(!app_state.is_left_active);
+    assert_eq!(cursor(&app_state, Side::Left), "b.txt");
+    assert_eq!(app_state.active_side, Side::Right);
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -98,25 +98,25 @@ fn swapped_panels_still_see_changes() {
     // Watchers that look every few milliseconds, so a change is seen
     // inside the test.
     app_state.workers.watch_interval = std::time::Duration::from_millis(5);
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.join("one"), None);
-    app_state.open_dir(false, dir.join("two"), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.join("one"), None);
+    app_state.open_dir(Side::Right, dir.join("two"), None);
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL));
     assert_eq!((app_state.left.dir.clone(), app_state.right.dir.clone()), (dir.join("two"), dir.join("one")));
 
     std::fs::write(dir.join("one").join("new.txt"), "").unwrap();
     std::fs::write(dir.join("two").join("new.txt"), "").unwrap();
-    let shows = |app_state: &AppState, is_left: bool| app_state.panel(is_left).children.iter().any(|item| item.name_os == "new.txt");
+    let shows = |app_state: &AppState, side: Side| app_state.panel(side).children.iter().any(|item| item.name_os == "new.txt");
     for _ in 0..200 {
-        if shows(&app_state, true) && shows(&app_state, false) {
+        if shows(&app_state, Side::Left) && shows(&app_state, Side::Right) {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_watchers();
         app_state.refresh_stale_panels();
     }
-    assert!(shows(&app_state, true), "the left panel missed its change");
-    assert!(shows(&app_state, false), "the right panel missed its change");
+    assert!(shows(&app_state, Side::Left), "the left panel missed its change");
+    assert!(shows(&app_state, Side::Right), "the right panel missed its change");
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -134,8 +134,8 @@ fn sort_from_the_keys_and_the_headings() {
     std::fs::write(dir.join("c.md"), "mid size").unwrap();
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("b.rs".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("b.rs".as_ref()));
     let names = |app_state: &AppState| app_state.left.children.iter().skip(1).map(|item| item.name_full.clone()).collect::<Vec<_>>();
     let control = |app_state: &mut AppState, n| handle_key(app_state, KeyEvent::new(KeyCode::F(n), KeyModifiers::CONTROL));
 
@@ -182,8 +182,8 @@ fn go_to_a_path_and_back_and_forward() {
     std::fs::create_dir_all(dir.join("sub/deeper")).unwrap();
     std::fs::write(dir.join("a.txt"), "text").unwrap();
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("sub".as_ref()));
     let alt = |app_state: &mut AppState, code: KeyCode| handle_key(app_state, KeyEvent::new(code, KeyModifiers::ALT));
     let ctrl_l = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL));
     let cursor = |app_state: &AppState| {
@@ -271,8 +271,8 @@ fn alt_shift_enter_sizes_every_directory() {
     for modifiers in [KeyModifiers::ALT | KeyModifiers::SHIFT, KeyModifiers::ALT] {
         let mut app_state = AppState::new();
         app_state.options = crate::options::Options::default();
-        app_state.is_left_active = true;
-        app_state.open_dir(true, dir.clone(), None);
+        app_state.active_side = Side::Left;
+        app_state.open_dir(Side::Left, dir.clone(), None);
         handle_key(&mut app_state, KeyEvent::new(KeyCode::Enter, modifiers));
         assert_eq!(app_state.left.dir, dir, "it sizes, and does not go in");
 
@@ -296,8 +296,8 @@ fn alt_shift_enter_sizes_every_directory() {
 
     // Esc stops what is running and what is waiting.
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT | KeyModifiers::SHIFT));
     press(&mut app_state, KeyCode::Esc);
     assert!(app_state.workers.dir_sizing.is_empty() && app_state.workers.dir_size_queue.is_empty());
@@ -335,25 +335,25 @@ fn leaving_a_directory_stops_sizing_what_is_in_it() {
     let size_all = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT | KeyModifiers::SHIFT));
 
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
-    app_state.open_dir(false, elsewhere.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Right, elsewhere.clone(), None);
     app_state.dir_sizes.insert(dir.join("d0"), 42);
     size_all(&mut app_state);
     assert!(!app_state.workers.dir_sizing.is_empty() && !app_state.workers.dir_size_queue.is_empty());
-    app_state.open_dir(true, elsewhere.clone(), None);
+    app_state.open_dir(Side::Left, elsewhere.clone(), None);
     assert!(app_state.workers.dir_sizing.is_empty(), "running ones stopped");
     assert!(app_state.workers.dir_size_queue.is_empty(), "waiting ones dropped");
     assert_eq!(app_state.dir_sizes.get(&dir.join("d0")), Some(&42), "a size counted before is kept");
 
     // The other panel still in it: they go on, for that panel to show.
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
-    app_state.open_dir(false, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Right, dir.clone(), None);
     size_all(&mut app_state);
     let asked = app_state.workers.dir_sizing.len() + app_state.workers.dir_size_queue.len();
-    app_state.open_dir(true, elsewhere.clone(), None);
+    app_state.open_dir(Side::Left, elsewhere.clone(), None);
     assert_eq!(app_state.workers.dir_sizing.len() + app_state.workers.dir_size_queue.len(), asked);
     app_state.cancel_dir_sizes();
     std::fs::remove_dir_all(&dir).unwrap();
@@ -373,8 +373,8 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     }
     let mut app_state = AppState::new();
     app_state.options = crate::options::Options::default();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("notes.md".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("notes.md".as_ref()));
     app_state.left.selected.insert("main.rs".into());
     app_state.left.selected.insert("report.txt".into());
     // In order of name, whatever F11 sorts by.
@@ -420,13 +420,13 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     // A file arriving is narrowed as everything else is.
     std::fs::write(dir.join("lib.rs"), "").unwrap();
     std::fs::write(dir.join("todo.txt"), "").unwrap();
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     assert_eq!(names(&app_state), ["..", "lib.rs", "main.rs", "notes.md"]);
 
     // Somewhere else, and it is gone - also on coming back.
-    app_state.open_dir(true, dir.join("reports"), None);
+    app_state.open_dir(Side::Left, dir.join("reports"), None);
     assert!(app_state.left.filter.is_none());
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     assert_eq!(app_state.left.children.len(), shown.len() + 2);
 
     std::fs::remove_dir_all(&dir).unwrap();
@@ -445,14 +445,14 @@ fn alt_down_goes_back_anywhere_that_has_been() {
     }
     let mut app_state = AppState::new();
     app_state.options = crate::options::Options::default();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
-    app_state.open_dir(true, dir.join("music/jazz"), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.join("music/jazz"), None);
     app_state.new_tab();
-    app_state.open_dir(true, dir.join("photos"), None);
-    app_state.open_dir(false, dir.join("music/rock"), None);
-    app_state.open_dir(true, dir.join("gone"), None);
-    app_state.open_dir(true, dir.join("music/jazz"), None);
+    app_state.open_dir(Side::Left, dir.join("photos"), None);
+    app_state.open_dir(Side::Right, dir.join("music/rock"), None);
+    app_state.open_dir(Side::Left, dir.join("gone"), None);
+    app_state.open_dir(Side::Left, dir.join("music/jazz"), None);
     let shown = |app_state: &AppState| match &app_state.dialog {
         Some(Dialog::History(list)) => (list.shown.iter().map(|path| path.strip_prefix(&dir).unwrap_or(path).to_path_buf()).collect::<Vec<_>>(), list.index),
         _ => panic!("not open"),
@@ -511,8 +511,8 @@ fn ctrl_b_lists_every_file_below() {
     app_state.options = crate::options::Options::default();
     app_state.options.show_hidden = false;
     app_state.options.sort_key = crate::options::SortKey::Name;
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("sub".as_ref()));
     let names = |app_state: &AppState| app_state.left.children.iter().map(|item| item.name_full.clone()).collect::<Vec<_>>();
     let cursor = |app_state: &AppState| app_state.left.children[app_state.left.state.selected().unwrap()].name_full.clone();
     let ctrl_b = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
@@ -548,7 +548,7 @@ fn ctrl_b_lists_every_file_below() {
     ctrl_b(&mut app_state);
     press(&mut app_state, KeyCode::Backspace);
     assert!(app_state.left.flat.is_none());
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     assert!(names(&app_state).contains(&"sub".to_string()));
     std::fs::remove_dir_all(&dir).unwrap();
 }

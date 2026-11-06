@@ -20,7 +20,7 @@ fn a_name_that_is_not_utf8_still_names_its_file() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let item = app_state.left.children.iter().find(|item| item.name_full != "..").unwrap().clone();
     // Blank until the stem was read lossily too, which left the column empty.
     assert!(!item.name.is_empty());
@@ -48,7 +48,7 @@ fn a_file_called_three_dots_is_not_the_parent_entry() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.open_dir(true, dir.clone(), Some("...".as_ref()));
+    app_state.open_dir(Side::Left, dir.clone(), Some("...".as_ref()));
     let item = &app_state.left.children[app_state.left.state.selected().unwrap()];
     assert_eq!(item.name, "..");
     assert!(!item.is_parent());
@@ -74,7 +74,7 @@ fn a_reread_gathers_the_preview_and_the_detail_again() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.show_preview = true;
-    app_state.open_dir(true, dir.clone(), Some("notes.txt".as_ref()));
+    app_state.open_dir(Side::Left, dir.clone(), Some("notes.txt".as_ref()));
     app_state.refresh_cursor_detail();
     app_state.refresh_preview();
     assert_eq!(app_state.cursor_detail.as_ref().unwrap().size, "5 bytes");
@@ -83,7 +83,7 @@ fn a_reread_gathers_the_preview_and_the_detail_again() {
     // The file grows where it stands, and the panel rereads - which is
     // what saving in the editor, or a copy landing on it, comes to.
     std::fs::write(dir.join("notes.txt"), "hello, a longer file now").unwrap();
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     app_state.refresh_cursor_detail();
     app_state.refresh_preview();
     assert_eq!(app_state.cursor_detail.as_ref().unwrap().size, "24 bytes");
@@ -116,10 +116,10 @@ fn an_unreadable_directory_is_refused_once() {
     // Watchers that look every few milliseconds, so the ticks the
     // refresh would answer come round inside the test.
     app_state.workers.watch_interval = std::time::Duration::from_millis(5);
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let listed = app_state.left.children.len();
 
-    app_state.open_dir(true, locked.clone(), None);
+    app_state.open_dir(Side::Left, locked.clone(), None);
     assert!(app_state.error.is_some());
     assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.left.children.len(), listed);
@@ -132,11 +132,11 @@ fn an_unreadable_directory_is_refused_once() {
     assert!(app_state.error.is_none());
 
     // Gone unreadable while the panel is in it: said once, not every tick.
-    app_state.open_dir(true, locked.parent().unwrap().to_path_buf(), None);
+    app_state.open_dir(Side::Left, locked.parent().unwrap().to_path_buf(), None);
     std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
-    app_state.open_dir(true, locked.clone(), None);
+    app_state.open_dir(Side::Left, locked.clone(), None);
     std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     assert!(app_state.error.is_some());
     app_state.reset_error();
     std::thread::sleep(std::time::Duration::from_millis(50));
@@ -157,19 +157,19 @@ fn each_tab_keeps_its_own_way_back() {
     std::fs::create_dir_all(dir.join("a")).unwrap();
     std::fs::create_dir_all(dir.join("b")).unwrap();
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.join("a"), None);
-    app_state.open_dir(true, dir.join("b"), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.join("a"), None);
+    app_state.open_dir(Side::Left, dir.join("b"), None);
 
     app_state.new_tab();
     app_state.travel(true);
     assert_eq!(app_state.left.dir, dir.join("b"), "a new tab has nowhere to go back to");
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
 
-    app_state.select_tab(true, 0);
+    app_state.select_tab(Side::Left, 0);
     app_state.travel(true);
     assert_eq!(app_state.left.dir, dir.join("a"));
-    app_state.select_tab(true, 1);
+    app_state.select_tab(Side::Left, 1);
     app_state.travel(true);
     assert_eq!(app_state.left.dir, dir.join("b"));
     // Switching tabs is not a step of either's.
@@ -187,34 +187,34 @@ fn ctrl_arrows_send_the_entry_under_the_cursor_to_a_panel() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.open_dir(true, dir.clone(), None);
-    app_state.open_dir(false, std::env::temp_dir(), None);
-    app_state.is_left_active = true;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Right, std::env::temp_dir(), None);
+    app_state.active_side = Side::Left;
     let at = |app_state: &AppState, name: &str| app_state.left.children.iter().position(|item| item.name_full == name);
     let cursor_right = |app_state: &AppState| app_state.right.state.selected().and_then(|index| app_state.right.children.get(index)).map(|item| item.name_full.clone());
 
     // A directory: the other panel goes into it, and the focus stays.
     app_state.left.state.select(at(&app_state, "inner"));
-    app_state.open_in_panel(false);
+    app_state.open_in_panel(Side::Right);
     assert_eq!(app_state.right.dir, dir.join("inner"));
-    assert!(app_state.is_left_active);
+    assert_eq!(app_state.active_side, Side::Left);
     assert_eq!(app_state.left.dir, dir);
 
     // A file: the directory it is in, on the file.
     app_state.left.state.select(at(&app_state, "note.txt"));
-    app_state.open_in_panel(false);
+    app_state.open_in_panel(Side::Right);
     assert_eq!(app_state.right.dir, dir);
     assert_eq!(cursor_right(&app_state).as_deref(), Some("note.txt"));
 
     // The parent entry: the parent, on the directory left.
     app_state.left.state.select(at(&app_state, ".."));
-    app_state.open_in_panel(false);
+    app_state.open_in_panel(Side::Right);
     assert_eq!(app_state.right.dir, std::env::temp_dir());
     assert_eq!(cursor_right(&app_state), dir.file_name().map(|name| name.to_string_lossy().into_owned()));
 
     // Pointed at the active panel, it goes in there.
     app_state.left.state.select(at(&app_state, "inner"));
-    app_state.open_in_panel(true);
+    app_state.open_in_panel(Side::Left);
     assert_eq!(app_state.left.dir, dir.join("inner"));
 
     std::fs::remove_dir_all(&dir).unwrap();
@@ -232,8 +232,8 @@ fn tabs_keep_where_each_was_left() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let at = |app_state: &AppState, name: &str| app_state.left.children.iter().position(|item| item.name_full == name);
     let cursor = |app_state: &AppState| app_state.left.state.selected().and_then(|index| app_state.left.children.get(index)).map(|item| item.name_full.clone());
 
@@ -249,12 +249,12 @@ fn tabs_keep_where_each_was_left() {
     assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
 
     // Off somewhere else in the second tab.
-    app_state.open_dir(true, dir.join("inner"), None);
+    app_state.open_dir(Side::Left, dir.join("inner"), None);
     app_state.left.selected.insert("two.txt".into());
-    assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), dir.join("inner")], 1));
+    assert_eq!(app_state.tab_dirs(Side::Left), (vec![dir.clone(), dir.join("inner")], 1));
 
     // Back to the first: its directory, cursor and selection.
-    app_state.select_tab(true, 0);
+    app_state.select_tab(Side::Left, 0);
     assert_eq!(app_state.left.dir, dir);
     assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
     assert_eq!(app_state.left.selected.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("one.txt")]);
@@ -267,19 +267,19 @@ fn tabs_keep_where_each_was_left() {
     assert_eq!(app_state.left.tabs.active, 0);
 
     // Closing one not shown leaves the panel be and keeps the right one active.
-    app_state.select_tab(true, 1);
-    app_state.close_tab(true, 0);
+    app_state.select_tab(Side::Left, 1);
+    app_state.close_tab(Side::Left, 0);
     assert_eq!((app_state.left.tabs.list.len(), app_state.left.tabs.active), (1, 0));
     assert_eq!(app_state.left.dir, dir.join("inner"));
 
     // The last one stays.
-    app_state.close_tab(true, 0);
+    app_state.close_tab(Side::Left, 0);
     assert_eq!(app_state.left.tabs.list.len(), 1);
 
     // Closing the one shown moves to its neighbour.
     app_state.new_tab();
-    app_state.open_dir(true, dir.clone(), None);
-    app_state.close_tab(true, 1);
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.close_tab(Side::Left, 1);
     assert_eq!(app_state.left.dir, dir.join("inner"));
     // The other panel's tabs are its own.
     assert_eq!(app_state.right.tabs.list.len(), 1);
@@ -302,11 +302,11 @@ fn a_tab_that_cannot_be_read_is_refused_and_kept() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
     app_state.new_tab();
-    app_state.open_dir(true, locked.clone(), None);
-    app_state.select_tab(true, 0);
+    app_state.open_dir(Side::Left, locked.clone(), None);
+    app_state.select_tab(Side::Left, 0);
     app_state.left.selected.insert("here.txt".into());
 
     std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
@@ -316,18 +316,18 @@ fn a_tab_that_cannot_be_read_is_refused_and_kept() {
         return std::fs::remove_dir_all(&dir).unwrap();
     }
 
-    app_state.select_tab(true, 1);
+    app_state.select_tab(Side::Left, 1);
     assert!(app_state.error.is_some());
     assert_eq!(app_state.left.tabs.active, 0);
     assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.left.selected.len(), 1);
-    assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
+    assert_eq!(app_state.tab_dirs(Side::Left), (vec![dir.clone(), locked.clone()], 0));
 
     // Closing the tab shown would move to the locked one, so it stays too.
     app_state.reset_error();
-    app_state.close_tab(true, 0);
+    app_state.close_tab(Side::Left, 0);
     assert!(app_state.error.is_some());
-    assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
+    assert_eq!(app_state.tab_dirs(Side::Left), (vec![dir.clone(), locked.clone()], 0));
     assert_eq!(app_state.left.selected.len(), 1);
 
     std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
@@ -345,8 +345,8 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     std::fs::write(dir.join("far").join("there.txt"), "").unwrap();
 
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let listed = app_state.left.children.len();
 
     let (sender, answer) = std::sync::mpsc::channel();
@@ -360,20 +360,20 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
         _stop: Default::default(),
         restore_flat: None,
     });
-    assert!(app_state.panel_busy(true));
+    assert!(app_state.panel_busy(Side::Left));
     // The panel is as it was, and its tabs cannot be touched.
     app_state.new_tab();
     assert_eq!(app_state.left.tabs.list.len(), 1);
     assert_eq!((app_state.left.dir.clone(), app_state.left.children.len()), (dir.clone(), listed));
     // Nor does a reread of where it was get in the way of where it is going.
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     assert!(app_state.left.listing.as_ref().is_some_and(|pending| pending.dir == dir.join("far")));
     app_state.poll_listings();
-    assert!(app_state.panel_busy(true), "nothing has landed yet");
+    assert!(app_state.panel_busy(Side::Left), "nothing has landed yet");
 
     sender.send(crate::app::read_listing(&dir.join("far"), &app_state.options, None)).unwrap();
     app_state.poll_listings();
-    assert!(!app_state.panel_busy(true));
+    assert!(!app_state.panel_busy(Side::Left));
     assert_eq!(app_state.left.dir, dir.join("far"));
     assert!(app_state.left.children.iter().any(|item| item.name_full == "there.txt"));
     std::fs::remove_dir_all(&dir).unwrap();
@@ -388,7 +388,7 @@ fn a_late_refusal_or_esc_puts_the_tab_back() {
     std::fs::create_dir_all(&dir).unwrap();
 
     let mut app_state = AppState::new();
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     app_state.left.tabs = crate::app::Tabs::new(vec![dir.clone(), dir.join("locked")], 0);
 
     for refused in [true, false] {
@@ -425,9 +425,9 @@ fn a_late_refusal_or_esc_puts_the_tab_back() {
             assert!(app_state.error.is_some());
             app_state.reset_error();
         } else {
-            app_state.cancel_listing(true);
+            app_state.cancel_listing(Side::Left);
         }
-        assert!(!app_state.panel_busy(true));
+        assert!(!app_state.panel_busy(Side::Left));
         assert_eq!(app_state.left.tabs.active, 0);
         assert_eq!(app_state.left.dir, dir);
     }
@@ -445,7 +445,7 @@ fn changes_and_details_arrive_from_their_threads() {
 
     let mut app_state = AppState::new();
     app_state.workers.watch_interval = std::time::Duration::from_millis(5);
-    app_state.open_dir(true, dir.clone(), Some("notes.txt".as_ref()));
+    app_state.open_dir(Side::Left, dir.clone(), Some("notes.txt".as_ref()));
 
     // Made behind fm84's back, and found without anything being pressed.
     std::fs::write(dir.join("new.txt"), "").unwrap();
@@ -522,7 +522,7 @@ fn a_slower_older_listing_does_not_land_over_a_newer_one() {
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("old"), "").unwrap();
     let mut app_state = AppState::new();
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
 
     // A reread held up on a slow disk, which saw only "old".
     let older = read_listing(&dir, &app_state.options, None);
@@ -539,7 +539,7 @@ fn a_slower_older_listing_does_not_land_over_a_newer_one() {
     });
 
     std::fs::write(dir.join("new"), "").unwrap();
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     assert!(app_state.left.listing.is_none(), "the older one is no longer waited for");
 
     let _ = sender.send(older);
@@ -557,8 +557,8 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("sub")).unwrap();
     let mut app_state = AppState::new();
-    app_state.open_dir(true, dir.clone(), None);
-    app_state.is_left_active = true;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.active_side = Side::Left;
 
     let (_sender, answer) = std::sync::mpsc::channel();
     app_state.left.flat = Some(crate::app::Flat { dir: dir.clone(), feed: None });
@@ -572,15 +572,15 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
         _stop: Default::default(),
         restore_flat: Some(None),
     });
-    app_state.cancel_listing(true);
+    app_state.cancel_listing(Side::Left);
     assert!(app_state.left.flat.is_none());
 
     // As Ctrl+B leaves it when the walk has not come back yet.
     app_state.workers.listing_wait = std::time::Duration::ZERO;
     app_state.toggle_flat();
-    if app_state.panel_busy(true) {
+    if app_state.panel_busy(Side::Left) {
         assert_eq!(app_state.left.listing.as_ref().and_then(|pending| pending.restore_flat.clone()), Some(None));
-        app_state.cancel_listing(true);
+        app_state.cancel_listing(Side::Left);
         assert!(app_state.left.flat.is_none());
     }
     std::fs::remove_dir_all(&dir).unwrap();

@@ -7,7 +7,7 @@ impl AppState {
     /// the active panel's directory when it is one of them.
     pub fn open_bookmarks(&mut self) {
         let list = crate::options::load_bookmarks();
-        let here = self.panel_dir(self.is_left_active);
+        let here = self.panel_dir(self.active_side);
         let index = list.iter().position(|path| *path == here).unwrap_or(0);
         self.dialog = Some(Dialog::Bookmarks { list, index });
     }
@@ -22,7 +22,7 @@ impl AppState {
     /// Insert or A: keep the active panel's directory, after the one
     /// highlighted. One already kept is only highlighted.
     pub fn add_bookmark(&mut self) {
-        let here = self.panel_dir(self.is_left_active);
+        let here = self.panel_dir(self.active_side);
         let Some(Dialog::Bookmarks { list, index }) = &mut self.dialog else {
             return;
         };
@@ -69,8 +69,8 @@ impl AppState {
             return;
         };
         if let Some(path) = list.into_iter().nth(index) {
-            let is_left = self.is_left_active;
-            self.request_listing(is_left, path, true, None, None, Travel::GoTo);
+            let side = self.active_side;
+            self.request_listing(side, path, true, None, None, Travel::GoTo);
         }
     }
 

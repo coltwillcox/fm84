@@ -41,7 +41,7 @@ impl AppState {
     /// Alt+Down: the directories visited, opened on the newest that is not
     /// where the active panel already is.
     pub fn open_history(&mut self) {
-        let here = self.panel_dir(self.is_left_active);
+        let here = self.panel_dir(self.active_side);
         let mut all = self.visited.clone();
         if all.is_empty() {
             all.push(here.clone());
@@ -76,8 +76,8 @@ impl AppState {
             return;
         };
         if let Some(path) = list.shown.into_iter().nth(list.index) {
-            let is_left = self.is_left_active;
-            self.request_listing(is_left, path, true, None, None, Travel::GoTo);
+            let side = self.active_side;
+            self.request_listing(side, path, true, None, None, Travel::GoTo);
         }
     }
 }

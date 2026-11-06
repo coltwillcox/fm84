@@ -22,14 +22,14 @@ impl PanelFilter {
 }
 
 impl AppState {
-    pub fn filter(&self, is_left: bool) -> Option<&PanelFilter> {
-        self.panel(is_left).filter.as_ref()
+    pub fn filter(&self, side: Side) -> Option<&PanelFilter> {
+        self.panel(side).filter.as_ref()
     }
 
     /// Ctrl+S in a panel: ask for the pattern, starting from the one in
     /// place. Esc puts that one back.
     pub fn open_filter_prompt(&mut self) {
-        let text = self.filter(self.is_left_active).map(|filter| filter.text.clone()).unwrap_or_default();
+        let text = self.filter(self.active_side).map(|filter| filter.text.clone()).unwrap_or_default();
         let mut input = TextInput::new();
         input.set(text.clone());
         self.filter_before = text;
@@ -40,7 +40,7 @@ impl AppState {
     pub fn cancel_filter_prompt(&mut self) {
         self.dialog = None;
         let before = std::mem::take(&mut self.filter_before);
-        self.set_filter(self.is_left_active, &before);
+        self.set_filter(self.active_side, &before);
     }
 
     /// Narrow the panel to what `text` matches, or show it all again for a
@@ -48,26 +48,26 @@ impl AppState {
     /// is shown, and goes to the first match otherwise. What is selected but
     /// no longer shown is let go: a copy or delete takes the selection, and
     /// should not take what cannot be seen.
-    pub fn set_filter(&mut self, is_left: bool, text: &str) {
-        let panel = self.panel(is_left);
+    pub fn set_filter(&mut self, side: Side, text: &str) {
+        let panel = self.panel(side);
         let (dir, children, state) = (&panel.dir, &panel.children, &panel.state);
         let cursor = state.selected().and_then(|index| children.get(index)).map(|item| item.name_os.clone());
         let dir = dir.clone();
-        let all = match self.panel_mut(is_left).filter.take() {
+        let all = match self.panel_mut(side).filter.take() {
             Some(filter) => filter.all,
-            None => std::mem::take(&mut self.panel_mut(is_left).children),
+            None => std::mem::take(&mut self.panel_mut(side).children),
         };
         let items = match crate::glob::Glob::filter(text) {
             Some(glob) => {
                 let filter = PanelFilter { dir, text: text.to_string(), glob, all };
                 let items = filter.keep(&filter.all);
-                self.panel_mut(is_left).filter = Some(filter);
+                self.panel_mut(side).filter = Some(filter);
                 items
             }
             None => all,
         };
         let index = cursor.and_then(|name| items.iter().position(|item| item.name_os == name)).or_else(|| items.iter().position(|item| !item.is_parent())).unwrap_or(0);
-        let panel = self.panel_mut(is_left);
+        let panel = self.panel_mut(side);
         let (children, state, selected) = (&mut panel.children, &mut panel.state, &mut panel.selected);
         *children = items;
         state.select(Some(index));
@@ -79,8 +79,8 @@ impl AppState {
 
     /// A fresh reading of the directory `found`, narrowed by the panel's
     /// filter if it is still there; the filter goes if the panel has moved.
-    pub(super) fn filter_listing(&mut self, is_left: bool, found: &Path, items: Vec<Item>) -> Vec<Item> {
-        let slot = &mut self.panel_mut(is_left).filter;
+    pub(super) fn filter_listing(&mut self, side: Side, found: &Path, items: Vec<Item>) -> Vec<Item> {
+        let slot = &mut self.panel_mut(side).filter;
         match slot {
             Some(filter) if filter.dir == found => {
                 let kept = filter.keep(&items);
@@ -98,7 +98,7 @@ impl AppState {
     pub fn filter_typed(&mut self) {
         if let Some(Dialog::Prompt(PromptKind::Filter, input)) = &self.dialog {
             let text = input.text.clone();
-            self.set_filter(self.is_left_active, &text);
+            self.set_filter(self.active_side, &text);
         }
     }
 }

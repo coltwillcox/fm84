@@ -9,24 +9,24 @@ pub fn read_only() -> &'static str {
 
 impl AppState {
     /// The archive a panel's directory runs through, as its listing found it.
-    pub fn panel_archive(&self, is_left: bool) -> Option<&PathBuf> {
-        self.panel(is_left).archive.as_ref()
+    pub fn panel_archive(&self, side: Side) -> Option<&PathBuf> {
+        self.panel(side).archive.as_ref()
     }
 
     /// The directory on the disk a panel is in: the one it shows, or for a
     /// panel inside an archive, the one the archive is in - for what needs a
     /// real directory, such as a terminal, git, or a shell's cd.
-    pub fn panel_real_dir(&self, is_left: bool) -> PathBuf {
-        match self.panel_archive(is_left) {
+    pub fn panel_real_dir(&self, side: Side) -> PathBuf {
+        match self.panel_archive(side) {
             Some(archive) => archive.parent().map_or_else(|| archive.clone(), Path::to_path_buf),
-            None => self.panel_dir(is_left),
+            None => self.panel_dir(side),
         }
     }
 
     /// Refuse, with a word, what would write into the archive the panel is
     /// in. True when it did.
-    pub fn refuse_in_archive(&mut self, is_left: bool) -> bool {
-        let inside = self.panel_archive(is_left).is_some();
+    pub fn refuse_in_archive(&mut self, side: Side) -> bool {
+        let inside = self.panel_archive(side).is_some();
         if inside {
             self.display_error(read_only().to_string());
         }
@@ -44,7 +44,7 @@ impl AppState {
     /// `path`, inside the archive the active panel is in, copied out to a
     /// scratch directory of its own, and then `after` with where it went.
     pub(super) fn extract_then(&mut self, path: &Path, after: impl FnOnce(PathBuf) -> AfterJob) {
-        let Some(archive) = self.panel_archive(self.is_left_active).cloned() else {
+        let Some(archive) = self.panel_archive(self.active_side).cloned() else {
             return;
         };
         let (Ok(inner), Some(name)) = (path.strip_prefix(&archive), path.file_name()) else {

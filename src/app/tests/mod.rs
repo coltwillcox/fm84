@@ -1,4 +1,4 @@
-use super::{AppState, Item, prune_selection, recentre, slot_at};
+use super::{AppState, Item, Side, prune_selection, recentre, slot_at};
 use crate::options::Options;
 use std::collections::HashSet;
 

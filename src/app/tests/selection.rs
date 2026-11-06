@@ -13,7 +13,7 @@ fn space_sizes_a_directory_off_the_ui_thread() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
+    app_state.open_dir(Side::Left, dir.clone(), Some("sub".as_ref()));
     app_state.toggle_selection();
     assert_eq!(app_state.workers.dir_sizing.len(), 1);
 
@@ -48,7 +48,7 @@ fn space_selects_a_link_to_a_directory_without_sizing_it() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.open_dir(true, dir.clone(), Some("link".as_ref()));
+    app_state.open_dir(Side::Left, dir.clone(), Some("link".as_ref()));
     app_state.toggle_selection();
     assert!(app_state.left.selected.contains(std::ffi::OsStr::new("link")));
     assert!(app_state.workers.dir_sizing.is_empty());
@@ -126,7 +126,7 @@ fn compare_selects_what_differs() {
 #[test]
 fn plus_minus_and_star_select_by_pattern() {
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
+    app_state.active_side = Side::Left;
     let directory = Item { is_dir: true, ..row("photos") };
     app_state.left.children = vec![row(".."), directory, row("a.jpg"), row("B.JPG"), row("c.png"), row("notes.txt")];
     let selected = |app_state: &AppState| {
@@ -209,7 +209,7 @@ fn names_that_read_alike_are_selected_apart() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.open_dir(true, dir.clone(), None);
+    app_state.open_dir(Side::Left, dir.clone(), None);
     let rows: Vec<Item> = app_state.left.children.iter().filter(|item| item.name != "..").cloned().collect();
     assert_eq!(rows.len(), 2);
     assert_eq!(rows[0].name_full, rows[1].name_full);

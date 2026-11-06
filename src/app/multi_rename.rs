@@ -370,8 +370,8 @@ impl AppState {
         }
         self.feed_follow(&moves[..renamed]);
         // The cursor stays on the entry it was on, under its new name.
-        let is_left = self.is_left_active;
-        let panel = self.panel(is_left);
+        let side = self.active_side;
+        let panel = self.panel(side);
         let (children, state, dir) = (&panel.children, &panel.state, &panel.dir);
         let landing = state.selected().and_then(|index| children.get(index)).map(|item| {
             let at = item.path_in(dir);
@@ -381,7 +381,7 @@ impl AppState {
         if result.is_ok() {
             self.clear_active_selections();
         }
-        self.reload_panel(is_left, landing.as_deref());
+        self.reload_panel(side, landing.as_deref());
         if let Err((done, e)) = result {
             self.display_error(t!("Renamed {done} of {total}, then: {e}", done, total = moves.len(), e));
         }

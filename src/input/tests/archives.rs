@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 /// Put the active panel's cursor on `name`.
 fn on(app_state: &mut AppState, name: &str) {
-    let panel = app_state.panel_mut(app_state.is_left_active);
+    let panel = app_state.panel_mut(app_state.active_side);
     let (children, state) = (&panel.children, &mut panel.state);
     let index = children.iter().position(|item| item.name_os == name).unwrap_or_else(|| panic!("no {name} in the panel"));
     state.select(Some(index));
@@ -33,9 +33,9 @@ fn setup(name: &str) -> (PathBuf, PathBuf, AppState) {
     let out = dir.join("out");
     std::fs::create_dir_all(&out).unwrap();
     let mut app_state = AppState::new();
-    app_state.open_dir(false, out, None);
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("photos.zip".as_ref()));
+    app_state.open_dir(Side::Right, out, None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("photos.zip".as_ref()));
     (dir, archive, app_state)
 }
 
@@ -73,7 +73,7 @@ fn enter_goes_into_an_archive_and_backspace_comes_out() {
 #[test]
 fn f3_views_a_file_inside_an_archive() {
     let (dir, archive, mut app_state) = setup("view");
-    app_state.open_dir(true, archive.join("2024/june"), Some("beach.txt".as_ref()));
+    app_state.open_dir(Side::Left, archive.join("2024/june"), Some("beach.txt".as_ref()));
     press(&mut app_state, KeyCode::F(3));
     finish(&mut app_state);
     let Screen::Viewer(state) = &app_state.screen else {
@@ -97,7 +97,7 @@ fn f3_views_a_file_inside_an_archive() {
 fn f5_copies_out_and_f6_is_refused() {
     let (dir, archive, mut app_state) = setup("copy-out");
     let out = dir.join("out");
-    app_state.open_dir(true, archive.clone(), Some("2024".as_ref()));
+    app_state.open_dir(Side::Left, archive.clone(), Some("2024".as_ref()));
 
     press(&mut app_state, KeyCode::F(5));
     press(&mut app_state, KeyCode::Enter);
@@ -119,7 +119,7 @@ fn f5_copies_out_and_f6_is_refused() {
 fn nothing_writes_into_an_archive() {
     let (dir, archive, mut app_state) = setup("read-only");
     let before = std::fs::read(&archive).unwrap();
-    app_state.open_dir(true, archive.clone(), Some("readme.txt".as_ref()));
+    app_state.open_dir(Side::Left, archive.clone(), Some("readme.txt".as_ref()));
 
     let keys = [
         (KeyCode::F(2), KeyModifiers::NONE),
@@ -141,8 +141,8 @@ fn nothing_writes_into_an_archive() {
 
     // From the other side: a file copied or moved into the archive.
     std::fs::write(dir.join("out/new.txt"), "new").unwrap();
-    app_state.open_dir(false, dir.join("out"), Some("new.txt".as_ref()));
-    app_state.is_left_active = false;
+    app_state.open_dir(Side::Right, dir.join("out"), Some("new.txt".as_ref()));
+    app_state.active_side = Side::Right;
     for code in [KeyCode::F(5), KeyCode::F(6)] {
         press(&mut app_state, code);
         press(&mut app_state, KeyCode::Enter);
@@ -161,8 +161,8 @@ fn a_damaged_archive_is_not_gone_into() {
     let dir = scratch("damaged");
     std::fs::write(dir.join("broken.zip"), "not a zip at all").unwrap();
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, dir.clone(), Some("broken.zip".as_ref()));
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("broken.zip".as_ref()));
     press(&mut app_state, KeyCode::Enter);
     assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.left.archive, None);
@@ -178,17 +178,17 @@ fn a_changed_or_deleted_archive_is_followed() {
     let archive = dir.join("src.tar.gz");
     tar(&archive, &[(b"src/main.rs", Put::File(b"fn main() {}")), (b"src/lib.rs", Put::File(b""))]);
     let mut app_state = AppState::new();
-    app_state.is_left_active = true;
-    app_state.open_dir(true, archive.join("src"), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, archive.join("src"), None);
     assert_eq!(shown(&app_state), ["..", "lib.rs", "main.rs"]);
 
     tar(&archive, &[(b"docs/readme", Put::File(b"r"))]);
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     assert_eq!(app_state.left.dir, archive);
     assert_eq!(shown(&app_state), ["..", "docs"]);
 
     std::fs::remove_file(&archive).unwrap();
-    app_state.reload_panel(true, None);
+    app_state.reload_panel(Side::Left, None);
     assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.left.archive, None);
     std::fs::remove_dir_all(&dir).unwrap();
@@ -200,7 +200,7 @@ fn a_changed_or_deleted_archive_is_followed() {
 fn preview_detail_and_size_inside_an_archive() {
     let (dir, archive, mut app_state) = setup("preview");
     app_state.show_preview = true;
-    app_state.open_dir(true, archive.clone(), Some("readme.txt".as_ref()));
+    app_state.open_dir(Side::Left, archive.clone(), Some("readme.txt".as_ref()));
     app_state.refresh_cursor_detail();
     app_state.refresh_preview();
     assert_eq!(app_state.preview.as_ref().unwrap().lines, ["read me"]);
@@ -251,7 +251,7 @@ fn alt_f9_extracts_a_whole_archive() {
 
     // From inside it, into a directory typed: relative to where the archive is.
     std::fs::create_dir(dir.join("again")).unwrap();
-    app_state.open_dir(true, archive.join("2024"), None);
+    app_state.open_dir(Side::Left, archive.join("2024"), None);
     handle_key(&mut app_state, KeyEvent::new(KeyCode::F(9), KeyModifiers::CONTROL));
     app_state.dialog_input().unwrap().set("again".to_string());
     press(&mut app_state, KeyCode::Enter);
@@ -259,7 +259,7 @@ fn alt_f9_extracts_a_whole_archive() {
     assert_eq!(std::fs::read_to_string(dir.join("again/readme.txt")).unwrap(), "read me");
 
     // Not onto an archive, nor into one.
-    app_state.open_dir(true, dir.clone(), Some("out".as_ref()));
+    app_state.open_dir(Side::Left, dir.clone(), Some("out".as_ref()));
     handle_key(&mut app_state, KeyEvent::new(KeyCode::F(9), KeyModifiers::ALT));
     assert_eq!(app_state.error.as_deref(), Some("Put the cursor on an archive to extract it"));
     app_state.reset_error();
@@ -289,8 +289,8 @@ fn shift_f3_compares_files_inside_archives() {
 
     // Inside on the left, on the disk on the right.
     std::fs::write(dir.join("out/readme.txt"), "read me\nand more\n").unwrap();
-    app_state.open_dir(false, dir.join("out"), Some("readme.txt".as_ref()));
-    app_state.open_dir(true, archive.clone(), Some("readme.txt".as_ref()));
+    app_state.open_dir(Side::Right, dir.join("out"), Some("readme.txt".as_ref()));
+    app_state.open_dir(Side::Left, archive.clone(), Some("readme.txt".as_ref()));
     compare(&mut app_state);
     assert_eq!(sides(&app_state), (archive.join("readme.txt"), dir.join("out/readme.txt"), 1));
 
@@ -298,7 +298,7 @@ fn shift_f3_compares_files_inside_archives() {
     app_state.screen = Screen::Panels;
     let other = dir.join("other.tar.gz");
     tar(&other, &[(b"readme.txt", Put::File(b"read me too"))]);
-    app_state.open_dir(false, other.clone(), Some("readme.txt".as_ref()));
+    app_state.open_dir(Side::Right, other.clone(), Some("readme.txt".as_ref()));
     compare(&mut app_state);
     assert_eq!(sides(&app_state), (archive.join("readme.txt"), other.join("readme.txt"), 1));
     std::fs::remove_dir_all(&dir).unwrap();
@@ -309,7 +309,7 @@ fn shift_f3_compares_files_inside_archives() {
 #[test]
 fn ctrl_c_copies_a_path_through_an_archive() {
     let (dir, archive, mut app_state) = setup("paths");
-    app_state.open_dir(true, archive.join("2024"), Some("notes.txt".as_ref()));
+    app_state.open_dir(Side::Left, archive.join("2024"), Some("notes.txt".as_ref()));
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL));
     assert_eq!(PathBuf::from(&app_state.clipboard), archive.join("2024/notes.txt"));
     std::fs::remove_dir_all(&dir).unwrap();
@@ -326,9 +326,9 @@ fn alt_p_packs_into_the_other_panel() {
     std::fs::write(here.join("photos/beach.txt"), "sand").unwrap();
     std::fs::create_dir_all(&out).unwrap();
     let mut app_state = AppState::new();
-    app_state.open_dir(false, out.clone(), None);
-    app_state.is_left_active = true;
-    app_state.open_dir(true, here.clone(), Some("photos".as_ref()));
+    app_state.open_dir(Side::Right, out.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, here.clone(), Some("photos".as_ref()));
     let alt_p = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('p'), KeyModifiers::ALT));
     let typed = |app_state: &mut AppState| PathBuf::from(&app_state.dialog_input().unwrap().text);
 
@@ -377,7 +377,7 @@ fn alt_p_packs_into_the_other_panel() {
     press(&mut app_state, KeyCode::Enter);
     assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()));
     app_state.reset_error();
-    app_state.open_dir(true, out.join("photos.7z"), None);
+    app_state.open_dir(Side::Left, out.join("photos.7z"), None);
     alt_p(&mut app_state);
     assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy it out of the archive first"), "{:?}", app_state.error);
     assert!(app_state.dialog.is_none());
@@ -389,7 +389,7 @@ fn alt_p_packs_into_the_other_panel() {
 #[test]
 fn alt_h_inside_an_archive_says_to_copy_out_first() {
     let (dir, archive, mut app_state) = setup("checksum-inside");
-    app_state.open_dir(true, archive.clone(), Some("readme.txt".as_ref()));
+    app_state.open_dir(Side::Left, archive.clone(), Some("readme.txt".as_ref()));
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('h'), KeyModifiers::ALT));
     assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy it out of the archive first"), "{:?}", app_state.error);
     assert!(app_state.workers.job.is_none());
