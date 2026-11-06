@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-06" "fm84 0.43.0" "User Commands"
+.TH FM84 1 "2026-11-06" "fm84 0.44.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -732,9 +732,10 @@ what the scroll bars are drawn with, highlighting and image settings.
 .B Language
 is Automatic, which follows the environment (see
 .BR ENVIRONMENT ),
-or one of English, Serbian in the Latin alphabet, Turkish, Norwegian
-Bokm\(oal, German, Italian, Greek, French and Slovenian; the keys stay the
-same in any of them.
+or one of English, Serbian in the Latin alphabet, Croatian, Macedonian,
+Slovenian, Czech, Slovak, Polish, Hungarian, Greek, Turkish, German, French,
+Italian, Spanish, Brazilian Portuguese, Swedish and Norwegian Bokm\(oal; the
+keys stay the same in any of them.
 The list scrolls within the panels when it does not fit, with Up and Down or
 the mouse wheel.
 .PP
@@ -825,16 +826,25 @@ of LANGUAGE's colon\-separated list that fm84 has words for, unless the
 locale is C; otherwise the first of the other three that is set.
 A locale is taken by its language:
 .BR sr ,
+.BR hr ,
+.BR mk ,
+.BR sl ,
+.BR cs ,
+.BR sk ,
+.BR pl ,
+.BR hu ,
+.BR el ,
 .BR tr ,
+.BR de ,
+.BR fr ,
+.BR it ,
+.BR es ,
+.BR pt ,
+.B sv
+and
 .B nb
 or
 .BR no ,
-.BR de ,
-.BR it ,
-.BR el ,
-.B fr
-and
-.BR sl ,
 as
 .BR de_AT.UTF\-8 ;
 anything else is English.

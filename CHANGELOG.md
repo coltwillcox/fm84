@@ -6,6 +6,13 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.44.0] - 2026-11-06
+
+### ✨ Added
+- 🌐 **Nine more languages** - **Hrvatski**, **Македонски**, **Magyar**, **Slovenčina**, **Čeština**, **Polski**, **Svenska**, **Español** and **Português (Brasil)**, every word of each built in, for seventeen in all. F11's Language picks one, or Automatic finds it in a locale by `hr`, `mk`, `hu`, `sk`, `cs`, `pl`, `sv`, `es` or `pt`. Counts take each language's own forms: Polish says 2 pliki and 22 pliki but 12 and 21 plików, Slovak and Czech give 2 to 4 a form of their own and 21 the many form, Macedonian takes 21 as one, Hungarian keeps a noun singular after any number, and Brazilian Portuguese counts nothing as one. Each has its own quotes - „“ in Czech, Slovak and Macedonian, „” in Polish and Hungarian, ”” in Swedish, »« in Croatian, «» in Spanish with its opening ¿, “” in Portuguese - and Spanish names the keys as its keyboards do, Mayús, Intro and Supr
+
+---
+
 ## [0.43.0] - 2026-11-06
 
 ### ✨ Added
