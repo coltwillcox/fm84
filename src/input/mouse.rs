@@ -247,7 +247,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // A panel's git branch, after its path, lists the repository's branches
     // to change to; the panel becomes the active one. Checked before the
     // path, which the branch is drawn along with.
-    if let Some((side, _)) = Side::BOTH.into_iter().zip(app_state.drawn.branch_hits).find(|(_, cell)| cell.is_some_and(|cell| cell.contains(Position::new(column, row)))) {
+    if let Some(side) = Side::BOTH.into_iter().find(|&side| app_state.drawn.branch_hits[side].is_some_and(|cell| cell.contains(Position::new(column, row)))) {
         if app_state.workers.job.is_none() && !app_state.panel_busy(side) {
             app_state.active_side = side;
             app_state.open_branches(side);

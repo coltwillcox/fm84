@@ -308,7 +308,7 @@ fn a_click_on_the_branch_lists_branches_to_switch_to() {
     assert_eq!(app_state.left.branch.as_deref(), Some("main"));
 
     // The branch on the path bar, clicked: the list, on the one checked out.
-    let branch = app_state.drawn.branch_hits[0].expect("the branch is drawn");
+    let branch = app_state.drawn.branch_hits[Side::Left].expect("the branch is drawn");
     click(&mut app_state, branch);
     assert_eq!(listed(&app_state), Some((vec!["feature".to_string(), "main".to_string()], Some(1), 1)));
 
@@ -327,7 +327,7 @@ fn a_click_on_the_branch_lists_branches_to_switch_to() {
     // An edit that the switch would lose: git refuses, and says so.
     std::fs::write(dir.join("file.txt"), "not committed\n").unwrap();
     draw(&mut app_state);
-    let branch = app_state.drawn.branch_hits[0].unwrap();
+    let branch = app_state.drawn.branch_hits[Side::Left].unwrap();
     click(&mut app_state, branch);
     press(&mut app_state, KeyCode::Down);
     assert_eq!(listed(&app_state).map(|(_, _, index)| index), Some(1));
