@@ -244,12 +244,8 @@ pub struct AppState {
     pub visited: Vec<PathBuf>,
     pub last_click_time: Option<Instant>,
     pub last_click_pos: (u16, u16),
-    // Where the last frame actually drew things. Mouse handling reads these
-    // instead of recomputing the layout from hardcoded row numbers.
     /// A branch git is still switching to.
     pub branch_switch: Option<PendingSwitch>,
-    /// The viewer's or the editor's scroll bars, as last drawn.
-    pub scroll_bars: Vec<crate::scroll_bar::ScrollBar>,
     /// The bar whose thumb the left button took hold of, as it was then, and
     /// how many cells from the thumb's start it was taken - followed until
     /// the button comes up.
@@ -426,6 +422,8 @@ pub struct Drawn {
     /// The viewer's text, for a click or a drag to select in, or to take hold
     /// of a picture.
     pub viewer_content_area: Rect,
+    /// The viewer's or the editor's scroll bars, as last drawn.
+    pub scroll_bars: Vec<crate::scroll_bar::ScrollBar>,
 }
 
 impl AppState {
@@ -516,7 +514,6 @@ impl AppState {
             last_click_time: None,
             last_click_pos: (0, 0),
             branch_switch: None,
-            scroll_bars: Vec::new(),
             bar_drag: None,
             listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
             detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },

@@ -205,7 +205,7 @@ fn scroll_bars_page_when_clicked_and_follow_a_drag() {
             Screen::Viewer(state) => (state.scroll_offset, state.horizontal_offset),
             _ => unreachable!(),
         };
-        let bar = |app_state: &AppState, vertical: bool| *app_state.scroll_bars.iter().find(|bar| bar.vertical == vertical).expect("a bar");
+        let bar = |app_state: &AppState, vertical: bool| *app_state.drawn.scroll_bars.iter().find(|bar| bar.vertical == vertical).expect("a bar");
         let thumb_cell = |bar: crate::scroll_bar::ScrollBar| {
             let (start, _) = crate::scroll_bar::thumb(if bar.vertical { bar.track.height } else { bar.track.width } as usize, bar.extent).unwrap();
             if bar.vertical { (bar.track.x, bar.track.y + start as u16) } else { (bar.track.x + start as u16, bar.track.y) }

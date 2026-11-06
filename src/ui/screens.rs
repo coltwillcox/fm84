@@ -323,6 +323,6 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
     };
 
     app_state.drawn.editor_content_area = content_area;
-    app_state.scroll_bars = bars;
+    app_state.drawn.scroll_bars = bars;
     viewport_height
 }

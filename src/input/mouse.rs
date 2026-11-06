@@ -173,7 +173,7 @@ fn scroll_bar_mouse(app_state: &mut AppState, kind: MouseEventKind, column: u16,
     match kind {
         MouseEventKind::Down(MouseButton::Left) => {
             app_state.bar_drag = None;
-            let Some((bar, press)) = app_state.scroll_bars.iter().find_map(|bar| bar.press(column, row).map(|press| (*bar, press))) else {
+            let Some((bar, press)) = app_state.drawn.scroll_bars.iter().find_map(|bar| bar.press(column, row).map(|press| (*bar, press))) else {
                 return false;
             };
             match press {

@@ -768,11 +768,11 @@ fn the_scroll_bar_style_from_f11_draws_both_thumbs() {
             (track.y..track.bottom()).flat_map(|y| (track.x..track.right()).map(move |x| (x, y))).map(|(x, y)| buffer[(x, y)].symbol().to_string()).collect()
         };
         let (down, along) = style.thumbs();
-        for bar in &app_state.scroll_bars {
+        for bar in &app_state.drawn.scroll_bars {
             let thumb = if bar.vertical { down } else { along };
             assert!(drawn(bar).iter().any(|symbol| symbol == thumb), "{style:?}: {:?}", drawn(bar));
         }
-        assert_eq!(app_state.scroll_bars.len(), 2, "{style:?}");
+        assert_eq!(app_state.drawn.scroll_bars.len(), 2, "{style:?}");
         app_state.options.cycle(crate::options::OptionRow::ScrollBars, true);
     }
     assert_eq!(seen, ScrollBarStyle::ALL);
