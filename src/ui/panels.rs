@@ -516,7 +516,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: &[Column], name_width: u16) -> (Vec<Row<'static>>, usize) {
     let children = &app_state.panel(is_left).children;
     let state = &app_state.panel(is_left).state;
-    let selected_set = if is_left { &app_state.selected_left } else { &app_state.selected_right };
+    let selected_set = &app_state.panel(is_left).selected;
     let current_dir = &app_state.panel(is_left).dir;
     let selected = state.selected().unwrap_or(0);
     let total = children.len();

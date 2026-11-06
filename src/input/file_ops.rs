@@ -10,7 +10,7 @@ pub(super) fn open_rename(app_state: &mut AppState) {
     if app_state.refuse_in_archive(app_state.is_left_active) {
         return;
     }
-    let selected = if app_state.is_left_active { &app_state.selected_left } else { &app_state.selected_right };
+    let selected = &app_state.panel(app_state.is_left_active).selected;
     if !selected.is_empty() {
         let items = chosen_items(app_state).into_iter().map(|(path, _)| path).collect();
         app_state.open_multi_rename(items);
@@ -535,9 +535,9 @@ pub(super) fn open_compare(app_state: &mut AppState) {
     };
 
     let (children, selected, dir) = if is_left {
-        (&app_state.left.children, &app_state.selected_left, &app_state.left.dir)
+        (&app_state.left.children, &app_state.left.selected, &app_state.left.dir)
     } else {
-        (&app_state.right.children, &app_state.selected_right, &app_state.right.dir)
+        (&app_state.right.children, &app_state.right.selected, &app_state.right.dir)
     };
     let selected_files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir && selected.contains(&item.name_os)).map(|item| item.path_in(dir)).collect();
     if let [first, second] = &selected_files[..] {

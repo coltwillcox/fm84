@@ -23,8 +23,8 @@ fn copy_paths_and_names_from_a_panel() {
     chord(&mut app_state, KeyModifiers::ALT);
     assert_eq!(app_state.clipboard, "b.txt");
 
-    app_state.selected_left.insert("a.txt".into());
-    app_state.selected_left.insert("b.txt".into());
+    app_state.left.selected.insert("a.txt".into());
+    app_state.left.selected.insert("b.txt".into());
     chord(&mut app_state, KeyModifiers::ALT);
     assert_eq!(app_state.clipboard, "a.txt\nb.txt");
     assert_eq!(app_state.find_note.as_deref(), Some("Copied 2 names"));
@@ -32,7 +32,7 @@ fn copy_paths_and_names_from_a_panel() {
     press(&mut app_state, KeyCode::Down);
     assert!(app_state.find_note.is_none());
 
-    app_state.selected_left.clear();
+    app_state.left.selected.clear();
     app_state.left.state.select(Some(0));
     chord(&mut app_state, KeyModifiers::CONTROL);
     assert_eq!(app_state.clipboard, dir.to_string_lossy());
@@ -54,7 +54,7 @@ fn swap_the_panels_and_send_the_other_one_here() {
     let mut app_state = AppState::new();
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.join("one"), Some("b.txt".as_ref()));
-    app_state.selected_left.insert("a.txt".into());
+    app_state.left.selected.insert("a.txt".into());
     app_state.open_dir(false, dir.join("two"), None);
     app_state.is_left_active = false;
     app_state.new_tab();
@@ -71,7 +71,7 @@ fn swap_the_panels_and_send_the_other_one_here() {
     assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active, app_state.tabs_right.list.len()), (2, 1, 1));
     assert!(!app_state.is_left_active);
     assert_eq!(cursor(&app_state, false), "b.txt");
-    assert!(app_state.selected_right.contains(std::ffi::OsStr::new("a.txt")) && app_state.selected_left.is_empty());
+    assert!(app_state.right.selected.contains(std::ffi::OsStr::new("a.txt")) && app_state.left.selected.is_empty());
     // The other tab went across too, as it was.
     app_state.select_tab(true, 0);
     assert_eq!(app_state.left.dir, dir.join("two"));
@@ -338,8 +338,8 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     app_state.options = crate::options::Options::default();
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), Some("notes.md".as_ref()));
-    app_state.selected_left.insert("main.rs".into());
-    app_state.selected_left.insert("report.txt".into());
+    app_state.left.selected.insert("main.rs".into());
+    app_state.left.selected.insert("report.txt".into());
     // In order of name, whatever F11 sorts by.
     let names = |app_state: &AppState| {
         let mut names: Vec<String> = app_state.left.children.iter().map(|item| item.name_full.clone()).collect();
@@ -358,7 +358,7 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     // The cursor's entry went, so it is on the first match.
     assert_eq!(app_state.left.state.selected(), Some(1));
     assert!(!app_state.left.children[1].is_parent());
-    assert_eq!(app_state.selected_left, std::collections::HashSet::from(["report.txt".into()]));
+    assert_eq!(app_state.left.selected, std::collections::HashSet::from(["report.txt".into()]));
 
     // Esc puts back what there was before: nothing.
     press(&mut app_state, KeyCode::Esc);

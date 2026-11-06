@@ -50,7 +50,7 @@ fn space_selects_a_link_to_a_directory_without_sizing_it() {
     app_state.options = Options::default();
     app_state.open_dir(true, dir.clone(), Some("link".as_ref()));
     app_state.toggle_selection();
-    assert!(app_state.selected_left.contains(std::ffi::OsStr::new("link")));
+    assert!(app_state.left.selected.contains(std::ffi::OsStr::new("link")));
     assert!(app_state.dir_sizing.is_empty());
 
     std::fs::remove_dir_all(&dir).unwrap();
@@ -107,15 +107,15 @@ fn compare_selects_what_differs() {
     app_state.right.dir = "/right".into();
     app_state.left.children = left;
     app_state.right.children = right;
-    app_state.selected_left.insert("same.txt".into());
+    app_state.left.selected.insert("same.txt".into());
     app_state.compare_dirs();
-    assert!(!app_state.selected_left.contains(std::ffi::OsStr::new("same.txt")));
-    assert_eq!((app_state.selected_left.len(), app_state.selected_right.len()), (6, 5));
+    assert!(!app_state.left.selected.contains(std::ffi::OsStr::new("same.txt")));
+    assert_eq!((app_state.left.selected.len(), app_state.right.selected.len()), (6, 5));
     assert_eq!(app_state.find_note.as_deref(), Some("Differ: 6 on the left, 5 on the right"));
 
     app_state.right.children = app_state.left.children.clone();
     app_state.compare_dirs();
-    assert!(app_state.selected_left.is_empty() && app_state.selected_right.is_empty());
+    assert!(app_state.left.selected.is_empty() && app_state.right.selected.is_empty());
     assert_eq!(app_state.find_note.as_deref(), Some("The directories hold the same files"));
 
     app_state.right.dir = "/left".into();
@@ -130,7 +130,7 @@ fn plus_minus_and_star_select_by_pattern() {
     let directory = Item { is_dir: true, ..row("photos") };
     app_state.left.children = vec![row(".."), directory, row("a.jpg"), row("B.JPG"), row("c.png"), row("notes.txt")];
     let selected = |app_state: &AppState| {
-        let mut names: Vec<String> = app_state.selected_left.iter().map(|name| name.to_string_lossy().into_owned()).collect();
+        let mut names: Vec<String> = app_state.left.selected.iter().map(|name| name.to_string_lossy().into_owned()).collect();
         names.sort();
         names
     };
@@ -217,7 +217,7 @@ fn names_that_read_alike_are_selected_apart() {
     let index = app_state.left.children.iter().position(|row| row.name_os == rows[0].name_os).unwrap();
     app_state.left.state.select(Some(index));
     app_state.toggle_selection_no_size();
-    assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&rows[0].name_os]);
+    assert_eq!(app_state.left.selected.iter().collect::<Vec<_>>(), [&rows[0].name_os]);
 
     std::fs::remove_dir_all(&dir).unwrap();
 }

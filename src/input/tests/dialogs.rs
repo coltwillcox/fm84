@@ -17,7 +17,7 @@ fn a_key_reaches_only_what_is_on_top() {
     // Space behind an error selects nothing, and Enter puts the error away.
     app_state.display_error("in the way".to_string());
     assert!(press(&mut app_state, KeyCode::Char(' ')));
-    assert!(app_state.selected_left.is_empty() && app_state.error.is_some());
+    assert!(app_state.left.selected.is_empty() && app_state.error.is_some());
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.error.is_none());
 

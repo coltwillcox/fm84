@@ -57,7 +57,7 @@ fn a_file_called_three_dots_is_not_the_parent_entry() {
     let (path, _, _) = app_state.cursor_target().unwrap();
     assert_eq!(path, dir.join("..."));
     app_state.toggle_selection_no_size();
-    assert!(app_state.selected_left.contains(std::ffi::OsStr::new("...")));
+    assert!(app_state.left.selected.contains(std::ffi::OsStr::new("...")));
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -238,31 +238,31 @@ fn tabs_keep_where_each_was_left() {
     let cursor = |app_state: &AppState| app_state.left.state.selected().and_then(|index| app_state.left.children.get(index)).map(|item| item.name_full.clone());
 
     // Something selected and the cursor on two.txt in the first tab.
-    app_state.selected_left.insert("one.txt".into());
+    app_state.left.selected.insert("one.txt".into());
     app_state.left.state.select(at(&app_state, "two.txt"));
 
     // A new tab: same place, nothing selected, and the first keeps its own.
     app_state.new_tab();
     assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active), (2, 1));
     assert_eq!(app_state.left.dir, dir);
-    assert!(app_state.selected_left.is_empty());
+    assert!(app_state.left.selected.is_empty());
     assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
 
     // Off somewhere else in the second tab.
     app_state.open_dir(true, dir.join("inner"), None);
-    app_state.selected_left.insert("two.txt".into());
+    app_state.left.selected.insert("two.txt".into());
     assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), dir.join("inner")], 1));
 
     // Back to the first: its directory, cursor and selection.
     app_state.select_tab(true, 0);
     assert_eq!(app_state.left.dir, dir);
     assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
-    assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("one.txt")]);
+    assert_eq!(app_state.left.selected.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("one.txt")]);
 
     // Round to the second, and its own come back.
     app_state.cycle_tab(true);
     assert_eq!(app_state.left.dir, dir.join("inner"));
-    assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("two.txt")]);
+    assert_eq!(app_state.left.selected.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("two.txt")]);
     app_state.cycle_tab(true);
     assert_eq!(app_state.tabs_left.active, 0);
 
@@ -307,7 +307,7 @@ fn a_tab_that_cannot_be_read_is_refused_and_kept() {
     app_state.new_tab();
     app_state.open_dir(true, locked.clone(), None);
     app_state.select_tab(true, 0);
-    app_state.selected_left.insert("here.txt".into());
+    app_state.left.selected.insert("here.txt".into());
 
     std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
     // Root reads anything, so there is nothing to refuse.
@@ -320,7 +320,7 @@ fn a_tab_that_cannot_be_read_is_refused_and_kept() {
     assert!(app_state.error.is_some());
     assert_eq!(app_state.tabs_left.active, 0);
     assert_eq!(app_state.left.dir, dir);
-    assert_eq!(app_state.selected_left.len(), 1);
+    assert_eq!(app_state.left.selected.len(), 1);
     assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
 
     // Closing the tab shown would move to the locked one, so it stays too.
@@ -328,7 +328,7 @@ fn a_tab_that_cannot_be_read_is_refused_and_kept() {
     app_state.close_tab(true, 0);
     assert!(app_state.error.is_some());
     assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
-    assert_eq!(app_state.selected_left.len(), 1);
+    assert_eq!(app_state.left.selected.len(), 1);
 
     std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
     std::fs::remove_dir_all(&dir).unwrap();

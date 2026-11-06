@@ -252,12 +252,6 @@ pub struct AppState {
     /// end - or what Ctrl+C copied in a panel, shown in the status bar until
     /// the next key.
     pub find_note: Option<String>,
-    // Keyed by file name, not row index: a reload can re-sort the rows, and an
-    // index would then point at a different file than the one the user picked.
-    // The name the filesystem holds, not the one shown: two names that are not
-    // valid UTF-8 can read the same, and picking one would pick both.
-    pub selected_left: HashSet<OsString>,
-    pub selected_right: HashSet<OsString>,
     pub dir_sizes: HashMap<PathBuf, u64>,
     /// Every directory either panel has been in this run, newest first, for
     /// Alt+Down.
@@ -416,6 +410,11 @@ pub struct Panel {
     pub flat: Option<Flat>,
     /// What git says of the panel's entries.
     pub git: PanelGit,
+    // Keyed by file name, not row index: a reload can re-sort the rows, and an
+    // index would then point at a different file than the one the user picked.
+    // The name the filesystem holds, not the one shown: two names that are not
+    // valid UTF-8 can read the same, and picking one would pick both.
+    pub selected: HashSet<OsString>,
 }
 
 impl AppState {
@@ -464,6 +463,7 @@ impl AppState {
                 filter: None,
                 flat: None,
                 git: PanelGit::default(),
+                selected: HashSet::new(),
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -472,6 +472,7 @@ impl AppState {
                 filter: None,
                 flat: None,
                 git: PanelGit::default(),
+                selected: HashSet::new(),
             },
             page_size: 0,
             filter_before: String::new(),
@@ -493,8 +494,6 @@ impl AppState {
             viewer_wrap: false,
             find_shown: false,
             find_note: None,
-            selected_left: HashSet::new(),
-            selected_right: HashSet::new(),
             dir_sizes: HashMap::new(),
             visited: Vec::new(),
             last_click_time: None,

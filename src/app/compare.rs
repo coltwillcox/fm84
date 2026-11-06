@@ -105,7 +105,7 @@ impl AppState {
         } else {
             t!("Differ: {left} on the left, {right} on the right", left = left.len(), right = right.len())
         });
-        self.selected_left = left;
-        self.selected_right = right;
+        self.left.selected = left;
+        self.right.selected = right;
     }
 }

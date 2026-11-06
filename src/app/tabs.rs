@@ -157,9 +157,9 @@ impl AppState {
     /// The panel as it stands, as a tab to come back to.
     pub(super) fn panel_as_tab(&self, is_left: bool) -> Tab {
         let (dir, children, state, selected) = if is_left {
-            (&self.left.dir, &self.left.children, &self.left.state, &self.selected_left)
+            (&self.left.dir, &self.left.children, &self.left.state, &self.left.selected)
         } else {
-            (&self.right.dir, &self.right.children, &self.right.state, &self.selected_right)
+            (&self.right.dir, &self.right.children, &self.right.state, &self.right.selected)
         };
         let tabs = if is_left { &self.tabs_left } else { &self.tabs_right };
         let shown = &tabs.list[tabs.active];
@@ -203,7 +203,7 @@ impl AppState {
             },
         );
         tabs.active += 1;
-        if is_left { self.selected_left.clear() } else { self.selected_right.clear() }
+        self.panel_mut(is_left).selected.clear()
     }
 
     /// Ctrl+W, or a middle click: close a tab. The last one a panel has stays,

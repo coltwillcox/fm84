@@ -238,9 +238,9 @@ fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
 /// entry under the cursor when nothing is. Never the parent entry.
 pub(super) fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
     let (children, selected, state, dir) = if app_state.is_left_active {
-        (&app_state.left.children, &app_state.selected_left, &app_state.left.state, &app_state.left.dir)
+        (&app_state.left.children, &app_state.left.selected, &app_state.left.state, &app_state.left.dir)
     } else {
-        (&app_state.right.children, &app_state.selected_right, &app_state.right.state, &app_state.right.dir)
+        (&app_state.right.children, &app_state.right.selected, &app_state.right.state, &app_state.right.dir)
     };
     let chosen: Vec<&crate::app::Item> = if selected.is_empty() {
         state.selected().and_then(|index| children.get(index)).into_iter().collect()

@@ -108,9 +108,9 @@ impl AppState {
     /// Space is there for the one that is wanted.
     pub fn select_by(&mut self, glob: &crate::glob::Glob, select: bool) {
         let (children, selected) = if self.is_left_active {
-            (&self.left.children, &mut self.selected_left)
+            (&self.left.children, &mut self.left.selected)
         } else {
-            (&self.right.children, &mut self.selected_right)
+            (&self.right.children, &mut self.right.selected)
         };
         for item in children.iter().filter(|item| !item.is_parent() && glob.matches(&item.name_full, item.is_dir)) {
             if select {
@@ -127,9 +127,9 @@ impl AppState {
     /// them into the next delete. Alt+* asks, and inverts them too.
     pub fn invert_selection(&mut self, with_dirs: bool) {
         let (children, selected) = if self.is_left_active {
-            (&self.left.children, &mut self.selected_left)
+            (&self.left.children, &mut self.left.selected)
         } else {
-            (&self.right.children, &mut self.selected_right)
+            (&self.right.children, &mut self.right.selected)
         };
         for item in children.iter().filter(|item| (with_dirs || !item.is_dir) && !item.is_parent()) {
             if !selected.remove(&item.name_os) {
@@ -151,9 +151,9 @@ impl AppState {
 
         {
             let (state, children, selected_set, current_dir) = if self.is_left_active {
-                (&mut self.left.state, &self.left.children, &mut self.selected_left, &self.left.dir)
+                (&mut self.left.state, &self.left.children, &mut self.left.selected, &self.left.dir)
             } else {
-                (&mut self.right.state, &self.right.children, &mut self.selected_right, &self.right.dir)
+                (&mut self.right.state, &self.right.children, &mut self.right.selected, &self.right.dir)
             };
 
             if let Some(index) = state.selected() {
@@ -309,10 +309,6 @@ impl AppState {
     }
 
     pub fn clear_active_selections(&mut self) {
-        if self.is_left_active {
-            self.selected_left.clear();
-        } else {
-            self.selected_right.clear();
-        }
+        self.panel_mut(self.is_left_active).selected.clear();
     }
 }

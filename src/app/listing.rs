@@ -402,11 +402,11 @@ impl AppState {
             // Cursor, search and selection all referred to entries elsewhere.
             if is_left {
                 self.left.dir = found.clone();
-                self.selected_left.clear();
+                self.left.selected.clear();
                 self.left.state.select(Some(0));
             } else {
                 self.right.dir = found.clone();
-                self.selected_right.clear();
+                self.right.selected.clear();
                 self.right.state.select(Some(0));
             }
             self.search_clear();
@@ -433,7 +433,7 @@ impl AppState {
         match listed.items {
             Ok(items) => {
                 let items = self.filter_listing(is_left, &found, items);
-                let selected = if is_left { &mut self.selected_left } else { &mut self.selected_right };
+                let selected = &mut self.panel_mut(is_left).selected;
                 prune_selection(selected, &items);
                 let index = wanted.and_then(|name| items.iter().position(|item| item.name_os == name)).unwrap_or(previous_index).min(items.len().saturating_sub(1));
                 if is_left {
@@ -478,7 +478,7 @@ impl AppState {
         // A tab brings back what was selected in it - when the panel got to
         // where the tab was, and not to some parent of it.
         if let Some(tab) = pending.tab {
-            let (children, selected) = if is_left { (&self.left.children, &mut self.selected_left) } else { (&self.right.children, &mut self.selected_right) };
+            let (children, selected) = if is_left { (&self.left.children, &mut self.left.selected) } else { (&self.right.children, &mut self.right.selected) };
             if relocated {
                 selected.clear();
             } else {

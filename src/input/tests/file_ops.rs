@@ -65,12 +65,12 @@ fn compare_files_from_the_keys() {
 
     // Two selected in one panel.
     app_state.is_left_active = true;
-    app_state.selected_left.insert("a.txt".into());
-    app_state.selected_left.insert("b.txt".into());
+    app_state.left.selected.insert("a.txt".into());
+    app_state.left.selected.insert("b.txt".into());
     compare(&mut app_state);
     assert_eq!(sides(&app_state), (one.join("a.txt"), one.join("b.txt")));
     press(&mut app_state, KeyCode::Esc);
-    app_state.selected_left.clear();
+    app_state.left.selected.clear();
 
     // A directory is not a file to compare.
     app_state.open_dir(true, one.clone(), Some("sub".as_ref()));
@@ -128,8 +128,8 @@ fn symlinks_from_the_keys() {
     assert_eq!(std::fs::read_link(dst.join("sub")).unwrap(), src.join("sub"));
 
     // Several: into the directory, one already there passed over.
-    app_state.selected_left.insert("a.txt".into());
-    app_state.selected_left.insert("b.txt".into());
+    app_state.left.selected.insert("a.txt".into());
+    app_state.left.selected.insert("b.txt".into());
     link(&mut app_state);
     assert!(typed(&mut app_state).ends_with(std::path::MAIN_SEPARATOR));
     press(&mut app_state, KeyCode::Enter);
@@ -138,7 +138,7 @@ fn symlinks_from_the_keys() {
 
     // Esc leaves it be.
     app_state.error = None;
-    app_state.selected_left.clear();
+    app_state.left.selected.clear();
     app_state.open_dir(true, src.clone(), Some("b.txt".as_ref()));
     link(&mut app_state);
     app_state.dialog_input().unwrap().set("never".to_string());
@@ -199,8 +199,8 @@ fn tab_makes_a_hard_link_instead() {
 
     // A directory among files: passed over and named.
     app_state.reload_panel(true, None);
-    app_state.selected_left.insert("b.txt".into());
-    app_state.selected_left.insert("sub".into());
+    app_state.left.selected.insert("b.txt".into());
+    app_state.left.selected.insert("sub".into());
     link(&mut app_state);
     press(&mut app_state, KeyCode::Tab);
     press(&mut app_state, KeyCode::Enter);
@@ -258,8 +258,8 @@ fn attributes_change_from_the_keys() {
     assert_eq!(mode("a.txt"), 0o744);
 
     // Two that differ: the mode opens empty, and stays as it is.
-    app_state.selected_left.insert("a.txt".into());
-    app_state.selected_left.insert("b.txt".into());
+    app_state.left.selected.insert("a.txt".into());
+    app_state.left.selected.insert("b.txt".into());
     alt_a(&mut app_state);
     assert_eq!(fields(&app_state)[0], "");
     press(&mut app_state, KeyCode::BackTab);
@@ -475,7 +475,7 @@ fn copy_and_move_go_where_the_destination_says() {
     assert!(opened_on_directory(&mut app_state));
     press(&mut app_state, KeyCode::Esc);
     app_state.open_dir(true, left.clone(), None);
-    app_state.selected_left.extend(["dup.txt".into(), "z.txt".into()]);
+    app_state.left.selected.extend(["dup.txt".into(), "z.txt".into()]);
     press(&mut app_state, KeyCode::F(5));
     assert!(opened_on_directory(&mut app_state));
 
@@ -618,13 +618,13 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     assert_eq!(app_state.left.children[app_state.left.state.selected().unwrap()].name_full, "notes.txt.sha512");
 
     // Several, a directory's files among them: SHA256SUMS, checked after.
-    app_state.selected_left.extend(["notes.txt", "photos"].map(std::ffi::OsString::from));
+    app_state.left.selected.extend(["notes.txt", "photos"].map(std::ffi::OsString::from));
     alt_h(&mut app_state);
     finish(&mut app_state);
     assert_eq!(report(&app_state).report.summary(), "2 files");
     assert_eq!(popup_box(&mut app_state), sized);
     press(&mut app_state, KeyCode::Enter);
-    app_state.selected_left.clear();
+    app_state.left.selected.clear();
     alt_h(&mut app_state);
     finish(&mut app_state);
     assert_eq!(report(&app_state).report.summary(), "2 OK");
@@ -679,7 +679,7 @@ fn user_menu_commands_get_every_name_whole() {
     let out = dir.join("out");
 
     for name in &awkward[1..] {
-        app_state.selected_left.insert((*name).into());
+        app_state.left.selected.insert((*name).into());
     }
     app_state.dialog = Some(menu(&format!(
         "for f in {{files}}; do printf '%s\\n' \"$f\"; done > '{}'; printf '%s|%s|%s|%s' {{name}} {{dir}} {{other}} $PWD >> '{}'",
@@ -703,7 +703,7 @@ fn user_menu_commands_get_every_name_whole() {
     assert!(out.exists() && !here.join(format!("{}.done", awkward[0])).exists());
 
     // On .. with nothing selected, there is no entry to name.
-    app_state.selected_left.clear();
+    app_state.left.selected.clear();
     app_state.left.state.select(Some(0));
     app_state.dialog = Some(menu("echo {file}"));
     press(&mut app_state, KeyCode::Enter);
@@ -811,7 +811,7 @@ fn f2_on_a_selection_renames_every_name_by_a_pattern() {
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), Some("2.txt".as_ref()));
     let select = |app_state: &mut AppState, names: &[&str]| {
-        app_state.selected_left = names.iter().map(|name| std::ffi::OsString::from(*name)).collect();
+        app_state.left.selected = names.iter().map(|name| std::ffi::OsString::from(*name)).collect();
     };
     let set = |app_state: &mut AppState, field: usize, text: &str| {
         let Some(Dialog::MultiRename(rename)) = &mut app_state.dialog else { panic!("no dialog") };
@@ -827,7 +827,7 @@ fn f2_on_a_selection_renames_every_name_by_a_pattern() {
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.dialog.is_none() && app_state.error.is_none(), "{:?}", app_state.error);
     assert_eq!((read("1.txt"), read("2.txt"), read("3.txt"), read("4.txt")), (None, Some("one".into()), Some("two".into()), Some("three".into())));
-    assert!(app_state.selected_left.is_empty());
+    assert!(app_state.left.selected.is_empty());
     // The cursor followed its file, from 2.txt to 3.txt.
     let cursor = app_state.left.state.selected().and_then(|index| app_state.left.children.get(index)).unwrap();
     assert_eq!(cursor.name_os, "3.txt");
@@ -877,7 +877,7 @@ fn f2_on_a_selection_renames_every_name_by_a_pattern() {
     assert_eq!((read("3.TXT"), read("4.TXT")), (Some("two".into()), Some("three".into())));
 
     // Without a selection F2 still renames in place.
-    app_state.selected_left.clear();
+    app_state.left.selected.clear();
     press(&mut app_state, KeyCode::F(2));
     assert!(matches!(app_state.dialog, Some(Dialog::Rename(_))));
     std::fs::remove_dir_all(&dir).unwrap();
