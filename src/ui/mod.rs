@@ -88,8 +88,8 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
         Clock::Hours12 => Local::now().format(" %I:%M:%S %p ").to_string(),
         Clock::Off => String::new(),
     };
-    if app_state.cached_clock != current_time {
-        app_state.cached_clock = current_time;
+    if app_state.drawn.cached_clock != current_time {
+        app_state.drawn.cached_clock = current_time;
     }
 
     crate::display::set_classic_cursor(app_state.options.cursor == crate::options::CursorShape::Classic);

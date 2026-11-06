@@ -286,7 +286,7 @@ pub(super) fn tab_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> 
 }
 
 pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
-    let cached_clock = app_state.cached_clock.as_str();
+    let cached_clock = app_state.drawn.cached_clock.as_str();
     let logo = Span::styled(format!(" {} ", logo_icon(app_state.options.icon_style)), style_title());
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), style_title());
     let clock = Span::styled(cached_clock, style_title());

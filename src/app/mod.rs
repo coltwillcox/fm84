@@ -216,7 +216,6 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    pub cached_clock: String,
     pub cached_separator_height: u16,
     pub cached_separator: String,
     pub viewer_viewport_height: usize,
@@ -418,6 +417,8 @@ pub struct Drawn {
     pub help_room: usize,
     /// Rows a panel had room for - how far PageUp and PageDown go.
     pub page_size: u16,
+    /// The clock in the top border, as last drawn.
+    pub cached_clock: String,
 }
 
 impl AppState {
@@ -495,7 +496,6 @@ impl AppState {
             drawn: Drawn::default(),
             filter_before: String::new(),
             search_input: String::new(),
-            cached_clock: String::new(),
             cached_separator_height: 0,
             cached_separator: String::new(),
             viewer_viewport_height: 0,
