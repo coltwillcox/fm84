@@ -346,3 +346,27 @@ fn an_encrypted_7z_says_it_needs_the_password() {
     assert!(said.starts_with("Encrypted"), "{said}");
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A tar's times are what its headers say, and a header can say anything:
+/// one past what the clock can hold is no time, not a crash.
+#[test]
+fn a_tar_time_past_the_clock_is_no_time() {
+    let dir = scratch("tar-time");
+    let path = dir.join("far.tar");
+    let mut builder = tar::Builder::new(Vec::new());
+    for (name, mtime) in [("far.txt", u64::MAX), ("near.txt", 1_700_000_000)] {
+        let mut header = tar::Header::new_gnu();
+        header.set_size(1);
+        header.set_mode(0o644);
+        header.set_mtime(mtime);
+        header.set_cksum();
+        builder.append_data(&mut header, name, &b"x"[..]).unwrap();
+    }
+    std::fs::write(&path, builder.into_inner().unwrap()).unwrap();
+
+    let index = crate::archive::index(&path).unwrap();
+    let modified = |name: &str| index.children(Path::new("")).find(|entry| entry.path == Path::new(name)).unwrap().modified;
+    assert_eq!(modified("far.txt"), None);
+    assert_eq!(modified("near.txt"), Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_700_000_000)));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

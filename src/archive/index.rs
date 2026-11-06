@@ -315,7 +315,8 @@ impl Index {
                 path,
                 kind,
                 size: if kind == EntryKind::File { entry.size() } else { 0 },
-                modified: header.mtime().ok().map(|seconds| SystemTime::UNIX_EPOCH + Duration::from_secs(seconds)),
+                // As the header says, which can be past what the clock holds.
+                modified: header.mtime().ok().and_then(|seconds| SystemTime::UNIX_EPOCH.checked_add(Duration::from_secs(seconds))),
                 mode: header.mode().ok(),
                 owner,
                 link,
