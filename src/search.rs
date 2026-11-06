@@ -156,7 +156,8 @@ impl TimeRange {
             return Ok(None);
         }
         let wrong = || t!("Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}", text);
-        let at = |age: Duration| SystemTime::from(now) - age;
+        // So long ago the clock cannot say when is not understood either.
+        let at = |age: Duration| SystemTime::from(now).checked_sub(age).ok_or_else(wrong);
         let range = |after, before| Ok(Some(TimeRange { after, before }));
         // A day's start, and the next day's.
         let day = |text: &str| -> Option<(SystemTime, SystemTime)> {
@@ -170,7 +171,7 @@ impl TimeRange {
                 return range(Some(first.0), Some(last.1));
             }
             let (from, to) = (age(from).ok_or_else(wrong)?, age(to).ok_or_else(wrong)?);
-            return range(Some(at(from.max(to))), Some(at(from.min(to))));
+            return range(Some(at(from.max(to))?), Some(at(from.min(to))?));
         }
         // The two-character ones first, or >= would read as > and "=1d".
         for operator in [">=", "<=", ">", "<"] {
@@ -187,7 +188,8 @@ impl TimeRange {
             }
             let age = age(rest).ok_or_else(wrong)?;
             // Less than a week old is newer than a week ago.
-            return if operator.starts_with('<') { range(Some(at(age)), None) } else { range(None, Some(at(age))) };
+            let at = at(age)?;
+            return if operator.starts_with('<') { range(Some(at), None) } else { range(None, Some(at)) };
         }
         match day(text) {
             Some((start, end)) => range(Some(start), Some(end)),
@@ -664,6 +666,10 @@ mod tests {
         assert_eq!(TimeRange::parse(" ", now).unwrap(), None);
         // An age alone does not say newer or older.
         for wrong in ["7", "12h", "<7x", "2026-13-01", ">", "yesterday"] {
+            assert!(TimeRange::parse(wrong, now).is_err(), "{wrong}");
+        }
+        // Nor one further back than the clock goes.
+        for wrong in [">300000000000y", "<300000000000y", "300000000000y..1d"] {
             assert!(TimeRange::parse(wrong, now).is_err(), "{wrong}");
         }
 
