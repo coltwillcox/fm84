@@ -1,0 +1,1641 @@
+# fm84 în limba română.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, [few] for 0 and for 2 to 19 by the last
+# two digits, [other] for the rest, which takes "de" - "20 de fișiere". A
+# msgctxt sets one use of a word apart from the same word elsewhere. {name}
+# is a place the program fills, kept as it is. The keys to press - Y, N, A
+# and the like - stay as they are.
+
+msgid  "{name}" has changed since it was opened
+msgstr „{name}” s-a schimbat de când a fost deschis
+
+msgid  "{name}" is already in {folder}
+msgstr „{name}” există deja în {folder}
+
+msgid  "{name}" is no longer there
+msgstr „{name}” nu mai există
+
+msgid  "{path}" is already there
+msgstr „{path}” există deja
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Zoom {zoom}%
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- selectează/deselectează după model, * inversează
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): doar citire
+
+msgid  12-hour
+msgstr 12 ore
+
+msgid  24-hour
+msgstr 24 de ore
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Suprascrie tot    S - Omite tot    B - Păstrează ambele mereu
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr O legătură fixă către {path}, care nu este copiat afară
+
+msgid  A root directory cannot go to the trash
+msgstr Un director rădăcină nu poate merge la coșul de gunoi
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr Un manager de fișiere synthwave cu două panouri, pentru terminal
+
+msgid  About
+msgstr Despre
+
+msgid  Already exists: {name}
+msgstr Există deja: {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Există deja: {path} - Suprascrie sau Păstrează ambele din F11
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Există deja: {path} - alt nume, sau Suprascrie sau Păstrează ambele din F11
+
+msgid  Already there
+msgstr Există deja
+
+msgid  Alt+* invert with directories
+msgstr Alt+* inversează cu directoare
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Permisiuni, proprietar, timp
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Jos toate directoarele vizitate
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (sau Ctrl+Shift+F5) legătură, Tab fixă
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (sau Ctrl+F7) caută fișiere
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Sume de control (Tab algoritm); verifică un fișier
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Stânga/Dreapta înapoi/înainte
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Meniul utilizatorului (E îl editează)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O deschide cu... (E pe extensie)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Împachetează într-o arhivă (Tab format)
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R în Caută sau Înlocuiește: regex
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - Sincronizează cele două directoare
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Shift+Enter dimensiunea tuturor directoarelor
+
+msgid  Appearance
+msgstr Aspect
+
+msgid  Archives are read-only
+msgstr Arhivele sunt doar pentru citire
+
+msgid  Ascending
+msgstr Crescător
+
+msgid  Ask
+msgstr Întreabă
+
+msgid  Ask before opening over
+msgstr Întreabă înainte de a deschide peste
+
+msgid  Attributes
+msgstr Atribute
+
+msgid  Attributes column
+msgstr Coloana Atribute
+
+msgid  Automatic
+msgstr Automat
+
+msgid  Automatic ({language})
+msgstr Automat ({language})
+
+msgid  Background
+msgstr Fundal
+
+msgid  Bar
+msgstr Bară
+
+msgid  Behaviour
+msgstr Comportament
+
+msgid  Binary
+msgstr Binar
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Fișier binar. Apăsați Esc pentru a reveni.
+
+msgid  Block
+msgstr Bloc
+
+msgid  Bookmarks
+msgstr Semne de carte
+
+msgid  Both panels show the same directory
+msgstr Ambele panouri arată același director
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Ambele panouri arată același director: nimic de sincronizat
+
+msgid  Branches:
+msgstr Ramuri:
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Construit cu Rust, Ratatui și Crossterm
+
+msgid  Built-in
+msgstr Încorporat
+
+msgid  C - Copy
+msgstr C - Copiază
+
+msgid  Cancelling
+msgstr Se anulează
+
+msgid  Cannot calculate size: {e}
+msgstr Nu se poate calcula dimensiunea: {e}
+
+msgid  Cannot change {what}
+msgstr Nu se poate schimba {what}
+
+msgid  Cannot copy
+msgstr Nu se poate copia
+
+msgid  Cannot copy "{path}" into itself
+msgstr Nu se poate copia „{path}” în el însuși
+
+msgid  Cannot copy to {path}
+msgstr Nu se poate copia în {path}
+
+msgid  Cannot delete
+msgstr Nu se poate șterge
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr Nu se poate edita {path}: nu este text UTF-8. F3 îl arată așa cum este.
+
+msgid  Cannot extract
+msgstr Nu se poate extrage
+
+msgid  Cannot link {what}
+msgstr Nu se poate lega {what}
+
+msgid  Cannot make room beside {path}
+msgstr Nu se poate face loc lângă {path}
+
+msgid  Cannot make room to compare: {e}
+msgstr Nu se poate face loc pentru comparare: {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Nu se poate face loc pentru a-l deschide: {e}
+
+msgid  Cannot move
+msgstr Nu se poate muta
+
+msgid  Cannot move to the trash: {why}
+msgstr Nu se poate muta la coșul de gunoi: {why}
+
+msgid  Cannot move to trash
+msgstr Nu se poate muta la coșul de gunoi
+
+msgid  Cannot open file: {e}
+msgstr Nu se poate deschide fișierul: {e}
+
+msgid  Cannot open terminal: {e}
+msgstr Nu se poate deschide terminalul: {e}
+
+msgid  Cannot open {path}: {e}
+msgstr Nu se poate deschide {path}: {e}
+
+msgid  Cannot pack
+msgstr Nu se poate împacheta
+
+msgid  Cannot pack into {path}
+msgstr Nu se poate împacheta în {path}
+
+msgid  Cannot reach {target}
+msgstr Nu se poate ajunge la {target}
+
+msgid  Cannot read
+msgstr Nu se poate citi
+
+msgid  Cannot read file
+msgstr Nu se poate citi fișierul
+
+msgid  Cannot read {path}
+msgstr Nu se poate citi {path}
+
+msgid  Cannot read {path}: {e}
+msgstr Nu se poate citi {path}: {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Nu se poate înlocui directorul {path} cu un fișier
+
+msgid  Cannot replace directory {path} with a link
+msgstr Nu se poate înlocui directorul {path} cu o legătură
+
+msgid  Cannot replace file {path} with a directory
+msgstr Nu se poate înlocui fișierul {path} cu un director
+
+msgid  Cannot run git: {e}
+msgstr Nu se poate rula git: {e}
+
+msgid  Cannot run {label}: {e}
+msgstr Nu se poate rula {label}: {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr Nu se pot salva semnele de carte: {e}
+
+msgid  Cannot save options: {e}
+msgstr Nu se pot salva opțiunile: {e}
+
+msgid  Cannot start {program}: {e}
+msgstr Nu se poate porni {program}: {e}
+
+msgid  Cannot synchronize
+msgstr Nu se poate sincroniza
+
+msgid  Cannot write {path}: {e}
+msgstr Nu se poate scrie {path}: {e}
+
+msgid  Case
+msgstr Majuscule
+
+msgid  Case-sensitive sort
+msgstr Sortare sensibilă la majuscule
+
+msgid  Changed on disk
+msgstr Schimbat pe disc
+
+msgid  Checked against {file}
+msgstr Verificat cu {file}
+
+msgid  Checksumming
+msgstr Se calculează sumele de control
+
+msgid  Checksums
+msgstr Sume de control
+
+msgid  Choose another program
+msgstr Alege alt program
+
+msgid  Classic
+msgstr Clasic
+
+msgid  Click the git branch to switch it
+msgstr Clic pe ramura git pentru a o schimba
+
+msgid  Clock
+msgstr Ceas
+
+msgid  Compare
+msgstr Compară
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Se compară...    Esc - Oprește și închide
+
+msgid  Confirm copy and move
+msgstr Confirmă copierea și mutarea
+
+msgid  Confirm delete
+msgstr Confirmă ștergerea
+
+msgid  Containing
+msgstr Conține
+
+msgid  Containing is a regular expression
+msgstr Conține este o expresie regulată
+
+msgid  Copied name: {text}
+msgstr Nume copiat: {text}
+
+msgid  Copied path: {text}
+msgstr Cale copiată: {text}
+
+msgid  Copied the report
+msgstr Raportul a fost copiat
+
+msgid  Copied: {text}
+msgstr Copiat: {text}
+
+msgid  Copy
+msgstr Copiază
+
+msgid  Copy "{name}" to:
+msgstr Copiază „{name}” în:
+
+msgid  Copy directory
+msgstr Copiază directorul
+
+msgid  Copy file
+msgstr Copiază fișierul
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Copiați-l mai întâi din arhivă: sumele de control se calculează din fișiere de pe disc
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Copiați-l mai întâi din arhivă: ce se împachetează trebuie să fie pe disc
+
+msgid  Copying
+msgstr Se copiază
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Nu s-au putut schimba {count} din {total}. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Nu s-au putut lega {count} din {total}. {first}
+
+msgid  Counting...
+msgstr Se numără...
+
+msgid  Create Directory
+msgstr Creează director
+
+msgid  Create File
+msgstr Creează fișier
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Toate fișierele de dedesubt, plat
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Copiază căi/nume
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Semne de carte
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Caută
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F caută, F3/Shift+F3 următor/anterior
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Sortează nume/ext/dată/dimensiune
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G salt la linie, Ctrl+R/F4 înlocuiește
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Salt la cale (sau clic pe ea)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Stânga/Dreapta - Directorul în acel panou
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgUp/PgDn, Alt+1..9 comută
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Reîncarcă ambele panouri
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - Filtrează panoul după model
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Filă nouă/închide
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U schimbă panourile, Alt+I același director acolo
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z anulează, Ctrl+Y refă, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Anulează
+
+msgid  Cursor
+msgstr Cursor
+
+msgid  Cursor blinks
+msgstr Cursorul clipește
+
+msgid  D - Delete permanently
+msgstr D - Șterge definitiv
+
+msgid  Dashed
+msgstr Întrerupt
+
+msgid  Date format
+msgstr Format dată
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Decodarea unei imagini atât de mari necesită atâta memorie.
+
+msgid  Delete
+msgstr Șterge
+
+msgid  Delete "{name}" permanently?
+msgstr Ștergeți definitiv „{name}”?
+
+msgid  Delete to trash (F8)
+msgstr Șterge la coșul de gunoi (F8)
+
+msgid  Delete: directory
+msgstr Șterge: director
+
+msgid  Delete: file
+msgstr Șterge: fișier
+
+msgid  Deleting
+msgstr Se șterge
+
+msgid  Descending
+msgstr Descrescător
+
+msgid  Deselect:
+msgstr Deselectează:
+
+msgid  Destination already exists: {path}
+msgstr Destinația există deja: {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Diferă: {left} în stânga, {right} în dreapta
+
+msgid  Difference {at}/{count}
+msgstr Diferența {at}/{count}
+
+msgid  Directories first
+msgstr Directoare mai întâi
+
+msgid  Directory "{name}"
+msgstr Directorul „{name}”
+
+msgid  Directory History
+msgstr Istoricul directoarelor
+
+msgid  Double
+msgstr Dublu
+
+msgid  Edit
+msgstr Editează
+
+msgid  Edit "{name}" ({size})?
+msgstr Editați „{name}” ({size})?
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr Editați „{name}” ({width}x{height}, {size})?
+
+msgid  Edit:
+msgstr Editează:
+
+msgid  Editor (F4)
+msgstr Editor (F4)
+
+msgid  Empty terminal command
+msgstr Comandă de terminal goală
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Criptat: fm84 nu îl poate citi fără parolă
+
+msgid  Enter - Copy
+msgstr Enter - Copiază
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Enter - Creează    Esc - Anulează
+
+msgid  Enter - Extract
+msgstr Enter - Extrage
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Enter - Salt    F - În panou    Esc - Închide
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Enter - Salt    F - În panou    Esc - Oprește și închide
+
+msgid  Enter - Hard link
+msgstr Enter - Legătură fixă
+
+msgid  Enter - Move
+msgstr Enter - Mută
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Enter - Deschide directorul, sau intră într-o arhivă
+
+msgid  Enter - Pack
+msgstr Enter - Împachetează
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Enter - Salvează    Esc - Anulează    {} - director
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Enter - Salvează    Esc - Anulează    {} - fișier
+
+msgid  Enter - Symlink
+msgstr Enter - Legătură simbolică
+
+msgid  Enter - Write
+msgstr Enter - Scrie
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Enter din nou pentru a rula, ștergând {deleting}    Orice altă tastă - Nu încă
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Enter/1-9 - Salt    A/Ins - Adaugă aici    D/Del - Elimină
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Enter/1-9 - Deschide    E - Editează asocierile    Esc - Închide
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Enter/1-9 - Rulează    E - Editează meniul    Esc - Închide
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Enter/Clic - Comută    Esc - Închide
+
+msgid  Error
+msgstr Eroare
+
+msgid  Esc - Back to editing
+msgstr Esc - Înapoi la editare
+
+msgid  Esc - Cancel
+msgstr Esc - Anulează
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Esc - Anulează    F10 din nou - Ieșire
+
+msgid  Esc - Close
+msgstr Esc - Închide
+
+msgid  Esc Exit
+msgstr Esc Ieșire
+
+msgid  Existing
+msgstr Existent
+
+msgid  Ext
+msgstr Ext
+
+msgid  Ext column
+msgstr Coloana Ext
+
+msgid  Extension
+msgstr Extensie
+
+msgid  Extract "{name}" to:
+msgstr Extrage „{name}” în:
+
+msgid  Extract archive
+msgstr Extrage arhiva
+
+msgid  Extracting
+msgstr Se extrage
+
+msgid  F Fit [Fill]
+msgstr F Încadrează [Umple]
+
+msgid  F [Fit] Fill
+msgstr F [Încadrează] Umple
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F încadrează/umple, +/- zoom, W încadrare text
+
+msgid  F on the results feeds them to the panel
+msgstr F pe rezultate le pune în panou
+
+msgid  F1 - This help
+msgstr F1 - Acest ajutor
+
+msgid  F10 - Quit
+msgstr F10 - Ieșire
+
+msgid  F10 again - Quit
+msgstr F10 din nou - Ieșire
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Opțiuni (Alt+F1/F2 unități)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Previzualizare în celălalt panou
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Redenumește director/fișier
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Salvează
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Vezi fișierul (X text/hex/imagine)
+
+msgid  F3/N Next
+msgstr F3/N Următor
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Editează fișierul (Ctrl+S/F2 salvează)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Copiază (în celălalt panou, sau unde se scrie)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 copiază afară, Alt+F9 (sau Ctrl+F9) totul
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Mută (în celălalt panou, sau unde se scrie)
+
+msgid  F7 - Create directory
+msgstr F7 - Creează director
+
+msgid  F8 - Move to trash
+msgstr F8 - Mută la coșul de gunoi
+
+msgid  F9 - Open terminal
+msgstr F9 - Deschide terminalul
+
+msgid  File "{name}"
+msgstr Fișierul „{name}”
+
+msgid  Fill
+msgstr Umple
+
+msgid  Filter:
+msgstr Filtru:
+
+msgid  Find
+msgstr Caută
+
+msgid  Find (regex, Alt+R for text):
+msgstr Caută (regex, Alt+R pentru text):
+
+msgid  Find files
+msgstr Caută fișiere
+
+msgid  Find files cannot search inside an archive yet
+msgstr Caută fișiere nu poate căuta încă într-o arhivă
+
+msgid  Find:
+msgstr Caută:
+
+msgid  First letter
+msgstr Prima literă
+
+msgid  Fit
+msgstr Încadrează
+
+msgid  Git marks
+msgstr Marcaje git
+
+msgid  Go to line:
+msgstr Salt la linia:
+
+msgid  Gone
+msgstr Dispărut
+
+msgid  Group
+msgstr Grup
+
+msgid  Hard link "{name}" at:
+msgstr Legătură fixă către „{name}” în:
+
+msgid  Hard link directory
+msgstr Legătură fixă către director
+
+msgid  Hard link file
+msgstr Legătură fixă către fișier
+
+msgid  Heavy
+msgstr Groasă
+
+msgid  Help
+msgstr Ajutor
+
+msgid  Help/About
+msgstr Ajutor/Despre
+
+msgid  High contrast
+msgstr Contrast ridicat
+
+msgid  Highlight files up to
+msgstr Evidențiază fișiere până la
+
+msgid  Icons
+msgstr Pictograme
+
+msgid  Image backgrounds
+msgstr Fundaluri pentru imagini
+
+msgid  Images open as
+msgstr Imaginile se deschid ca
+
+msgid  In
+msgstr În
+
+msgid  It got shorter while it was being packed
+msgstr S-a micșorat în timp ce era împachetat
+
+msgid  Keep both
+msgstr Păstrează ambele
+
+msgid  Keys
+msgstr Taste
+
+msgid  Language
+msgstr Limbă
+
+msgid  Large File
+msgstr Fișier mare
+
+msgid  Large Picture
+msgstr Imagine mare
+
+msgid  Line numbers
+msgstr Numere de linie
+
+msgid  Line {at}/{count}
+msgstr Linia {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Ln {line}, Col {column}
+
+msgid  Military
+msgstr Militar
+
+msgid  Mkdir
+msgstr Director nou
+
+msgid  Mode
+msgstr Mod
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Mod ca 755 sau u+x,go-w; proprietar și grup după nume sau număr
+
+msgid  Modified
+msgstr Modificat
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Modificat ca <7d, >1y, 1d..7d, 2026-10-01 sau >2026-10-01, nu {text}
+
+msgid  Modified column
+msgstr Coloana Modificat
+
+msgid  Move
+msgstr Mută
+
+msgid  Move "{name}" to the trash?
+msgstr Mutați „{name}” la coșul de gunoi?
+
+msgid  Move "{name}" to:
+msgstr Mută „{name}” în:
+
+msgid  Move directory
+msgstr Mută directorul
+
+msgid  Move file
+msgstr Mută fișierul
+
+msgid  Move to trash: directory
+msgstr La coșul de gunoi: director
+
+msgid  Move to trash: file
+msgstr La coșul de gunoi: fișier
+
+msgid  Moving
+msgstr Se mută
+
+msgid  Moving to trash
+msgstr Se mută la coșul de gunoi
+
+msgid  Name
+msgstr Nume
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Nume cum îl ia +: *.jpg;*.png, sau */ pentru directoare. Literele mici potrivesc ambele
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Denumiți-o ca arhivă, terminată în {endings}
+
+msgid  New
+msgstr Nou
+
+msgid  New name
+msgstr Nume nou
+
+msgid  Next
+msgstr Următor
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Încă niciun semn de carte - A păstrează directorul panoului
+
+msgid  No branches yet: nothing has been committed
+msgstr Încă nicio ramură: nimic nu a fost înregistrat
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Încă nicio comandă - E le adaugă, ca etichetă = comandă, în
+
+msgid  No config directory
+msgstr Niciun director de configurare
+
+msgid  No config directory to keep a menu in
+msgstr Niciun director de configurare în care să se păstreze un meniu
+
+msgid  No config directory to keep associations in
+msgstr Niciun director de configurare în care să se păstreze asocierile
+
+msgid  No such directory: {path}
+msgstr Nu există directorul: {path}
+
+msgid  No such file or directory: {path}
+msgstr Nu există fișierul sau directorul: {path}
+
+msgid  No such group: {text}
+msgstr Nu există grupul: {text}
+
+msgid  No such user: {text}
+msgstr Nu există utilizatorul: {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Nu s-a găsit niciun emulator de terminal. Setați $TERMINAL.
+
+msgid  Not a line number: {text}
+msgstr Nu este un număr de linie: {text}
+
+msgid  Not a mode: {text}
+msgstr Nu este un mod: {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Nu este un mod: {text} - 755, sau u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Nu este un nume simplu de fișier: {name}
+
+msgid  Not a regular expression: {why}
+msgstr Nu este o expresie regulată: {why}
+
+msgid  Not a regular file
+msgstr Nu este un fișier obișnuit
+
+msgid  Not a regular file: {path}
+msgstr Nu este un fișier obișnuit: {path}
+
+msgid  Not a time here: {text}
+msgstr Nu este o oră aici: {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Nu este o oră: {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Nu este o arhivă: {path}
+
+msgid  Not found: {term}
+msgstr Nu s-a găsit: {term}
+
+msgid  Nothing chosen for {label}
+msgstr Nimic ales pentru {label}
+
+msgid  Nothing found
+msgstr Nimic găsit
+
+msgid  Nothing found to feed to the panel
+msgstr Nimic găsit de pus în panou
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Nimic nu e mai mic de 0 octeți
+
+msgid  Nothing replaced
+msgstr Nimic înlocuit
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Nimic cu care să se compare: celălalt panou nu are niciun fișier cu acest nume, nici unul sub cursor
+
+msgid  Nothing to synchronize
+msgstr Nimic de sincronizat
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Nimic de scris: nicio sumă de control nu a putut fi calculată
+
+msgid  Nothing visited matches
+msgstr Niciun director vizitat nu se potrivește
+
+msgid  Now
+msgstr Acum
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Suprascrie toate cele mai vechi    Esc - Abandonează
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Suprascrie    R - Reîncarcă, pierzând modificările
+
+msgid  O - Save it again
+msgstr O - Salvează din nou
+
+msgid  Off
+msgstr Dezactivat
+
+msgid  Old name
+msgstr Nume vechi
+
+msgid  On
+msgstr Activat
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr Directorul unui panou este în interiorul celuilalt: nimic de sincronizat
+
+msgid  Only the first {count} files are listed
+msgstr Sunt listate doar primele {count} fișiere
+
+msgid  Open {name} With
+msgstr Deschide {name} cu
+
+msgid  Options
+msgstr Opțiuni
+
+msgid  Overwrite
+msgstr Suprascrie
+
+msgid  Owner
+msgstr Proprietar
+
+msgid  Pack "{name}" into:
+msgstr Împachetează „{name}” în:
+
+msgid  Pack directory
+msgstr Împachetează directorul
+
+msgid  Pack file
+msgstr Împachetează fișierul
+
+msgid  Packing
+msgstr Se împachetează
+
+msgid  Panels
+msgstr Panouri
+
+msgid  Plain
+msgstr Simple
+
+msgid  Plain Text
+msgstr Text simplu
+
+msgid  Preview
+msgstr Previzualizare
+
+msgid  Preview on startup
+msgstr Previzualizare la pornire
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Puneți cursorul pe un fișier pentru comparare, sau selectați două
+
+msgid  Put the cursor on an archive to extract it
+msgstr Puneți cursorul pe o arhivă pentru a o extrage
+
+msgid  Quit
+msgstr Ieșire
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Reîncearcă    S - Omite    A - Omite tot    Esc - Abandonează
+
+msgid  Read pictures ahead
+msgstr Citește imaginile în avans
+
+msgid  Reading a file this large may take a while.
+msgstr Citirea unui fișier atât de mare poate dura.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr Se citește {dir}…  Esc pentru oprire
+
+msgid  Refuse
+msgstr Refuză
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Relativ
+
+msgid  Released under the {license} License
+msgstr Publicat sub licența {license}
+
+msgid  Remember directories
+msgstr Ține minte directoarele
+
+msgid  Rename
+msgstr Redenumește
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr Redenumite {done} din {total}, apoi: {e}
+
+msgid  Replace
+msgstr Înlocuiește
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr Înlocuiți „{find}” cu „{with}”?   Y - Da   N - Nu   A - Toate   Esc - Oprește
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Înlocuiește (regex, Alt+R pentru text):
+
+msgid  Replace:
+msgstr Înlocuiește:
+
+msgid  Row {at}/{count}
+msgstr Rândul {at}/{count}
+
+msgid  Save
+msgstr Salvează
+
+msgid  Save changes before closing?
+msgstr Salvați modificările înainte de închidere?
+
+msgid  Scroll bars
+msgstr Bare de derulare
+
+msgid  Search:
+msgstr Caută:
+
+msgid  Select:
+msgstr Selectează:
+
+msgid  Shade
+msgstr Umbră
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Shift+Enter (sau Ctrl+O) deschide cum o face sistemul
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Shift+F10 ieșire, cd84 rămâne pe loc
+
+msgid  Shift+F2 compare directories
+msgstr Shift+F2 compară directoarele
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Shift+F3 (sau =) compară două fișiere
+
+msgid  Shift+F3/P Previous
+msgstr Shift+F3/P Anterior
+
+msgid  Shift+F4 - Create file
+msgstr Shift+F4 - Creează fișier
+
+msgid  Shift+F8 delete permanently
+msgstr Shift+F8 șterge definitiv
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Shift+Sus/Jos - Mută    Esc - Închide
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Shift+săgeți selectează, Ctrl+A tot
+
+msgid  Show hidden files
+msgstr Arată fișierele ascunse
+
+msgid  Size
+msgstr Dimensiune
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Dimensiune ca >10M, <1K sau 1M..10M, nu {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Dimensiune ca >10M, <1K sau 1M..10M; Modificat ca <7d, >1y, 1d..7d, 2026-10-01 sau >2026-10-01
+
+msgid  Size column
+msgstr Coloana Dimensiune
+
+msgid  Size units
+msgstr Unități de dimensiune
+
+msgid  Sort by
+msgstr Sortează după
+
+msgid  Sort direction
+msgstr Ordinea sortării
+
+msgid  Space - Select/deselect file
+msgstr Space - Selectează/deselectează fișierul
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Comutarea la {branch} s-a oprit neașteptat
+
+msgid  Symbolic links are not supported here
+msgstr Legăturile simbolice nu sunt acceptate aici
+
+msgid  Symlink "{name}" at:
+msgstr Legătură simbolică către „{name}” în:
+
+msgid  Symlink directory
+msgstr Legătură simbolică către director
+
+msgid  Symlink file
+msgstr Legătură simbolică către fișier
+
+msgid  Synchronize
+msgstr Sincronizează
+
+msgid  Synchronizing
+msgstr Se sincronizează
+
+msgid  System default
+msgstr Implicit de sistem
+
+msgid  Tab - Algorithm
+msgstr Tab - Algoritm
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Câmp   ←/→ - Majuscule   Enter - Redenumește   Esc - Anulează
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Câmp  Space - Regex  Enter - Caută  Esc - Anulează
+
+msgid  Tab - Format
+msgstr Tab - Format
+
+msgid  Tab - Hard link
+msgstr Tab - Legătură fixă
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Câmpul următor    Enter - Aplică    Esc - Anulează
+
+msgid  Tab - Symlink
+msgstr Tab - Legătură simbolică
+
+msgid  Tab completes a name
+msgstr Tab completează un nume
+
+msgid  Tab width
+msgstr Lățimea tabului
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab indentare, Ctrl+/ comentariu
+
+msgid  Terminal
+msgstr Terminal
+
+msgid  Terminal (F9)
+msgstr Terminal (F9)
+
+msgid  Terminal too small
+msgstr Terminalul este prea mic
+
+msgid  The archive ends before it
+msgstr Arhiva se termină înaintea lui
+
+msgid  The directories hold the same files
+msgstr Directoarele conțin aceleași fișiere
+
+msgid  The files are identical
+msgstr Fișierele sunt identice
+
+msgid  The files differ from byte {at}
+msgstr Fișierele diferă de la octetul {at}
+
+msgid  The files differ from byte {at}, and in size
+msgstr Fișierele diferă de la octetul {at}, și ca dimensiune
+
+msgid  The files differ only in line endings
+msgstr Fișierele diferă doar prin sfârșiturile de linie
+
+msgid  Theme
+msgstr Temă
+
+msgid  This cannot be undone
+msgstr Acest lucru nu poate fi anulat
+
+msgid  Title Case
+msgstr Fiecare Cuvânt Cu Majusculă
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr Prea mare pentru comparare: {path} ({size}; F11 stabilește limita)
+
+msgid  Transfer stopped unexpectedly
+msgstr Transferul s-a oprit neașteptat
+
+msgid  Trash
+msgstr Coș
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Tastați pentru a restrânge    Sus/Jos - Alege    Enter - Salt    Esc - Închide
+
+msgid  Type to search, Esc to clear
+msgstr Tastați pentru a căuta, Esc pentru a goli
+
+msgid  UPPER CASE
+msgstr MAJUSCULE
+
+msgid  Unchanged
+msgstr Neschimbat
+
+msgid  Underline
+msgstr Subliniere
+
+msgid  Unsaved Changes
+msgstr Modificări nesalvate
+
+msgid  User Menu
+msgstr Meniul utilizatorului
+
+msgid  View
+msgstr Vezi
+
+msgid  View "{name}" ({size})?
+msgstr Vedeți „{name}” ({size})?
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr Vedeți „{name}” ({width}x{height}, {size})?
+
+msgid  View:
+msgstr Vezi:
+
+msgid  Viewer and editor
+msgstr Vizualizator și editor
+
+msgid  W Wrap
+msgstr W Încadrare
+
+msgid  W [Wrap]
+msgstr W [Încadrare]
+
+msgid  When destination exists
+msgstr Când destinația există
+
+msgid  When opened
+msgstr La deschidere
+
+msgid  With:
+msgstr Cu:
+
+msgid  Wrapped to the bottom
+msgstr Continuat de la sfârșit
+
+msgid  Wrapped to the top
+msgstr Continuat de la început
+
+msgid  Written: {name}
+msgstr Scris: {name}
+
+msgid  X Image Text [Hex]
+msgstr X Imagine Text [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Imagine [Text] Hex
+
+msgid  X Text [Hex]
+msgstr X Text [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Imagine] Text Hex
+
+msgid  X [Text] Hex
+msgstr X [Text] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Suprascrie    N - Omite    K - Păstrează ambele
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Salvează    N - Renunță    Esc - Anulează
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Enter - Da    N / Esc - Nu
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] literele 2 la 5   [C10+5:3] de la 10, din 5 în 5, 3 cifre
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] nume   [E] extensie   [C] contor
+
+msgid  a directory cannot be hard linked
+msgstr un director nu poate avea o legătură fixă
+
+msgid  already exists
+msgstr există deja
+
+msgid  by name, text, regex, size, date
+msgstr după nume, text, regex, dimensiune, dată
+
+msgid  del
+msgstr ște
+
+msgid  filter: {pattern}
+msgstr filtru: {pattern}
+
+msgid  flat
+msgstr plat
+
+msgid  found
+msgstr găsite
+
+msgid  git did not answer
+msgstr git nu a răspuns
+
+msgid  given twice
+msgstr dat de două ori
+
+msgid  just now
+msgstr chiar acum
+
+msgid  lower case
+msgstr litere mici
+
+msgid  name not readable as text
+msgstr numele nu poate fi citit ca text
+
+msgid  newer
+msgstr mai nou
+
+msgid  not a plain name
+msgstr nu este un nume simplu
+
+msgid  not readable as an archive ({e})
+msgstr nu poate fi citit ca arhivă ({e})
+
+msgid  not there
+msgstr nu există
+
+msgid  terminal
+msgstr terminal
+
+msgid  to be replaced by "{name}"
+msgstr va fi înlocuit cu „{name}”
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr cu o selecție: toate după [N] [E] [C]
+
+msgid  {count} FAILED
+msgstr {count} EȘUATE
+
+msgid  {count} OK
+msgstr {count} OK
+
+msgid  {count} could not be read
+msgstr {count} nu au putut fi citite
+
+msgid  {count} h ago
+msgstr acum {count} h
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr {count} elemente au nevoie de un director în care să intre, iar {path} nu este unul
+
+msgid  {count} min ago
+msgstr acum {count} min
+
+msgid  {count} missing
+msgstr {count} lipsă
+
+msgid  {count} mo ago
+msgstr acum {count} luni
+
+msgid  {count} yr ago
+msgstr acum {count} ani
+
+msgid  {deleting} to delete
+msgstr {deleting} de șters
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} din {total} la {rate}/s
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title} anulat după {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr {name} nu este un nume pe care un {format} îl poate păstra: nu este UTF-8
+
+msgid  {path} already exists
+msgstr {path} există deja
+
+msgid  {path} could not be read after all
+msgstr {path} nu a putut fi citit până la urmă
+
+msgid  {path} is a directory
+msgstr {path} este un director
+
+msgid  {program} exited with {status}
+msgstr {program} s-a încheiat cu {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Mută    Enter/←→ - Schimbă    Esc - Închide
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Copiază  Del Șterge  Space Lasă  > < Oglindă  R Resetează  Enter Rulează  Esc Închide
+
+msgctxt job
+msgid   Checksum
+msgstr  Sumă de control
+
+msgctxt job
+msgid   Copy
+msgstr  Copiere
+
+msgctxt job
+msgid   Delete
+msgstr  Ștergere
+
+msgctxt job
+msgid   Extract
+msgstr  Extragere
+
+msgctxt job
+msgid   Move
+msgstr  Mutare
+
+msgctxt job
+msgid   Move to trash
+msgstr  Mutare la coșul de gunoi
+
+msgctxt job
+msgid   Pack
+msgstr  Împachetare
+
+msgctxt job
+msgid   Synchronize
+msgstr  Sincronizare
+
+msgid  Copied {count} name
+msgstr[one]   Copiat {count} nume
+msgstr[few]   Copiate {count} nume
+msgstr[other] Copiate {count} de nume
+
+msgid  Copied {count} path
+msgstr[one]   Copiată {count} cale
+msgstr[few]   Copiate {count} căi
+msgstr[other] Copiate {count} de căi
+
+msgid  Copy {count} item
+msgstr[one]   Copiază {count} element
+msgstr[few]   Copiază {count} elemente
+msgstr[other] Copiază {count} de elemente
+
+msgid  Copy {count} item to: {names}
+msgstr[one]   Copiază {count} element ({names}) în:
+msgstr[few]   Copiază {count} elemente ({names}) în:
+msgstr[other] Copiază {count} de elemente ({names}) în:
+
+msgid  Delete {count} item permanently?
+msgstr[one]   Ștergeți definitiv {count} element?
+msgstr[few]   Ștergeți definitiv {count} elemente?
+msgstr[other] Ștergeți definitiv {count} de elemente?
+
+msgid  Delete: {count} item
+msgstr[one]   Șterge: {count} element
+msgstr[few]   Șterge: {count} elemente
+msgstr[other] Șterge: {count} de elemente
+
+msgid  Hard link {count} item
+msgstr[one]   Legătură fixă către {count} element
+msgstr[few]   Legături fixe către {count} elemente
+msgstr[other] Legături fixe către {count} de elemente
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]   Legătură fixă către {count} element ({names}) în:
+msgstr[few]   Legături fixe către {count} elemente ({names}) în:
+msgstr[other] Legături fixe către {count} de elemente ({names}) în:
+
+msgid  Move to trash: {count} item
+msgstr[one]   La coșul de gunoi: {count} element
+msgstr[few]   La coșul de gunoi: {count} elemente
+msgstr[other] La coșul de gunoi: {count} de elemente
+
+msgid  Move {count} item
+msgstr[one]   Mută {count} element
+msgstr[few]   Mută {count} elemente
+msgstr[other] Mută {count} de elemente
+
+msgid  Move {count} item to the trash?
+msgstr[one]   Mutați {count} element la coșul de gunoi?
+msgstr[few]   Mutați {count} elemente la coșul de gunoi?
+msgstr[other] Mutați {count} de elemente la coșul de gunoi?
+
+msgid  Move {count} item to: {names}
+msgstr[one]   Mută {count} element ({names}) în:
+msgstr[few]   Mută {count} elemente ({names}) în:
+msgstr[other] Mută {count} de elemente ({names}) în:
+
+msgid  Pack {count} item
+msgstr[one]   Împachetează {count} element
+msgstr[few]   Împachetează {count} elemente
+msgstr[other] Împachetează {count} de elemente
+
+msgid  Pack {count} item into: {names}
+msgstr[one]   Împachetează {count} element ({names}) în:
+msgstr[few]   Împachetează {count} elemente ({names}) în:
+msgstr[other] Împachetează {count} de elemente ({names}) în:
+
+msgid  Rename {count} Entry
+msgstr[one]   Redenumește {count} element
+msgstr[few]   Redenumește {count} elemente
+msgstr[other] Redenumește {count} de elemente
+
+msgid  Replaced {count}
+msgstr[one]   Înlocuit {count}
+msgstr[few]   Înlocuite {count}
+msgstr[other] Înlocuite {count}
+
+msgid  Symlink {count} item
+msgstr[one]   Legătură simbolică către {count} element
+msgstr[few]   Legături simbolice către {count} elemente
+msgstr[other] Legături simbolice către {count} de elemente
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]   Legătură simbolică către {count} element ({names}) în:
+msgstr[few]   Legături simbolice către {count} elemente ({names}) în:
+msgstr[other] Legături simbolice către {count} de elemente ({names}) în:
+
+msgid  {count} day ago
+msgstr[one]   acum {count} zi
+msgstr[few]   acum {count} zile
+msgstr[other] acum {count} de zile
+
+msgid  {count} difference
+msgstr[one]   {count} diferență
+msgstr[few]   {count} diferențe
+msgstr[other] {count} de diferențe
+
+msgid  {count} directory could not be read
+msgstr[one]   {count} director nu a putut fi citit
+msgstr[few]   {count} directoare nu au putut fi citite
+msgstr[other] {count} de directoare nu au putut fi citite
+
+msgid  {count} file
+msgstr[one]   {count} fișier
+msgstr[few]   {count} fișiere
+msgstr[other] {count} de fișiere
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]   {count} fișier, {failed} nu au putut fi citite
+msgstr[few]   {count} fișiere, {failed} nu au putut fi citite
+msgstr[other] {count} de fișiere, {failed} nu au putut fi citite
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]   {count} element - un câmp lăsat așa cum este, sau gol, nu schimbă nimic
+msgstr[few]   {count} elemente - un câmp lăsat așa cum este, sau gol, nu schimbă nimic
+msgstr[other] {count} de elemente - un câmp lăsat așa cum este, sau gol, nu schimbă nimic
+
+msgid  {count} line
+msgstr[one]   {count} linie
+msgstr[few]   {count} linii
+msgstr[other] {count} de linii
+
+msgid  {count} line not understood
+msgstr[one]   {count} linie neînțeleasă
+msgstr[few]   {count} linii neînțelese
+msgstr[other] {count} de linii neînțelese
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]   {count} dintre numele noi nu poate fi folosit: {why} - vedeți tabelul
+msgstr[few]   {count} dintre numele noi nu pot fi folosite: {why} - vedeți tabelul
+msgstr[other] {count} dintre numele noi nu pot fi folosite: {why} - vedeți tabelul
+
+msgid  {done} of {total} entry
+msgstr[one]   {done} din {total} element
+msgstr[few]   {done} din {total} elemente
+msgstr[other] {done} din {total} de elemente
+
+msgid  {done} of {total} item
+msgstr[one]   {done} din {total} element
+msgstr[few]   {done} din {total} elemente
+msgstr[other] {done} din {total} de elemente
+
+msgid  {found} differs
+msgstr[one]   {found} diferă
+msgstr[few]   {found} diferă
+msgstr[other] {found} diferă
+
+msgid  {found} differs, comparing
+msgstr[one]   {found} diferă, se compară
+msgstr[few]   {found} diferă, se compară
+msgstr[other] {found} diferă, se compară
+
+msgid  {found} found
+msgstr[one]   {found} găsit
+msgstr[few]   {found} găsite
+msgstr[other] {found} găsite
+
+msgid  {found} found, searching
+msgstr[one]   {found} găsit, se caută
+msgstr[few]   {found} găsite, se caută
+msgstr[other] {found} găsite, se caută
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]   {job_title} anulat după {done} element
+msgstr[few]   {job_title} anulat după {done} elemente
+msgstr[other] {job_title} anulat după {done} de elemente
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]   {job_title} anulat după {done} element
+msgstr[few]   {job_title} anulat după {done} elemente
+msgstr[other] {job_title} anulat după {done} de elemente
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]   {job_title} terminat, {count} element omis
+msgstr[few]   {job_title} terminat, {count} elemente omise
+msgstr[other] {job_title} terminat, {count} de elemente omise
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]   {problems} nu poate fi redenumit așa cum este    Esc - Anulează
+msgstr[few]   {problems} nu pot fi redenumite așa cum sunt    Esc - Anulează
+msgstr[other] {problems} nu pot fi redenumite așa cum sunt    Esc - Anulează
+
+msgid  {skipped} left as it is
+msgstr[one]   {skipped} rămâne așa cum este
+msgstr[few]   {skipped} rămân așa cum sunt
+msgstr[other] {skipped} rămân așa cum sunt

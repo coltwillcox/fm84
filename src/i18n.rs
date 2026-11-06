@@ -39,13 +39,14 @@ pub enum Language {
     Dutch,
     Danish,
     Irish,
+    Romanian,
 }
 
 impl Language {
     /// In the order F11 steps through them: English, then the rest by their
     /// own names, as the alphabet has them - a Greek or Cyrillic one by how
     /// it is spelt in Latin letters.
-    pub const ALL: [Language; 21] = [
+    pub const ALL: [Language; 22] = [
         Language::English,
         Language::Czech,
         Language::Danish,
@@ -62,6 +63,7 @@ impl Language {
         Language::Norwegian,
         Language::Polish,
         Language::Portuguese,
+        Language::Romanian,
         Language::Slovak,
         Language::Slovenian,
         Language::Serbian,
@@ -93,6 +95,7 @@ impl Language {
             Language::Dutch => "nl",
             Language::Danish => "da",
             Language::Irish => "ga",
+            Language::Romanian => "ro",
         }
     }
 
@@ -121,6 +124,7 @@ impl Language {
             Language::Dutch => "Nederlands",
             Language::Danish => "Dansk",
             Language::Irish => "Gaeilge",
+            Language::Romanian => "Română",
         }
     }
 
@@ -153,6 +157,7 @@ impl Language {
             Language::Dutch => Some(include_str!("../lang/nl.lang")),
             Language::Danish => Some(include_str!("../lang/da.lang")),
             Language::Irish => Some(include_str!("../lang/ga.lang")),
+            Language::Romanian => Some(include_str!("../lang/ro.lang")),
         }
     }
 
@@ -211,6 +216,14 @@ impl Language {
                 (2..=4, tens) if !(12..=14).contains(&tens) => Form::Few,
                 _ => Form::Other,
             },
+            // 1 one; 0, and 2 to 19 by the last two digits, few - "5
+            // fișiere"; the rest other, which takes "de" - "20 de fișiere",
+            // "101 de fișiere".
+            Language::Romanian => match (count, count % 100) {
+                (1, _) => Form::One,
+                (0, _) | (_, 2..=19) => Form::Few,
+                _ => Form::Other,
+            },
             // By the whole number, as the noun after it changes: 1 one, 2
             // two, 3-6 few ("3 chomhad"), 7-10 many ("7 gcomhad"), the rest
             // other ("20 comhad").
@@ -252,6 +265,7 @@ impl Language {
             "nl" => Some(Language::Dutch),
             "da" => Some(Language::Danish),
             "ga" => Some(Language::Irish),
+            "ro" => Some(Language::Romanian),
             _ => None,
         }
     }
