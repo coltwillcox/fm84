@@ -931,3 +931,35 @@ fn the_space_map_draws_a_bar_behind_each_row() {
     assert_eq!(bar(&terminal, "big"), 0, "gone with the directory");
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// F1 draws the README's logo between the keys and About, centred, its
+/// blocks in the directories' colour and the lines shading them in the
+/// border's - whichever theme is on.
+#[test]
+fn f1_draws_the_logo_in_the_theme_colours() {
+    let lines = help_lines();
+    let about = lines.iter().position(|(text, _)| text.trim() == "About").unwrap();
+    let logo: Vec<usize> = lines.iter().enumerate().filter(|(_, (_, kind))| *kind == HelpLine::Logo).map(|(at, _)| at).collect();
+    assert_eq!(logo.len(), 6);
+    assert_eq!(logo[5] + 2, about, "a blank row, then About");
+    assert_eq!(lines[logo[0] - 1].0, "", "a blank row after the keys");
+    assert!(lines[logo[0] - 2].0.contains("Type to search"), "after the last key");
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.dialog = Some(Dialog::Help);
+    app_state.help_scroll = logo[0];
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer();
+    let at = |row: &str| {
+        (0..40).find_map(|y| {
+            let text: String = (0..120).map(|x| buffer[(x, y)].symbol().to_string()).collect();
+            text.find(row).map(|byte| (text[..byte].chars().count() as u16, y))
+        })
+    };
+    let (x, y) = at("███████╗███╗   ███╗ █████╗ ██╗  ██╗").expect("the logo's first row");
+    assert_eq!(buffer[(x, y)].fg, crate::display::palette().directory, "a block");
+    assert_eq!(buffer[(x + 7, y)].fg, crate::display::palette().border, "its shade");
+    assert!(at("╚═╝     ╚═╝     ╚═╝ ╚════╝      ╚═╝").is_some_and(|(_, last)| last == y + 5), "six rows");
+}

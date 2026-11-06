@@ -92,19 +92,74 @@ fn help() -> Vec<(&'static str, Vec<String>)> {
     ]
 }
 
-/// F1's lines as they are drawn, and whether each is a heading: a heading
-/// over each part, with a blank row before every one but the first, and the
-/// lines under it set in from it - laid out as F11 lays out its options.
-pub fn help_lines() -> Vec<(String, bool)> {
+/// The logo from the README, between the keys and what fm84 is.
+const LOGO: [&str; 6] = [
+    "███████╗███╗   ███╗ █████╗ ██╗  ██╗",
+    "██╔════╝████╗ ████║██╔══██╗██║  ██║",
+    "█████╗  ██╔████╔██║╚█████╔╝███████║",
+    "██╔══╝  ██║╚██╔╝██║██╔══██╗╚════██║",
+    "██║     ██║ ╚═╝ ██║╚█████╔╝     ██║",
+    "╚═╝     ╚═╝     ╚═╝ ╚════╝      ╚═╝",
+];
+
+/// What a line of F1 is, for how it is drawn.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum HelpLine {
+    Heading,
+    Item,
+    /// A row of the logo, centred, in the theme's colours.
+    Logo,
+}
+
+/// F1's lines as they are drawn, and what each is: a heading over each part,
+/// with a blank row before every one but the first, and the lines under it
+/// set in from it - laid out as F11 lays out its options. The logo stands
+/// before About, a blank row either side of it.
+pub fn help_lines() -> Vec<(String, HelpLine)> {
     let mut lines = Vec::new();
-    for (heading, items) in help() {
+    for (index, (heading, items)) in help().into_iter().enumerate() {
         if !lines.is_empty() {
-            lines.push((String::new(), false));
+            lines.push((String::new(), HelpLine::Item));
         }
-        lines.push((format!(" {heading}"), true));
-        lines.extend(items.iter().map(|item| (format!("   {item}"), false)));
+        if index == 1 {
+            lines.extend(LOGO.iter().map(|row| (row.to_string(), HelpLine::Logo)));
+            lines.push((String::new(), HelpLine::Item));
+        }
+        lines.push((format!(" {heading}"), HelpLine::Heading));
+        lines.extend(items.iter().map(|item| (format!("   {item}"), HelpLine::Item)));
     }
     lines
+}
+
+/// A row of the logo, centred in `width`: its solid blocks in the colour
+/// directories have, the lines that shade them in the border's.
+fn logo_row(row: &str, width: usize) -> Line<'static> {
+    let used = row.chars().count();
+    let before = width.saturating_sub(used) / 2;
+    let after = width.saturating_sub(used + before);
+    let solid = Style::default().fg(palette().directory).add_modifier(Modifier::BOLD);
+    let shade = Style::default().fg(palette().border);
+    let mut spans = vec![Span::raw(" ".repeat(before))];
+    let mut run = String::new();
+    let mut run_solid = None;
+    for character in row.chars() {
+        // Spaces go with whatever they are beside: they take no colour.
+        let is_solid = match character {
+            '█' => Some(true),
+            ' ' => run_solid,
+            _ => Some(false),
+        };
+        if is_solid != run_solid && !run.is_empty() {
+            spans.push(Span::styled(std::mem::take(&mut run), if run_solid == Some(true) { solid } else { shade }));
+        }
+        run_solid = is_solid;
+        run.push(character);
+    }
+    if !run.is_empty() {
+        spans.push(Span::styled(run, if run_solid == Some(true) { solid } else { shade }));
+    }
+    spans.push(Span::raw(" ".repeat(after)));
+    Line::from(spans)
 }
 
 /// F1: the keys, over the panels and no taller than them. What does not fit
@@ -135,9 +190,10 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
         .iter()
         .skip(first)
         .take(room)
-        .map(|(text, heading)| {
-            let style = if *heading { style_title().add_modifier(Modifier::BOLD) } else { style_title() };
-            Line::from(Span::styled(format!("{text:<max_len$}"), style))
+        .map(|(text, kind)| match kind {
+            HelpLine::Logo => logo_row(text, max_len),
+            HelpLine::Heading => Line::from(Span::styled(format!("{text:<max_len$}"), style_title().add_modifier(Modifier::BOLD))),
+            HelpLine::Item => Line::from(Span::styled(format!("{text:<max_len$}"), style_title())),
         })
         .collect();
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), inner);
