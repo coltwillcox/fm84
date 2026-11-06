@@ -818,6 +818,9 @@ msgstr Όνομα όπως στο +: *.jpg;*.png, ή */ για φακέλους.
 msgid  Name it as an archive, ending in {endings}
 msgstr Δώστε όνομα αρχειοθήκης, με κατάληξη {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Χρειάζονται {needed}, {free} ελεύθερα στο {path}
+
 msgid  New
 msgstr Νέο
 
@@ -889,6 +892,9 @@ msgstr Όχι ώρα: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Όχι αρχειοθήκη: {path}
+
+msgid  Not enough room
+msgstr Δεν υπάρχει αρκετός χώρος
 
 msgid  Not found: {term}
 msgstr Δεν βρέθηκε: {term}
@@ -994,6 +1000,9 @@ msgstr Βάλτε τον δρομέα σε αρχειοθήκη για αποσ�
 
 msgid  Quit
 msgstr Έξοδος
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Νέος έλεγχος    C - Συνέχεια παρ' όλα αυτά    Esc - Άκυρο
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Ξανά    S - Παράλειψη    A - Παράλειψη όλων    Esc - Ματαίωση

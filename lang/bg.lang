@@ -817,6 +817,9 @@ msgstr Име както го приема +: *.jpg;*.png, или */ за дир
 msgid  Name it as an archive, ending in {endings}
 msgstr Именувайте го като архив, завършващ на {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Нужни са {needed}, свободни {free} в {path}
+
 msgid  New
 msgstr Нов
 
@@ -888,6 +891,9 @@ msgstr Не е време: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Не е архив: {path}
+
+msgid  Not enough room
+msgstr Няма достатъчно място
 
 msgid  Not found: {term}
 msgstr Не е намерено: {term}
@@ -993,6 +999,9 @@ msgstr Поставете курсора върху архив, за да го �
 
 msgid  Quit
 msgstr Изход
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Нова проверка    C - Продължаване въпреки това    Esc - Отказ
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Повторно    S - Пропускане    A - Пропускане на всички    Esc - Прекъсване

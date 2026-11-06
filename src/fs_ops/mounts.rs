@@ -329,11 +329,32 @@ pub fn list_mounts() -> Vec<Mount> {
     home_mount().into_iter().collect()
 }
 
+/// How much room the filesystem holding `path` has, in bytes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Space {
+    pub total: u64,
+    /// Free, the blocks kept back for root included, as `df` counts used.
+    pub free: u64,
+    /// What someone who is not root can still write: free without the
+    /// blocks kept back for root.
+    pub available: u64,
+}
+
 /// Bytes used and total for the filesystem holding `path`, as `df` counts them.
 /// None when the platform call fails, so a dead network mount shows nothing
 /// rather than an error.
-#[cfg(all(unix, not(target_vendor = "apple")))]
 pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
+    space(path).map(|space| (space.total.saturating_sub(space.free), space.total))
+}
+
+/// Bytes that can still be written to the filesystem holding `path`, or None
+/// when the platform will not say.
+pub fn free_space(path: &Path) -> Option<u64> {
+    space(path).map(|space| space.available)
+}
+
+#[cfg(all(unix, not(target_vendor = "apple")))]
+fn space(path: &Path) -> Option<Space> {
     use std::ffi::CString;
     use std::os::unix::ffi::OsStrExt;
 
@@ -349,15 +370,17 @@ pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
     };
 
     let block = stats.f_frsize as u64;
-    let total = (stats.f_blocks as u64).checked_mul(block)?;
-    let free = (stats.f_bfree as u64).checked_mul(block)?;
-    Some((total.saturating_sub(free), total))
+    Some(Space {
+        total: (stats.f_blocks as u64).checked_mul(block)?,
+        free: (stats.f_bfree as u64).checked_mul(block)?,
+        available: (stats.f_bavail as u64).checked_mul(block)?,
+    })
 }
 
 /// Apple platforms declare statvfs block counts as a 32-bit fsblkcnt_t, so it
 /// truncates past about 16 TiB. Their native statfs carries the counts as u64.
 #[cfg(target_vendor = "apple")]
-pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
+fn space(path: &Path) -> Option<Space> {
     use std::ffi::CString;
     use std::os::unix::ffi::OsStrExt;
 
@@ -373,13 +396,15 @@ pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
     };
 
     let block = stats.f_bsize as u64;
-    let total = stats.f_blocks.checked_mul(block)?;
-    let free = stats.f_bfree.checked_mul(block)?;
-    Some((total.saturating_sub(free), total))
+    Some(Space {
+        total: stats.f_blocks.checked_mul(block)?,
+        free: stats.f_bfree.checked_mul(block)?,
+        available: stats.f_bavail.checked_mul(block)?,
+    })
 }
 
 #[cfg(windows)]
-pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
+fn space(path: &Path) -> Option<Space> {
     use std::os::windows::ffi::OsStrExt;
 
     // Declared here rather than pulling in windows-sys for one call.
@@ -395,11 +420,15 @@ pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
     if !ok {
         return None;
     }
-    Some((total.saturating_sub(total_free), total))
+    Some(Space {
+        total,
+        free: total_free,
+        available: free_to_caller,
+    })
 }
 
 #[cfg(not(any(unix, windows)))]
-pub fn disk_usage(_path: &Path) -> Option<(u64, u64)> {
+fn space(_path: &Path) -> Option<Space> {
     None
 }
 

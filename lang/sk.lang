@@ -818,6 +818,9 @@ msgstr Názov ako pri +: *.jpg;*.png, alebo */ pre priečinky. Malé písmená n
 msgid  Name it as an archive, ending in {endings}
 msgstr Pomenujte ho ako archív, s príponou {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Potrebné {needed}, voľné {free} na {path}
+
 msgid  New
 msgstr Nový
 
@@ -889,6 +892,9 @@ msgstr Nie je to čas: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Nie je archív: {path}
+
+msgid  Not enough room
+msgstr Nedostatok miesta
 
 msgid  Not found: {term}
 msgstr Nenájdené: {term}
@@ -994,6 +1000,9 @@ msgstr Na rozbalenie dajte kurzor na archív
 
 msgid  Quit
 msgstr Koniec
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Skontrolovať znova    C - Napriek tomu pokračovať    Esc - Zrušiť
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Znova    S - Preskočiť    A - Preskočiť všetky    Esc - Prerušiť

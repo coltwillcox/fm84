@@ -224,6 +224,11 @@ fn job_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         KeyCode::Char('o') | KeyCode::Char('O') if clash => job.answer(Answer::OverwriteOlder),
         KeyCode::Char('k') | KeyCode::Char('K') if clash => job.answer(Answer::KeepBoth),
         KeyCode::Char('b') | KeyCode::Char('B') if clash => job.answer(Answer::KeepBothAll),
+        // Not the room for what is about to be written: look again, once
+        // some has been made, or go on anyway. Enter is not one of the
+        // answers here either.
+        KeyCode::Char('r') | KeyCode::Char('R') if job.room.is_some() => job.answer(Answer::Retry),
+        KeyCode::Char('c') | KeyCode::Char('C') if job.room.is_some() => job.answer(Answer::GoOn),
         // An entry that failed, waiting on what to do about it.
         KeyCode::Char('r') | KeyCode::Char('R') if job.problem.is_some() => job.answer(Answer::Retry),
         KeyCode::Char('s') | KeyCode::Char('S') if job.problem.is_some() => job.answer(Answer::Skip),

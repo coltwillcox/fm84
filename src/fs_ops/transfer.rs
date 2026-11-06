@@ -156,6 +156,69 @@ pub fn measure(items: &[(PathBuf, PathBuf, bool)]) -> u64 {
         .sum()
 }
 
+/// A filesystem that has not the room for what a job is about to write to it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Shortfall {
+    /// The directory written into, standing for its filesystem.
+    pub dir: PathBuf,
+    pub needed: u64,
+    pub free: u64,
+}
+
+/// What each of `items` will write, by where it goes, given `sizes` as
+/// `measure` counts them. A move within one filesystem renames rather than
+/// writes, so it needs no room - only a move to another one does.
+pub fn writes(items: &[(PathBuf, PathBuf, bool)], sizes: &[u64], is_copy: bool) -> Vec<(PathBuf, u64)> {
+    items
+        .iter()
+        .zip(sizes)
+        .map(|((source, dest, _), &size)| {
+            let renames = !is_copy && same_filesystem(source, dest);
+            (dest.clone(), if renames { 0 } else { size })
+        })
+        .collect()
+}
+
+/// The first filesystem among `writes` - each where something goes and its
+/// bytes - with less room than all that goes to it, before anything does.
+/// One that will not say how much room it has is taken to have enough: a
+/// copy that then fails asks about it as any failure does.
+pub fn short_of_room(writes: &[(PathBuf, u64)]) -> Option<Shortfall> {
+    // Each filesystem written to, by a directory on it, and what it takes.
+    let mut filesystems: Vec<(PathBuf, u64)> = Vec::new();
+    for (dest, bytes) in writes {
+        let Some(dir) = nearest_existing_dir(dest) else { continue };
+        match filesystems.iter_mut().find(|(known, _)| same_filesystem(known, &dir)) {
+            Some((_, needed)) => *needed = needed.saturating_add(*bytes),
+            None => filesystems.push((dir, *bytes)),
+        }
+    }
+    filesystems.into_iter().filter(|(_, needed)| *needed > 0).find_map(|(dir, needed)| {
+        let free = free_space(&dir)?;
+        (needed > free).then_some(Shortfall { dir, needed, free })
+    })
+}
+
+/// Whether `a` and `b` are on one filesystem: each as it is, or, when it is
+/// not there yet, the directory it would go into.
+fn same_filesystem(a: &Path, b: &Path) -> bool {
+    let on = |path: &Path| fs::symlink_metadata(path).ok().map(|_| path.to_path_buf()).or_else(|| nearest_existing_dir(path));
+    let (Some(a), Some(b)) = (on(a), on(b)) else {
+        return false;
+    };
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        matches!((fs::symlink_metadata(&a), fs::symlink_metadata(&b)), (Ok(a), Ok(b)) if a.dev() == b.dev())
+    }
+    // A drive letter, or a share, is a filesystem of its own.
+    #[cfg(not(unix))]
+    {
+        let root = |path: &Path| path.components().next().map(|component| component.as_os_str().to_ascii_lowercase());
+        root(&a) == root(&b)
+    }
+}
+
 /// True when copying `source` to `dest` would descend into what it is writing:
 /// a directory copied to somewhere inside itself. copy_dir_recursive creates
 /// the destination before it reads the source, so it then finds it, copies it,

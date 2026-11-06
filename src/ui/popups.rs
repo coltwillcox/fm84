@@ -272,6 +272,10 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
         render_job_problem(f, area, job.kind, problem, app_state.quit_armed);
         return;
     }
+    if let Some(short) = &job.room {
+        render_job_room(f, area, short, app_state.quit_armed);
+        return;
+    }
     let elapsed = job.started.elapsed();
     if elapsed < TRANSFER_POPUP_DELAY {
         return;
@@ -377,6 +381,28 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
     if kind == TransferKind::Trash {
         lines.push(Line::from(Span::styled(t!("D - Delete permanently"), style_file())));
     }
+    if quit_armed {
+        lines.push(Line::from(Span::styled(t!("F10 again - Quit"), style_file())));
+    }
+    f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
+}
+
+/// A filesystem without the room for what a copy or move is about to write,
+/// asked about before anything is. Shown at once: the job waits on it.
+fn render_job_room(f: &mut ratatui::Frame<'_>, area: Rect, short: &crate::fs_ops::Shortfall, quit_armed: bool) {
+    let title = format!(" {} ", t!("Not enough room"));
+    let popup_area = popup_rect(30, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let mut lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(printable_name(&crate::app::room_needed(short)), style_columns())),
+        Line::from(""),
+        Line::from(Span::styled(t!("R - Check again    C - Go on anyway    Esc - Cancel"), style_file())),
+    ];
     if quit_armed {
         lines.push(Line::from(Span::styled(t!("F10 again - Quit"), style_file())));
     }

@@ -818,6 +818,9 @@ msgstr Nazwa jak dla +: *.jpg;*.png, lub */ dla katalogów. Małe litery znajduj
 msgid  Name it as an archive, ending in {endings}
 msgstr Nazwij je jak archiwum, z rozszerzeniem {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Potrzeba {needed}, wolne {free} na {path}
+
 msgid  New
 msgstr Nowy
 
@@ -889,6 +892,9 @@ msgstr To nie czas: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr To nie archiwum: {path}
+
+msgid  Not enough room
+msgstr Za mało miejsca
 
 msgid  Not found: {term}
 msgstr Nie znaleziono: {term}
@@ -994,6 +1000,9 @@ msgstr Ustaw kursor na archiwum, aby je rozpakować
 
 msgid  Quit
 msgstr Wyjdź
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Sprawdź ponownie    C - Kontynuuj mimo to    Esc - Anuluj
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Ponów    S - Pomiń    A - Pomiń wszystkie    Esc - Przerwij

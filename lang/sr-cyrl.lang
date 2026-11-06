@@ -808,6 +808,9 @@ msgstr Име као за +: *.jpg;*.png, или */ за директорију�
 msgid  Name it as an archive, ending in {endings}
 msgstr Назови је као архиву, са наставком {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Потребно {needed}, слободно {free} на {path}
+
 msgid  New
 msgstr Ново
 
@@ -879,6 +882,9 @@ msgstr Није време: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Није архива: {path}
+
+msgid  Not enough room
+msgstr Нема довољно места
 
 msgid  Not found: {term}
 msgstr Није пронађено: {term}
@@ -984,6 +990,9 @@ msgstr Постави курсор на архиву да је распакуј�
 
 msgid  Quit
 msgstr Излаз
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Провери поново    C - Ипак настави    Esc - Откажи
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Поново    S - Прескочи    A - Прескочи све    Esc - Прекини

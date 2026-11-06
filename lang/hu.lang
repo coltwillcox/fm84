@@ -819,6 +819,9 @@ msgstr Név, mint a +-nál: *.jpg;*.png, vagy */ mappákhoz. A kisbetű mindkett
 msgid  Name it as an archive, ending in {endings}
 msgstr Archívumként nevezd el, ezek egyikével a végén: {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr {needed} kell, {free} szabad itt: {path}
+
 msgid  New
 msgstr Új
 
@@ -890,6 +893,9 @@ msgstr Nem időpont: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Nem archívum: {path}
+
+msgid  Not enough room
+msgstr Nincs elég hely
 
 msgid  Not found: {term}
 msgstr Nincs találat: {term}
@@ -995,6 +1001,9 @@ msgstr Állj a kurzorral egy archívumra a kibontáshoz
 
 msgid  Quit
 msgstr Kilépés
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Újraellenőrzés    C - Folytatás mégis    Esc - Mégse
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Újra    S - Kihagyás    A - Mind kihagyása    Esc - Megszakítás

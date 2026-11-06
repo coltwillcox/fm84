@@ -817,6 +817,9 @@ msgstr Naam zoals + hem neemt: *.jpg;*.png, of */ voor mappen. Kleine letters vi
 msgid  Name it as an archive, ending in {endings}
 msgstr Geef het een archiefnaam, eindigend op {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Nodig: {needed}, {free} vrij op {path}
+
 msgid  New
 msgstr Nieuw
 
@@ -888,6 +891,9 @@ msgstr Geen tijdstip: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Geen archief: {path}
+
+msgid  Not enough room
+msgstr Niet genoeg ruimte
 
 msgid  Not found: {term}
 msgstr Niet gevonden: {term}
@@ -993,6 +999,9 @@ msgstr Zet de cursor op een archief om het uit te pakken
 
 msgid  Quit
 msgstr Afsluiten
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Opnieuw controleren    C - Toch doorgaan    Esc - Annuleren
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Opnieuw    S - Overslaan    A - Alles overslaan    Esc - Afbreken

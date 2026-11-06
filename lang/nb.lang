@@ -817,6 +817,9 @@ msgstr Navn som for +: *.jpg;*.png, eller */ for mapper. Små bokstaver finner b
 msgid  Name it as an archive, ending in {endings}
 msgstr Gi det navn som et arkiv, med endelsen {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Trenger {needed}, {free} ledig på {path}
+
 msgid  New
 msgstr Ny
 
@@ -888,6 +891,9 @@ msgstr Ikke et tidspunkt: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Ikke et arkiv: {path}
+
+msgid  Not enough room
+msgstr Ikke nok plass
 
 msgid  Not found: {term}
 msgstr Ikke funnet: {term}
@@ -993,6 +999,9 @@ msgstr Sett markøren på et arkiv for å pakke det ut
 
 msgid  Quit
 msgstr Avslutt
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Sjekk igjen    C - Fortsett likevel    Esc - Avbryt
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Prøv igjen    S - Hopp over    A - Hopp over alle    Esc - Avbryt

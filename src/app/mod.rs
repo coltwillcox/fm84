@@ -2,7 +2,7 @@
 //! panels, the dialogs, the viewer and editor, and the jobs running behind them.
 
 use crate::background::{Latest, Watch, WatchEvent};
-use crate::fs_ops::{Clash, Description, Mount, Progress, Reply, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place};
+use crate::fs_ops::{Clash, Description, Mount, Progress, Reply, Shortfall, Step, Transfer, copy_path, count_entries, delete_path, disk_usage, get_current_dir, load_directory_rows, measure, move_path, nearest_existing_dir, path_exists, rename_in_place};
 use crate::options::{OPTION_ROWS, OptionRow, Options, SortKey};
 use crate::strip::{Strip, StripHit};
 use crate::viewer::Preview;

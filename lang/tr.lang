@@ -818,6 +818,9 @@ msgstr Ad + gibi: *.jpg;*.png, dizinler için */. Küçük harf her iki durumu d
 msgid  Name it as an archive, ending in {endings}
 msgstr Arşiv gibi adlandırın, {endings} ile biten
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr {needed} gerekli, {path} üzerinde {free} boş
+
 msgid  New
 msgstr Yeni
 
@@ -889,6 +892,9 @@ msgstr Zaman değil: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Arşiv değil: {path}
+
+msgid  Not enough room
+msgstr Yeterli yer yok
 
 msgid  Not found: {term}
 msgstr Bulunamadı: {term}
@@ -994,6 +1000,9 @@ msgstr Açmak için imleci bir arşivin üzerine getirin
 
 msgid  Quit
 msgstr Çıkış
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Yeniden denetle    C - Yine de sürdür    Esc - İptal
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Yeniden dene    S - Atla    A - Tümünü atla    Esc - Vazgeç

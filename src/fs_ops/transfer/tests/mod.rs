@@ -4,6 +4,7 @@ mod copy;
 mod delete;
 mod moving;
 mod paths;
+mod room;
 mod save;
 
 fn scratch(name: &str) -> PathBuf {

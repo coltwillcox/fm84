@@ -819,6 +819,9 @@ msgstr Nombre como en +: *.jpg;*.png, o */ para carpetas. Las minúsculas encuen
 msgid  Name it as an archive, ending in {endings}
 msgstr Dale nombre de archivo comprimido, terminado en {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Se necesitan {needed}, {free} libres en {path}
+
 msgid  New
 msgstr Nuevo
 
@@ -890,6 +893,9 @@ msgstr No es una hora: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr No es un archivo comprimido: {path}
+
+msgid  Not enough room
+msgstr No hay espacio suficiente
 
 msgid  Not found: {term}
 msgstr No encontrado: {term}
@@ -995,6 +1001,9 @@ msgstr Pon el cursor sobre un archivo comprimido para extraerlo
 
 msgid  Quit
 msgstr Salir
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Comprobar de nuevo    C - Seguir de todos modos    Esc - Cancelar
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Reintentar    S - Omitir    A - Omitir todos    Esc - Abortar

@@ -818,6 +818,9 @@ msgstr Nume cum îl ia +: *.jpg;*.png, sau */ pentru directoare. Literele mici p
 msgid  Name it as an archive, ending in {endings}
 msgstr Denumiți-o ca arhivă, terminată în {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Necesită {needed}, {free} liber pe {path}
+
 msgid  New
 msgstr Nou
 
@@ -889,6 +892,9 @@ msgstr Nu este o oră: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Nu este o arhivă: {path}
+
+msgid  Not enough room
+msgstr Spațiu insuficient
 
 msgid  Not found: {term}
 msgstr Nu s-a găsit: {term}
@@ -994,6 +1000,9 @@ msgstr Puneți cursorul pe o arhivă pentru a o extrage
 
 msgid  Quit
 msgstr Ieșire
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Verifică din nou    C - Continuă oricum    Esc - Anulează
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Reîncearcă    S - Omite    A - Omite tot    Esc - Abandonează

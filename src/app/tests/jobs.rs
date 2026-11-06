@@ -168,3 +168,53 @@ fn files_in_the_way_are_asked_about_one_at_a_time() {
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A copy bigger than the room where it goes asks before it writes a byte:
+/// R looks again and asks again while there is still not the room, and Esc
+/// stops it there with the reason. A sparse file stands for a big one - it
+/// says it is far larger than it takes.
+#[cfg(unix)]
+#[test]
+fn a_copy_without_the_room_asks_before_it_starts() {
+    let dir = std::env::temp_dir().join(format!("fm84-no-room-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("onto")).unwrap();
+    let Some(free) = crate::fs_ops::free_space(&dir) else {
+        return;
+    };
+    let file = std::fs::File::create(dir.join("huge")).unwrap();
+    // A filesystem that will not hold a file that size has nothing to show.
+    if file.set_len(free.saturating_add(1 << 30)).is_err() {
+        std::fs::remove_dir_all(&dir).unwrap();
+        return;
+    }
+    drop(file);
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.start_transfer(vec![(dir.join("huge"), dir.join("onto").join("huge"), false)], true, crate::app::Clashes::Ask);
+
+    let started = std::time::Instant::now();
+    let wait = |app_state: &mut AppState, done: &dyn Fn(&AppState) -> bool| {
+        while !done(app_state) {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never got there");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
+    };
+    let asked = |app_state: &AppState| app_state.workers.job.as_ref().is_some_and(|job| job.room.is_some());
+    wait(&mut app_state, &asked);
+    let short = app_state.workers.job.as_ref().unwrap().room.clone().unwrap();
+    assert_eq!(short.dir, dir.join("onto"));
+    assert!(short.needed > short.free);
+
+    // Looked at again, it is still short, so it asks again.
+    app_state.workers.job.as_mut().unwrap().answer(crate::app::Answer::Retry);
+    wait(&mut app_state, &asked);
+
+    app_state.cancel_transfer();
+    wait(&mut app_state, &|app_state| app_state.workers.job.is_none());
+    assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Not enough room: Needs "), "{:?}", app_state.error);
+    assert!(!dir.join("onto").join("huge").exists(), "something was written");
+    std::fs::remove_dir_all(&dir).unwrap();
+}

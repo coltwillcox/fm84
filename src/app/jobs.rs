@@ -27,6 +27,10 @@ pub struct TransferJob {
     /// A file in the way of one being copied or moved, waiting on whether to
     /// write over it. The worker sits still until it hears.
     pub clash: Option<JobClash>,
+    /// A filesystem without the room for what is about to go to it, waiting
+    /// on whether to look again, go on anyway or stop. Asked before anything
+    /// is written.
+    pub room: Option<Shortfall>,
     answers: Sender<Answer>,
     /// Entries left where they were, by Skip or Skip all, to say so at the end.
     pub skipped: u64,
@@ -123,7 +127,7 @@ impl TransferJob {
 
     /// Answer the question on screen, letting the worker go on.
     pub fn answer(&mut self, answer: Answer) {
-        if self.problem.take().is_some() || self.clash.take().is_some() {
+        if self.problem.take().is_some() || self.clash.take().is_some() || self.room.take().is_some() {
             let _ = self.answers.send(answer);
         }
     }
@@ -186,6 +190,8 @@ pub enum Answer {
     KeepBoth,
     /// Keep both, for this one and every other in the way.
     KeepBothAll,
+    /// Go on although there seems not to be the room.
+    GoOn,
 }
 
 /// What the worker sends back. Bytes are per chunk rather than a running total,
@@ -198,6 +204,8 @@ enum JobUpdate {
     Problem(JobProblem),
     /// Stuck on a file in the way until an Answer comes back.
     Clash(JobClash),
+    /// Stuck on a filesystem without the room until an Answer comes back.
+    Room(Shortfall),
     /// One more entry left where it was.
     Skipped,
     /// What a checksum job found.
@@ -227,6 +235,32 @@ impl<'a> JobProgress<'a> {
             skip_all: false,
             clashes,
             aborted: false,
+        }
+    }
+
+    /// Before anything is written: when a filesystem has not the room for
+    /// `writes`, ask whether to look again - once some has been made - to go
+    /// on anyway, or to stop. The count can be more than is needed: a file
+    /// written over gives its room back, and a filesystem may compress. True
+    /// to go on; false when the job has ended here, the reason said.
+    fn room_for(&mut self, writes: &[(PathBuf, u64)]) -> bool {
+        loop {
+            let Some(short) = crate::fs_ops::short_of_room(writes) else {
+                return true;
+            };
+            let answer = if self.cancel.load(Ordering::Relaxed) || self.updates.send(JobUpdate::Room(short.clone())).is_err() {
+                Answer::Abort
+            } else {
+                self.answers.recv().unwrap_or(Answer::Abort)
+            };
+            match answer {
+                Answer::Retry => {}
+                Answer::GoOn => return true,
+                _ => {
+                    let _ = self.updates.send(JobUpdate::Finished(Err(short_of_room_message(&short))));
+                    return false;
+                }
+            }
         }
     }
 
@@ -278,8 +312,8 @@ impl Progress for JobProgress<'_> {
                 Reply::Abort
             }
             Answer::Delete => Reply::Delete,
-            // Answers to a clash, which a failure is never asked.
-            Answer::Overwrite | Answer::OverwriteAll | Answer::OverwriteOlder | Answer::KeepBoth | Answer::KeepBothAll => Reply::Skip,
+            // Answers to other questions, which a failure is never asked.
+            Answer::Overwrite | Answer::OverwriteAll | Answer::OverwriteOlder | Answer::KeepBoth | Answer::KeepBothAll | Answer::GoOn => Reply::Skip,
         }
     }
 
@@ -331,7 +365,7 @@ impl Progress for JobProgress<'_> {
                         self.clashes = Clashes::ReplaceOlder;
                         replace_if_older(modified(source), modified(dest))
                     }
-                    Answer::Abort | Answer::Retry | Answer::Delete => Clash::Abort,
+                    Answer::Abort | Answer::Retry | Answer::Delete | Answer::GoOn => Clash::Abort,
                 }
             }
             Clashes::ReplaceAll => Clash::Replace,
@@ -344,6 +378,20 @@ impl Progress for JobProgress<'_> {
         }
         clash
     }
+}
+
+/// Why a job did not start for want of room, as the popup says it.
+pub fn room_needed(short: &Shortfall) -> String {
+    t!(
+        "Needs {needed}, {free} free on {path}",
+        needed = crate::utils::format_size(short.needed),
+        free = crate::utils::format_size(short.free),
+        path = short.dir.display()
+    )
+}
+
+fn short_of_room_message(short: &Shortfall) -> String {
+    format!("{}: {}", t!("Not enough room"), room_needed(short))
 }
 
 /// Overwrite older: write over what is there only when it is older than what
@@ -461,8 +509,13 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, mut progres
         remaining.push((source, dest, is_dir));
     }
 
-    // Only what is actually going to be copied needs counting.
-    let _ = progress.updates.send(JobUpdate::Total(measure(&remaining)));
+    // Only what is actually going to be copied needs counting, and the
+    // room for it is looked for before any of it goes.
+    let sizes: Vec<u64> = remaining.iter().map(|item| measure(std::slice::from_ref(item))).collect();
+    let _ = progress.updates.send(JobUpdate::Total(sizes.iter().sum()));
+    if !progress.room_for(&crate::fs_ops::writes(&remaining, &sizes, is_copy)) {
+        return;
+    }
 
     for (source, dest, is_dir) in remaining {
         let result = if is_copy { copy_path(source, dest, is_dir, &mut progress) } else { move_path(source, dest, &mut progress) };
@@ -486,7 +539,11 @@ fn run_sync_steps(steps: Vec<crate::app::SyncStep>, to_trash: bool, mut progress
             SyncStep::Delete(..) => None,
         })
         .collect();
-    let _ = progress.updates.send(JobUpdate::Total(measure(&copies)));
+    let sizes: Vec<u64> = copies.iter().map(|item| measure(std::slice::from_ref(item))).collect();
+    let _ = progress.updates.send(JobUpdate::Total(sizes.iter().sum()));
+    if !progress.room_for(&crate::fs_ops::writes(&copies, &sizes, true)) {
+        return;
+    }
     for step in steps {
         let outcome = match step {
             SyncStep::Copy(from, to, is_dir) => copy_path(from, to, is_dir, &mut progress),
@@ -528,6 +585,7 @@ impl AppState {
             updates,
             problem: None,
             clash: None,
+            room: None,
             answers,
             skipped: 0,
             after: None,
@@ -606,11 +664,12 @@ impl AppState {
                 Ok(JobUpdate::Advanced(amount)) => job.done += amount,
                 // Asked after Esc, which answered nothing then: there was no
                 // question on screen yet. Esc is the answer, so it is not shown.
-                Ok(JobUpdate::Problem(_) | JobUpdate::Clash(_)) if job.is_cancelling() => {
+                Ok(JobUpdate::Problem(_) | JobUpdate::Clash(_) | JobUpdate::Room(_)) if job.is_cancelling() => {
                     let _ = job.answers.send(Answer::Abort);
                 }
                 Ok(JobUpdate::Problem(problem)) => job.problem = Some(problem),
                 Ok(JobUpdate::Clash(clash)) => job.clash = Some(clash),
+                Ok(JobUpdate::Room(short)) => job.room = Some(short),
                 Ok(JobUpdate::Skipped) => job.skipped += 1,
                 Ok(JobUpdate::Checksums(report)) => job.checksums = Some(report),
                 Ok(JobUpdate::Finished(result)) => {

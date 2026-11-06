@@ -818,6 +818,9 @@ msgstr Ainm mar a ghlacann + é: *.jpg;*.png, nó */ do chomhadlanna. Aimsíonn 
 msgid  Name it as an archive, ending in {endings}
 msgstr Tabhair ainm cartlainne air, ag críochnú le {endings}
 
+msgid  Needs {needed}, {free} free on {path}
+msgstr Teastaíonn {needed}, {free} saor ar {path}
+
 msgid  New
 msgstr Nua
 
@@ -889,6 +892,9 @@ msgstr Ní am é: {text} - 2026-10-23 14:02:11
 
 msgid  Not an archive: {path}
 msgstr Ní cartlann é: {path}
+
+msgid  Not enough room
+msgstr Níl go leor spáis
 
 msgid  Not found: {term}
 msgstr Níor aimsíodh: {term}
@@ -994,6 +1000,9 @@ msgstr Cuir an cúrsóir ar chartlann chun í a bhaint amach
 
 msgid  Quit
 msgstr Scoir
+
+msgid  R - Check again    C - Go on anyway    Esc - Cancel
+msgstr R - Seiceáil arís    C - Lean ar aghaidh mar sin féin    Esc - Cealaigh
 
 msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
 msgstr R - Atriail    S - Scipeáil    A - Scipeáil gach ceann    Esc - Tobscoir
