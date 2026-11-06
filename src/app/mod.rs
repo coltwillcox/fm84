@@ -215,9 +215,6 @@ pub struct AppState {
     pub left: Panel,
     pub right: Panel,
     pub page_size: u16,
-    /// Ctrl+S: what each panel is narrowed to, if anything.
-    pub filter_left: Option<PanelFilter>,
-    pub filter_right: Option<PanelFilter>,
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     /// Ctrl+B: the directory each panel lists every file under, if any.
@@ -419,6 +416,8 @@ pub struct Panel {
     pub dir: PathBuf,
     pub state: TableState,
     pub children: Vec<Item>,
+    /// Ctrl+S: what the panel is narrowed to, if anything.
+    pub filter: Option<PanelFilter>,
 }
 
 impl AppState {
@@ -464,15 +463,15 @@ impl AppState {
                 dir: dir_root.clone(),
                 state: state_left,
                 children: Vec::new(),
+                filter: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
                 state: state_right,
                 children: Vec::new(),
+                filter: None,
             },
             page_size: 0,
-            filter_left: None,
-            filter_right: None,
             filter_before: String::new(),
             flat_left: None,
             flat_right: None,

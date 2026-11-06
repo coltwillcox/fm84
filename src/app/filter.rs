@@ -23,11 +23,11 @@ impl PanelFilter {
 
 impl AppState {
     pub fn filter(&self, is_left: bool) -> Option<&PanelFilter> {
-        if is_left { self.filter_left.as_ref() } else { self.filter_right.as_ref() }
+        self.panel(is_left).filter.as_ref()
     }
 
     fn filter_mut(&mut self, is_left: bool) -> &mut Option<PanelFilter> {
-        if is_left { &mut self.filter_left } else { &mut self.filter_right }
+        &mut self.panel_mut(is_left).filter
     }
 
     /// Ctrl+S in a panel: ask for the pattern, starting from the one in

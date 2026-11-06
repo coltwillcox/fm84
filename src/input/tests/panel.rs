@@ -362,7 +362,7 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
 
     // Esc puts back what there was before: nothing.
     press(&mut app_state, KeyCode::Esc);
-    assert!(app_state.dialog.is_none() && app_state.filter_left.is_none());
+    assert!(app_state.dialog.is_none() && app_state.left.filter.is_none());
     assert_eq!(names(&app_state), shown);
 
     ctrl_s(&mut app_state);
@@ -371,7 +371,7 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     }
     press(&mut app_state, KeyCode::Enter);
     assert_eq!(names(&app_state), ["..", "main.rs", "notes.md"]);
-    assert_eq!(app_state.filter_left.as_ref().map(|filter| filter.text.as_str()), Some("*.md;*.rs"));
+    assert_eq!(app_state.left.filter.as_ref().map(|filter| filter.text.as_str()), Some("*.md;*.rs"));
 
     // Opened again, it starts from the filter in place, which Esc keeps.
     ctrl_s(&mut app_state);
@@ -388,7 +388,7 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
 
     // Somewhere else, and it is gone - also on coming back.
     app_state.open_dir(true, dir.join("reports"), None);
-    assert!(app_state.filter_left.is_none());
+    assert!(app_state.left.filter.is_none());
     app_state.open_dir(true, dir.clone(), None);
     assert_eq!(app_state.left.children.len(), shown.len() + 2);
 
