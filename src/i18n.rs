@@ -38,13 +38,14 @@ pub enum Language {
     Portuguese,
     Dutch,
     Danish,
+    Irish,
 }
 
 impl Language {
     /// In the order F11 steps through them: English, then the rest by their
     /// own names, as the alphabet has them - a Greek or Cyrillic one by how
     /// it is spelt in Latin letters.
-    pub const ALL: [Language; 20] = [
+    pub const ALL: [Language; 21] = [
         Language::English,
         Language::Czech,
         Language::Danish,
@@ -52,6 +53,7 @@ impl Language {
         Language::Greek,
         Language::Spanish,
         Language::French,
+        Language::Irish,
         Language::Croatian,
         Language::Italian,
         Language::Hungarian,
@@ -90,6 +92,7 @@ impl Language {
             Language::Portuguese => "pt",
             Language::Dutch => "nl",
             Language::Danish => "da",
+            Language::Irish => "ga",
         }
     }
 
@@ -117,6 +120,7 @@ impl Language {
             Language::Portuguese => "Português (Brasil)",
             Language::Dutch => "Nederlands",
             Language::Danish => "Dansk",
+            Language::Irish => "Gaeilge",
         }
     }
 
@@ -148,6 +152,7 @@ impl Language {
             Language::Portuguese => Some(include_str!("../lang/pt.lang")),
             Language::Dutch => Some(include_str!("../lang/nl.lang")),
             Language::Danish => Some(include_str!("../lang/da.lang")),
+            Language::Irish => Some(include_str!("../lang/ga.lang")),
         }
     }
 
@@ -206,6 +211,16 @@ impl Language {
                 (2..=4, tens) if !(12..=14).contains(&tens) => Form::Few,
                 _ => Form::Other,
             },
+            // By the whole number, as the noun after it changes: 1 one, 2
+            // two, 3-6 few ("3 chomhad"), 7-10 many ("7 gcomhad"), the rest
+            // other ("20 comhad").
+            Language::Irish => match count {
+                1 => Form::One,
+                2 => Form::Two,
+                3..=6 => Form::Few,
+                7..=10 => Form::Many,
+                _ => Form::Other,
+            },
         }
     }
 
@@ -236,6 +251,7 @@ impl Language {
             "pt" => Some(Language::Portuguese),
             "nl" => Some(Language::Dutch),
             "da" => Some(Language::Danish),
+            "ga" => Some(Language::Irish),
             _ => None,
         }
     }
@@ -248,6 +264,9 @@ pub enum Form {
     /// Of a language with a dual, as Slovenian has: two of a thing.
     Two,
     Few,
+    /// Of a language that sets more counts apart than few, as Irish sets
+    /// 7 to 10 apart from 3 to 6.
+    Many,
     Other,
 }
 
@@ -257,6 +276,7 @@ impl Form {
             "one" => Some(Form::One),
             "two" => Some(Form::Two),
             "few" => Some(Form::Few),
+            "many" => Some(Form::Many),
             "other" => Some(Form::Other),
             _ => None,
         }
@@ -371,7 +391,7 @@ pub(crate) fn parse(text: &str) -> Result<Catalog, ParseError> {
             }
         } else if let Some(form) = keyword.strip_prefix("msgstr[").and_then(|form| form.strip_suffix(']')) {
             let Some(form) = Form::from_key(form) else {
-                return Err(error(number, "a form that is not one, two, few or other"));
+                return Err(error(number, "a form that is not one, two, few, many or other"));
             };
             if catalog.forms.insert((current, form), rest).is_some() {
                 return Err(error(number, "translated twice"));

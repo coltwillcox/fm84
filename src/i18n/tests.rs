@@ -33,6 +33,13 @@ fn serbian_counts_take_one_few_or_other() {
     // Polish: 1 alone one; 22 few, but 12 and 21 other.
     let polish = |count| Language::Polish.plural(count);
     assert_eq!([1, 2, 4, 5, 12, 21, 22, 112, 122].map(polish), [Form::One, Form::Few, Form::Few, Form::Other, Form::Other, Form::Other, Form::Few, Form::Other, Form::Few]);
+    // Irish by the whole number: 7 to 10 apart from 3 to 6, and 11 on as
+    // other.
+    let irish = |count| Language::Irish.plural(count);
+    assert_eq!(
+        [0, 1, 2, 3, 6, 7, 10, 11, 21, 102].map(irish),
+        [Form::Other, Form::One, Form::Two, Form::Few, Form::Few, Form::Many, Form::Many, Form::Other, Form::Other, Form::Other]
+    );
     // French counts nothing as one.
     assert_eq!(Language::French.plural(0), Form::One);
     assert_eq!(Language::French.plural(1), Form::One);
@@ -68,6 +75,7 @@ fn a_locale_names_its_language() {
     assert_eq!(Language::from_locale("pt_BR.UTF-8"), Some(Language::Portuguese));
     assert_eq!(Language::from_locale("nl_NL.UTF-8"), Some(Language::Dutch));
     assert_eq!(Language::from_locale("da_DK.UTF-8"), Some(Language::Danish));
+    assert_eq!(Language::from_locale("ga_IE.UTF-8"), Some(Language::Irish));
     assert_eq!(Language::from_locale("ja_JP.UTF-8"), None);
     for language in Language::ALL {
         assert_eq!(Language::from_key(language.key()), Some(language));
@@ -80,6 +88,8 @@ fn a_catalog_reads_and_says_what_is_wrong_with_one_that_does_not() {
     assert_eq!(catalog.plain["Open {name}"], "Otvori {name}");
     assert_eq!(catalog.plain["Two\nlines"], "Dva\nreda");
     assert_eq!(catalog.forms[&("{count} file".to_string(), Form::Few)], "{count} datoteke");
+    let catalog = parse("msgid {count} file\nmsgstr[many] {count} gcomhad\n").unwrap();
+    assert_eq!(catalog.forms[&("{count} file".to_string(), Form::Many)], "{count} gcomhad");
     let catalog = parse("msgid Copy\nmsgstr Kopiraj\nmsgctxt job\nmsgid Copy\nmsgstr Kopiranje\n").unwrap();
     assert_eq!(catalog.plain["Copy"], "Kopiraj");
     assert_eq!(catalog.plain[&keyed("job", "Copy")], "Kopiranje");
@@ -89,7 +99,6 @@ fn a_catalog_reads_and_says_what_is_wrong_with_one_that_does_not() {
         ("msgid One\nmsgid Two\nmsgstr Dva", 2),
         ("msgid One", 1),
         ("msgid One\nmsgstr Jedan\nmsgstr Opet", 3),
-        ("msgid One\nmsgstr[many] Mnogo", 2),
         ("msgid One\nmsgstr[three] Tri", 2),
         ("msgid One\nmsgtext Jedan", 2),
         ("msgid One\nmsgstr", 2),
@@ -282,6 +291,7 @@ const COMPLETE: &[Language] = &[
     Language::Portuguese,
     Language::Dutch,
     Language::Danish,
+    Language::Irish,
 ];
 
 #[test]
