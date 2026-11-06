@@ -10,6 +10,7 @@ pub enum MountKind {
     /// Detected on Linux and Windows; other platforms have no cheap way to tell.
     #[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
     Removable,
+    #[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
     Network,
     #[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
     Optical,
