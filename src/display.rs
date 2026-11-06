@@ -162,6 +162,27 @@ const PICARD: Palette = Palette {
     selected_marker: rgb(255, 85, 85),             // Alert red
 };
 
+// An arcade maze at night: blue walls on black, a yellow hero, and the four
+// ghosts' red, pink, cyan and orange for what is left to tell apart.
+const PACMAN: Palette = Palette {
+    background: rgb(0, 0, 0), // The maze floor
+    gutter: rgb(8, 8, 28),    // Near black blue
+    light: false,
+    syntax_theme: DARK_SYNTAX,
+    border: rgb(33, 33, 222),                      // Maze blue
+    columns: rgb(0, 255, 255),                     // Ghost cyan
+    directory: rgb(255, 255, 0),                   // Yellow
+    directory_dark: rgb(170, 170, 0),              // Dim yellow
+    directory_bracket: rgb(255, 255, 0),           // Yellow
+    file: rgb(255, 184, 255),                      // Ghost pink
+    rename_background: rgb(200, 0, 0),             // Ghost red, darker
+    selected_background: rgb(33, 33, 222),         // Maze blue
+    selected_background_inactive: rgb(16, 16, 96), // Deep maze blue
+    selected_foreground: rgb(255, 255, 0),         // Yellow
+    title: rgb(255, 0, 0),                         // Ghost red
+    selected_marker: rgb(255, 184, 82),            // Ghost orange
+};
+
 // The schemes below take their colours from each one's published palette.
 
 const DRACULA: Palette = Palette {
@@ -384,6 +405,7 @@ pub fn palette_of(theme: Theme) -> &'static Palette {
         Theme::HighContrast => &HIGH_CONTRAST,
         Theme::Military => &MILITARY,
         Theme::Picard => &PICARD,
+        Theme::Pacman => &PACMAN,
         Theme::Dracula => &DRACULA,
         Theme::Monokai => &MONOKAI,
         Theme::Nord => &NORD,
