@@ -221,11 +221,6 @@ pub struct AppState {
     /// Whether W last left the viewer wrapping lines, which the next file
     /// opened takes up.
     pub viewer_wrap: bool,
-    /// What Ctrl+F last looked for. Kept when the prompt closes, for F3 and
-    /// Shift+F3, and offered again the next time it opens.
-    pub find_term: String,
-    /// Alt+R in the find prompt: the term is a regular expression.
-    pub find_regex: bool,
     /// Whether the matches of find_term are marked on screen. On from the
     /// first search until the viewer or editor closes.
     pub find_shown: bool,
@@ -434,6 +429,11 @@ pub struct Recall {
     pub find_files_last: FindForm,
     /// What Ctrl+R last replaced with, offered again the next time.
     pub replace_with: String,
+    /// What Ctrl+F last looked for. Kept when the prompt closes, for F3 and
+    /// Shift+F3, and offered again the next time it opens.
+    pub find_term: String,
+    /// Alt+R in the find prompt: the term is a regular expression.
+    pub find_regex: bool,
 }
 
 impl AppState {
@@ -513,6 +513,8 @@ impl AppState {
                 select_pattern: "*".to_string(),
                 find_files_last: FindForm::default(),
                 replace_with: String::new(),
+                find_term: String::new(),
+                find_regex: false,
             },
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
@@ -530,8 +532,6 @@ impl AppState {
             },
             filter_before: String::new(),
             search_input: String::new(),
-            find_term: String::new(),
-            find_regex: false,
             viewer_wrap: false,
             find_shown: false,
             find_note: None,

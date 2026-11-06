@@ -266,7 +266,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         // cursor to sit on, unless show_cursor paints the cell for Classic.
         let cursor_style = Style::new().add_modifier(EDITOR_CURSOR);
         let selection = editor_state.selection();
-        let needle = app_state.find_shown.then(|| crate::find::Needle::with(&app_state.find_term, app_state.find_regex).ok().flatten()).flatten();
+        let needle = app_state.find_shown.then(|| crate::find::Needle::with(&app_state.recall.find_term, app_state.recall.find_regex).ok().flatten()).flatten();
         let mut content_lines: Vec<Line> = Vec::with_capacity(end - start);
 
         for (idx, line) in editor_state.lines[start..end].iter().enumerate() {

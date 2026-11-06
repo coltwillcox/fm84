@@ -60,7 +60,7 @@ fn find_selects_each_match_in_turn_and_wraps() {
     // Closing the editor takes the marks with it, and keeps the term.
     app_state.close_editor();
     assert!(!app_state.find_shown);
-    assert_eq!(app_state.find_term, "BETAMAX");
+    assert_eq!(app_state.recall.find_term, "BETAMAX");
     std::fs::remove_file(path).unwrap();
 }
 
@@ -274,7 +274,7 @@ fn the_viewer_wraps_long_lines_onto_rows() {
     assert_eq!(state.row(1), (1, 0, 8));
 
     // Found on the long line's fifth row, which scrolls into view.
-    app_state.find_term = "needle".to_string();
+    app_state.recall.find_term = "needle".to_string();
     app_state.find(true, true);
     let state = app_state.viewer().unwrap();
     assert_eq!(state.selected_text().as_deref(), Some("needle"));

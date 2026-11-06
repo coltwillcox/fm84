@@ -535,7 +535,7 @@ fn matches_on_wrapped_rows_are_marked_where_they_fall() {
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(40, 20)).unwrap();
     render_ui(&mut terminal, &mut app_state);
     app_state.viewer_toggle_wrap();
-    app_state.find_term = "needle".to_string();
+    app_state.recall.find_term = "needle".to_string();
     app_state.find_shown = true;
     render_ui(&mut terminal, &mut app_state);
 

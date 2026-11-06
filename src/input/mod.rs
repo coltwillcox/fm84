@@ -108,7 +108,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
     if c == '*' && in_panel {
         app_state.invert_selection(true);
     } else if finding && modifiers.contains(KeyModifiers::ALT) && matches!(c, 'r' | 'R') {
-        app_state.find_regex = !app_state.find_regex;
+        app_state.recall.find_regex = !app_state.recall.find_regex;
     } else if modifiers.contains(KeyModifiers::ALT) {
         // Alt+1 to Alt+8 go to that tab, and Alt+9 to the last, however
         // many there are - as browsers have it.

@@ -245,7 +245,7 @@ fn find_and_replace_by_regular_expression() {
     };
     ctrl(&mut app_state, 'f');
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('r'), KeyModifiers::ALT));
-    assert!(app_state.find_regex);
+    assert!(app_state.recall.find_regex);
     typed(&mut app_state, r"\d{3}");
     assert_eq!(app_state.editor().unwrap().selection(), Some(((1, 9), (1, 12))));
 

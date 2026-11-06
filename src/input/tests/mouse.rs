@@ -369,7 +369,7 @@ fn the_viewer_counts_wide_characters_as_the_columns_they_take() {
     assert_eq!(click(&mut app_state, 10), Some((0, 5)));
     assert_eq!(click(&mut app_state, 11), Some((0, 5)));
 
-    app_state.find_term = "x".to_string();
+    app_state.recall.find_term = "x".to_string();
     app_state.find(true, true);
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let buffer = terminal.backend().buffer();

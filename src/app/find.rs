@@ -8,13 +8,13 @@ impl AppState {
     /// None for nothing to look for - or an expression that is not one,
     /// which was said so when it was typed.
     pub fn find_needle(&self) -> Option<crate::find::Needle> {
-        crate::find::Needle::with(&self.find_term, self.find_regex).ok().flatten()
+        crate::find::Needle::with(&self.recall.find_term, self.recall.find_regex).ok().flatten()
     }
 
     /// A term typed into Find or Replace that will not do: an expression
     /// that is not one. Said so, and the prompt opened on it again.
     fn refuse_term(&mut self, kind: PromptKind, term: &str) -> bool {
-        let Err(message) = crate::find::Needle::with(term, self.find_regex) else {
+        let Err(message) = crate::find::Needle::with(term, self.recall.find_regex) else {
             return false;
         };
         self.display_error(message);
@@ -42,7 +42,7 @@ impl AppState {
         }
         let mut input = TextInput::new();
         if kind == PromptKind::Find {
-            input.set(self.find_term.clone());
+            input.set(self.recall.find_term.clone());
         }
         self.dialog = Some(Dialog::Prompt(kind, input));
     }
@@ -72,7 +72,7 @@ impl AppState {
                 if self.refuse_term(kind, &input.text) {
                     return;
                 }
-                self.find_term = input.text;
+                self.recall.find_term = input.text;
                 self.find(true, true);
             }
             PromptKind::GoToLine => match input.text.trim().parse::<usize>() {
@@ -93,7 +93,7 @@ impl AppState {
                 if input.text.is_empty() || self.refuse_term(kind, &input.text) {
                     return;
                 }
-                self.find_term = input.text;
+                self.recall.find_term = input.text;
                 let mut with = TextInput::new();
                 with.set(self.recall.replace_with.clone());
                 self.dialog = Some(Dialog::Prompt(PromptKind::ReplaceWith, with));
@@ -117,7 +117,7 @@ impl AppState {
         let Some(state) = self.editor() else {
             return;
         };
-        let offered = state.selected_text().filter(|text| !text.contains('\n')).unwrap_or_else(|| self.find_term.clone());
+        let offered = state.selected_text().filter(|text| !text.contains('\n')).unwrap_or_else(|| self.recall.find_term.clone());
         let mut input = TextInput::new();
         input.set(offered);
         self.dialog = Some(Dialog::Prompt(PromptKind::Replace, input));
@@ -135,7 +135,7 @@ impl AppState {
         self.find_shown = true;
         match self.editor_find(&needle, true, true) {
             Some(wrapped) => self.dialog = Some(Dialog::Replacing { stop_at, wrapped, replaced: 0 }),
-            None => self.find_note = Some(t!("Not found: {term}", term = self.find_term)),
+            None => self.find_note = Some(t!("Not found: {term}", term = self.recall.find_term)),
         }
     }
 
@@ -275,7 +275,7 @@ impl AppState {
 
         let found = if self.is_editing() { self.editor_find(&needle, forward, fresh) } else { self.viewer_find(&needle, forward, fresh) };
         self.find_note = match found {
-            None => Some(t!("Not found: {term}", term = self.find_term)),
+            None => Some(t!("Not found: {term}", term = self.recall.find_term)),
             Some(true) => Some(if forward { t!("Wrapped to the top") } else { t!("Wrapped to the bottom") }.to_string()),
             Some(false) => None,
         };
