@@ -218,8 +218,6 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    /// What Ctrl+R last replaced with, offered again the next time.
-    pub replace_with: String,
     /// Whether W last left the viewer wrapping lines, which the next file
     /// opened takes up.
     pub viewer_wrap: bool,
@@ -434,6 +432,8 @@ pub struct Recall {
     /// What Find files last looked for - the name pattern and the text -
     /// offered again the next time.
     pub find_files_last: FindForm,
+    /// What Ctrl+R last replaced with, offered again the next time.
+    pub replace_with: String,
 }
 
 impl AppState {
@@ -512,6 +512,7 @@ impl AppState {
             recall: Recall {
                 select_pattern: "*".to_string(),
                 find_files_last: FindForm::default(),
+                replace_with: String::new(),
             },
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
@@ -531,7 +532,6 @@ impl AppState {
             search_input: String::new(),
             find_term: String::new(),
             find_regex: false,
-            replace_with: String::new(),
             viewer_wrap: false,
             find_shown: false,
             find_note: None,

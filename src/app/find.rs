@@ -95,11 +95,11 @@ impl AppState {
                 }
                 self.find_term = input.text;
                 let mut with = TextInput::new();
-                with.set(self.replace_with.clone());
+                with.set(self.recall.replace_with.clone());
                 self.dialog = Some(Dialog::Prompt(PromptKind::ReplaceWith, with));
             }
             PromptKind::ReplaceWith => {
-                self.replace_with = input.text;
+                self.recall.replace_with = input.text;
                 self.start_replace();
             }
             PromptKind::GoTo => self.go_to_path(&input.text),
@@ -152,7 +152,7 @@ impl AppState {
         if replace && let Some(((line, start), (_, end))) = self.editor().and_then(EditorState::selection) {
             // A regular expression's groups, $1 and on, from the match.
             let text = self.editor().and_then(|state| state.lines.get(line).cloned()).unwrap_or_default();
-            let with = needle.expand(&text, start, &self.replace_with);
+            let with = needle.expand(&text, start, &self.recall.replace_with);
             self.replace_selection(&with);
             replaced += 1;
             // Gone round and back on the line it started on, text before the

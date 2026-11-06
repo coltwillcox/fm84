@@ -76,7 +76,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
     let status_style = style_title().bg(palette().selected_background);
 
     if let Some(Dialog::Replacing { .. }) = &app_state.dialog {
-        let (find, with) = (printable_name(&app_state.find_term), printable_name(&app_state.replace_with));
+        let (find, with) = (printable_name(&app_state.find_term), printable_name(&app_state.recall.replace_with));
         let question = format!(" {} ", t!("Replace \"{find}\" with \"{with}\"?   Y - Yes   N - No   A - All   Esc - Stop", find, with));
         render_status_bar(f, area, question, status_style);
         return;
