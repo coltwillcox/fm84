@@ -77,7 +77,7 @@ fn a_click_on_a_path_edits_it() {
     app_state.is_left_active = true;
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
-    let bar = app_state.path_bar_area;
+    let bar = app_state.drawn.path_bar_area;
     let click_at = |app_state: &mut AppState, column, row| {
         crate::input::handle_mouse(
             app_state,

@@ -43,7 +43,7 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     // the click it was.
     if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::GoTo, _))) {
         let on_left = column < app_state.drawn.table_area_right.x;
-        if !app_state.path_bar_area.contains(Position::new(column, row)) || on_left != app_state.is_left_active {
+        if !app_state.drawn.path_bar_area.contains(Position::new(column, row)) || on_left != app_state.is_left_active {
             app_state.dialog = None;
         }
     }
@@ -251,7 +251,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // A panel's path, in the row above it, is edited where it is as Ctrl+L
     // edits it; the panel becomes the active one. The split between the two
     // is where the right panel starts.
-    if app_state.path_bar_area.contains(Position::new(column, row)) {
+    if app_state.drawn.path_bar_area.contains(Position::new(column, row)) {
         let is_left = column < app_state.drawn.table_area_right.x;
         let editing = matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::GoTo, _)));
         if app_state.job.is_none() && !app_state.panel_busy(is_left) && !(editing && is_left == app_state.is_left_active) {
