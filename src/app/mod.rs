@@ -421,7 +421,7 @@ pub struct Drawn {
     pub branch_rows: Vec<(Rect, usize)>,
     /// The column headings a click sorts by, both panels', as last drawn.
     pub sort_headers: Vec<(Rect, SortKey)>,
-    /// The editor's text, for a click to place the cursor.
+    /// The editor's text, for a click or a drag to place the cursor in.
     pub editor_content_area: Rect,
     /// The viewer's text, for a click or a drag to select in, or to take hold
     /// of a picture.
