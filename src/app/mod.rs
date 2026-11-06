@@ -296,10 +296,7 @@ pub struct AppState {
     pub listing_wait: Duration,
     /// How long the UI waits on the detail lines and the preview.
     pub detail_wait: Duration,
-    // Watching each panel's directory for changes and its filesystem for free
-    // space, and the mounts for drives coming and going. Dropping one stops it.
-    watch_left: Option<Watch>,
-    watch_right: Option<Watch>,
+    // Watching the mounts for drives coming and going. Dropping it stops it.
     _watch_mounts: Watch,
     /// Handed to each watcher as it starts; what they report arrives on
     /// `watch_events`.
@@ -412,6 +409,9 @@ pub struct Panel {
     // The panel's directory still being read, past the moment the UI waits for
     // it. The panel goes on showing what it did until it lands.
     pub listing: Option<PendingListing>,
+    // Watching the directory for changes and its filesystem for free space.
+    // Dropping it stops it.
+    watch: Option<Watch>,
 }
 
 impl AppState {
@@ -464,6 +464,7 @@ impl AppState {
                 viewport_start: 0,
                 tabs: Tabs::new(vec![dir_root.clone()], 0),
                 listing: None,
+                watch: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -476,6 +477,7 @@ impl AppState {
                 viewport_start: 0,
                 tabs: Tabs::new(vec![dir_root], 0),
                 listing: None,
+                watch: None,
             },
             page_size: 0,
             filter_before: String::new(),
@@ -516,8 +518,6 @@ impl AppState {
             bar_drag: None,
             listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
             detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },
-            watch_left: None,
-            watch_right: None,
             _watch_mounts: crate::background::watch_mounts(crate::constants::REFRESH_INTERVAL, watch_sender.clone()),
             watch_sender,
             watch_events,

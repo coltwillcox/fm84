@@ -465,14 +465,10 @@ impl AppState {
             self.branch_right = listed.branch;
             self.archive_right = listed.archive;
         }
-        let watch = if is_left { &self.watch_left } else { &self.watch_right };
+        let watch = &self.panel(is_left).watch;
         if watch.as_ref().is_none_or(|watch| watch.dir != found) {
             let watch = crate::background::watch_dir(is_left, found.clone(), probe, listed.stamp, listed.disk, self.watch_interval, self.watch_sender.clone());
-            if is_left {
-                self.watch_left = Some(watch);
-            } else {
-                self.watch_right = Some(watch);
-            }
+            self.panel_mut(is_left).watch = Some(watch);
         }
 
         // A tab brings back what was selected in it - when the panel got to
