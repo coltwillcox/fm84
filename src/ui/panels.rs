@@ -231,7 +231,7 @@ pub(super) fn drive_strip(app_state: &mut AppState, side: Side, area: Rect) -> L
         })
         .collect();
 
-    let strip = if side.is_left() { &mut app_state.drive_strip_left } else { &mut app_state.drive_strip_right };
+    let strip = &mut app_state.drive_strips[side];
     let mut spans = lay_strip(strip, area, items, picking.or(current));
 
     // Name whichever is under consideration, else the one this panel is on.
@@ -315,8 +315,9 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
 
     // Each strip hands its real geometry to the mouse handler, as the panels
     // do. One not drawn this frame has nothing to click either.
-    app_state.drive_strip_left.area = Rect::default();
-    app_state.drive_strip_right.area = Rect::default();
+    for strip in &mut app_state.drive_strips {
+        strip.area = Rect::default();
+    }
     app_state.left.tabs.strip.area = Rect::default();
     app_state.right.tabs.strip.area = Rect::default();
 

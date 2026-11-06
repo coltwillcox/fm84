@@ -235,9 +235,8 @@ pub struct AppState {
     /// how many cells from the thumb's start it was taken - followed until
     /// the button comes up.
     pub bar_drag: Option<(crate::scroll_bar::ScrollBar, usize)>,
-    // The drive strips as drawn, and which of the drives each one shows.
-    pub drive_strip_left: Strip,
-    pub drive_strip_right: Strip,
+    /// Each side's drive strip as drawn, and which of the drives it shows.
+    pub drive_strips: [Strip; 2],
     /// `user@host`, for the top border, and whether that is root.
     pub user_at_host: (String, bool),
     /// Pictures read around the one on screen, while F11 leaves it on.
@@ -298,8 +297,9 @@ impl Item {
 /// Which of the two panels.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Side {
-    Left,
-    Right,
+    // The places in a `[left, right]` pair.
+    Left = 0,
+    Right = 1,
 }
 
 impl Side {
@@ -314,6 +314,21 @@ impl Side {
 
     pub fn is_left(self) -> bool {
         self == Side::Left
+    }
+}
+
+/// What there is one of for each side, as `[left, right]`, picked by side.
+impl<T> std::ops::Index<Side> for [T; 2] {
+    type Output = T;
+
+    fn index(&self, side: Side) -> &T {
+        &self[side as usize]
+    }
+}
+
+impl<T> std::ops::IndexMut<Side> for [T; 2] {
+    fn index_mut(&mut self, side: Side) -> &mut T {
+        &mut self[side as usize]
     }
 }
 
@@ -584,8 +599,7 @@ impl AppState {
             cursor_detail: None,
             quit_armed: false,
             stay_put: false,
-            drive_strip_left: Strip::default(),
-            drive_strip_right: Strip::default(),
+            drive_strips: [Strip::default(), Strip::default()],
         }
     }
 

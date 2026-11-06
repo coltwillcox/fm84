@@ -94,13 +94,7 @@ impl AppState {
     /// Which panel's drive strip a position is on, if either.
     pub fn drive_strip_at(&self, column: u16, row: u16) -> Option<Side> {
         let position = Position::new(column, row);
-        if self.drive_strip_left.area.contains(position) {
-            Some(Side::Left)
-        } else if self.drive_strip_right.area.contains(position) {
-            Some(Side::Right)
-        } else {
-            None
-        }
+        Side::BOTH.into_iter().find(|&side| self.drive_strips[side].area.contains(position))
     }
 
     /// The panel and what a click landed on, when it was a drive icon or an
@@ -108,7 +102,7 @@ impl AppState {
     /// a click on the label beside them, or past the last one, is nothing.
     pub fn drive_at(&self, column: u16, row: u16) -> Option<(Side, StripHit)> {
         let side = self.drive_strip_at(column, row)?;
-        let strip = if side.is_left() { &self.drive_strip_left } else { &self.drive_strip_right };
+        let strip = &self.drive_strips[side];
         let hit = strip_hit(strip, column)?;
         match hit {
             StripHit::Item(mount) if mount >= self.mounts.len() => None,
@@ -118,7 +112,7 @@ impl AppState {
 
     /// Move a panel's drive strip a page along, when not all of it fits.
     pub fn scroll_drive_strip(&mut self, side: Side, forward: bool) {
-        let strip = if side.is_left() { &mut self.drive_strip_left } else { &mut self.drive_strip_right };
+        let strip = &mut self.drive_strips[side];
         strip.scroll(forward);
     }
 
@@ -306,7 +300,7 @@ impl AppState {
         let current = self.current_mount(side).unwrap_or(0);
         self.dialog = Some(Dialog::DrivePicker { side, index: current });
         // Into view, even if the strip was scrolled away from it.
-        let strip = if side.is_left() { &mut self.drive_strip_left } else { &mut self.drive_strip_right };
+        let strip = &mut self.drive_strips[side];
         strip.followed = None;
     }
 

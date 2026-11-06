@@ -71,7 +71,7 @@ fn a_crowded_drive_strip_scrolls() {
 
     // Plain icons are five columns a slot: 30, less 4 for arrows, holds 5.
     drive_strip(&mut app_state, Side::Left, area);
-    let strip = &app_state.drive_strip_left;
+    let strip = &app_state.drive_strips[Side::Left];
     assert_eq!((strip.first, strip.visible), (0, 5));
     assert_eq!(strip.hits.first(), Some(&StripHit::Item(0)));
     assert_eq!(strip.hits.last(), Some(&StripHit::Forward));
@@ -88,12 +88,12 @@ fn a_crowded_drive_strip_scrolls() {
     // At the end, no forward arrow.
     app_state.scroll_drive_strip(Side::Left, true);
     drive_strip(&mut app_state, Side::Left, area);
-    assert_eq!(app_state.drive_strip_left.first, 7);
-    assert!(!app_state.drive_strip_left.hits.contains(&StripHit::Forward));
+    assert_eq!(app_state.drive_strips[Side::Left].first, 7);
+    assert!(!app_state.drive_strips[Side::Left].hits.contains(&StripHit::Forward));
 
     // Room for all: no arrows and the old layout.
     drive_strip(&mut app_state, Side::Left, Rect::new(0, 0, 80, 1));
-    assert_eq!(app_state.drive_strip_left.first, 0);
+    assert_eq!(app_state.drive_strips[Side::Left].first, 0);
     assert_eq!(app_state.drive_at(1, 0), Some((Side::Left, StripHit::Item(0))));
 }
 
