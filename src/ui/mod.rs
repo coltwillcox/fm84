@@ -119,6 +119,8 @@ struct Settled {
     popup_list: Option<(usize, usize)>,
     /// The diff's scroll, kept so the last row stays at the bottom.
     diff_scroll: Option<usize>,
+    /// The editor's scroll down and across, kept with the cursor in view.
+    editor_scroll: Option<(usize, usize)>,
 }
 
 impl Settled {
@@ -137,6 +139,9 @@ impl Settled {
         }
         if let (Some(scroll), Screen::Diff(state)) = (self.diff_scroll, &mut app_state.screen) {
             state.scroll_offset = scroll;
+        }
+        if let (Some((down, across)), Screen::Editor(state)) = (self.editor_scroll, &mut app_state.screen) {
+            (state.scroll_offset, state.horizontal_offset) = (down, across);
         }
     }
 }
@@ -247,7 +252,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut 
                 drawn.viewer_content_area = content_area;
                 drawn.scroll_bars = bars;
             }
-            Screen::Editor(_) => drawn.editor_viewport_height = render_editor(f, chunks_main[2], app_state, drawn),
+            Screen::Editor(_) => (drawn.editor_viewport_height, settled.editor_scroll) = render_editor(f, chunks_main[2], app_state, drawn),
             Screen::Diff(_) => {
                 let (height, width, scroll) = render_diff(f, chunks_main[2], app_state);
                 drawn.diff_viewport_height = height;

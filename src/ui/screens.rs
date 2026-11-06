@@ -203,11 +203,13 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
     (height, text_width, scroll)
 }
 
-pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState, drawn: &mut Drawn) -> usize {
+/// Returns the rows the text had room for, and the scroll down and across
+/// that keep the cursor in view.
+pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, drawn: &mut Drawn) -> (usize, Option<(usize, usize)>) {
     let line_numbers = app_state.options.line_numbers;
     let mut bars = Vec::new();
     let bar_style = app_state.options.scroll_bar;
-    let (viewport_height, content_area) = if let Screen::Editor(editor_state) = &mut app_state.screen {
+    let (viewport_height, content_area, scrolls) = if let Screen::Editor(editor_state) = &app_state.screen {
         let filename = shown_name(&editor_state.file_path);
         let modified = if editor_state.modified { format!(" [{}]", t!("Modified")) } else { String::new() };
         let title = format!(" {} {}{} ", t!("Edit:"), filename, modified);
@@ -226,8 +228,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Length(line_num_width), Constraint::Min(0)]).split(inner_area);
 
         let viewport_height = inner_area.height as usize;
-        editor_state.keep_in_view(viewport_height);
-        let start = editor_state.scroll_offset;
+        let start = editor_state.scroll_in_view(viewport_height);
         let end = (start + viewport_height).min(total_lines);
         let num_width = (line_num_width as usize).saturating_sub(1);
 
@@ -245,18 +246,18 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         }
 
         // Auto-scroll to keep cursor visible (disabled during mouse scrolling)
+        let mut h_offset = editor_state.horizontal_offset;
         if editor_state.auto_scroll {
             // In columns, as skip_columns scrolls: a wide character takes two.
             let visual_cursor_col = crate::utils::display_column(&editor_state.lines[editor_state.cursor_line], editor_state.cursor_col);
             let viewport_width = chunks[1].width as usize;
-            if visual_cursor_col < editor_state.horizontal_offset {
-                editor_state.horizontal_offset = visual_cursor_col;
+            if visual_cursor_col < h_offset {
+                h_offset = visual_cursor_col;
             }
-            if visual_cursor_col >= editor_state.horizontal_offset + viewport_width {
-                editor_state.horizontal_offset = visual_cursor_col - viewport_width + 1;
+            if visual_cursor_col >= h_offset + viewport_width {
+                h_offset = visual_cursor_col - viewport_width + 1;
             }
         }
-        let h_offset = editor_state.horizontal_offset;
 
         // Syntax colours first, then the selection over them, then the cursor.
         let has_highlighting = !editor_state.highlighted_lines.is_empty();
@@ -301,7 +302,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         let rows = Extent {
             content: editor_state.lines.len(),
             view: viewport_height,
-            offset: editor_state.scroll_offset,
+            offset: start,
         };
         bars.extend(vertical_bar(f, area, rows, bar_style));
         // A column more than the widest line, for the cursor at its end; and
@@ -315,12 +316,12 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         };
         bars.extend(horizontal_bar(f, area, chunks[1], columns, bar_style));
 
-        (viewport_height, chunks[1])
+        (viewport_height, chunks[1], Some((start, h_offset)))
     } else {
-        (0, Rect::default())
+        (0, Rect::default(), None)
     };
 
     drawn.editor_content_area = content_area;
     drawn.scroll_bars = bars;
-    viewport_height
+    (viewport_height, scrolls)
 }
