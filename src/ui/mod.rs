@@ -97,11 +97,31 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
     }
 
     crate::display::set_classic_cursor(app_state.options.cursor == crate::options::CursorShape::Classic);
+    let mut settled = Settled::default();
     let _ = terminal.draw(|f| {
-        draw_frame(f, app_state, &mut drawn);
+        settled = draw_frame(f, app_state, &mut drawn);
         show_cursor(f, app_state);
     });
     app_state.drawn = drawn;
+    settled.apply(app_state);
+}
+
+/// What a frame worked out that the state takes on after it - a scroll kept
+/// to what the room allows, now the room is known. Drawing only reads the
+/// state; this is how what it found goes back.
+#[derive(Default)]
+struct Settled {
+    /// F1's list, kept to its room, so a screen that has grown does not
+    /// leave the keys scrolling through lines past the end.
+    help_scroll: Option<usize>,
+}
+
+impl Settled {
+    fn apply(self, app_state: &mut AppState) {
+        if let Some(scroll) = self.help_scroll {
+            app_state.help_scroll = scroll;
+        }
+    }
 }
 
 /// Show the cursor where the frame marked it. A field's wins over the
@@ -175,7 +195,8 @@ fn screen_layout(area: Rect) -> std::rc::Rc<[Rect]> {
         .split(area)
 }
 
-fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut Drawn) {
+fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut Drawn) -> Settled {
+    let mut settled = Settled::default();
     {
         let area = f.area();
         paint_background(f, area);
@@ -187,7 +208,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut 
             if y < area.height {
                 f.render_widget(msg, Rect::new(area.x, area.y + y, area.width, 1));
             }
-            return;
+            return settled;
         }
 
         let chunks_main = screen_layout(area);
@@ -230,9 +251,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut 
         match &app_state.dialog {
             Some(Dialog::Help) => {
                 drawn.help_room = render_help_popup(f, area, app_state.help_scroll);
-                // Kept to what the room allows, so a screen that has grown
-                // does not leave the keys scrolling through lines past the end.
-                app_state.help_scroll = app_state.help_scroll.min(help_lines().len().saturating_sub(drawn.help_room));
+                settled.help_scroll = Some(app_state.help_scroll.min(help_lines().len().saturating_sub(drawn.help_room)));
             }
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
@@ -291,6 +310,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut 
             render_error_popup(f, area, message);
         }
     }
+    settled
 }
 
 /// A path's last component, lossy where it has to be and with anything that
