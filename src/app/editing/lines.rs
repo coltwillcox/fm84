@@ -52,8 +52,8 @@ impl AppState {
             state.lines.insert(state.cursor_line, new_line);
             state.cursor_col = indent.chars().count();
             state.modified = true;
-            if state.cursor_line >= state.scroll_offset + self.editor_viewport_height {
-                state.scroll_offset = state.cursor_line - self.editor_viewport_height + 1;
+            if state.cursor_line >= state.scroll_offset + self.drawn.editor_viewport_height {
+                state.scroll_offset = state.cursor_line - self.drawn.editor_viewport_height + 1;
             }
         }
         if let Some(from) = from {

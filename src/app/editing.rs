@@ -349,7 +349,7 @@ impl AppState {
 
     pub fn editor_scroll_down(&mut self) {
         if let Screen::Editor(state) = &mut self.screen {
-            let max = state.lines.len().saturating_sub(self.editor_viewport_height);
+            let max = state.lines.len().saturating_sub(self.drawn.editor_viewport_height);
             if state.scroll_offset < max {
                 state.scroll_offset += 1;
                 state.auto_scroll = false;
@@ -375,7 +375,7 @@ impl AppState {
     /// column along. Like the wheel it leaves the cursor where it is, and
     /// the view stays put until a key brings it back to it.
     pub fn editor_scroll_to(&mut self, vertical: bool, offset: usize) {
-        let height = self.editor_viewport_height;
+        let height = self.drawn.editor_viewport_height;
         if let Screen::Editor(state) = &mut self.screen {
             if vertical {
                 state.scroll_offset = offset.min(state.lines.len().saturating_sub(height));
@@ -510,7 +510,7 @@ impl AppState {
     }
 
     pub fn editor_select_all(&mut self) {
-        let height = self.editor_viewport_height;
+        let height = self.drawn.editor_viewport_height;
         if let Screen::Editor(state) = &mut self.screen {
             let last_line = state.lines.len().saturating_sub(1);
             state.selection_anchor = Some((0, 0));
@@ -626,8 +626,8 @@ impl AppState {
         {
             state.cursor_line += 1;
             state.clamp_col();
-            if state.cursor_line >= state.scroll_offset + self.editor_viewport_height {
-                state.scroll_offset = state.cursor_line - self.editor_viewport_height + 1;
+            if state.cursor_line >= state.scroll_offset + self.drawn.editor_viewport_height {
+                state.scroll_offset = state.cursor_line - self.drawn.editor_viewport_height + 1;
             }
         }
     }
@@ -654,8 +654,8 @@ impl AppState {
             } else if state.cursor_line < state.lines.len().saturating_sub(1) {
                 state.cursor_line += 1;
                 state.cursor_col = 0;
-                if state.cursor_line >= state.scroll_offset + self.editor_viewport_height {
-                    state.scroll_offset = state.cursor_line - self.editor_viewport_height + 1;
+                if state.cursor_line >= state.scroll_offset + self.drawn.editor_viewport_height {
+                    state.scroll_offset = state.cursor_line - self.drawn.editor_viewport_height + 1;
                 }
             }
         }
@@ -675,7 +675,7 @@ impl AppState {
 
     pub fn editor_page_up(&mut self) {
         if let Screen::Editor(state) = &mut self.screen {
-            let page = self.editor_viewport_height.saturating_sub(1);
+            let page = self.drawn.editor_viewport_height.saturating_sub(1);
             state.cursor_line = state.cursor_line.saturating_sub(page);
             state.scroll_offset = state.scroll_offset.saturating_sub(page);
             state.clamp_col();
@@ -684,10 +684,10 @@ impl AppState {
 
     pub fn editor_page_down(&mut self) {
         if let Screen::Editor(state) = &mut self.screen {
-            let page = self.editor_viewport_height.saturating_sub(1);
+            let page = self.drawn.editor_viewport_height.saturating_sub(1);
             let max_line = state.lines.len().saturating_sub(1);
             state.cursor_line = (state.cursor_line + page).min(max_line);
-            let max_scroll = state.lines.len().saturating_sub(self.editor_viewport_height);
+            let max_scroll = state.lines.len().saturating_sub(self.drawn.editor_viewport_height);
             state.scroll_offset = (state.scroll_offset + page).min(max_scroll);
             state.clamp_col();
         }

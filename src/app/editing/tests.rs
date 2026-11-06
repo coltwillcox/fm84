@@ -25,7 +25,7 @@ fn selected(app_state: &AppState) -> Option<((usize, usize), (usize, usize))> {
 #[test]
 fn find_selects_each_match_in_turn_and_wraps() {
     let (mut app_state, path) = editor_with("find", "alpha beta\nBETA\ngamma beta\n");
-    app_state.editor_viewport_height = 10;
+    app_state.drawn.editor_viewport_height = 10;
 
     // F3 before anything was looked for asks what to look for.
     app_state.find(true, false);
@@ -68,7 +68,7 @@ fn find_selects_each_match_in_turn_and_wraps() {
 fn go_to_line_puts_the_cursor_on_it_and_keeps_inside_the_file() {
     let text: String = (1..=100).map(|n| format!("line {n}\n")).collect();
     let (mut app_state, path) = editor_with("goto", &text);
-    app_state.editor_viewport_height = 10;
+    app_state.drawn.editor_viewport_height = 10;
 
     answer_prompt(&mut app_state, super::PromptKind::GoToLine, "42");
     let state = app_state.editor().unwrap();

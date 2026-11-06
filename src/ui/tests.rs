@@ -609,7 +609,7 @@ fn a_long_paste_leaves_the_cursor_on_screen() {
     app_state.editor_insert_text(&pasted);
     render_ui(&mut terminal, &mut app_state);
     let state = app_state.editor().unwrap();
-    let height = app_state.editor_viewport_height;
+    let height = app_state.drawn.editor_viewport_height;
     assert!(state.cursor_line >= state.scroll_offset && state.cursor_line < state.scroll_offset + height);
     std::fs::remove_file(path).unwrap();
 }

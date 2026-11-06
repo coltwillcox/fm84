@@ -204,7 +204,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
                 app_state.viewer_content_area = content_area;
                 app_state.scroll_bars = bars;
             }
-            Screen::Editor(_) => app_state.editor_viewport_height = render_editor(f, chunks_main[2], app_state),
+            Screen::Editor(_) => app_state.drawn.editor_viewport_height = render_editor(f, chunks_main[2], app_state),
             Screen::Diff(_) => {
                 let (height, width) = render_diff(f, chunks_main[2], app_state);
                 app_state.diff_viewport_height = height;

@@ -283,7 +283,7 @@ impl AppState {
 
     /// Some(wrapped) when a match was found and selected.
     fn editor_find(&mut self, needle: &crate::find::Needle, forward: bool, fresh: bool) -> Option<bool> {
-        let height = self.editor_viewport_height.max(1);
+        let height = self.drawn.editor_viewport_height.max(1);
         let state = self.editor_mut()?;
         let cursor = (state.cursor_line, state.cursor_col);
         let start = state.selection().map_or(cursor, |(start, _)| start);
@@ -342,7 +342,7 @@ impl AppState {
     /// top, as far as the end of the file allows.
     pub fn go_to_line(&mut self, number: usize) {
         if self.is_editing() {
-            let height = self.editor_viewport_height.max(1);
+            let height = self.drawn.editor_viewport_height.max(1);
             if let Screen::Editor(state) = &mut self.screen {
                 let line = number.clamp(1, state.lines.len().max(1)) - 1;
                 state.selection_anchor = None;

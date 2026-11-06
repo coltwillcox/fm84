@@ -216,7 +216,6 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    pub editor_viewport_height: usize,
     /// Rows the diff shows, and the width of each side's text.
     pub diff_viewport_height: usize,
     pub diff_viewport_width: usize,
@@ -421,6 +420,8 @@ pub struct Drawn {
     /// Rows and columns the viewer's text had room for.
     pub viewer_viewport_height: usize,
     pub viewer_viewport_width: usize,
+    /// Rows the editor's text had room for.
+    pub editor_viewport_height: usize,
 }
 
 impl AppState {
@@ -498,7 +499,6 @@ impl AppState {
             drawn: Drawn::default(),
             filter_before: String::new(),
             search_input: String::new(),
-            editor_viewport_height: 0,
             diff_viewport_height: 0,
             diff_viewport_width: 0,
             select_pattern: "*".to_string(),

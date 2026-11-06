@@ -115,7 +115,7 @@ fn editing(name: &str, text: &str) -> (AppState, std::path::PathBuf) {
     let mut app_state = AppState::new();
     app_state.options = crate::options::Options::default();
     app_state.open_editor(path.clone()).unwrap();
-    app_state.editor_viewport_height = 20;
+    app_state.drawn.editor_viewport_height = 20;
     (app_state, path)
 }
 
