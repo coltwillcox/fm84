@@ -457,7 +457,7 @@ impl AppState {
         }
         let watch = &self.panel(is_left).watch;
         if watch.as_ref().is_none_or(|watch| watch.dir != found) {
-            let watch = crate::background::watch_dir(is_left, found.clone(), probe, listed.stamp, listed.disk, self.workers.watch_interval, self.workers.watch_sender.clone());
+            let watch = crate::background::watch_dir(found.clone(), probe, listed.stamp, listed.disk, self.workers.watch_interval, self.workers.watch_sender.clone());
             self.panel_mut(is_left).watch = Some(watch);
         }
 
@@ -611,16 +611,22 @@ impl AppState {
     pub fn poll_watchers(&mut self) {
         while let Ok(event) = self.workers.watch_events.try_recv() {
             match event {
-                WatchEvent::Changed { is_left, dir } => {
-                    if dir == self.panel(is_left).dir {
-                        self.panel_mut(is_left).stale = true;
+                // To whichever panel shows the directory - both, when they are
+                // in the same one.
+                WatchEvent::Changed { dir } => {
+                    for panel in [&mut self.left, &mut self.right] {
+                        if panel.dir == dir {
+                            panel.stale = true;
+                        }
                     }
                 }
                 // Free space moves without the directory changing - a copy
                 // anywhere else on the same filesystem shifts it.
-                WatchEvent::Disk { is_left, dir, usage } => {
-                    if dir == self.panel(is_left).dir {
-                        self.panel_mut(is_left).disk = usage;
+                WatchEvent::Disk { dir, usage } => {
+                    for panel in [&mut self.left, &mut self.right] {
+                        if panel.dir == dir {
+                            panel.disk = usage;
+                        }
                     }
                 }
                 WatchEvent::Mounts(mounts) => self.mounts = mounts,

@@ -88,12 +88,14 @@ impl<Q, A> Drop for Latest<Q, A> {
 }
 
 /// What the watchers report. Only changes are sent, so a panel left alone
-/// costs a message only when something about it moves.
+/// costs a message only when something about it moves. Told by directory,
+/// not by side: a panel goes to the other side with Ctrl+U, its watcher
+/// with it.
 pub enum WatchEvent {
     /// The directory a panel shows changed on disk since it was read.
-    Changed { is_left: bool, dir: PathBuf },
+    Changed { dir: PathBuf },
     /// Used and total bytes on that directory's filesystem.
-    Disk { is_left: bool, dir: PathBuf, usage: Option<(u64, u64)> },
+    Disk { dir: PathBuf, usage: Option<(u64, u64)> },
     /// The mounts offered in the drive strips.
     Mounts(Vec<Mount>),
 }
@@ -117,7 +119,7 @@ impl Drop for Watch {
 /// the listing it is watching saw, so a change made while it was being read
 /// is still reported. `probe` is what is asked: the directory itself, or the
 /// archive file for a directory inside one, which has no time of its own.
-pub fn watch_dir(is_left: bool, dir: PathBuf, probe: PathBuf, mut stamp: Option<SystemTime>, mut usage: Option<(u64, u64)>, interval: Duration, events: Sender<WatchEvent>) -> Watch {
+pub fn watch_dir(dir: PathBuf, probe: PathBuf, mut stamp: Option<SystemTime>, mut usage: Option<(u64, u64)>, interval: Duration, events: Sender<WatchEvent>) -> Watch {
     let stop = Arc::new(AtomicBool::new(false));
     let (watched, worker_stop) = (dir.clone(), Arc::clone(&stop));
     std::thread::spawn(move || {
@@ -129,14 +131,14 @@ pub fn watch_dir(is_left: bool, dir: PathBuf, probe: PathBuf, mut stamp: Option<
             let now = std::fs::metadata(&probe).and_then(|metadata| metadata.modified()).ok();
             if now != stamp {
                 stamp = now;
-                if events.send(WatchEvent::Changed { is_left, dir: watched.clone() }).is_err() {
+                if events.send(WatchEvent::Changed { dir: watched.clone() }).is_err() {
                     return;
                 }
             }
             let now = crate::fs_ops::disk_usage(&probe);
             if now != usage {
                 usage = now;
-                if events.send(WatchEvent::Disk { is_left, dir: watched.clone(), usage }).is_err() {
+                if events.send(WatchEvent::Disk { dir: watched.clone(), usage }).is_err() {
                     return;
                 }
             }
