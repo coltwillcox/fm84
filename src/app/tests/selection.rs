@@ -215,7 +215,7 @@ fn names_that_read_alike_are_selected_apart() {
     assert_eq!(rows[0].name_full, rows[1].name_full);
 
     let index = app_state.children_left.iter().position(|row| row.name_os == rows[0].name_os).unwrap();
-    app_state.state_left.select(Some(index));
+    app_state.left.state.select(Some(index));
     app_state.toggle_selection_no_size();
     assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&rows[0].name_os]);
 

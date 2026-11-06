@@ -157,9 +157,9 @@ impl AppState {
     /// The panel as it stands, as a tab to come back to.
     pub(super) fn panel_as_tab(&self, is_left: bool) -> Tab {
         let (dir, children, state, selected) = if is_left {
-            (&self.left.dir, &self.children_left, &self.state_left, &self.selected_left)
+            (&self.left.dir, &self.children_left, &self.left.state, &self.selected_left)
         } else {
-            (&self.right.dir, &self.children_right, &self.state_right, &self.selected_right)
+            (&self.right.dir, &self.children_right, &self.right.state, &self.selected_right)
         };
         let tabs = if is_left { &self.tabs_left } else { &self.tabs_right };
         let shown = &tabs.list[tabs.active];

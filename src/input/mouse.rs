@@ -313,7 +313,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
 
     // Select the row if within bounds
     if actual_index < total {
-        let state = if clicked_left { &mut app_state.state_left } else { &mut app_state.state_right };
+        let state = &mut app_state.panel_mut(clicked_left).state;
         state.select(Some(actual_index));
 
         // Double-click on directory: enter it

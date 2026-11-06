@@ -33,7 +33,7 @@ fn copy_paths_and_names_from_a_panel() {
     assert!(app_state.find_note.is_none());
 
     app_state.selected_left.clear();
-    app_state.state_left.select(Some(0));
+    app_state.left.state.select(Some(0));
     chord(&mut app_state, KeyModifiers::CONTROL);
     assert_eq!(app_state.clipboard, dir.to_string_lossy());
 
@@ -62,7 +62,7 @@ fn swap_the_panels_and_send_the_other_one_here() {
     app_state.is_left_active = true;
     let chord = |app_state: &mut AppState, c, modifiers| handle_key(app_state, KeyEvent::new(KeyCode::Char(c), modifiers));
     let cursor = |app_state: &AppState, is_left: bool| {
-        let (children, state) = if is_left { (&app_state.children_left, &app_state.state_left) } else { (&app_state.children_right, &app_state.state_right) };
+        let (children, state) = if is_left { (&app_state.children_left, &app_state.left.state) } else { (&app_state.children_right, &app_state.right.state) };
         children[state.selected().unwrap()].name_full.clone()
     };
 
@@ -112,7 +112,7 @@ fn sort_from_the_keys_and_the_headings() {
     control(&mut app_state, 4);
     assert_eq!((app_state.options.sort_key, app_state.options.sort_descending), (SortKey::Extension, false));
     assert_eq!(names(&app_state), ["c.md", "b.rs", "a.txt"]);
-    let cursor = app_state.state_left.selected().unwrap();
+    let cursor = app_state.left.state.selected().unwrap();
     assert_eq!(app_state.children_left[cursor].name_full, "b.rs");
 
     // A click on the Size heading sorts by size, arrow and all.
@@ -150,7 +150,7 @@ fn go_to_a_path_and_back_and_forward() {
     let alt = |app_state: &mut AppState, code: KeyCode| handle_key(app_state, KeyEvent::new(code, KeyModifiers::ALT));
     let ctrl_l = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL));
     let cursor = |app_state: &AppState| {
-        let index = app_state.state_left.selected().unwrap();
+        let index = app_state.left.state.selected().unwrap();
         app_state.children_left[index].name.clone()
     };
     let type_in = |app_state: &mut AppState, text: &str| {
@@ -356,7 +356,7 @@ fn ctrl_s_filters_the_panel_as_it_is_typed() {
     }
     assert_eq!(names(&app_state), ["..", "report.txt", "reports"]);
     // The cursor's entry went, so it is on the first match.
-    assert_eq!(app_state.state_left.selected(), Some(1));
+    assert_eq!(app_state.left.state.selected(), Some(1));
     assert!(!app_state.children_left[1].is_parent());
     assert_eq!(app_state.selected_left, std::collections::HashSet::from(["report.txt".into()]));
 
@@ -477,7 +477,7 @@ fn ctrl_b_lists_every_file_below() {
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), Some("sub".as_ref()));
     let names = |app_state: &AppState| app_state.children_left.iter().map(|item| item.name_full.clone()).collect::<Vec<_>>();
-    let cursor = |app_state: &AppState| app_state.children_left[app_state.state_left.selected().unwrap()].name_full.clone();
+    let cursor = |app_state: &AppState| app_state.children_left[app_state.left.state.selected().unwrap()].name_full.clone();
     let ctrl_b = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('b'), KeyModifiers::CONTROL));
     let sep = std::path::MAIN_SEPARATOR;
 
@@ -494,7 +494,7 @@ fn ctrl_b_lists_every_file_below() {
 
     // F2 offers the file's own name, and renames it where it is.
     let at = app_state.children_left.iter().position(|item| item.name_full.ends_with("c.txt")).unwrap();
-    app_state.state_left.select(Some(at));
+    app_state.left.state.select(Some(at));
     press(&mut app_state, KeyCode::F(2));
     assert_eq!(app_state.dialog_input().unwrap().text, "c.txt");
     app_state.dialog_input().unwrap().set("d.txt".to_string());

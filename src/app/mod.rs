@@ -215,8 +215,6 @@ pub struct AppState {
     pub left: Panel,
     pub right: Panel,
     pub page_size: u16,
-    pub state_left: TableState,
-    pub state_right: TableState,
     pub children_left: Vec<Item>,
     pub children_right: Vec<Item>,
     /// Ctrl+S: what each panel is narrowed to, if anything.
@@ -421,12 +419,17 @@ impl Item {
 /// One panel: the directory it is in and what it shows of it.
 pub struct Panel {
     pub dir: PathBuf,
+    pub state: TableState,
 }
 
 impl AppState {
     /// The left panel, or the right.
     pub fn panel(&self, is_left: bool) -> &Panel {
         if is_left { &self.left } else { &self.right }
+    }
+
+    pub fn panel_mut(&mut self, is_left: bool) -> &mut Panel {
+        if is_left { &mut self.left } else { &mut self.right }
     }
 
     pub fn new() -> Self {
@@ -458,11 +461,9 @@ impl AppState {
             clipboard: String::new(),
             mounts: Vec::new(),
             is_left_active: true,
-            left: Panel { dir: dir_root.clone() },
-            right: Panel { dir: dir_root.clone() },
+            left: Panel { dir: dir_root.clone(), state: state_left },
+            right: Panel { dir: dir_root.clone(), state: state_right },
             page_size: 0,
-            state_left,
-            state_right,
             children_left: Vec::new(),
             children_right: Vec::new(),
             filter_left: None,

@@ -26,7 +26,7 @@ fn a_name_that_is_not_utf8_still_names_its_file() {
     assert!(!item.name.is_empty());
 
     let index = app_state.children_left.iter().position(|row| row.name_full == item.name_full).unwrap();
-    app_state.state_left.select(Some(index));
+    app_state.left.state.select(Some(index));
     let (path, _, _) = app_state.cursor_target().unwrap();
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "contents");
     // What the name alone would have named, and what every operation used
@@ -49,7 +49,7 @@ fn a_file_called_three_dots_is_not_the_parent_entry() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.open_dir(true, dir.clone(), Some("...".as_ref()));
-    let item = &app_state.children_left[app_state.state_left.selected().unwrap()];
+    let item = &app_state.children_left[app_state.left.state.selected().unwrap()];
     assert_eq!(item.name, "..");
     assert!(!item.is_parent());
     assert!(app_state.children_left[0].is_parent());
@@ -191,29 +191,29 @@ fn ctrl_arrows_send_the_entry_under_the_cursor_to_a_panel() {
     app_state.open_dir(false, std::env::temp_dir(), None);
     app_state.is_left_active = true;
     let at = |app_state: &AppState, name: &str| app_state.children_left.iter().position(|item| item.name_full == name);
-    let cursor_right = |app_state: &AppState| app_state.state_right.selected().and_then(|index| app_state.children_right.get(index)).map(|item| item.name_full.clone());
+    let cursor_right = |app_state: &AppState| app_state.right.state.selected().and_then(|index| app_state.children_right.get(index)).map(|item| item.name_full.clone());
 
     // A directory: the other panel goes into it, and the focus stays.
-    app_state.state_left.select(at(&app_state, "inner"));
+    app_state.left.state.select(at(&app_state, "inner"));
     app_state.open_in_panel(false);
     assert_eq!(app_state.right.dir, dir.join("inner"));
     assert!(app_state.is_left_active);
     assert_eq!(app_state.left.dir, dir);
 
     // A file: the directory it is in, on the file.
-    app_state.state_left.select(at(&app_state, "note.txt"));
+    app_state.left.state.select(at(&app_state, "note.txt"));
     app_state.open_in_panel(false);
     assert_eq!(app_state.right.dir, dir);
     assert_eq!(cursor_right(&app_state).as_deref(), Some("note.txt"));
 
     // The parent entry: the parent, on the directory left.
-    app_state.state_left.select(at(&app_state, ".."));
+    app_state.left.state.select(at(&app_state, ".."));
     app_state.open_in_panel(false);
     assert_eq!(app_state.right.dir, std::env::temp_dir());
     assert_eq!(cursor_right(&app_state), dir.file_name().map(|name| name.to_string_lossy().into_owned()));
 
     // Pointed at the active panel, it goes in there.
-    app_state.state_left.select(at(&app_state, "inner"));
+    app_state.left.state.select(at(&app_state, "inner"));
     app_state.open_in_panel(true);
     assert_eq!(app_state.left.dir, dir.join("inner"));
 
@@ -235,11 +235,11 @@ fn tabs_keep_where_each_was_left() {
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), None);
     let at = |app_state: &AppState, name: &str| app_state.children_left.iter().position(|item| item.name_full == name);
-    let cursor = |app_state: &AppState| app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone());
+    let cursor = |app_state: &AppState| app_state.left.state.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone());
 
     // Something selected and the cursor on two.txt in the first tab.
     app_state.selected_left.insert("one.txt".into());
-    app_state.state_left.select(at(&app_state, "two.txt"));
+    app_state.left.state.select(at(&app_state, "two.txt"));
 
     // A new tab: same place, nothing selected, and the first keeps its own.
     app_state.new_tab();
@@ -461,7 +461,7 @@ fn changes_and_details_arrive_from_their_threads() {
     app_state.detail_wait = std::time::Duration::ZERO;
     app_state.show_preview = true;
     let at = app_state.children_left.iter().position(|item| item.name_full == "notes.txt");
-    app_state.state_left.select(at);
+    app_state.left.state.select(at);
     app_state.cursor_detail = None;
     app_state.refresh_cursor_detail();
     assert_eq!(app_state.cursor_detail.as_ref().unwrap().name, "notes.txt");

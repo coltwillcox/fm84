@@ -454,7 +454,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     let field = name_width(&app_state.options, chunks[0].width);
     let (rows_left, offset_left) = build_viewport_rows(app_state, true, viewport_height, &columns, field);
     let mut state_left_view = TableState::default();
-    state_left_view.select(app_state.state_left.selected().map(|s| s.saturating_sub(offset_left)));
+    state_left_view.select(app_state.left.state.selected().map(|s| s.saturating_sub(offset_left)));
 
     let block_left = Block::default().borders(Borders::LEFT).border_style(style_border());
     let block_right = Block::default().borders(Borders::RIGHT).border_style(style_border());
@@ -492,7 +492,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     // Build only visible rows for right panel
     let (rows_right, offset_right) = build_viewport_rows(app_state, false, viewport_height, &columns, field);
     let mut state_right_view = TableState::default();
-    state_right_view.select(app_state.state_right.selected().map(|s| s.saturating_sub(offset_right)));
+    state_right_view.select(app_state.right.state.selected().map(|s| s.saturating_sub(offset_right)));
 
     let table_right = Table::new(rows_right, widths).block(block_right).header(header).row_highlight_style(table_style(!app_state.is_left_active)).column_spacing(1);
     f.render_stateful_widget(table_right, chunks[2], &mut state_right_view);
@@ -515,7 +515,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 /// Build only the rows visible in the viewport, returns (rows, start_offset)
 fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usize, columns: &[Column], name_width: u16) -> (Vec<Row<'static>>, usize) {
     let children = if is_left { &app_state.children_left } else { &app_state.children_right };
-    let state = if is_left { &app_state.state_left } else { &app_state.state_right };
+    let state = &app_state.panel(is_left).state;
     let selected_set = if is_left { &app_state.selected_left } else { &app_state.selected_right };
     let current_dir = &app_state.panel(is_left).dir;
     let selected = state.selected().unwrap_or(0);

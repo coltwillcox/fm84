@@ -372,9 +372,9 @@ impl AppState {
         // The cursor stays on the entry it was on, under its new name.
         let is_left = self.is_left_active;
         let (children, state, dir) = if is_left {
-            (&self.children_left, &self.state_left, &self.left.dir)
+            (&self.children_left, &self.left.state, &self.left.dir)
         } else {
-            (&self.children_right, &self.state_right, &self.right.dir)
+            (&self.children_right, &self.right.state, &self.right.dir)
         };
         let landing = state.selected().and_then(|index| children.get(index)).map(|item| {
             let at = item.path_in(dir);

@@ -105,7 +105,7 @@ fn symlinks_from_the_keys() {
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.dialog.is_none() && app_state.error.is_none());
     assert_eq!(std::fs::read_link(dst.join("a.txt")).unwrap(), src.join("a.txt"));
-    let cursor = app_state.state_right.selected().map(|index| app_state.children_right[index].name_os.clone());
+    let cursor = app_state.right.state.selected().map(|index| app_state.children_right[index].name_os.clone());
     assert_eq!(cursor.as_deref(), Some("a.txt".as_ref()), "the other panel lands on the new link");
 
     // Again: refused, nothing written over.
@@ -615,7 +615,7 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.dialog.is_none());
     assert_eq!(std::fs::read_to_string(dir.join("notes.txt.sha512")).unwrap(), format!("{sha512}  notes.txt\n"));
-    assert_eq!(app_state.children_left[app_state.state_left.selected().unwrap()].name_full, "notes.txt.sha512");
+    assert_eq!(app_state.children_left[app_state.left.state.selected().unwrap()].name_full, "notes.txt.sha512");
 
     // Several, a directory's files among them: SHA256SUMS, checked after.
     app_state.selected_left.extend(["notes.txt", "photos"].map(std::ffi::OsString::from));
@@ -704,7 +704,7 @@ fn user_menu_commands_get_every_name_whole() {
 
     // On .. with nothing selected, there is no entry to name.
     app_state.selected_left.clear();
-    app_state.state_left.select(Some(0));
+    app_state.left.state.select(Some(0));
     app_state.dialog = Some(menu("echo {file}"));
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.user_command.is_none());
@@ -793,7 +793,7 @@ fn alt_o_opens_a_file_with_the_program_picked() {
     assert!(out.exists());
 
     // Nothing for the parent entry.
-    app_state.state_left.select(Some(0));
+    app_state.left.state.select(Some(0));
     alt_o(&mut app_state);
     assert!(app_state.dialog.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
@@ -829,7 +829,7 @@ fn f2_on_a_selection_renames_every_name_by_a_pattern() {
     assert_eq!((read("1.txt"), read("2.txt"), read("3.txt"), read("4.txt")), (None, Some("one".into()), Some("two".into()), Some("three".into())));
     assert!(app_state.selected_left.is_empty());
     // The cursor followed its file, from 2.txt to 3.txt.
-    let cursor = app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).unwrap();
+    let cursor = app_state.left.state.selected().and_then(|index| app_state.children_left.get(index)).unwrap();
     assert_eq!(cursor.name_os, "3.txt");
 
     // Find and replace, after the pattern.

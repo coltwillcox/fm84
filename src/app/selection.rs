@@ -93,7 +93,7 @@ impl AppState {
 
     /// Returns (&children, &mut state) for the active panel.
     fn active_panel_mut(&mut self) -> (&[Item], &mut TableState) {
-        if self.is_left_active { (&self.children_left, &mut self.state_left) } else { (&self.children_right, &mut self.state_right) }
+        if self.is_left_active { (&self.children_left, &mut self.left.state) } else { (&self.children_right, &mut self.right.state) }
     }
 
     /// + and - in a panel: ask for a pattern, starting from the last one.
@@ -151,9 +151,9 @@ impl AppState {
 
         {
             let (state, children, selected_set, current_dir) = if self.is_left_active {
-                (&mut self.state_left, &self.children_left, &mut self.selected_left, &self.left.dir)
+                (&mut self.left.state, &self.children_left, &mut self.selected_left, &self.left.dir)
             } else {
-                (&mut self.state_right, &self.children_right, &mut self.selected_right, &self.right.dir)
+                (&mut self.right.state, &self.children_right, &mut self.selected_right, &self.right.dir)
             };
 
             if let Some(index) = state.selected() {

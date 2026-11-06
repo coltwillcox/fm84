@@ -210,7 +210,7 @@ fn find_files_finds_and_goes_there() {
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.dialog.is_none());
     assert_eq!(app_state.left.dir, dir.join("a").join("deep"));
-    let on = app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone());
+    let on = app_state.left.state.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone());
     assert_eq!(on.as_deref(), Some("notes.md"));
 
     // The next time, the last search is offered again.
@@ -302,7 +302,7 @@ fn find_files_filters_and_feeds_the_panel() {
 
     // One renamed stays in the list, under its new name.
     let at = app_state.children_left.iter().position(|item| item.name_full == format!("src{sep}main.rs")).unwrap();
-    app_state.state_left.select(Some(at));
+    app_state.left.state.select(Some(at));
     press(&mut app_state, KeyCode::F(2));
     app_state.dialog_input().unwrap().set("app.rs".to_string());
     press(&mut app_state, KeyCode::Enter);

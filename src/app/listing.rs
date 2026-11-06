@@ -244,9 +244,9 @@ impl AppState {
     /// stays where it is. Pointed at the active panel itself, it simply goes in.
     pub fn open_in_panel(&mut self, is_left: bool) {
         let (children, state, dir) = if self.is_left_active {
-            (&self.children_left, &self.state_left, &self.left.dir)
+            (&self.children_left, &self.left.state, &self.left.dir)
         } else {
-            (&self.children_right, &self.state_right, &self.right.dir)
+            (&self.children_right, &self.right.state, &self.right.dir)
         };
         let item = state.selected().and_then(|index| children.get(index));
         let (target, select) = match item {
@@ -403,11 +403,11 @@ impl AppState {
             if is_left {
                 self.left.dir = found.clone();
                 self.selected_left.clear();
-                self.state_left.select(Some(0));
+                self.left.state.select(Some(0));
             } else {
                 self.right.dir = found.clone();
                 self.selected_right.clear();
-                self.state_right.select(Some(0));
+                self.right.state.select(Some(0));
             }
             self.search_clear();
             if leaving.dir != found {
@@ -416,7 +416,7 @@ impl AppState {
             }
         }
 
-        let (children, state) = if is_left { (&self.children_left, &self.state_left) } else { (&self.children_right, &self.state_right) };
+        let (children, state) = if is_left { (&self.children_left, &self.left.state) } else { (&self.children_right, &self.right.state) };
         let previous_index = state.selected().unwrap_or(0);
         let wanted = if to_file {
             pending.dir.file_name().map(std::ffi::OsStr::to_os_string)
@@ -438,10 +438,10 @@ impl AppState {
                 let index = wanted.and_then(|name| items.iter().position(|item| item.name_os == name)).unwrap_or(previous_index).min(items.len().saturating_sub(1));
                 if is_left {
                     self.children_left = items;
-                    self.state_left.select(Some(index));
+                    self.left.state.select(Some(index));
                 } else {
                     self.children_right = items;
-                    self.state_right.select(Some(index));
+                    self.right.state.select(Some(index));
                 }
             }
             // Gone unreadable while the panel is in it. Said once: the watcher
