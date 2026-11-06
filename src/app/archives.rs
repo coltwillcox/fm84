@@ -10,7 +10,7 @@ pub fn read_only() -> &'static str {
 impl AppState {
     /// The archive a panel's directory runs through, as its listing found it.
     pub fn panel_archive(&self, is_left: bool) -> Option<&PathBuf> {
-        if is_left { self.archive_left.as_ref() } else { self.archive_right.as_ref() }
+        self.panel(is_left).archive.as_ref()
     }
 
     /// The directory on the disk a panel is in: the one it shows, or for a
@@ -66,7 +66,7 @@ impl AppState {
     /// a job for each archive, and the two compared from there under the
     /// paths they have in the panels. Two on the disk are compared at once.
     pub fn compare_anywhere(&mut self, left: PathBuf, right: PathBuf) {
-        let archives: Vec<PathBuf> = [self.archive_left.clone(), self.archive_right.clone()].into_iter().flatten().collect();
+        let archives: Vec<PathBuf> = [self.left.archive.clone(), self.right.archive.clone()].into_iter().flatten().collect();
         // Each archive with what is to come out of it.
         let mut out_of: Vec<(PathBuf, Vec<(PathBuf, PathBuf)>)> = Vec::new();
         let mut files = Vec::new();

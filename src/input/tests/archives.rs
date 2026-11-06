@@ -53,7 +53,7 @@ fn enter_goes_into_an_archive_and_backspace_comes_out() {
     // As written, not only as compared: a separator on the end of a file's
     // path does not stat, and the next reread climbed out.
     assert_eq!(app_state.left.dir.as_os_str(), archive.as_os_str());
-    assert_eq!(app_state.archive_left.as_ref(), Some(&archive));
+    assert_eq!(app_state.left.archive.as_ref(), Some(&archive));
     assert_eq!(shown(&app_state), ["..", "2024", "readme.txt"]);
 
     on(&mut app_state, "2024");
@@ -66,7 +66,7 @@ fn enter_goes_into_an_archive_and_backspace_comes_out() {
     assert_eq!(app_state.left.children[app_state.left.state.selected().unwrap()].name_full, "2024");
     press(&mut app_state, KeyCode::Backspace);
     assert_eq!(app_state.left.dir, dir);
-    assert_eq!(app_state.archive_left, None);
+    assert_eq!(app_state.left.archive, None);
     assert_eq!(app_state.left.children[app_state.left.state.selected().unwrap()].name_full, "photos.zip");
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -168,7 +168,7 @@ fn a_damaged_archive_is_not_gone_into() {
     app_state.open_dir(true, dir.clone(), Some("broken.zip".as_ref()));
     press(&mut app_state, KeyCode::Enter);
     assert_eq!(app_state.left.dir, dir);
-    assert_eq!(app_state.archive_left, None);
+    assert_eq!(app_state.left.archive, None);
     assert!(app_state.error.as_deref().unwrap_or_default().contains("not readable as an archive"), "{:?}", app_state.error);
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -193,7 +193,7 @@ fn a_changed_or_deleted_archive_is_followed() {
     std::fs::remove_file(&archive).unwrap();
     app_state.reload_panel(true, None);
     assert_eq!(app_state.left.dir, dir);
-    assert_eq!(app_state.archive_left, None);
+    assert_eq!(app_state.left.archive, None);
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

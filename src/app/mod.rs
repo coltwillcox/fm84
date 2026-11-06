@@ -309,11 +309,6 @@ pub struct AppState {
     detail_worker: Latest<(PathBuf, bool), Option<Description>>,
     /// Where the preview is gathered.
     preview_worker: Latest<(PathBuf, bool), Preview>,
-    /// The archive each panel's directory runs through, when it is inside
-    /// one, as its listing found it. Read-only there: everything that would
-    /// write asks this first, and never the disk.
-    pub archive_left: Option<PathBuf>,
-    pub archive_right: Option<PathBuf>,
     /// `user@host`, for the top border, and whether that is root.
     pub user_at_host: (String, bool),
     /// Set while a copy, move or delete is running on its own thread.
@@ -409,6 +404,10 @@ pub struct Panel {
     pub disk: Option<(u64, u64)>,
     /// The git branch the panel's directory is on, shown after its path.
     pub branch: Option<String>,
+    /// The archive the panel's directory runs through, when it is inside
+    /// one, as its listing found it. Read-only there: everything that would
+    /// write asks this first, and never the disk.
+    pub archive: Option<PathBuf>,
 }
 
 impl AppState {
@@ -465,6 +464,7 @@ impl AppState {
                 stale: false,
                 disk: None,
                 branch: None,
+                archive: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -481,6 +481,7 @@ impl AppState {
                 stale: false,
                 disk: None,
                 branch: None,
+                archive: None,
             },
             page_size: 0,
             filter_before: String::new(),
@@ -527,8 +528,6 @@ impl AppState {
             watch_interval: crate::constants::REFRESH_INTERVAL,
             detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
             preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
-            archive_left: None,
-            archive_right: None,
             user_at_host: crate::fs_ops::user_at_host(),
             job: None,
             dir_sizing: Vec::new(),

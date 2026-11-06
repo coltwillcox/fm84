@@ -459,11 +459,11 @@ impl AppState {
         if is_left {
             self.left.disk = listed.disk;
             self.left.branch = listed.branch;
-            self.archive_left = listed.archive;
+            self.left.archive = listed.archive;
         } else {
             self.right.disk = listed.disk;
             self.right.branch = listed.branch;
-            self.archive_right = listed.archive;
+            self.right.archive = listed.archive;
         }
         let watch = &self.panel(is_left).watch;
         if watch.as_ref().is_none_or(|watch| watch.dir != found) {
