@@ -261,7 +261,7 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
     match app_state.dialog.as_ref() {
         None => {}
         Some(Dialog::Help) => {
-            let page = app_state.help_room.max(1) as isize;
+            let page = app_state.drawn.help_room.max(1) as isize;
             match code {
                 KeyCode::Esc | KeyCode::F(1) => app_state.dialog = None,
                 KeyCode::Down => scroll_help(app_state, 1),
@@ -616,7 +616,7 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
 /// Scroll F1's list by `lines`, no further than its last line coming into
 /// view at the bottom.
 fn scroll_help(app_state: &mut AppState, lines: isize) {
-    let last = crate::ui::help_lines().len().saturating_sub(app_state.help_room);
+    let last = crate::ui::help_lines().len().saturating_sub(app_state.drawn.help_room);
     app_state.help_scroll = app_state.help_scroll.saturating_add_signed(lines).min(last);
 }
 

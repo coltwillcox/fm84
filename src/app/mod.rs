@@ -193,10 +193,8 @@ pub struct AppState {
     pub options: Options,
     /// The row the options popup has highlighted.
     pub options_cursor: usize,
-    /// How far down F1's list it is scrolled, and how many lines it had room
-    /// for when last drawn - what the keys scroll it by, and up to.
+    /// How far down F1's list it is scrolled.
     pub help_scroll: usize,
-    pub help_room: usize,
     /// A file F4 is handing to an external editor. The main loop runs it,
     /// since only that can give the terminal up and take it back.
     pub external_edit: Option<PathBuf>,
@@ -214,6 +212,7 @@ pub struct AppState {
     /// side when Ctrl+U swaps them.
     pub left: Panel,
     pub right: Panel,
+    pub drawn: Drawn,
     pub page_size: u16,
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
@@ -410,6 +409,16 @@ pub struct Panel {
     pub archive: Option<PathBuf>,
 }
 
+/// What the last frame drew, where, and how much room it had: written while
+/// drawing, read by the keys and the mouse, which would otherwise have to
+/// work the layout out again.
+#[derive(Default)]
+pub struct Drawn {
+    /// How many lines F1's list had room for - what the keys scroll it by,
+    /// and up to.
+    pub help_room: usize,
+}
+
 impl AppState {
     /// The left panel, or the right.
     pub fn panel(&self, is_left: bool) -> &Panel {
@@ -441,7 +450,6 @@ impl AppState {
             options: if cfg!(test) { Options::default() } else { Options::load() },
             options_cursor: 0,
             help_scroll: 0,
-            help_room: 0,
             external_edit: None,
             user_command: None,
             show_preview: false,
@@ -483,6 +491,7 @@ impl AppState {
                 branch: None,
                 archive: None,
             },
+            drawn: Drawn::default(),
             page_size: 0,
             filter_before: String::new(),
             search_input: String::new(),

@@ -224,10 +224,10 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
         let mut branch_rows = Vec::new();
         match &app_state.dialog {
             Some(Dialog::Help) => {
-                app_state.help_room = render_help_popup(f, area, app_state.help_scroll);
+                app_state.drawn.help_room = render_help_popup(f, area, app_state.help_scroll);
                 // Kept to what the room allows, so a screen that has grown
                 // does not leave the keys scrolling through lines past the end.
-                app_state.help_scroll = app_state.help_scroll.min(help_lines().len().saturating_sub(app_state.help_room));
+                app_state.help_scroll = app_state.help_scroll.min(help_lines().len().saturating_sub(app_state.drawn.help_room));
             }
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),

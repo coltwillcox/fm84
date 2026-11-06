@@ -628,7 +628,7 @@ fn scrolling_keeps_to_the_room_there_is() {
     render_ui(&mut terminal, &mut app_state);
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 50)).unwrap();
     render_ui(&mut terminal, &mut app_state);
-    assert_eq!(app_state.help_scroll, help_lines().len() - app_state.help_room, "F1 past its end");
+    assert_eq!(app_state.help_scroll, help_lines().len() - app_state.drawn.help_room, "F1 past its end");
 
     // A diff whose last difference is near the end: jumping to it stops
     // with the last row at the bottom, not past it.
