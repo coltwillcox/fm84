@@ -374,3 +374,39 @@ fn every_catalog_is_whole_and_up_to_date() {
     problems.dedup();
     assert!(problems.is_empty(), "{} problems:\n{}", problems.len(), problems.join("\n"));
 }
+
+/// How a language's own name sorts: in Latin letters, without the marks
+/// over them, so Čeština sits among the C's and Ελληνικά among the E's.
+fn sort_name(language: Language) -> String {
+    let label = match language.label() {
+        "Ελληνικά" => "Ellinika",
+        "Македонски" => "Makedonski",
+        "Български" => "Balgarski",
+        label => label,
+    };
+    label
+        .chars()
+        .map(|c| match c {
+            'á' | 'à' | 'â' | 'ă' | 'å' | 'ä' | 'ã' => 'a',
+            'č' | 'ç' | 'Č' => 'c',
+            'é' | 'è' | 'ê' | 'ë' => 'e',
+            'í' | 'î' | 'ı' => 'i',
+            'ó' | 'ô' | 'ö' | 'ø' | 'õ' => 'o',
+            'š' | 'ș' | 'ş' => 's',
+            'ț' | 'ţ' => 't',
+            'ú' | 'ü' => 'u',
+            'ž' => 'z',
+            'ñ' => 'n',
+            c => c.to_ascii_lowercase(),
+        })
+        .collect()
+}
+
+#[test]
+fn english_comes_first_then_the_rest_by_their_own_names() {
+    assert_eq!(Language::ALL[0], Language::English);
+    let names: Vec<String> = Language::ALL[1..].iter().map(|&language| sort_name(language)).collect();
+    let mut sorted = names.clone();
+    sorted.sort();
+    assert_eq!(names, sorted);
+}

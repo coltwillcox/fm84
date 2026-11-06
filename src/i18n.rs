@@ -39,26 +39,28 @@ pub enum Language {
 }
 
 impl Language {
-    /// In the order F11 steps through them.
+    /// In the order F11 steps through them: English, then the rest by their
+    /// own names, as the alphabet has them - a Greek or Cyrillic one by how
+    /// it is spelt in Latin letters.
     pub const ALL: [Language; 18] = [
         Language::English,
-        Language::Serbian,
-        Language::Turkish,
-        Language::Norwegian,
-        Language::German,
-        Language::Italian,
-        Language::Greek,
-        Language::French,
-        Language::Slovenian,
-        Language::Croatian,
-        Language::Macedonian,
-        Language::Hungarian,
-        Language::Slovak,
         Language::Czech,
-        Language::Polish,
-        Language::Swedish,
+        Language::German,
+        Language::Greek,
         Language::Spanish,
+        Language::French,
+        Language::Croatian,
+        Language::Italian,
+        Language::Hungarian,
+        Language::Macedonian,
+        Language::Norwegian,
+        Language::Polish,
         Language::Portuguese,
+        Language::Slovak,
+        Language::Slovenian,
+        Language::Serbian,
+        Language::Swedish,
+        Language::Turkish,
     ];
 
     /// How the config file names it.
