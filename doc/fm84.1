@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-06" "fm84 0.44.0" "User Commands"
+.TH FM84 1 "2026-11-06" "fm84 0.44.1" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -242,7 +242,7 @@ Open the directory under the cursor in the left or right panel.
 .TP
 .B Ctrl+U
 Swap the panels, each with its tabs, cursor, selection and history;
-the focus goes with the one it was in.
+the focus goes with the one it was in, and neither is read again.
 .TP
 .B Alt+I
 Send the other panel to the active one's directory.
@@ -451,6 +451,9 @@ be had \- given twice, taken by something else, or not a plain name \- and
 nothing is renamed until none is.
 Names that go where another is leaving are moved through names of their own
 first, so none is written over.
+Where a drive takes two names for one that the table told apart \- a FAT
+stick on Linux taking ax and Ax for the same \- the second is refused and
+named, and the first stays.
 .TP
 .B Shift+F2
 Compare the panels' directories, as in Total Commander, and select in each

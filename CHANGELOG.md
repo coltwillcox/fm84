@@ -6,6 +6,20 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.44.1] - 2026-11-06
+
+### 🐛 Fixed
+- 🏷️ **Multi-rename never writes over a file** - on a drive that takes two names for one, as a FAT stick on Linux takes `ax` and `Ax`, a second name the table had told apart from the first was renamed over it. It is refused and named, and the first stays
+- 🔤 **Multi-rename and names that are not UTF-8** - two whose names only read alike as text were marked as given twice, and nothing could be renamed until they were changed. They are told apart by their bytes
+- 💥 **Times at the clock's end** - a file dated as far ahead as the system clock goes crashed Shift+F2 and Alt+S, which added two seconds to it; a tar header dated past it crashed the listing; and a Modified age further back than the clock goes, as `>300000000000y`, crashed Find files. The times are compared by their gap, the tar entry has no time, and the age is not understood
+- 🕛 **A day without a midnight** - where summer time starts at 00:00, as it did in Brazil, a Modified date of that day in Find files was not understood. It starts at its first minute
+
+### 🛠️ Changed
+- 🔁 **Ctrl+U swaps whole panels** - filter, git marks and watcher go along, so neither directory is read again
+- 📖 **A shorter README** - one line per feature and the everyday keys; the full reference is in `doc/USAGE.md` and every key in `doc/KEYS.md`
+
+---
+
 ## [0.44.0] - 2026-11-06
 
 ### ✨ Added
