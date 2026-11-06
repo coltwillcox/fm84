@@ -1418,6 +1418,9 @@ msgstr {path} yine de okunamadı
 msgid  {path} is a directory
 msgstr {path} bir dizin
 
+msgid  {percent}% of {total}
+msgstr {total} içinde %{percent}
+
 msgid  {program} exited with {status}
 msgstr {program} şu durumla çıktı: {status}
 

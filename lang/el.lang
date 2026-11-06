@@ -1418,6 +1418,9 @@ msgstr Το {path} τελικά δεν διαβάστηκε
 msgid  {path} is a directory
 msgstr Το {path} είναι φάκελος
 
+msgid  {percent}% of {total}
+msgstr {percent}% από {total}
+
 msgid  {program} exited with {status}
 msgstr Το {program} τερμάτισε με {status}
 

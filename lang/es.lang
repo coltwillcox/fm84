@@ -1419,6 +1419,9 @@ msgstr {path} no se pudo leer al final
 msgid  {path} is a directory
 msgstr {path} es una carpeta
 
+msgid  {percent}% of {total}
+msgstr {percent} % de {total}
+
 msgid  {program} exited with {status}
 msgstr {program} terminó con {status}
 

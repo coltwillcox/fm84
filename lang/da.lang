@@ -1417,6 +1417,9 @@ msgstr {path} kunne alligevel ikke læses
 msgid  {path} is a directory
 msgstr {path} er en mappe
 
+msgid  {percent}% of {total}
+msgstr {percent} % af {total}
+
 msgid  {program} exited with {status}
 msgstr {program} afsluttede med {status}
 

@@ -1418,6 +1418,9 @@ msgstr {path} se přece jen nepodařilo přečíst
 msgid  {path} is a directory
 msgstr {path} je složka
 
+msgid  {percent}% of {total}
+msgstr {percent} % z {total}
+
 msgid  {program} exited with {status}
 msgstr {program} skončil se {status}
 

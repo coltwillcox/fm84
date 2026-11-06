@@ -488,12 +488,14 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
         }
     }
 
+    let inner_left = block_left.inner(chunks[0]);
     let table_left = Table::new(rows_left, widths.clone())
         .block(block_left)
         .header(header.clone())
         .row_highlight_style(table_style(app_state.active_side.is_left()))
         .column_spacing(1);
     f.render_stateful_widget(table_left, chunks[0], &mut state_left_view);
+    draw_space_map(f, inner_left, app_state, Side::Left, offset_left);
 
     // Cache the separator string based on height
     let separator_height = chunks[0].height;
@@ -509,8 +511,10 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     let mut state_right_view = TableState::default();
     state_right_view.select(app_state.right.state.selected().map(|s| s.saturating_sub(offset_right)));
 
+    let inner_right = block_right.inner(chunks[2]);
     let table_right = Table::new(rows_right, widths).block(block_right).header(header).row_highlight_style(table_style(!app_state.active_side.is_left())).column_spacing(1);
     f.render_stateful_widget(table_right, chunks[2], &mut state_right_view);
+    draw_space_map(f, inner_right, app_state, Side::Right, offset_right);
 
     // Preview takes over the panel the cursor is not in.
     if let Some(preview) = &app_state.preview {
@@ -523,6 +527,29 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     drawn.table_starts = [offset_left, offset_right];
 
     chunks[0].height
+}
+
+/// Alt+Shift+Enter's space map, behind the rows just drawn in `inner` - the
+/// table inside its border, heading first. Each entry's bar runs from the
+/// left as far as its size goes against the largest, the text left as it
+/// is on top. Not on the cursor's row, whose colour is the cursor; the
+/// lines under the panels give its share instead.
+fn draw_space_map(f: &mut ratatui::Frame<'_>, inner: Rect, app_state: &AppState, side: Side, offset: usize) {
+    let Some(map) = app_state.space_map(side) else {
+        return;
+    };
+    let cursor = app_state.panel(side).state.selected();
+    let bar = Style::default().bg(crate::display::space_bar());
+    for row in 1..inner.height {
+        let index = offset + row as usize - 1;
+        if Some(index) == cursor {
+            continue;
+        }
+        let cells = map.bar(index, inner.width);
+        if cells > 0 {
+            f.buffer_mut().set_style(Rect::new(inner.x, inner.y + row, cells, 1), bar);
+        }
+    }
 }
 
 /// Build only the rows visible in the viewport, returns (rows, start_offset)

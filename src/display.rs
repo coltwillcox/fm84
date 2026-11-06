@@ -456,6 +456,33 @@ pub fn gutter() -> Color {
     if THEME_BACKGROUND.load(Ordering::Relaxed) { palette().gutter } else { Color::Black }
 }
 
+/// Behind a row of a panel with its space map on, as far as the entry's
+/// share goes: the theme's border colour let a little way into what is
+/// behind the panel - enough to see, little enough that the names on it
+/// read as well as off it. Less on a light background, where it darkens
+/// what dark names sit on.
+pub fn space_bar() -> Color {
+    let background = if THEME_BACKGROUND.load(Ordering::Relaxed) { palette().background } else { Color::Black };
+    space_bar_on(background, palette().border, light_background())
+}
+
+/// `border` a fifth of the way over `background`, or a tenth when that is
+/// light.
+fn space_bar_on(background: Color, border: Color, light: bool) -> Color {
+    let parts: u16 = if light { 10 } else { 5 };
+    let background = match background {
+        Color::Black => Color::Rgb(0, 0, 0),
+        other => other,
+    };
+    match (background, border) {
+        (Color::Rgb(r0, g0, b0), Color::Rgb(r1, g1, b1)) => {
+            let mix = |under: u8, over: u8| ((under as u16 * (parts - 1) + over as u16) / parts) as u8;
+            Color::Rgb(mix(r0, r1), mix(g0, g1), mix(b0, b1))
+        }
+        (_, border) => border,
+    }
+}
+
 /// How many columns a tab expands to.
 pub fn tab_width() -> usize {
     TAB_WIDTH.load(Ordering::Relaxed)
@@ -515,6 +542,24 @@ mod tests {
                 let ratio = contrast(fg, bg);
                 if ratio < 3.0 {
                     failures.push(format!("{name}: {what} contrast {ratio:.2}"));
+                }
+            }
+        }
+        assert!(failures.is_empty(), "{}", failures.join("\n"));
+    }
+
+    /// A name with the space map's bar behind it reads as it does without:
+    /// 3:1 at least, or nearly all the contrast it has off the bar.
+    #[test]
+    fn names_read_on_a_space_bar() {
+        let mut failures = Vec::new();
+        for theme in Theme::ALL {
+            let palette = palette_of(theme);
+            let bar = space_bar_on(palette.background, palette.border, palette.light);
+            for (what, fg) in [("file", palette.file), ("directory", palette.directory), ("selected", palette.selected_marker)] {
+                let (on, off) = (contrast(fg, bar), contrast(fg, palette.background));
+                if on < 3.0 && on < off * 0.9 {
+                    failures.push(format!("{}: {what} {on:.2} on the bar, {off:.2} off it", theme.label()));
                 }
             }
         }

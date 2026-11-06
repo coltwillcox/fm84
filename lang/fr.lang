@@ -1419,6 +1419,9 @@ msgstr {path} n'a finalement pas pu être lu
 msgid  {path} is a directory
 msgstr {path} est un dossier
 
+msgid  {percent}% of {total}
+msgstr {percent} % de {total}
+
 msgid  {program} exited with {status}
 msgstr {program} s'est terminé avec {status}
 

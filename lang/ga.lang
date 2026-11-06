@@ -1418,6 +1418,9 @@ msgstr Níorbh fhéidir {path} a léamh ar deireadh
 msgid  {path} is a directory
 msgstr Is comhadlann é {path}
 
+msgid  {percent}% of {total}
+msgstr {percent}% de {total}
+
 msgid  {program} exited with {status}
 msgstr Scoir {program} le {status}
 

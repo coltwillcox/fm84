@@ -285,7 +285,15 @@ pub(super) fn render_detail(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
     // What is left of the row goes to the name, shortened from the front to
     // keep its end, where the extension and whatever tells two near-identical
     // names apart both live.
-    let mut figures: Vec<(&str, Style)> = vec![(&detail.size, style_file()), (&detail.modified, style_columns())];
+    // With the space map on, the share of the directory the entry under the
+    // cursor is - its bar is the one the cursor covers.
+    let side = app_state.active_side;
+    let share = app_state
+        .space_map(side)
+        .zip(app_state.panel(side).state.selected())
+        .and_then(|(map, index)| map.percent(index).map(|percent| t!("{percent}% of {total}", percent, total = format_size(map.total))))
+        .unwrap_or_default();
+    let mut figures: Vec<(&str, Style)> = vec![(&detail.size, style_file()), (&share, style_title()), (&detail.modified, style_columns())];
     while !figures.is_empty() && NAME_MIN + cost(&figures) > room {
         figures.pop();
     }

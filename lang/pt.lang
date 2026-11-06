@@ -1418,6 +1418,9 @@ msgstr {path} não pôde ser lido, afinal
 msgid  {path} is a directory
 msgstr {path} é uma pasta
 
+msgid  {percent}% of {total}
+msgstr {percent}% de {total}
+
 msgid  {program} exited with {status}
 msgstr {program} terminou com {status}
 

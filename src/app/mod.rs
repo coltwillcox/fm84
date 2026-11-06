@@ -40,6 +40,7 @@ mod open_with;
 mod preview;
 mod selection;
 mod settings;
+mod space_map;
 mod sync;
 mod tabs;
 #[cfg(test)]
@@ -379,6 +380,9 @@ pub struct Panel {
     /// one, as its listing found it. Read-only there: everything that would
     /// write asks this first, and never the disk.
     pub archive: Option<PathBuf>,
+    /// Alt+Shift+Enter's space map: the directory it was asked for in. The
+    /// bars show while the panel is there, and come back with it.
+    pub space_map: Option<PathBuf>,
 }
 
 /// What the last frame drew, where, and how much room it had: written while
@@ -545,6 +549,7 @@ impl AppState {
                 disk: None,
                 branch: None,
                 archive: None,
+                space_map: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -561,6 +566,7 @@ impl AppState {
                 disk: None,
                 branch: None,
                 archive: None,
+                space_map: None,
             },
             drawn: Drawn { find_files_page: 10, ..Drawn::default() },
             recall: Recall {

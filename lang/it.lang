@@ -1418,6 +1418,9 @@ msgstr {path} non si è potuto leggere comunque
 msgid  {path} is a directory
 msgstr {path} è una cartella
 
+msgid  {percent}% of {total}
+msgstr {percent}% di {total}
+
 msgid  {program} exited with {status}
 msgstr {program} è uscito con {status}
 

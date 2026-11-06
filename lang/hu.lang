@@ -1419,6 +1419,9 @@ msgstr Mégsem olvasható: {path}
 msgid  {path} is a directory
 msgstr Ez egy mappa: {path}
 
+msgid  {percent}% of {total}
+msgstr {total} {percent}%-a
+
 msgid  {program} exited with {status}
 msgstr Kilépett: {program}, állapot: {status}
 

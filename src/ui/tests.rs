@@ -891,3 +891,43 @@ fn another_language_fits_where_english_did() {
     }
     crate::i18n::set_language(crate::i18n::Language::English);
 }
+
+/// Alt+Shift+Enter puts a bar behind each row, as long against the largest
+/// entry as the entry is, and none behind the cursor's. Somewhere else, the
+/// bars are gone.
+#[test]
+fn the_space_map_draws_a_bar_behind_each_row() {
+    let dir = std::env::temp_dir().join(format!("fm84-space-map-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("big"), vec![0u8; 4000]).unwrap();
+    std::fs::write(dir.join("small"), vec![0u8; 1000]).unwrap();
+    std::fs::write(dir.join("under"), vec![0u8; 3000]).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("under".as_ref()));
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    // The cells of the left panel's row naming `name` that have a bar behind.
+    let bar = |terminal: &Terminal<ratatui::backend::TestBackend>, name: &str| {
+        let buffer = terminal.backend().buffer();
+        let y = (0..30).find(|&y| (0..50).map(|x| buffer[(x, y)].symbol().to_string()).collect::<String>().contains(name)).expect(name);
+        (0..50).filter(|&x| buffer[(x, y)].bg == crate::display::space_bar()).count()
+    };
+
+    render_ui(&mut terminal, &mut app_state);
+    assert_eq!(bar(&terminal, "big"), 0, "no map until asked for");
+
+    app_state.size_all_dirs();
+    render_ui(&mut terminal, &mut app_state);
+    let (big, small) = (bar(&terminal, "big"), bar(&terminal, "small"));
+    assert!(big > 40, "the largest runs the width: {big}");
+    assert_eq!(small, (big + 2) / 4, "a quarter of the largest");
+    assert_eq!(bar(&terminal, "under"), 0, "the cursor's row is the cursor's");
+
+    // Elsewhere, and the map is not drawn there.
+    app_state.panel_mut(Side::Left).dir = std::env::temp_dir();
+    render_ui(&mut terminal, &mut app_state);
+    assert_eq!(bar(&terminal, "big"), 0, "gone with the directory");
+    std::fs::remove_dir_all(&dir).unwrap();
+}

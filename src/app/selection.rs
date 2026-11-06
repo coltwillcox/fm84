@@ -191,9 +191,11 @@ impl AppState {
     /// the active panel, counted again if it was before. Links to directories
     /// are left out: one to / or to a slow mount would walk all of it. They
     /// go in turn, top to bottom, a few at once, and each shows in the Size
-    /// column as it is counted.
+    /// column as it is counted - and in the space map, which this turns on.
     pub fn size_all_dirs(&mut self) {
-        let panel = self.panel(self.active_side);
+        let side = self.active_side;
+        self.panel_mut(side).space_map = Some(self.panel(side).dir.clone());
+        let panel = self.panel(side);
         let (children, dir) = (&panel.children, &panel.dir);
         let paths: Vec<PathBuf> = children.iter().filter(|item| item.is_dir && !item.is_symlink && !item.is_parent()).map(|item| item.path_in(dir)).collect();
         for path in paths {
