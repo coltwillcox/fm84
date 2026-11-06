@@ -246,8 +246,6 @@ pub struct AppState {
     pub last_click_pos: (u16, u16),
     // Where the last frame actually drew things. Mouse handling reads these
     // instead of recomputing the layout from hardcoded row numbers.
-    pub table_area_left: Rect,
-    pub table_area_right: Rect,
     /// The row of the panels' paths, a click on either of which edits it as
     /// Ctrl+L does.
     pub path_bar_area: Rect,
@@ -422,6 +420,9 @@ pub struct Drawn {
     /// How many results the Find files list showed when it was last drawn,
     /// which is how far PageUp and PageDown go.
     pub find_files_page: usize,
+    /// Each panel's table, for a click to find its row.
+    pub table_area_left: Rect,
+    pub table_area_right: Rect,
 }
 
 impl AppState {
@@ -511,8 +512,6 @@ impl AppState {
             visited: Vec::new(),
             last_click_time: None,
             last_click_pos: (0, 0),
-            table_area_left: Rect::default(),
-            table_area_right: Rect::default(),
             path_bar_area: Rect::default(),
             attribute_rows: Vec::new(),
             fkey_hits: Vec::new(),

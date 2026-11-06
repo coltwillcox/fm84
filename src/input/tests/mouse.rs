@@ -110,7 +110,7 @@ fn a_click_on_a_path_edits_it() {
 
     // A click anywhere else puts it away and is a click there too: on a
     // row of the other panel, that panel becomes the active one.
-    let right = app_state.table_area_right;
+    let right = app_state.drawn.table_area_right;
     click_at(&mut app_state, right.x + 3, right.y + 1);
     assert!(going_to(&app_state).is_none());
     assert!(!app_state.is_left_active);

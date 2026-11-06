@@ -42,7 +42,7 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     // away, as one off the name being renamed does, and then goes on to be
     // the click it was.
     if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::GoTo, _))) {
-        let on_left = column < app_state.table_area_right.x;
+        let on_left = column < app_state.drawn.table_area_right.x;
         if !app_state.path_bar_area.contains(Position::new(column, row)) || on_left != app_state.is_left_active {
             app_state.dialog = None;
         }
@@ -252,7 +252,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // edits it; the panel becomes the active one. The split between the two
     // is where the right panel starts.
     if app_state.path_bar_area.contains(Position::new(column, row)) {
-        let is_left = column < app_state.table_area_right.x;
+        let is_left = column < app_state.drawn.table_area_right.x;
         let editing = matches!(app_state.dialog, Some(Dialog::Prompt(PromptKind::GoTo, _)));
         if app_state.job.is_none() && !app_state.panel_busy(is_left) && !(editing && is_left == app_state.is_left_active) {
             app_state.is_left_active = is_left;
@@ -277,11 +277,11 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     // Hit-test the panels the last frame actually drew, rather than deriving
     // their position from the layout constants a second time.
     let position = Position::new(column, row);
-    let clicked_left = app_state.table_area_left.contains(position);
-    if !clicked_left && !app_state.table_area_right.contains(position) {
+    let clicked_left = app_state.drawn.table_area_left.contains(position);
+    if !clicked_left && !app_state.drawn.table_area_right.contains(position) {
         return;
     }
-    let area = if clicked_left { app_state.table_area_left } else { app_state.table_area_right };
+    let area = if clicked_left { app_state.drawn.table_area_left } else { app_state.drawn.table_area_right };
     // A click on a panel still being read makes it the active one, and does
     // nothing to rows about to be replaced.
     if app_state.panel_busy(clicked_left) {
