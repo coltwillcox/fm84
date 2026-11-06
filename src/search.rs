@@ -162,7 +162,12 @@ impl TimeRange {
         // A day's start, and the next day's.
         let day = |text: &str| -> Option<(SystemTime, SystemTime)> {
             let date = chrono::NaiveDate::parse_from_str(text.trim(), "%Y-%m-%d").ok()?;
-            let start = |date: chrono::NaiveDate| date.and_hms_opt(0, 0, 0)?.and_local_timezone(chrono::Local).earliest().map(SystemTime::from);
+            // Midnight, or where a clock change skips it - summer time starting
+            // at 00:00 - the first minute the day has.
+            let start = |date: chrono::NaiveDate| {
+                let midnight = date.and_hms_opt(0, 0, 0)?;
+                (0..24 * 60).find_map(|minute| (midnight + chrono::TimeDelta::minutes(minute)).and_local_timezone(chrono::Local).earliest()).map(SystemTime::from)
+            };
             Some((start(date)?, start(date.succ_opt()?)?))
         };
         if let Some((from, to)) = text.split_once("..") {
@@ -698,5 +703,38 @@ mod tests {
         });
         assert_eq!(updates, 0);
         fs::remove_dir_all(&dir).unwrap();
+    }
+    /// A day whose midnight a clock change skips - summer time starting at
+    /// 00:00, as it did in Brazil - is still a day, starting when it does.
+    /// In a child run of its own, under a zone with such a day: the zone is
+    /// the process's, and the other tests run beside this one.
+    #[test]
+    fn a_day_without_a_midnight_starts_when_it_does() {
+        const CHILD: &str = "FM84_TEST_SKIPPED_MIDNIGHT";
+        if std::env::var_os(CHILD).is_none() {
+            let module = module_path!().split_once("::").map_or("", |(_, module)| module);
+            let name = format!("{module}::a_day_without_a_midnight_starts_when_it_does");
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", &name, "--nocapture"])
+                .env(CHILD, "1")
+                // Three hours behind, two in summer, which starts at 00:00 on
+                // November's first Sunday: 1 November 2026 starts at 01:00.
+                .env("TZ", "BRT3BRST,M11.1.0/0,M2.3.0/0")
+                .output()
+                .unwrap();
+            let said = String::from_utf8_lossy(&output.stdout);
+            assert!(output.status.success() && said.contains("1 passed"), "the child run failed:\n{said}{}", String::from_utf8_lossy(&output.stderr));
+            return;
+        }
+        use chrono::TimeZone;
+        // The zone is the one asked for: that midnight is not there.
+        assert!(chrono::Local.with_ymd_and_hms(2026, 11, 1, 0, 30, 0).earliest().is_none(), "TZ not taken up");
+        let first = SystemTime::from(chrono::Utc.with_ymd_and_hms(2026, 11, 1, 3, 0, 0).unwrap());
+        let next = SystemTime::from(chrono::Utc.with_ymd_and_hms(2026, 11, 2, 2, 0, 0).unwrap());
+        let now = chrono::Local::now();
+        assert_eq!(TimeRange::parse("2026-11-01", now), Ok(Some(TimeRange { after: Some(first), before: Some(next) })));
+        assert_eq!(TimeRange::parse(">=2026-11-01", now), Ok(Some(TimeRange { after: Some(first), before: None })));
+        // The day before ends where it starts.
+        assert_eq!(TimeRange::parse("<=2026-10-31", now), Ok(Some(TimeRange { after: None, before: Some(first) })));
     }
 }
