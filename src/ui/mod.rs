@@ -210,7 +210,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
                 app_state.diff_viewport_height = height;
                 app_state.diff_viewport_width = width;
             }
-            Screen::Panels => app_state.page_size = render_file_tables(f, chunks_main[2], app_state),
+            Screen::Panels => app_state.drawn.page_size = render_file_tables(f, chunks_main[2], app_state),
         }
         render_bottom_panel(f, chunks_main[3], app_state);
         render_fkey_bar(f, chunks_main[4], app_state);

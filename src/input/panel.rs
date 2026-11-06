@@ -98,13 +98,13 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::PageDown if control => app_state.cycle_tab(true),
         KeyCode::PageUp if control => app_state.cycle_tab(false),
         KeyCode::PageDown => {
-            let page_size = app_state.page_size as usize;
+            let page_size = app_state.drawn.page_size as usize;
             move_cursor(app_state, |state, len| {
                 state.select(state.selected().map(|selected| (selected + page_size).min(len.saturating_sub(1))));
             })
         }
         KeyCode::PageUp => {
-            let page_size = app_state.page_size as usize;
+            let page_size = app_state.drawn.page_size as usize;
             move_cursor(app_state, |state, _len| {
                 state.select(state.selected().map(|selected| selected.saturating_sub(page_size)));
             })

@@ -213,7 +213,6 @@ pub struct AppState {
     pub left: Panel,
     pub right: Panel,
     pub drawn: Drawn,
-    pub page_size: u16,
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
@@ -417,6 +416,8 @@ pub struct Drawn {
     /// How many lines F1's list had room for - what the keys scroll it by,
     /// and up to.
     pub help_room: usize,
+    /// Rows a panel had room for - how far PageUp and PageDown go.
+    pub page_size: u16,
 }
 
 impl AppState {
@@ -492,7 +493,6 @@ impl AppState {
                 archive: None,
             },
             drawn: Drawn::default(),
-            page_size: 0,
             filter_before: String::new(),
             search_input: String::new(),
             cached_clock: String::new(),
