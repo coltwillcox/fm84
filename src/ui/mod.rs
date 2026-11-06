@@ -81,9 +81,11 @@ fn style_match() -> Style {
     Style::new().add_modifier(Modifier::UNDERLINED | Modifier::BOLD)
 }
 
-/// Draw a frame. What it drew, and where, is drawn into a `Drawn` of its
-/// own, taken out of the state while the frame is drawn and put back after,
-/// for the keys and the mouse to read.
+/// Draw a frame. The frame only reads the state: what it drew, and where,
+/// goes into a `Drawn` of its own, taken out of the state while it draws and
+/// put back after for the keys and the mouse to read; and what it worked out
+/// the state should take on - scrolls kept in range, strips laid out - comes
+/// back as `Settled`, applied once it is done.
 pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppState) {
     let mut drawn = std::mem::take(&mut app_state.drawn);
     // Update cached clock
@@ -224,7 +226,7 @@ fn screen_layout(area: Rect) -> std::rc::Rc<[Rect]> {
         .split(area)
 }
 
-fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut Drawn) -> Settled {
+fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Drawn) -> Settled {
     let mut settled = Settled::default();
     {
         let area = f.area();
