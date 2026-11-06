@@ -114,7 +114,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         // many there are - as browsers have it.
         if in_panel && let Some(digit) = c.to_digit(10).filter(|&digit| digit > 0) {
             let is_left = app_state.is_left_active;
-            let count = if is_left { app_state.tabs_left.list.len() } else { app_state.tabs_right.list.len() };
+            let count = app_state.panel(is_left).tabs.list.len();
             let index = if digit == 9 { count - 1 } else { digit as usize - 1 };
             app_state.select_tab(is_left, index);
         }
@@ -198,7 +198,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             't' if in_panel => app_state.new_tab(),
             'w' if in_panel => {
                 let is_left = app_state.is_left_active;
-                let active = if is_left { app_state.tabs_left.active } else { app_state.tabs_right.active };
+                let active = app_state.panel(is_left).tabs.active;
                 app_state.close_tab(is_left, active);
             }
             _ => {}

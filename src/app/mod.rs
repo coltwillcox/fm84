@@ -290,9 +290,6 @@ pub struct AppState {
     // The drive strips as drawn, and which of the drives each one shows.
     pub drive_strip_left: Strip,
     pub drive_strip_right: Strip,
-    // Each panel's tabs, and its tab strip as drawn.
-    pub tabs_left: Tabs,
-    pub tabs_right: Tabs,
     // A panel's directory still being read, past the moment the UI waits for
     // it. The panel goes on showing what it did until it lands.
     pub listing_left: Option<PendingListing>,
@@ -414,6 +411,8 @@ pub struct Panel {
     // valid UTF-8 can read the same, and picking one would pick both.
     pub selected: HashSet<OsString>,
     pub viewport_start: usize,
+    // The panel's tabs, and its tab strip as drawn.
+    pub tabs: Tabs,
 }
 
 impl AppState {
@@ -464,6 +463,7 @@ impl AppState {
                 git: PanelGit::default(),
                 selected: HashSet::new(),
                 viewport_start: 0,
+                tabs: Tabs::new(vec![dir_root.clone()], 0),
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -474,6 +474,7 @@ impl AppState {
                 git: PanelGit::default(),
                 selected: HashSet::new(),
                 viewport_start: 0,
+                tabs: Tabs::new(vec![dir_root], 0),
             },
             page_size: 0,
             filter_before: String::new(),
@@ -542,8 +543,6 @@ impl AppState {
             stay_put: false,
             drive_strip_left: Strip::default(),
             drive_strip_right: Strip::default(),
-            tabs_left: Tabs::new(vec![dir_root.clone()], 0),
-            tabs_right: Tabs::new(vec![dir_root], 0),
         }
     }
 

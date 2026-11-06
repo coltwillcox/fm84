@@ -212,8 +212,8 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     {
         app_state.left.dir = left.dir().to_path_buf();
         app_state.right.dir = right.dir().to_path_buf();
-        app_state.tabs_left = app::Tabs::new(left.tabs, left.active);
-        app_state.tabs_right = app::Tabs::new(right.tabs, right.active);
+        app_state.left.tabs = app::Tabs::new(left.tabs, left.active);
+        app_state.right.tabs = app::Tabs::new(right.tabs, right.active);
     }
     // A directory on the command line takes the place of the tab that would
     // have shown, and the others stay.

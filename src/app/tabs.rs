@@ -125,9 +125,9 @@ impl AppState {
     /// Which panel's tab strip a position is on, if either.
     pub fn tab_strip_at(&self, column: u16, row: u16) -> Option<bool> {
         let position = Position::new(column, row);
-        if self.tabs_left.strip.area.contains(position) {
+        if self.left.tabs.strip.area.contains(position) {
             Some(true)
-        } else if self.tabs_right.strip.area.contains(position) {
+        } else if self.right.tabs.strip.area.contains(position) {
             Some(false)
         } else {
             None
@@ -137,7 +137,7 @@ impl AppState {
     /// The panel and what a click landed on, when it was a tab or an arrow.
     pub fn tab_at(&self, column: u16, row: u16) -> Option<(bool, StripHit)> {
         let is_left = self.tab_strip_at(column, row)?;
-        let tabs = if is_left { &self.tabs_left } else { &self.tabs_right };
+        let tabs = &self.panel(is_left).tabs;
         let hit = strip_hit(&tabs.strip, column)?;
         match hit {
             StripHit::Item(index) if index >= tabs.list.len() => None,
@@ -146,12 +146,12 @@ impl AppState {
     }
 
     pub fn scroll_tab_strip(&mut self, is_left: bool, forward: bool) {
-        let tabs = if is_left { &mut self.tabs_left } else { &mut self.tabs_right };
+        let tabs = &mut self.panel_mut(is_left).tabs;
         tabs.strip.scroll(forward);
     }
 
     pub(super) fn tabs_mut(&mut self, is_left: bool) -> &mut Tabs {
-        if is_left { &mut self.tabs_left } else { &mut self.tabs_right }
+        &mut self.panel_mut(is_left).tabs
     }
 
     /// The panel as it stands, as a tab to come back to.
@@ -161,7 +161,7 @@ impl AppState {
         } else {
             (&self.right.dir, &self.right.children, &self.right.state, &self.right.selected)
         };
-        let tabs = if is_left { &self.tabs_left } else { &self.tabs_right };
+        let tabs = &self.panel(is_left).tabs;
         let shown = &tabs.list[tabs.active];
         Tab {
             dir: dir.clone(),
@@ -175,7 +175,7 @@ impl AppState {
     /// Every tab of a panel's directory, the one it shows as it is now, and
     /// which that is - for the strip's labels and the session file.
     pub fn tab_dirs(&self, is_left: bool) -> (Vec<PathBuf>, usize) {
-        let (tabs, dir) = if is_left { (&self.tabs_left, &self.left.dir) } else { (&self.tabs_right, &self.right.dir) };
+        let (tabs, dir) = if is_left { (&self.left.tabs, &self.left.dir) } else { (&self.right.tabs, &self.right.dir) };
         let mut dirs: Vec<PathBuf> = tabs.list.iter().map(|tab| tab.dir.clone()).collect();
         dirs[tabs.active] = dir.clone();
         (dirs, tabs.active)
@@ -257,9 +257,9 @@ impl AppState {
             return;
         }
         let (left, right) = (self.panel_as_tab(true), self.panel_as_tab(false));
-        self.tabs_left.list[self.tabs_left.active] = left;
-        self.tabs_right.list[self.tabs_right.active] = right;
-        std::mem::swap(&mut self.tabs_left, &mut self.tabs_right);
+        self.left.tabs.list[self.left.tabs.active] = left;
+        self.right.tabs.list[self.right.tabs.active] = right;
+        std::mem::swap(&mut self.left.tabs, &mut self.right.tabs);
         // Each filter goes with its directory, and is kept once there.
         std::mem::swap(&mut self.left.filter, &mut self.right.filter);
         std::mem::swap(&mut self.left.flat, &mut self.right.flat);

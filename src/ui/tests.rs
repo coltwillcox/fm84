@@ -39,7 +39,7 @@ fn tabs_are_drawn_and_clicked_where_they_are() {
     let mut app_state = AppState::new();
     app_state.is_left_active = true;
     app_state.left.dir = "/tmp/b".into();
-    app_state.tabs_left = crate::app::Tabs::new(vec!["/a".into(), "/tmp/b".into()], 1);
+    app_state.left.tabs = crate::app::Tabs::new(vec!["/a".into(), "/tmp/b".into()], 1);
     tab_strip(&mut app_state, true, Rect::new(0, 1, 40, 1));
 
     // " " then " a " then " b ".

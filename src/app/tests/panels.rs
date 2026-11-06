@@ -243,7 +243,7 @@ fn tabs_keep_where_each_was_left() {
 
     // A new tab: same place, nothing selected, and the first keeps its own.
     app_state.new_tab();
-    assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active), (2, 1));
+    assert_eq!((app_state.left.tabs.list.len(), app_state.left.tabs.active), (2, 1));
     assert_eq!(app_state.left.dir, dir);
     assert!(app_state.left.selected.is_empty());
     assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
@@ -264,17 +264,17 @@ fn tabs_keep_where_each_was_left() {
     assert_eq!(app_state.left.dir, dir.join("inner"));
     assert_eq!(app_state.left.selected.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("two.txt")]);
     app_state.cycle_tab(true);
-    assert_eq!(app_state.tabs_left.active, 0);
+    assert_eq!(app_state.left.tabs.active, 0);
 
     // Closing one not shown leaves the panel be and keeps the right one active.
     app_state.select_tab(true, 1);
     app_state.close_tab(true, 0);
-    assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active), (1, 0));
+    assert_eq!((app_state.left.tabs.list.len(), app_state.left.tabs.active), (1, 0));
     assert_eq!(app_state.left.dir, dir.join("inner"));
 
     // The last one stays.
     app_state.close_tab(true, 0);
-    assert_eq!(app_state.tabs_left.list.len(), 1);
+    assert_eq!(app_state.left.tabs.list.len(), 1);
 
     // Closing the one shown moves to its neighbour.
     app_state.new_tab();
@@ -282,7 +282,7 @@ fn tabs_keep_where_each_was_left() {
     app_state.close_tab(true, 1);
     assert_eq!(app_state.left.dir, dir.join("inner"));
     // The other panel's tabs are its own.
-    assert_eq!(app_state.tabs_right.list.len(), 1);
+    assert_eq!(app_state.right.tabs.list.len(), 1);
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -318,7 +318,7 @@ fn a_tab_that_cannot_be_read_is_refused_and_kept() {
 
     app_state.select_tab(true, 1);
     assert!(app_state.error.is_some());
-    assert_eq!(app_state.tabs_left.active, 0);
+    assert_eq!(app_state.left.tabs.active, 0);
     assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.left.selected.len(), 1);
     assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
@@ -363,7 +363,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     assert!(app_state.panel_busy(true));
     // The panel is as it was, and its tabs cannot be touched.
     app_state.new_tab();
-    assert_eq!(app_state.tabs_left.list.len(), 1);
+    assert_eq!(app_state.left.tabs.list.len(), 1);
     assert_eq!((app_state.left.dir.clone(), app_state.left.children.len()), (dir.clone(), listed));
     // Nor does a reread of where it was get in the way of where it is going.
     app_state.reload_panel(true, None);
@@ -389,11 +389,11 @@ fn a_late_refusal_or_esc_puts_the_tab_back() {
 
     let mut app_state = AppState::new();
     app_state.open_dir(true, dir.clone(), None);
-    app_state.tabs_left = crate::app::Tabs::new(vec![dir.clone(), dir.join("locked")], 0);
+    app_state.left.tabs = crate::app::Tabs::new(vec![dir.clone(), dir.join("locked")], 0);
 
     for refused in [true, false] {
         let (sender, answer) = std::sync::mpsc::channel();
-        app_state.tabs_left.active = 1;
+        app_state.left.tabs.active = 1;
         let tab = crate::app::TabSwitch {
             selected: HashSet::new(),
             undo: crate::app::TabUndo::Active(0),
@@ -428,7 +428,7 @@ fn a_late_refusal_or_esc_puts_the_tab_back() {
             app_state.cancel_listing(true);
         }
         assert!(!app_state.panel_busy(true));
-        assert_eq!(app_state.tabs_left.active, 0);
+        assert_eq!(app_state.left.tabs.active, 0);
         assert_eq!(app_state.left.dir, dir);
     }
     std::fs::remove_dir_all(&dir).unwrap();

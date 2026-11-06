@@ -68,7 +68,7 @@ fn swap_the_panels_and_send_the_other_one_here() {
 
     chord(&mut app_state, 'u', KeyModifiers::CONTROL);
     assert_eq!((app_state.left.dir.clone(), app_state.right.dir.clone()), (dir.join("three"), dir.join("one")));
-    assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active, app_state.tabs_right.list.len()), (2, 1, 1));
+    assert_eq!((app_state.left.tabs.list.len(), app_state.left.tabs.active, app_state.right.tabs.list.len()), (2, 1, 1));
     assert!(!app_state.is_left_active);
     assert_eq!(cursor(&app_state, false), "b.txt");
     assert!(app_state.right.selected.contains(std::ffi::OsStr::new("a.txt")) && app_state.left.selected.is_empty());

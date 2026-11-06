@@ -281,7 +281,7 @@ pub(super) fn tab_strip(app_state: &mut AppState, is_left: bool, area: Rect) -> 
         })
         .collect();
 
-    let tabs = if is_left { &mut app_state.tabs_left } else { &mut app_state.tabs_right };
+    let tabs = &mut app_state.panel_mut(is_left).tabs;
     Line::from(lay_strip(&mut tabs.strip, area, items, Some(active)))
 }
 
@@ -317,8 +317,8 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
     // do. One not drawn this frame has nothing to click either.
     app_state.drive_strip_left.area = Rect::default();
     app_state.drive_strip_right.area = Rect::default();
-    app_state.tabs_left.strip.area = Rect::default();
-    app_state.tabs_right.strip.area = Rect::default();
+    app_state.left.tabs.strip.area = Rect::default();
+    app_state.right.tabs.strip.area = Rect::default();
 
     if inner.height > 0 && !app_state.mounts.is_empty() {
         let halves = panel_split(Rect { height: 1, ..inner });
