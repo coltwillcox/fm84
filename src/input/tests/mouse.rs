@@ -110,7 +110,7 @@ fn a_click_on_a_path_edits_it() {
 
     // A click anywhere else puts it away and is a click there too: on a
     // row of the other panel, that panel becomes the active one.
-    let right = app_state.drawn.table_area_right;
+    let right = app_state.drawn.table_areas[Side::Right];
     click_at(&mut app_state, right.x + 3, right.y + 1);
     assert!(going_to(&app_state).is_none());
     assert_eq!(app_state.active_side, Side::Right);
@@ -416,14 +416,14 @@ fn a_double_click_enters_a_directory() {
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let row_of = |app_state: &AppState, name: &str| {
         let index = app_state.left.children.iter().position(|item| item.name_os == name).unwrap();
-        app_state.drawn.table_area_left.y + 1 + (index - app_state.left.viewport_start) as u16
+        app_state.drawn.table_areas[Side::Left].y + 1 + (index - app_state.left.viewport_start) as u16
     };
     let click = |app_state: &mut AppState, row: u16| {
         crate::input::handle_mouse(
             app_state,
             MouseEvent {
                 kind: MouseEventKind::Down(MouseButton::Left),
-                column: app_state.drawn.table_area_left.x + 2,
+                column: app_state.drawn.table_areas[Side::Left].x + 2,
                 row,
                 modifiers: KeyModifiers::NONE,
             },

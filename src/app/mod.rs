@@ -408,9 +408,8 @@ pub struct Drawn {
     /// How many results the Find files list showed when it was last drawn,
     /// which is how far PageUp and PageDown go.
     pub find_files_page: usize,
-    /// Each panel's table, for a click to find its row.
-    pub table_area_left: Rect,
-    pub table_area_right: Rect,
+    /// Each side's table, for a click to find its row.
+    pub table_areas: [Rect; 2],
     /// The row of the panels' paths, a click on either of which edits it as
     /// Ctrl+L does.
     pub path_bar_area: Rect,

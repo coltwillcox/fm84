@@ -509,8 +509,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     }
 
     // Hand the real geometry to the mouse handlers.
-    app_state.drawn.table_area_left = chunks[0];
-    app_state.drawn.table_area_right = chunks[2];
+    app_state.drawn.table_areas = [chunks[0], chunks[2]];
     app_state.left.viewport_start = offset_left;
     app_state.right.viewport_start = offset_right;
 
