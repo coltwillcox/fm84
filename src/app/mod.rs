@@ -245,8 +245,6 @@ pub struct AppState {
     pub visited: Vec<PathBuf>,
     pub last_click_time: Option<Instant>,
     pub last_click_pos: (u16, u16),
-    /// A branch git is still switching to.
-    pub branch_switch: Option<PendingSwitch>,
     /// The bar whose thumb the left button took hold of, as it was then, and
     /// how many cells from the thumb's start it was taken - followed until
     /// the button comes up.
@@ -429,6 +427,8 @@ pub struct Workers {
     pub dir_sizing: Vec<DirSizing>,
     /// Directories waiting for a sizing worker to come free, next first.
     pub dir_size_queue: std::collections::VecDeque<PathBuf>,
+    /// A branch git is still switching to.
+    pub branch_switch: Option<PendingSwitch>,
 }
 
 impl AppState {
@@ -516,6 +516,7 @@ impl AppState {
                 job: None,
                 dir_sizing: Vec::new(),
                 dir_size_queue: std::collections::VecDeque::new(),
+                branch_switch: None,
             },
             filter_before: String::new(),
             search_input: String::new(),
@@ -531,7 +532,6 @@ impl AppState {
             visited: Vec::new(),
             last_click_time: None,
             last_click_pos: (0, 0),
-            branch_switch: None,
             bar_drag: None,
             user_at_host: crate::fs_ops::user_at_host(),
             image_cache: ImageCache::default(),

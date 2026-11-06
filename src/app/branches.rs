@@ -25,7 +25,7 @@ impl AppState {
     /// repository on a mount that has stopped answering, the click says so
     /// rather than hold up the screen.
     pub fn open_branches(&mut self, is_left: bool) {
-        if self.branch_switch.is_some() {
+        if self.workers.branch_switch.is_some() {
             return;
         }
         // Inside an archive, the repository the archive is in.
@@ -92,14 +92,14 @@ impl AppState {
         });
         match answer.recv_timeout(crate::constants::GIT_WAIT) {
             Ok(result) => self.finish_switch(result),
-            Err(mpsc::RecvTimeoutError::Timeout) => self.branch_switch = Some(PendingSwitch { branch, answer }),
+            Err(mpsc::RecvTimeoutError::Timeout) => self.workers.branch_switch = Some(PendingSwitch { branch, answer }),
             Err(mpsc::RecvTimeoutError::Disconnected) => self.finish_switch(Err(t!("Switching to {branch} stopped unexpectedly", branch))),
         }
     }
 
     /// Take in a switch that went on past the wait, once git is done.
     pub fn poll_branch_switch(&mut self) {
-        let Some(pending) = &self.branch_switch else {
+        let Some(pending) = &self.workers.branch_switch else {
             return;
         };
         let result = match pending.answer.try_recv() {
@@ -107,7 +107,7 @@ impl AppState {
             Err(TryRecvError::Empty) => return,
             Err(TryRecvError::Disconnected) => Err(t!("Switching to {branch} stopped unexpectedly", branch = pending.branch)),
         };
-        self.branch_switch = None;
+        self.workers.branch_switch = None;
         self.finish_switch(result);
     }
 
