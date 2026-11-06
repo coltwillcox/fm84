@@ -277,7 +277,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             app_state.drawn.find_files_page = page;
         }
         app_state.drawn.attribute_rows = attribute_rows;
-        app_state.branch_rows = branch_rows;
+        app_state.drawn.branch_rows = branch_rows;
         // Over everything: a job, which holds the keys while it runs, or an
         // error, which holds them until it is put away.
         if app_state.job.is_some() {

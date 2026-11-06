@@ -314,7 +314,7 @@ fn a_click_on_the_branch_lists_branches_to_switch_to() {
 
     // The other row: highlighted, then switched to.
     draw(&mut app_state);
-    let feature = app_state.branch_rows.iter().find(|(_, index)| *index == 0).unwrap().0;
+    let feature = app_state.drawn.branch_rows.iter().find(|(_, index)| *index == 0).unwrap().0;
     click(&mut app_state, feature);
     assert_eq!(listed(&app_state).map(|(_, _, index)| index), Some(0));
     draw(&mut app_state);

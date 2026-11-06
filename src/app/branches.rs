@@ -60,7 +60,7 @@ impl AppState {
     /// A click on a row of the list: the first highlights it, and one on
     /// the row already highlighted switches to it, as Enter does.
     pub fn click_branch(&mut self, column: u16, row: u16) {
-        let Some(&(_, index)) = self.branch_rows.iter().find(|(cell, _)| cell.contains(Position::new(column, row))) else {
+        let Some(&(_, index)) = self.drawn.branch_rows.iter().find(|(cell, _)| cell.contains(Position::new(column, row))) else {
             return;
         };
         if let Some(Dialog::Branches(list)) = &mut self.dialog {
