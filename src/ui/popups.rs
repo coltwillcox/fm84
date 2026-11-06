@@ -738,7 +738,8 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
 /// F2 with a selection: the pattern, find and replace and case, and under
 /// them every old name beside its new one, with what is wrong with any that
 /// cannot be had. The table's rows are kept for Page Up and Page Down.
-pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, rename: &mut crate::app::MultiRename) {
+/// Returns the rows the table had room for, and its scroll kept to them.
+pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, rename: &crate::app::MultiRename) -> (usize, usize) {
     let popup_area = popup_rect(80, area);
     let count = rename.entries.len();
     let title = format!(" {} ", tn!(count, "Rename {count} Entry", "Rename {count} Entries", count));
@@ -783,10 +784,10 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
     lines.push(Line::from(vec![Span::styled(pad(t!("Old name"), half), style_title()), Span::styled(format!("   {}", t!("New name")), style_title())]));
     // Above the table, and the blank row and keys below it.
     let rows = (inner.height as usize).saturating_sub(lines.len() + 2);
-    rename.room = rows.max(1);
-    rename.scroll = rename.scroll.min(rename.entries.len().saturating_sub(rename.room));
+    let room = rows.max(1);
+    let scroll = rename.scroll.min(rename.entries.len().saturating_sub(room));
     let preview = rename.preview();
-    for (entry, (new, problem)) in rename.entries.iter().zip(&preview).skip(rename.scroll).take(rows) {
+    for (entry, (new, problem)) in rename.entries.iter().zip(&preview).skip(scroll).take(rows) {
         let old = cut_to(&printable_name(&entry.old), half);
         let mut spans = vec![Span::styled(pad(&old, half), style_dir()), Span::styled(" → ", style_columns())];
         match problem {
@@ -813,6 +814,7 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
     };
     lines.push(keys);
     f.render_widget(Paragraph::new(lines), inner);
+    (room, scroll)
 }
 
 /// Alt+S: the plan. Each entry that differs by its path from both
