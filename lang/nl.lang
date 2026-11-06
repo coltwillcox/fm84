@@ -1,0 +1,1602 @@
+# fm84 in het Nederlands.
+#
+# Each msgid is the English as the code has it, and the msgstr under it what
+# is shown in its place. A sentence with a count in it has a msgstr for each
+# form the count takes: [one] for 1, [other] for the rest. A msgctxt sets
+# one use of a word apart from the same word elsewhere. {name} is a place
+# the program fills, kept as it is. The keys to press - Y, N, A and the like
+# - stay as they are.
+
+msgid  "{name}" has changed since it was opened
+msgstr "{name}" is gewijzigd sinds het werd geopend
+
+msgid  "{name}" is already in {folder}
+msgstr "{name}" staat al in {folder}
+
+msgid  "{name}" is no longer there
+msgstr "{name}" bestaat niet meer
+
+msgid  "{path}" is already there
+msgstr "{path}" bestaat al
+
+msgid  +/- Zoom {zoom}%
+msgstr +/- Zoom {zoom}%
+
+msgid  +/- select/deselect by pattern, * invert
+msgstr +/- (de)selecteren op patroon, * omkeren
+
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): alleen-lezen
+
+msgid  12-hour
+msgstr 12-uurs
+
+msgid  24-hour
+msgstr 24-uurs
+
+msgid  A - Overwrite all    S - Skip all    B - Keep both all
+msgstr A - Alles overschrijven    S - Alles overslaan    B - Altijd beide houden
+
+msgid  A hard link to {path}, which is not being copied out
+msgstr Een harde koppeling naar {path}, dat niet wordt uitgepakt
+
+msgid  A root directory cannot go to the trash
+msgstr Een hoofdmap kan niet naar de prullenbak
+
+msgid  A synthwave dual-pane TUI file manager
+msgstr Een synthwave-bestandsbeheerder met twee panelen, voor de terminal
+
+msgid  About
+msgstr Over
+
+msgid  Already exists: {name}
+msgstr Bestaat al: {name}
+
+msgid  Already exists: {path} - Overwrite or Keep both under F11
+msgstr Bestaat al: {path} - Overschrijven of Beide houden in F11
+
+msgid  Already exists: {path} - another name, or Overwrite or Keep both under F11
+msgstr Bestaat al: {path} - een andere naam, of Overschrijven of Beide houden in F11
+
+msgid  Already there
+msgstr Bestaat al
+
+msgid  Alt+* invert with directories
+msgstr Alt+* omkeren met mappen
+
+msgid  Alt+A - Permissions, owner, time
+msgstr Alt+A - Rechten, eigenaar, tijd
+
+msgid  Alt+Down every directory visited
+msgstr Alt+Omlaag alle bezochte mappen
+
+msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
+msgstr Alt+F5 (of Ctrl+Shift+F5) koppeling, Tab hard
+
+msgid  Alt+F7 (or Ctrl+F7) find files
+msgstr Alt+F7 (of Ctrl+F7) bestanden zoeken
+
+msgid  Alt+H - Checksums (Tab algorithm); check a file
+msgstr Alt+H - Controlesommen (Tab algoritme); bestand controleren
+
+msgid  Alt+Left/Right back/forward
+msgstr Alt+Links/Rechts terug/vooruit
+
+msgid  Alt+M - User menu (E edits it)
+msgstr Alt+M - Gebruikersmenu (E bewerkt het)
+
+msgid  Alt+O open with... (E per extension)
+msgstr Alt+O openen met... (E per extensie)
+
+msgid  Alt+P - Pack into an archive (Tab format)
+msgstr Alt+P - Inpakken in een archief (Tab formaat)
+
+msgid  Alt+R in Find or Replace: regex
+msgstr Alt+R in Zoeken of Vervangen: regex
+
+msgid  Alt+S - Synchronize the two directories
+msgstr Alt+S - De twee mappen synchroniseren
+
+msgid  Alt+Shift+Enter size every directory
+msgstr Alt+Shift+Enter grootte van alle mappen
+
+msgid  Appearance
+msgstr Weergave
+
+msgid  Archives are read-only
+msgstr Archieven zijn alleen-lezen
+
+msgid  Ascending
+msgstr Oplopend
+
+msgid  Ask
+msgstr Vragen
+
+msgid  Ask before opening over
+msgstr Vragen voor openen boven
+
+msgid  Attributes
+msgstr Kenmerken
+
+msgid  Attributes column
+msgstr Kolom Kenmerken
+
+msgid  Automatic
+msgstr Automatisch
+
+msgid  Automatic ({language})
+msgstr Automatisch ({language})
+
+msgid  Background
+msgstr Achtergrond
+
+msgid  Bar
+msgstr Streep
+
+msgid  Behaviour
+msgstr Gedrag
+
+msgid  Binary
+msgstr Binair
+
+msgid  Binary file detected. Press Esc to return.
+msgstr Binair bestand. Druk op Esc om terug te gaan.
+
+msgid  Block
+msgstr Blok
+
+msgid  Bookmarks
+msgstr Bladwijzers
+
+msgid  Both panels show the same directory
+msgstr Beide panelen tonen dezelfde map
+
+msgid  Both panels show the same directory: nothing to synchronize
+msgstr Beide panelen tonen dezelfde map: niets te synchroniseren
+
+msgid  Branches:
+msgstr Branches:
+
+msgid  Built with Rust, Ratatui and Crossterm
+msgstr Gemaakt met Rust, Ratatui en Crossterm
+
+msgid  Built-in
+msgstr Ingebouwd
+
+msgid  C - Copy
+msgstr C - Kopiëren
+
+msgid  Cancelling
+msgstr Bezig met annuleren
+
+msgid  Cannot calculate size: {e}
+msgstr Kan grootte niet berekenen: {e}
+
+msgid  Cannot change {what}
+msgstr Kan {what} niet wijzigen
+
+msgid  Cannot copy
+msgstr Kan niet kopiëren
+
+msgid  Cannot copy "{path}" into itself
+msgstr Kan "{path}" niet naar zichzelf kopiëren
+
+msgid  Cannot copy to {path}
+msgstr Kan niet kopiëren naar {path}
+
+msgid  Cannot delete
+msgstr Kan niet verwijderen
+
+msgid  Cannot edit {path}: it is not UTF-8 text. F3 shows it as it is.
+msgstr Kan {path} niet bewerken: het is geen UTF-8-tekst. F3 toont het zoals het is.
+
+msgid  Cannot extract
+msgstr Kan niet uitpakken
+
+msgid  Cannot link {what}
+msgstr Kan {what} niet koppelen
+
+msgid  Cannot make room beside {path}
+msgstr Kan geen ruimte maken naast {path}
+
+msgid  Cannot make room to compare: {e}
+msgstr Kan geen ruimte maken om te vergelijken: {e}
+
+msgid  Cannot make room to open it: {e}
+msgstr Kan geen ruimte maken om het te openen: {e}
+
+msgid  Cannot move
+msgstr Kan niet verplaatsen
+
+msgid  Cannot move to the trash: {why}
+msgstr Kan niet naar de prullenbak verplaatsen: {why}
+
+msgid  Cannot move to trash
+msgstr Kan niet naar de prullenbak verplaatsen
+
+msgid  Cannot open file: {e}
+msgstr Kan bestand niet openen: {e}
+
+msgid  Cannot open terminal: {e}
+msgstr Kan terminal niet openen: {e}
+
+msgid  Cannot open {path}: {e}
+msgstr Kan {path} niet openen: {e}
+
+msgid  Cannot pack
+msgstr Kan niet inpakken
+
+msgid  Cannot pack into {path}
+msgstr Kan niet inpakken in {path}
+
+msgid  Cannot reach {target}
+msgstr Kan {target} niet bereiken
+
+msgid  Cannot read
+msgstr Kan niet lezen
+
+msgid  Cannot read file
+msgstr Kan bestand niet lezen
+
+msgid  Cannot read {path}
+msgstr Kan {path} niet lezen
+
+msgid  Cannot read {path}: {e}
+msgstr Kan {path} niet lezen: {e}
+
+msgid  Cannot replace directory {path} with a file
+msgstr Kan map {path} niet vervangen door een bestand
+
+msgid  Cannot replace directory {path} with a link
+msgstr Kan map {path} niet vervangen door een koppeling
+
+msgid  Cannot replace file {path} with a directory
+msgstr Kan bestand {path} niet vervangen door een map
+
+msgid  Cannot run git: {e}
+msgstr Kan git niet uitvoeren: {e}
+
+msgid  Cannot run {label}: {e}
+msgstr Kan {label} niet uitvoeren: {e}
+
+msgid  Cannot save bookmarks: {e}
+msgstr Kan bladwijzers niet opslaan: {e}
+
+msgid  Cannot save options: {e}
+msgstr Kan opties niet opslaan: {e}
+
+msgid  Cannot start {program}: {e}
+msgstr Kan {program} niet starten: {e}
+
+msgid  Cannot synchronize
+msgstr Kan niet synchroniseren
+
+msgid  Cannot write {path}: {e}
+msgstr Kan {path} niet schrijven: {e}
+
+msgid  Case
+msgstr Hoofdletters
+
+msgid  Case-sensitive sort
+msgstr Hoofdlettergevoelig sorteren
+
+msgid  Changed on disk
+msgstr Gewijzigd op schijf
+
+msgid  Checked against {file}
+msgstr Gecontroleerd met {file}
+
+msgid  Checksumming
+msgstr Controlesommen berekenen
+
+msgid  Checksums
+msgstr Controlesommen
+
+msgid  Choose another program
+msgstr Ander programma kiezen
+
+msgid  Classic
+msgstr Klassiek
+
+msgid  Click the git branch to switch it
+msgstr Klik op de git-branch om te wisselen
+
+msgid  Clock
+msgstr Klok
+
+msgid  Compare
+msgstr Vergelijken
+
+msgid  Comparing...    Esc - Stop and close
+msgstr Vergelijken...    Esc - Stoppen en sluiten
+
+msgid  Confirm copy and move
+msgstr Kopiëren en verplaatsen bevestigen
+
+msgid  Confirm delete
+msgstr Verwijderen bevestigen
+
+msgid  Containing
+msgstr Bevat
+
+msgid  Containing is a regular expression
+msgstr Bevat is een reguliere expressie
+
+msgid  Copied name: {text}
+msgstr Naam gekopieerd: {text}
+
+msgid  Copied path: {text}
+msgstr Pad gekopieerd: {text}
+
+msgid  Copied the report
+msgstr Rapport gekopieerd
+
+msgid  Copied: {text}
+msgstr Gekopieerd: {text}
+
+msgid  Copy
+msgstr Kopiëren
+
+msgid  Copy "{name}" to:
+msgstr "{name}" kopiëren naar:
+
+msgid  Copy directory
+msgstr Map kopiëren
+
+msgid  Copy file
+msgstr Bestand kopiëren
+
+msgid  Copy it out of the archive first: checksums are worked out of files on the disk
+msgstr Haal het eerst uit het archief: controlesommen worden berekend van bestanden op de schijf
+
+msgid  Copy it out of the archive first: what is packed has to be on the disk
+msgstr Haal het eerst uit het archief: wat wordt ingepakt moet op de schijf staan
+
+msgid  Copying
+msgstr Bezig met kopiëren
+
+msgid  Could not change {count} of {total}. {first}
+msgstr Kon {count} van {total} niet wijzigen. {first}
+
+msgid  Could not link {count} of {total}. {first}
+msgstr Kon {count} van {total} niet koppelen. {first}
+
+msgid  Counting...
+msgstr Tellen...
+
+msgid  Create Directory
+msgstr Map maken
+
+msgid  Create File
+msgstr Bestand maken
+
+msgid  Ctrl+B - Every file below, flat
+msgstr Ctrl+B - Alle bestanden eronder, plat
+
+msgid  Ctrl+C/Alt+C - Copy paths/names
+msgstr Ctrl+C/Alt+C - Paden/namen kopiëren
+
+msgid  Ctrl+D - Bookmarks
+msgstr Ctrl+D - Bladwijzers
+
+msgid  Ctrl+F Find
+msgstr Ctrl+F Zoeken
+
+msgid  Ctrl+F find, F3/Shift+F3 next/prev
+msgstr Ctrl+F zoeken, F3/Shift+F3 volgende/vorige
+
+msgid  Ctrl+F3..F6 - Sort name/ext/date/size
+msgstr Ctrl+F3..F6 - Sorteren naam/ext/datum/grootte
+
+msgid  Ctrl+G go to line, Ctrl+R/F4 replace
+msgstr Ctrl+G ga naar regel, Ctrl+R/F4 vervangen
+
+msgid  Ctrl+L - Go to path (or click it)
+msgstr Ctrl+L - Ga naar pad (of klik erop)
+
+msgid  Ctrl+Left/Right - Dir to that panel
+msgstr Ctrl+Links/Rechts - Map naar dat paneel
+
+msgid  Ctrl+PgUp/PgDn, Alt+1..9 switch
+msgstr Ctrl+PgUp/PgDn, Alt+1..9 wisselen
+
+msgid  Ctrl+R - Reload both panels
+msgstr Ctrl+R - Beide panelen herladen
+
+msgid  Ctrl+S - Filter the panel by pattern
+msgstr Ctrl+S - Paneel filteren op patroon
+
+msgid  Ctrl+T/Ctrl+W - New/close tab
+msgstr Ctrl+T/Ctrl+W - Nieuw/sluit tabblad
+
+msgid  Ctrl+U swap panels, Alt+I same dir there
+msgstr Ctrl+U panelen wisselen, Alt+I zelfde map daar
+
+msgid  Ctrl+Z undo, Ctrl+Y redo, Ctrl+X/C/V
+msgstr Ctrl+Z ongedaan, Ctrl+Y opnieuw, Ctrl+X/C/V
+
+msgid  Ctrl+Z/Y Undo
+msgstr Ctrl+Z/Y Ongedaan
+
+msgid  Cursor
+msgstr Cursor
+
+msgid  Cursor blinks
+msgstr Cursor knippert
+
+msgid  D - Delete permanently
+msgstr D - Definitief verwijderen
+
+msgid  Dashed
+msgstr Gestreept
+
+msgid  Date format
+msgstr Datumnotatie
+
+msgid  Decoding a picture this size needs that much memory.
+msgstr Een afbeelding van dit formaat decoderen vraagt zoveel geheugen.
+
+msgid  Delete
+msgstr Verwijderen
+
+msgid  Delete "{name}" permanently?
+msgstr "{name}" definitief verwijderen?
+
+msgid  Delete to trash (F8)
+msgstr Verwijderen naar prullenbak (F8)
+
+msgid  Delete: directory
+msgstr Verwijderen: map
+
+msgid  Delete: file
+msgstr Verwijderen: bestand
+
+msgid  Deleting
+msgstr Bezig met verwijderen
+
+msgid  Descending
+msgstr Aflopend
+
+msgid  Deselect:
+msgstr Deselecteren:
+
+msgid  Destination already exists: {path}
+msgstr Doel bestaat al: {path}
+
+msgid  Differ: {left} on the left, {right} on the right
+msgstr Verschillen: {left} links, {right} rechts
+
+msgid  Difference {at}/{count}
+msgstr Verschil {at}/{count}
+
+msgid  Directories first
+msgstr Mappen eerst
+
+msgid  Directory "{name}"
+msgstr Map "{name}"
+
+msgid  Directory History
+msgstr Mapgeschiedenis
+
+msgid  Double
+msgstr Dubbel
+
+msgid  Edit
+msgstr Bewerken
+
+msgid  Edit "{name}" ({size})?
+msgstr "{name}" ({size}) bewerken?
+
+msgid  Edit "{name}" ({width}x{height}, {size})?
+msgstr "{name}" ({width}x{height}, {size}) bewerken?
+
+msgid  Edit:
+msgstr Bewerken:
+
+msgid  Editor (F4)
+msgstr Editor (F4)
+
+msgid  Empty terminal command
+msgstr Lege terminalopdracht
+
+msgid  Encrypted: fm84 cannot read it without the password
+msgstr Versleuteld: fm84 kan het niet lezen zonder het wachtwoord
+
+msgid  Enter - Copy
+msgstr Enter - Kopiëren
+
+msgid  Enter - Create    Esc - Cancel
+msgstr Enter - Maken    Esc - Annuleren
+
+msgid  Enter - Extract
+msgstr Enter - Uitpakken
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Close
+msgstr Enter - Ga naar    F - Naar paneel    Esc - Sluiten
+
+msgid  Enter - Go to    F - Feed to panel    Esc - Stop and close
+msgstr Enter - Ga naar    F - Naar paneel    Esc - Stoppen en sluiten
+
+msgid  Enter - Hard link
+msgstr Enter - Harde koppeling
+
+msgid  Enter - Move
+msgstr Enter - Verplaatsen
+
+msgid  Enter - Open dir, or go into an archive
+msgstr Enter - Map openen, of een archief in
+
+msgid  Enter - Pack
+msgstr Enter - Inpakken
+
+msgid  Enter - Save    Esc - Cancel    {} - directory
+msgstr Enter - Opslaan    Esc - Annuleren    {} - map
+
+msgid  Enter - Save    Esc - Cancel    {} - file
+msgstr Enter - Opslaan    Esc - Annuleren    {} - bestand
+
+msgid  Enter - Symlink
+msgstr Enter - Symbolische koppeling
+
+msgid  Enter - Write
+msgstr Enter - Schrijven
+
+msgid  Enter again to run, deleting {deleting}    Any other key - Not yet
+msgstr Nogmaals Enter om uit te voeren, {deleting} wordt verwijderd    Andere toets - Nog niet
+
+msgid  Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove
+msgstr Enter/1-9 - Ga    A/Ins - Hier toevoegen    D/Del - Verwijderen
+
+msgid  Enter/1-9 - Open    E - Edit associations    Esc - Close
+msgstr Enter/1-9 - Openen    E - Toewijzingen bewerken    Esc - Sluiten
+
+msgid  Enter/1-9 - Run    E - Edit the menu    Esc - Close
+msgstr Enter/1-9 - Uitvoeren    E - Menu bewerken    Esc - Sluiten
+
+msgid  Enter/Click - Switch    Esc - Close
+msgstr Enter/klik - Wisselen    Esc - Sluiten
+
+msgid  Error
+msgstr Fout
+
+msgid  Esc - Back to editing
+msgstr Esc - Terug naar bewerken
+
+msgid  Esc - Cancel
+msgstr Esc - Annuleren
+
+msgid  Esc - Cancel    F10 again - Quit
+msgstr Esc - Annuleren    F10 nogmaals - Afsluiten
+
+msgid  Esc - Close
+msgstr Esc - Sluiten
+
+msgid  Esc Exit
+msgstr Esc Sluiten
+
+msgid  Existing
+msgstr Bestaand
+
+msgid  Ext
+msgstr Ext
+
+msgid  Ext column
+msgstr Kolom Ext
+
+msgid  Extension
+msgstr Extensie
+
+msgid  Extract "{name}" to:
+msgstr "{name}" uitpakken naar:
+
+msgid  Extract archive
+msgstr Archief uitpakken
+
+msgid  Extracting
+msgstr Bezig met uitpakken
+
+msgid  F Fit [Fill]
+msgstr F Passend [Vullen]
+
+msgid  F [Fit] Fill
+msgstr F [Passend] Vullen
+
+msgid  F fit/fill, +/- zoom, W wrap
+msgstr F passend/vullen, +/- zoom, W omloop
+
+msgid  F on the results feeds them to the panel
+msgstr F op de resultaten zet ze in het paneel
+
+msgid  F1 - This help
+msgstr F1 - Deze hulp
+
+msgid  F10 - Quit
+msgstr F10 - Afsluiten
+
+msgid  F10 again - Quit
+msgstr F10 nogmaals - Afsluiten
+
+msgid  F11 - Options (Alt+F1/F2 drives)
+msgstr F11 - Opties (Alt+F1/F2 schijven)
+
+msgid  F12 - Preview in other panel
+msgstr F12 - Voorbeeld in ander paneel
+
+msgid  F2 - Rename folder/file
+msgstr F2 - Map/bestand hernoemen
+
+msgid  F2/Ctrl+S Save
+msgstr F2/Ctrl+S Opslaan
+
+msgid  F3 - View file (X text/hex/image)
+msgstr F3 - Bestand bekijken (X tekst/hex/afbeelding)
+
+msgid  F3/N Next
+msgstr F3/N Volgende
+
+msgid  F4 - Edit file (Ctrl+S/F2 save)
+msgstr F4 - Bestand bewerken (Ctrl+S/F2 opslaan)
+
+msgid  F5 - Copy (to the other panel, or where typed)
+msgstr F5 - Kopiëren (naar het andere paneel, of waar getypt)
+
+msgid  F5 copies out, Alt+F9 (or Ctrl+F9) all of it
+msgstr F5 haalt eruit, Alt+F9 (of Ctrl+F9) alles
+
+msgid  F6 - Move (to the other panel, or where typed)
+msgstr F6 - Verplaatsen (naar het andere paneel, of waar getypt)
+
+msgid  F7 - Create directory
+msgstr F7 - Map maken
+
+msgid  F8 - Move to trash
+msgstr F8 - Naar prullenbak
+
+msgid  F9 - Open terminal
+msgstr F9 - Terminal openen
+
+msgid  File "{name}"
+msgstr Bestand "{name}"
+
+msgid  Fill
+msgstr Vullen
+
+msgid  Filter:
+msgstr Filter:
+
+msgid  Find
+msgstr Zoeken
+
+msgid  Find (regex, Alt+R for text):
+msgstr Zoeken (regex, Alt+R voor tekst):
+
+msgid  Find files
+msgstr Bestanden zoeken
+
+msgid  Find files cannot search inside an archive yet
+msgstr Bestanden zoeken kan nog niet in een archief zoeken
+
+msgid  Find:
+msgstr Zoeken:
+
+msgid  First letter
+msgstr Eerste letter
+
+msgid  Fit
+msgstr Passend
+
+msgid  Git marks
+msgstr Git-markeringen
+
+msgid  Go to line:
+msgstr Ga naar regel:
+
+msgid  Gone
+msgstr Weg
+
+msgid  Group
+msgstr Groep
+
+msgid  Hard link "{name}" at:
+msgstr Harde koppeling naar "{name}" in:
+
+msgid  Hard link directory
+msgstr Harde koppeling naar map
+
+msgid  Hard link file
+msgstr Harde koppeling naar bestand
+
+msgid  Heavy
+msgstr Zwaar
+
+msgid  Help
+msgstr Help
+
+msgid  Help/About
+msgstr Help/Over
+
+msgid  High contrast
+msgstr Hoog contrast
+
+msgid  Highlight files up to
+msgstr Syntaxiskleuring tot
+
+msgid  Icons
+msgstr Pictogrammen
+
+msgid  Image backgrounds
+msgstr Afbeeldingsachtergronden
+
+msgid  Images open as
+msgstr Afbeeldingen openen als
+
+msgid  In
+msgstr In
+
+msgid  It got shorter while it was being packed
+msgstr Het werd korter tijdens het inpakken
+
+msgid  Keep both
+msgstr Beide houden
+
+msgid  Keys
+msgstr Toetsen
+
+msgid  Language
+msgstr Taal
+
+msgid  Large File
+msgstr Groot bestand
+
+msgid  Large Picture
+msgstr Grote afbeelding
+
+msgid  Line numbers
+msgstr Regelnummers
+
+msgid  Line {at}/{count}
+msgstr Regel {at}/{count}
+
+msgid  Ln {line}, Col {column}
+msgstr Rg {line}, Kol {column}
+
+msgid  Military
+msgstr Militair
+
+msgid  Mkdir
+msgstr Nieuwe map
+
+msgid  Mode
+msgstr Rechten
+
+msgid  Mode as 755 or u+x,go-w; owner and group by name or number
+msgstr Rechten als 755 of u+x,go-w; eigenaar en groep op naam of nummer
+
+msgid  Modified
+msgstr Gewijzigd
+
+msgid  Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01, not {text}
+msgstr Gewijzigd als <7d, >1y, 1d..7d, 2026-10-01 of >2026-10-01, niet {text}
+
+msgid  Modified column
+msgstr Kolom Gewijzigd
+
+msgid  Move
+msgstr Verplaatsen
+
+msgid  Move "{name}" to the trash?
+msgstr "{name}" naar de prullenbak verplaatsen?
+
+msgid  Move "{name}" to:
+msgstr "{name}" verplaatsen naar:
+
+msgid  Move directory
+msgstr Map verplaatsen
+
+msgid  Move file
+msgstr Bestand verplaatsen
+
+msgid  Move to trash: directory
+msgstr Naar prullenbak: map
+
+msgid  Move to trash: file
+msgstr Naar prullenbak: bestand
+
+msgid  Moving
+msgstr Bezig met verplaatsen
+
+msgid  Moving to trash
+msgstr Bezig met naar prullenbak verplaatsen
+
+msgid  Name
+msgstr Naam
+
+msgid  Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case
+msgstr Naam zoals + hem neemt: *.jpg;*.png, of */ voor mappen. Kleine letters vinden beide
+
+msgid  Name it as an archive, ending in {endings}
+msgstr Geef het een archiefnaam, eindigend op {endings}
+
+msgid  New
+msgstr Nieuw
+
+msgid  New name
+msgstr Nieuwe naam
+
+msgid  Next
+msgstr Volgende
+
+msgid  No bookmarks yet - A keeps the panel's directory
+msgstr Nog geen bladwijzers - A bewaart de map van het paneel
+
+msgid  No branches yet: nothing has been committed
+msgstr Nog geen branches: er is niets gecommit
+
+msgid  No commands yet - E adds them, as label = command, in
+msgstr Nog geen opdrachten - E voegt ze toe, als label = opdracht, in
+
+msgid  No config directory
+msgstr Geen configuratiemap
+
+msgid  No config directory to keep a menu in
+msgstr Geen configuratiemap om een menu in te bewaren
+
+msgid  No config directory to keep associations in
+msgstr Geen configuratiemap om toewijzingen in te bewaren
+
+msgid  No such directory: {path}
+msgstr Map bestaat niet: {path}
+
+msgid  No such file or directory: {path}
+msgstr Bestand of map bestaat niet: {path}
+
+msgid  No such group: {text}
+msgstr Groep bestaat niet: {text}
+
+msgid  No such user: {text}
+msgstr Gebruiker bestaat niet: {text}
+
+msgid  No terminal emulator found. Set $TERMINAL.
+msgstr Geen terminalemulator gevonden. Stel $TERMINAL in.
+
+msgid  Not a line number: {text}
+msgstr Geen regelnummer: {text}
+
+msgid  Not a mode: {text}
+msgstr Geen geldige rechten: {text}
+
+msgid  Not a mode: {text} - 755, or u+x,go-w
+msgstr Geen geldige rechten: {text} - 755, of u+x,go-w
+
+msgid  Not a plain file name: {name}
+msgstr Geen gewone bestandsnaam: {name}
+
+msgid  Not a regular expression: {why}
+msgstr Geen reguliere expressie: {why}
+
+msgid  Not a regular file
+msgstr Geen gewoon bestand
+
+msgid  Not a regular file: {path}
+msgstr Geen gewoon bestand: {path}
+
+msgid  Not a time here: {text}
+msgstr Hier geen tijdstip: {text}
+
+msgid  Not a time: {text} - 2026-10-23 14:02:11
+msgstr Geen tijdstip: {text} - 2026-10-23 14:02:11
+
+msgid  Not an archive: {path}
+msgstr Geen archief: {path}
+
+msgid  Not found: {term}
+msgstr Niet gevonden: {term}
+
+msgid  Nothing chosen for {label}
+msgstr Niets gekozen voor {label}
+
+msgid  Nothing found
+msgstr Niets gevonden
+
+msgid  Nothing found to feed to the panel
+msgstr Niets gevonden om in het paneel te zetten
+
+msgid  Nothing is smaller than 0 bytes
+msgstr Niets is kleiner dan 0 bytes
+
+msgid  Nothing replaced
+msgstr Niets vervangen
+
+msgid  Nothing to compare with: the other panel has no file of that name, nor one under its cursor
+msgstr Niets om mee te vergelijken: het andere paneel heeft geen bestand met die naam, en ook geen onder de cursor
+
+msgid  Nothing to synchronize
+msgstr Niets te synchroniseren
+
+msgid  Nothing to write: no checksum could be worked out
+msgstr Niets te schrijven: geen enkele controlesom kon worden berekend
+
+msgid  Nothing visited matches
+msgstr Geen bezochte map komt overeen
+
+msgid  Now
+msgstr Nu
+
+msgid  O - Overwrite all older    Esc - Abort
+msgstr O - Alle oudere overschrijven    Esc - Afbreken
+
+msgid  O - Overwrite it    R - Reload, losing your edits
+msgstr O - Overschrijven    R - Herladen, je wijzigingen gaan verloren
+
+msgid  O - Save it again
+msgstr O - Opnieuw opslaan
+
+msgid  Off
+msgstr Uit
+
+msgid  Old name
+msgstr Oude naam
+
+msgid  On
+msgstr Aan
+
+msgid  One panel's directory is inside the other's: nothing to synchronize
+msgstr De map van het ene paneel ligt in die van het andere: niets te synchroniseren
+
+msgid  Only the first {count} files are listed
+msgstr Alleen de eerste {count} bestanden worden getoond
+
+msgid  Open {name} With
+msgstr {name} openen met
+
+msgid  Options
+msgstr Opties
+
+msgid  Overwrite
+msgstr Overschrijven
+
+msgid  Owner
+msgstr Eigenaar
+
+msgid  Pack "{name}" into:
+msgstr "{name}" inpakken in:
+
+msgid  Pack directory
+msgstr Map inpakken
+
+msgid  Pack file
+msgstr Bestand inpakken
+
+msgid  Packing
+msgstr Bezig met inpakken
+
+msgid  Panels
+msgstr Panelen
+
+msgid  Plain
+msgstr Eenvoudig
+
+msgid  Plain Text
+msgstr Platte tekst
+
+msgid  Preview
+msgstr Voorbeeld
+
+msgid  Preview on startup
+msgstr Voorbeeld bij opstarten
+
+msgid  Put the cursor on a file to compare, or select two
+msgstr Zet de cursor op een bestand om te vergelijken, of selecteer er twee
+
+msgid  Put the cursor on an archive to extract it
+msgstr Zet de cursor op een archief om het uit te pakken
+
+msgid  Quit
+msgstr Afsluiten
+
+msgid  R - Retry    S - Skip    A - Skip all    Esc - Abort
+msgstr R - Opnieuw    S - Overslaan    A - Alles overslaan    Esc - Afbreken
+
+msgid  Read pictures ahead
+msgstr Afbeeldingen vooruit lezen
+
+msgid  Reading a file this large may take a while.
+msgstr Zo'n groot bestand lezen kan even duren.
+
+msgid  Reading {dir}…  Esc to stop
+msgstr {dir} lezen…  Esc om te stoppen
+
+msgid  Refuse
+msgstr Weigeren
+
+msgid  Regex
+msgstr Regex
+
+msgid  Relative
+msgstr Relatief
+
+msgid  Released under the {license} License
+msgstr Uitgegeven onder de {license}-licentie
+
+msgid  Remember directories
+msgstr Mappen onthouden
+
+msgid  Rename
+msgstr Hernoemen
+
+msgid  Renamed {done} of {total}, then: {e}
+msgstr {done} van {total} hernoemd, daarna: {e}
+
+msgid  Replace
+msgstr Vervangen
+
+msgid  Replace "{find}" with "{with}"?   Y - Yes   N - No   A - All   Esc - Stop
+msgstr "{find}" vervangen door "{with}"?   Y - Ja   N - Nee   A - Alle   Esc - Stop
+
+msgid  Replace (regex, Alt+R for text):
+msgstr Vervangen (regex, Alt+R voor tekst):
+
+msgid  Replace:
+msgstr Vervangen:
+
+msgid  Row {at}/{count}
+msgstr Rij {at}/{count}
+
+msgid  Save
+msgstr Opslaan
+
+msgid  Save changes before closing?
+msgstr Wijzigingen opslaan voor het sluiten?
+
+msgid  Scroll bars
+msgstr Schuifbalken
+
+msgid  Search:
+msgstr Zoeken:
+
+msgid  Select:
+msgstr Selecteren:
+
+msgid  Shade
+msgstr Schaduw
+
+msgid  Shift+Enter (or Ctrl+O) open as the system does
+msgstr Shift+Enter (of Ctrl+O) openen zoals het systeem doet
+
+msgid  Shift+F10 quit, cd84 staying put
+msgstr Shift+F10 afsluiten, cd84 blijft staan
+
+msgid  Shift+F2 compare directories
+msgstr Shift+F2 mappen vergelijken
+
+msgid  Shift+F3 (or =) compare two files
+msgstr Shift+F3 (of =) twee bestanden vergelijken
+
+msgid  Shift+F3/P Previous
+msgstr Shift+F3/P Vorige
+
+msgid  Shift+F4 - Create file
+msgstr Shift+F4 - Bestand maken
+
+msgid  Shift+F8 delete permanently
+msgstr Shift+F8 definitief verwijderen
+
+msgid  Shift+Up/Down - Move    Esc - Close
+msgstr Shift+Omhoog/Omlaag - Verplaatsen    Esc - Sluiten
+
+msgid  Shift+arrows select, Ctrl+A all
+msgstr Shift+pijlen selecteren, Ctrl+A alles
+
+msgid  Show hidden files
+msgstr Verborgen bestanden tonen
+
+msgid  Size
+msgstr Grootte
+
+msgid  Size as >10M, <1K or 1M..10M, not {text}
+msgstr Grootte als >10M, <1K of 1M..10M, niet {text}
+
+msgid  Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01
+msgstr Grootte als >10M, <1K of 1M..10M; Gewijzigd als <7d, >1y, 1d..7d, 2026-10-01 of >2026-10-01
+
+msgid  Size column
+msgstr Kolom Grootte
+
+msgid  Size units
+msgstr Grootte-eenheden
+
+msgid  Sort by
+msgstr Sorteren op
+
+msgid  Sort direction
+msgstr Sorteerrichting
+
+msgid  Space - Select/deselect file
+msgstr Space - Bestand (de)selecteren
+
+msgid  Switching to {branch} stopped unexpectedly
+msgstr Wisselen naar {branch} stopte onverwacht
+
+msgid  Symbolic links are not supported here
+msgstr Symbolische koppelingen worden hier niet ondersteund
+
+msgid  Symlink "{name}" at:
+msgstr Symbolische koppeling naar "{name}" in:
+
+msgid  Symlink directory
+msgstr Symbolische koppeling naar map
+
+msgid  Symlink file
+msgstr Symbolische koppeling naar bestand
+
+msgid  Synchronize
+msgstr Synchroniseren
+
+msgid  Synchronizing
+msgstr Bezig met synchroniseren
+
+msgid  System default
+msgstr Systeemstandaard
+
+msgid  Tab - Algorithm
+msgstr Tab - Algoritme
+
+msgid  Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel
+msgstr Tab - Veld   ←/→ - Hoofdletters   Enter - Hernoemen   Esc - Annuleren
+
+msgid  Tab - Field  Space - Regex  Enter - Find  Esc - Cancel
+msgstr Tab - Veld  Space - Regex  Enter - Zoeken  Esc - Annuleren
+
+msgid  Tab - Format
+msgstr Tab - Formaat
+
+msgid  Tab - Hard link
+msgstr Tab - Harde koppeling
+
+msgid  Tab - Next field    Enter - Apply    Esc - Cancel
+msgstr Tab - Volgend veld    Enter - Toepassen    Esc - Annuleren
+
+msgid  Tab - Symlink
+msgstr Tab - Symbolische koppeling
+
+msgid  Tab completes a name
+msgstr Tab vult een naam aan
+
+msgid  Tab width
+msgstr Tabbreedte
+
+msgid  Tab/Shift+Tab indent, Ctrl+/ comment
+msgstr Tab/Shift+Tab inspringen, Ctrl+/ commentaar
+
+msgid  Terminal
+msgstr Terminal
+
+msgid  Terminal (F9)
+msgstr Terminal (F9)
+
+msgid  Terminal too small
+msgstr Terminal te klein
+
+msgid  The archive ends before it
+msgstr Het archief eindigt ervoor
+
+msgid  The directories hold the same files
+msgstr De mappen bevatten dezelfde bestanden
+
+msgid  The files are identical
+msgstr De bestanden zijn gelijk
+
+msgid  The files differ from byte {at}
+msgstr De bestanden verschillen vanaf byte {at}
+
+msgid  The files differ from byte {at}, and in size
+msgstr De bestanden verschillen vanaf byte {at}, en in grootte
+
+msgid  The files differ only in line endings
+msgstr De bestanden verschillen alleen in regeleinden
+
+msgid  Theme
+msgstr Thema
+
+msgid  This cannot be undone
+msgstr Dit kan niet ongedaan worden gemaakt
+
+msgid  Title Case
+msgstr Elk Woord Met Hoofdletter
+
+msgid  Too large to compare: {path} ({size}; F11 sets the limit)
+msgstr Te groot om te vergelijken: {path} ({size}; F11 stelt de grens in)
+
+msgid  Transfer stopped unexpectedly
+msgstr Overdracht stopte onverwacht
+
+msgid  Trash
+msgstr Prullenbak
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close
+msgstr Typ om te verfijnen    Omhoog/Omlaag - Kiezen    Enter - Ga    Esc - Sluiten
+
+msgid  Type to search, Esc to clear
+msgstr Typ om te zoeken, Esc om te wissen
+
+msgid  UPPER CASE
+msgstr HOOFDLETTERS
+
+msgid  Unchanged
+msgstr Ongewijzigd
+
+msgid  Underline
+msgstr Onderstreept
+
+msgid  Unsaved Changes
+msgstr Niet-opgeslagen wijzigingen
+
+msgid  User Menu
+msgstr Gebruikersmenu
+
+msgid  View
+msgstr Bekijken
+
+msgid  View "{name}" ({size})?
+msgstr "{name}" ({size}) bekijken?
+
+msgid  View "{name}" ({width}x{height}, {size})?
+msgstr "{name}" ({width}x{height}, {size}) bekijken?
+
+msgid  View:
+msgstr Bekijken:
+
+msgid  Viewer and editor
+msgstr Viewer en editor
+
+msgid  W Wrap
+msgstr W Omloop
+
+msgid  W [Wrap]
+msgstr W [Omloop]
+
+msgid  When destination exists
+msgstr Als het doel bestaat
+
+msgid  When opened
+msgstr Bij openen
+
+msgid  With:
+msgstr Door:
+
+msgid  Wrapped to the bottom
+msgstr Verder vanaf het einde
+
+msgid  Wrapped to the top
+msgstr Verder vanaf het begin
+
+msgid  Written: {name}
+msgstr Geschreven: {name}
+
+msgid  X Image Text [Hex]
+msgstr X Afbeelding Tekst [Hex]
+
+msgid  X Image [Text] Hex
+msgstr X Afbeelding [Tekst] Hex
+
+msgid  X Text [Hex]
+msgstr X Tekst [Hex]
+
+msgid  X [Image] Text Hex
+msgstr X [Afbeelding] Tekst Hex
+
+msgid  X [Text] Hex
+msgstr X [Tekst] Hex
+
+msgid  Y - Overwrite    N - Skip    K - Keep both
+msgstr Y - Overschrijven    N - Overslaan    K - Beide houden
+
+msgid  Y - Save    N - Discard    Esc - Cancel
+msgstr Y - Opslaan    N - Verwerpen    Esc - Annuleren
+
+msgid  Y / Enter - Yes    N / Esc - No
+msgstr Y / Enter - Ja    N / Esc - Nee
+
+msgid  [N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits
+msgstr [N2-5] letters 2 tot 5   [C10+5:3] vanaf 10, per 5, 3 cijfers
+
+msgid  [N] name   [E] extension   [C] counter
+msgstr [N] naam   [E] extensie   [C] teller
+
+msgid  a directory cannot be hard linked
+msgstr een map kan geen harde koppeling krijgen
+
+msgid  already exists
+msgstr bestaat al
+
+msgid  by name, text, regex, size, date
+msgstr op naam, tekst, regex, grootte, datum
+
+msgid  del
+msgstr wis
+
+msgid  filter: {pattern}
+msgstr filter: {pattern}
+
+msgid  flat
+msgstr plat
+
+msgid  found
+msgstr gevonden
+
+msgid  git did not answer
+msgstr git gaf geen antwoord
+
+msgid  given twice
+msgstr dubbel gegeven
+
+msgid  just now
+msgstr zojuist
+
+msgid  lower case
+msgstr kleine letters
+
+msgid  name not readable as text
+msgstr naam niet leesbaar als tekst
+
+msgid  newer
+msgstr nieuwer
+
+msgid  not a plain name
+msgstr geen gewone naam
+
+msgid  not readable as an archive ({e})
+msgstr niet leesbaar als archief ({e})
+
+msgid  not there
+msgstr bestaat niet
+
+msgid  terminal
+msgstr terminal
+
+msgid  to be replaced by "{name}"
+msgstr wordt vervangen door "{name}"
+
+msgid  with a selection: all by [N] [E] [C]
+msgstr met selectie: alle via [N] [E] [C]
+
+msgid  {count} FAILED
+msgstr {count} MISLUKT
+
+msgid  {count} OK
+msgstr {count} OK
+
+msgid  {count} could not be read
+msgstr {count} niet leesbaar
+
+msgid  {count} h ago
+msgstr {count} u geleden
+
+msgid  {count} items need a directory to go into, and {path} is not one
+msgstr {count} items hebben een map nodig om in te gaan, en {path} is er geen
+
+msgid  {count} min ago
+msgstr {count} min geleden
+
+msgid  {count} missing
+msgstr {count} ontbreken
+
+msgid  {count} mo ago
+msgstr {count} mnd geleden
+
+msgid  {count} yr ago
+msgstr {count} jr geleden
+
+msgid  {deleting} to delete
+msgstr {deleting} te verwijderen
+
+msgid  {done} of {total} at {rate}/s
+msgstr {done} van {total} met {rate}/s
+
+msgid  {job_title} cancelled after {size}
+msgstr {job_title} geannuleerd na {size}
+
+msgid  {name} is not a name a {format} can hold: it is not UTF-8
+msgstr {name} is geen naam die een {format} kan bevatten: het is geen UTF-8
+
+msgid  {path} already exists
+msgstr {path} bestaat al
+
+msgid  {path} could not be read after all
+msgstr {path} kon toch niet worden gelezen
+
+msgid  {path} is a directory
+msgstr {path} is een map
+
+msgid  {program} exited with {status}
+msgstr {program} eindigde met {status}
+
+msgid  ↑↓ - Move    Enter/←→ - Change    Esc - Close
+msgstr ↑↓ - Verplaatsen    Enter/←→ - Wijzigen    Esc - Sluiten
+
+msgid  → ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close
+msgstr → ← Kopiëren  Del Verwijderen  Space Laten  > < Spiegelen  R Herstellen  Enter Uitvoeren  Esc Sluiten
+
+msgctxt job
+msgid   Checksum
+msgstr  Controlesom
+
+msgctxt job
+msgid   Copy
+msgstr  Kopiëren
+
+msgctxt job
+msgid   Delete
+msgstr  Verwijderen
+
+msgctxt job
+msgid   Extract
+msgstr  Uitpakken
+
+msgctxt job
+msgid   Move
+msgstr  Verplaatsen
+
+msgctxt job
+msgid   Move to trash
+msgstr  Naar prullenbak
+
+msgctxt job
+msgid   Pack
+msgstr  Inpakken
+
+msgctxt job
+msgid   Synchronize
+msgstr  Synchroniseren
+
+msgid  Copied {count} name
+msgstr[one]   {count} naam gekopieerd
+msgstr[other] {count} namen gekopieerd
+
+msgid  Copied {count} path
+msgstr[one]   {count} pad gekopieerd
+msgstr[other] {count} paden gekopieerd
+
+msgid  Copy {count} item
+msgstr[one]   {count} item kopiëren
+msgstr[other] {count} items kopiëren
+
+msgid  Copy {count} item to: {names}
+msgstr[one]   {count} item ({names}) kopiëren naar:
+msgstr[other] {count} items ({names}) kopiëren naar:
+
+msgid  Delete {count} item permanently?
+msgstr[one]   {count} item definitief verwijderen?
+msgstr[other] {count} items definitief verwijderen?
+
+msgid  Delete: {count} item
+msgstr[one]   Verwijderen: {count} item
+msgstr[other] Verwijderen: {count} items
+
+msgid  Hard link {count} item
+msgstr[one]   Harde koppeling voor {count} item
+msgstr[other] Harde koppelingen voor {count} items
+
+msgid  Hard link {count} item at: {names}
+msgstr[one]   Harde koppeling voor {count} item ({names}) in:
+msgstr[other] Harde koppelingen voor {count} items ({names}) in:
+
+msgid  Move to trash: {count} item
+msgstr[one]   Naar prullenbak: {count} item
+msgstr[other] Naar prullenbak: {count} items
+
+msgid  Move {count} item
+msgstr[one]   {count} item verplaatsen
+msgstr[other] {count} items verplaatsen
+
+msgid  Move {count} item to the trash?
+msgstr[one]   {count} item naar de prullenbak verplaatsen?
+msgstr[other] {count} items naar de prullenbak verplaatsen?
+
+msgid  Move {count} item to: {names}
+msgstr[one]   {count} item ({names}) verplaatsen naar:
+msgstr[other] {count} items ({names}) verplaatsen naar:
+
+msgid  Pack {count} item
+msgstr[one]   {count} item inpakken
+msgstr[other] {count} items inpakken
+
+msgid  Pack {count} item into: {names}
+msgstr[one]   {count} item ({names}) inpakken in:
+msgstr[other] {count} items ({names}) inpakken in:
+
+msgid  Rename {count} Entry
+msgstr[one]   {count} item hernoemen
+msgstr[other] {count} items hernoemen
+
+msgid  Replaced {count}
+msgstr[one]   {count} keer vervangen
+msgstr[other] {count} keer vervangen
+
+msgid  Symlink {count} item
+msgstr[one]   Symbolische koppeling voor {count} item
+msgstr[other] Symbolische koppelingen voor {count} items
+
+msgid  Symlink {count} item at: {names}
+msgstr[one]   Symbolische koppeling voor {count} item ({names}) in:
+msgstr[other] Symbolische koppelingen voor {count} items ({names}) in:
+
+msgid  {count} day ago
+msgstr[one]   {count} dag geleden
+msgstr[other] {count} dagen geleden
+
+msgid  {count} difference
+msgstr[one]   {count} verschil
+msgstr[other] {count} verschillen
+
+msgid  {count} directory could not be read
+msgstr[one]   {count} map kon niet worden gelezen
+msgstr[other] {count} mappen konden niet worden gelezen
+
+msgid  {count} file
+msgstr[one]   {count} bestand
+msgstr[other] {count} bestanden
+
+msgid  {count} file, {failed} could not be read
+msgstr[one]   {count} bestand, {failed} niet leesbaar
+msgstr[other] {count} bestanden, {failed} niet leesbaar
+
+msgid  {count} item - a field left as it is, or empty, changes nothing
+msgstr[one]   {count} item - een veld dat blijft zoals het is, of leeg, verandert niets
+msgstr[other] {count} items - een veld dat blijft zoals het is, of leeg, verandert niets
+
+msgid  {count} line
+msgstr[one]   {count} regel
+msgstr[other] {count} regels
+
+msgid  {count} line not understood
+msgstr[one]   {count} regel niet begrepen
+msgstr[other] {count} regels niet begrepen
+
+msgid  {count} of the new names cannot be had: {why} - see the table
+msgstr[one]   {count} van de nieuwe namen kan niet: {why} - zie de tabel
+msgstr[other] {count} van de nieuwe namen kunnen niet: {why} - zie de tabel
+
+msgid  {done} of {total} entry
+msgstr[one]   {done} van {total} item
+msgstr[other] {done} van {total} items
+
+msgid  {done} of {total} item
+msgstr[one]   {done} van {total} item
+msgstr[other] {done} van {total} items
+
+msgid  {found} differs
+msgstr[one]   {found} verschilt
+msgstr[other] {found} verschillen
+
+msgid  {found} differs, comparing
+msgstr[one]   {found} verschilt, vergelijken
+msgstr[other] {found} verschillen, vergelijken
+
+msgid  {found} found
+msgstr[one]   {found} gevonden
+msgstr[other] {found} gevonden
+
+msgid  {found} found, searching
+msgstr[one]   {found} gevonden, zoeken
+msgstr[other] {found} gevonden, zoeken
+
+msgid  {job_title} cancelled after {done} entry
+msgstr[one]   {job_title} geannuleerd na {done} item
+msgstr[other] {job_title} geannuleerd na {done} items
+
+msgid  {job_title} cancelled after {done} item
+msgstr[one]   {job_title} geannuleerd na {done} item
+msgstr[other] {job_title} geannuleerd na {done} items
+
+msgid  {job_title} finished, {count} entry skipped
+msgstr[one]   {job_title} klaar, {count} item overgeslagen
+msgstr[other] {job_title} klaar, {count} items overgeslagen
+
+msgid  {problems} cannot be renamed as it stands    Esc - Cancel
+msgstr[one]   {problems} kan zo niet worden hernoemd    Esc - Annuleren
+msgstr[other] {problems} kunnen zo niet worden hernoemd    Esc - Annuleren
+
+msgid  {skipped} left as it is
+msgstr[one]   {skipped} blijft zoals het is
+msgstr[other] {skipped} blijven zoals ze zijn
