@@ -108,10 +108,10 @@ impl AppState {
     /// A click on one of the fields: the keys go to it, and when what it
     /// holds fits, the cursor goes where the click was.
     pub fn attributes_click(&mut self, column: u16, row: u16) {
-        let Some(index) = self.attribute_rows.iter().position(|(cell, _)| cell.contains(Position::new(column, row))) else {
+        let Some(index) = self.drawn.attribute_rows.iter().position(|(cell, _)| cell.contains(Position::new(column, row))) else {
             return;
         };
-        let (cell, text_x) = self.attribute_rows[index];
+        let (cell, text_x) = self.drawn.attribute_rows[index];
         if let Some(Dialog::Attributes(form)) = &mut self.dialog
             && let Some(field) = form.fields.get_mut(index)
         {

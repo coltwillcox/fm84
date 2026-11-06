@@ -287,19 +287,19 @@ fn attributes_change_from_the_keys() {
             },
         );
     };
-    let (group_row, text_x) = app_state.attribute_rows[2];
+    let (group_row, text_x) = app_state.drawn.attribute_rows[2];
     click(&mut app_state, text_x + 1, group_row.y);
     let focus = |app_state: &AppState| match &app_state.dialog {
         Some(Dialog::Attributes(form)) => (form.focus, form.fields[form.focus].input.cursor),
         _ => panic!("not open"),
     };
     assert_eq!(focus(&app_state), (2, 1));
-    let (modified_row, _) = app_state.attribute_rows[3];
+    let (modified_row, _) = app_state.drawn.attribute_rows[3];
     click(&mut app_state, modified_row.right() - 1, modified_row.y);
     assert_eq!(focus(&app_state), (3, "2001-02-03 04:05:06".len()));
     // Above the first field: the line naming what is changed, or a blank
     // row, whichever the popup's width leaves there.
-    let (mode_row, _) = app_state.attribute_rows[0];
+    let (mode_row, _) = app_state.drawn.attribute_rows[0];
     click(&mut app_state, mode_row.x, mode_row.y - 1);
     assert_eq!(focus(&app_state).0, 3);
     press(&mut app_state, KeyCode::Esc);

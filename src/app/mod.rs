@@ -246,9 +246,6 @@ pub struct AppState {
     pub last_click_pos: (u16, u16),
     // Where the last frame actually drew things. Mouse handling reads these
     // instead of recomputing the layout from hardcoded row numbers.
-    /// Alt+A's fields as last drawn: each one's row, and the column its text
-    /// starts at, for a click to land in.
-    pub attribute_rows: Vec<(Rect, u16)>,
     /// The F-key labels along the bottom, as last drawn, and their keys.
     pub fkey_hits: Vec<(Rect, u8)>,
     /// Each panel's git branch on the path bar, left then right, as last
@@ -423,6 +420,9 @@ pub struct Drawn {
     /// The row of the panels' paths, a click on either of which edits it as
     /// Ctrl+L does.
     pub path_bar_area: Rect,
+    /// Alt+A's fields as last drawn: each one's row, and the column its text
+    /// starts at, for a click to land in.
+    pub attribute_rows: Vec<(Rect, u16)>,
 }
 
 impl AppState {
@@ -512,7 +512,6 @@ impl AppState {
             visited: Vec::new(),
             last_click_time: None,
             last_click_pos: (0, 0),
-            attribute_rows: Vec::new(),
             fkey_hits: Vec::new(),
             branch_hits: [None, None],
             branch_rows: Vec::new(),
