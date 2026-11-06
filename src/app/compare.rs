@@ -76,8 +76,8 @@ impl AppState {
     /// Scroll the two columns by `rows`, down or up, or sideways by
     /// `columns`, within what there is to see.
     pub fn diff_scroll(&mut self, rows: isize, columns: isize) {
-        let height = self.diff_viewport_height;
-        let width = self.diff_viewport_width;
+        let height = self.drawn.diff_viewport_height;
+        let width = self.drawn.diff_viewport_width;
         if let Some(state) = self.diff_mut() {
             let bottom = state.rows.len().saturating_sub(height);
             state.scroll_offset = state.scroll_offset.saturating_add_signed(rows).min(bottom);

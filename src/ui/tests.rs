@@ -639,7 +639,7 @@ fn scrolling_keeps_to_the_room_there_is() {
     app_state.screen = Screen::Diff(crate::diff::DiffState::new(PathBuf::from("/a"), PathBuf::from("/b"), left, right));
     render_ui(&mut terminal, &mut app_state);
     let Screen::Diff(state) = &app_state.screen else { unreachable!() };
-    assert_eq!(state.scroll_offset, state.rows.len() - app_state.diff_viewport_height, "the diff past its end");
+    assert_eq!(state.scroll_offset, state.rows.len() - app_state.drawn.diff_viewport_height, "the diff past its end");
 }
 
 /// A diff of two long paths in a narrow window shows the end of each - the

@@ -216,9 +216,6 @@ pub struct AppState {
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
-    /// Rows the diff shows, and the width of each side's text.
-    pub diff_viewport_height: usize,
-    pub diff_viewport_width: usize,
     /// What + or - last selected by, offered again the next time.
     pub select_pattern: String,
     /// What Find files last looked for - the name pattern and the text -
@@ -422,6 +419,9 @@ pub struct Drawn {
     pub viewer_viewport_width: usize,
     /// Rows the editor's text had room for.
     pub editor_viewport_height: usize,
+    /// Rows the diff shows, and the width of each side's text.
+    pub diff_viewport_height: usize,
+    pub diff_viewport_width: usize,
 }
 
 impl AppState {
@@ -499,8 +499,6 @@ impl AppState {
             drawn: Drawn::default(),
             filter_before: String::new(),
             search_input: String::new(),
-            diff_viewport_height: 0,
-            diff_viewport_width: 0,
             select_pattern: "*".to_string(),
             find_files_last: FindForm::default(),
             find_files_page: 10,

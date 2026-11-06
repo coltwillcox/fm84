@@ -39,7 +39,7 @@ pub(super) fn viewer_key(app_state: &mut AppState, key: KeyEvent) {
 /// difference, as they go to the next and previous match in the viewer; N and
 /// P do too.
 pub(super) fn diff_key(app_state: &mut AppState, key: KeyEvent) {
-    let page = app_state.diff_viewport_height.max(1) as isize;
+    let page = app_state.drawn.diff_viewport_height.max(1) as isize;
     match key.code {
         KeyCode::Esc => app_state.close_diff(),
         KeyCode::F(3) => {

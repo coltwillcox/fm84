@@ -207,8 +207,8 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Screen::Editor(_) => app_state.drawn.editor_viewport_height = render_editor(f, chunks_main[2], app_state),
             Screen::Diff(_) => {
                 let (height, width) = render_diff(f, chunks_main[2], app_state);
-                app_state.diff_viewport_height = height;
-                app_state.diff_viewport_width = width;
+                app_state.drawn.diff_viewport_height = height;
+                app_state.drawn.diff_viewport_width = width;
             }
             Screen::Panels => app_state.drawn.page_size = render_file_tables(f, chunks_main[2], app_state),
         }
