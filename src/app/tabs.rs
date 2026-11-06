@@ -250,18 +250,9 @@ impl AppState {
         if self.panel_busy(true) || self.panel_busy(false) {
             return;
         }
-        let (left, right) = (self.panel_as_tab(true), self.panel_as_tab(false));
-        self.left.tabs.list[self.left.tabs.active] = left;
-        self.right.tabs.list[self.right.tabs.active] = right;
-        std::mem::swap(&mut self.left.tabs, &mut self.right.tabs);
-        // Each filter goes with its directory, and is kept once there.
-        std::mem::swap(&mut self.left.filter, &mut self.right.filter);
-        std::mem::swap(&mut self.left.flat, &mut self.right.flat);
-        std::mem::swap(&mut self.left.git, &mut self.right.git);
-        for is_left in [true, false] {
-            let active = self.panel_mut(is_left).tabs.active;
-            self.show_tab(is_left, TabUndo::Active(active));
-        }
+        // Everything a panel has goes with it - its filter, its git marks, its
+        // watcher, which reports by directory - so nothing is read again.
+        std::mem::swap(&mut self.left, &mut self.right);
         self.is_left_active = !self.is_left_active;
     }
 
