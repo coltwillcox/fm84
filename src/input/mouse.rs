@@ -306,7 +306,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     }
 
     // The offset the panel was rendered with, not a second guess at it.
-    let start = app_state.panel(clicked).viewport_start;
+    let start = app_state.drawn.table_starts[clicked];
     let actual_index = start + clicked_table_row;
 
     // Select the row if within bounds

@@ -360,7 +360,6 @@ pub struct Panel {
     // The name the filesystem holds, not the one shown: two names that are not
     // valid UTF-8 can read the same, and picking one would pick both.
     pub selected: HashSet<OsString>,
-    pub viewport_start: usize,
     // The panel's tabs, and its tab strip as drawn.
     pub tabs: Tabs,
     // The panel's directory still being read, past the moment the UI waits for
@@ -410,6 +409,9 @@ pub struct Drawn {
     pub find_files_page: usize,
     /// Each side's table, for a click to find its row.
     pub table_areas: [Rect; 2],
+    /// The entry each side's table starts at - the offset it was drawn
+    /// with, which a click is counted from.
+    pub table_starts: [usize; 2],
     /// The row of the panels' paths, a click on either of which edits it as
     /// Ctrl+L does.
     pub path_bar_area: Rect,
@@ -536,7 +538,6 @@ impl AppState {
                 flat: None,
                 git: PanelGit::default(),
                 selected: HashSet::new(),
-                viewport_start: 0,
                 tabs: Tabs::new(vec![dir_root.clone()], 0),
                 listing: None,
                 watch: None,
@@ -553,7 +554,6 @@ impl AppState {
                 flat: None,
                 git: PanelGit::default(),
                 selected: HashSet::new(),
-                viewport_start: 0,
                 tabs: Tabs::new(vec![dir_root], 0),
                 listing: None,
                 watch: None,

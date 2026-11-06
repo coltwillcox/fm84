@@ -416,7 +416,7 @@ fn a_double_click_enters_a_directory() {
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let row_of = |app_state: &AppState, name: &str| {
         let index = app_state.left.children.iter().position(|item| item.name_os == name).unwrap();
-        app_state.drawn.table_areas[Side::Left].y + 1 + (index - app_state.left.viewport_start) as u16
+        app_state.drawn.table_areas[Side::Left].y + 1 + (index - app_state.drawn.table_starts[Side::Left]) as u16
     };
     let click = |app_state: &mut AppState, row: u16| {
         crate::input::handle_mouse(

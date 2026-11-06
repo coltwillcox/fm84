@@ -424,7 +424,7 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
     branches
 }
 
-pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut AppState, drawn: &mut Drawn) -> u16 {
+pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &AppState, drawn: &mut Drawn) -> u16 {
     let chunks = panel_split(chunk);
 
     let columns = visible_columns(&app_state.options, chunks[0].width);
@@ -510,8 +510,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 
     // Hand the real geometry to the mouse handlers.
     drawn.table_areas = [chunks[0], chunks[2]];
-    app_state.left.viewport_start = offset_left;
-    app_state.right.viewport_start = offset_right;
+    drawn.table_starts = [offset_left, offset_right];
 
     chunks[0].height
 }
