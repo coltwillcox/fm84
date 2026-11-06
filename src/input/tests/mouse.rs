@@ -399,3 +399,43 @@ fn the_viewer_counts_wide_characters_as_the_columns_they_take() {
     assert_eq!(app_state.viewer().unwrap().selection.map(|(anchor, _)| anchor), Some((0, second_from + 2)));
     std::fs::remove_file(path).unwrap();
 }
+
+/// A second press on the same row, soon after the first, goes into the
+/// directory there; one press, or a second on another row, only moves the
+/// cursor.
+#[test]
+fn a_double_click_enters_a_directory() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let dir = std::env::temp_dir().join(format!("fm84-double-click-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("inner")).unwrap();
+    std::fs::create_dir_all(dir.join("other")).unwrap();
+    let mut app_state = AppState::new();
+    app_state.open_dir(true, dir.clone(), None);
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(160, 30)).unwrap();
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    let row_of = |app_state: &AppState, name: &str| {
+        let index = app_state.left.children.iter().position(|item| item.name_os == name).unwrap();
+        app_state.drawn.table_area_left.y + 1 + (index - app_state.left.viewport_start) as u16
+    };
+    let click = |app_state: &mut AppState, row: u16| {
+        crate::input::handle_mouse(
+            app_state,
+            MouseEvent {
+                kind: MouseEventKind::Down(MouseButton::Left),
+                column: app_state.drawn.table_area_left.x + 2,
+                row,
+                modifiers: KeyModifiers::NONE,
+            },
+        )
+    };
+    let (inner, other) = (row_of(&app_state, "inner"), row_of(&app_state, "other"));
+
+    click(&mut app_state, other);
+    click(&mut app_state, inner);
+    assert_eq!(app_state.left.dir, dir, "two rows are not a double click");
+
+    click(&mut app_state, inner);
+    assert_eq!(app_state.left.dir, dir.join("inner"));
+    let _ = std::fs::remove_dir_all(&dir);
+}
