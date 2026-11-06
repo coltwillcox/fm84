@@ -18,7 +18,7 @@ fn shown(app_state: &AppState) -> Vec<String> {
 
 fn finish(app_state: &mut AppState) {
     let started = std::time::Instant::now();
-    while app_state.job.is_some() {
+    while app_state.workers.job.is_some() {
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_transfer();
@@ -135,7 +135,7 @@ fn nothing_writes_into_an_archive() {
     for (code, modifiers) in keys {
         handle_key(&mut app_state, KeyEvent::new(code, modifiers));
         assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()), "{code:?} {modifiers:?}");
-        assert!(app_state.dialog.is_none() && app_state.job.is_none() && matches!(app_state.screen, Screen::Panels), "{code:?} {modifiers:?}");
+        assert!(app_state.dialog.is_none() && app_state.workers.job.is_none() && matches!(app_state.screen, Screen::Panels), "{code:?} {modifiers:?}");
         app_state.reset_error();
     }
 
@@ -147,7 +147,7 @@ fn nothing_writes_into_an_archive() {
         press(&mut app_state, code);
         press(&mut app_state, KeyCode::Enter);
         assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()), "{code:?}");
-        assert!(app_state.job.is_none());
+        assert!(app_state.workers.job.is_none());
         app_state.reset_error();
     }
     assert_eq!(std::fs::read(&archive).unwrap(), before);
@@ -268,7 +268,7 @@ fn alt_f9_extracts_a_whole_archive() {
     app_state.dialog_input().unwrap().set(archive.join("2024").display().to_string());
     press(&mut app_state, KeyCode::Enter);
     assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()));
-    assert!(app_state.job.is_none());
+    assert!(app_state.workers.job.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -354,7 +354,7 @@ fn alt_p_packs_into_the_other_panel() {
     app_state.dialog_input().unwrap().set(out.join("photos.7z").display().to_string());
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Already exists"), "{:?}", app_state.error);
-    assert!(app_state.job.is_none());
+    assert!(app_state.workers.job.is_none());
     app_state.reset_error();
 
     // With F11 on Keep both, beside it.
@@ -392,7 +392,7 @@ fn alt_h_inside_an_archive_says_to_copy_out_first() {
     app_state.open_dir(true, archive.clone(), Some("readme.txt".as_ref()));
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('h'), KeyModifiers::ALT));
     assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy it out of the archive first"), "{:?}", app_state.error);
-    assert!(app_state.job.is_none());
+    assert!(app_state.workers.job.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

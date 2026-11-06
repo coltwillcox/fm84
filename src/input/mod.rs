@@ -60,7 +60,7 @@ fn handle_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         return true;
     }
 
-    if app_state.job.is_some() {
+    if app_state.workers.job.is_some() {
         return job_key(app_state, key);
     }
     // F10 means the same over everything else.
@@ -98,7 +98,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
     let clear = app_state.dialog.is_none() && app_state.error.is_none();
     let in_editor = clear && app_state.is_editing();
     let in_viewer = clear && app_state.is_viewing();
-    let in_panel = clear && app_state.job.is_none() && matches!(app_state.screen, Screen::Panels) && !app_state.panel_busy(app_state.is_left_active);
+    let in_panel = clear && app_state.workers.job.is_none() && matches!(app_state.screen, Screen::Panels) && !app_state.panel_busy(app_state.is_left_active);
 
     // Alt+* inverts the directories as well as the files. Ctrl is an alias
     // for the terminals that can report it; most send Ctrl+* as a bare * or
@@ -208,7 +208,7 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
 
 /// While a copy, move or delete runs. False to quit.
 fn job_key(app_state: &mut AppState, key: KeyEvent) -> bool {
-    let Some(job) = app_state.job.as_mut() else {
+    let Some(job) = app_state.workers.job.as_mut() else {
         return true;
     };
     let clash = job.clash.is_some();

@@ -356,7 +356,7 @@ fn copy_and_move_go_where_the_destination_says() {
     };
     let finish = |app_state: &mut AppState| {
         let started = std::time::Instant::now();
-        while app_state.job.is_some() {
+        while app_state.workers.job.is_some() {
             assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
             std::thread::sleep(std::time::Duration::from_millis(5));
             app_state.poll_transfer();
@@ -382,7 +382,7 @@ fn copy_and_move_go_where_the_destination_says() {
     press(&mut app_state, KeyCode::F(5));
     press(&mut app_state, KeyCode::Enter);
     let started = std::time::Instant::now();
-    while !app_state.job.as_ref().is_some_and(|job| job.clash.is_some()) {
+    while !app_state.workers.job.as_ref().is_some_and(|job| job.clash.is_some()) {
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "never asked");
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_transfer();
@@ -400,13 +400,13 @@ fn copy_and_move_go_where_the_destination_says() {
     press(&mut app_state, KeyCode::F(5));
     press(&mut app_state, KeyCode::Enter);
     let started = std::time::Instant::now();
-    while !app_state.job.as_ref().is_some_and(|job| job.clash.is_some()) {
+    while !app_state.workers.job.as_ref().is_some_and(|job| job.clash.is_some()) {
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "never asked");
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_transfer();
     }
     // Drawn once the job has run long enough to be worth showing.
-    app_state.job.as_mut().unwrap().started -= std::time::Duration::from_secs(5);
+    app_state.workers.job.as_mut().unwrap().started -= std::time::Duration::from_secs(5);
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
@@ -438,7 +438,7 @@ fn copy_and_move_go_where_the_destination_says() {
     press(&mut app_state, KeyCode::Char('n'));
     assert!(app_state.dialog_input().unwrap().text.ends_with('n'));
     press(&mut app_state, KeyCode::Esc);
-    assert!(app_state.dialog.is_none() && app_state.job.is_none());
+    assert!(app_state.dialog.is_none() && app_state.workers.job.is_none());
 
     // A bare name is beside the original.
     on_a(&mut app_state);
@@ -541,7 +541,7 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     let alt_h = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('h'), KeyModifiers::ALT));
     let finish = |app_state: &mut AppState| {
         let started = std::time::Instant::now();
-        while app_state.job.is_some() {
+        while app_state.workers.job.is_some() {
             assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
             std::thread::sleep(std::time::Duration::from_millis(5));
             app_state.poll_transfer();
@@ -563,7 +563,7 @@ fn alt_h_works_out_writes_and_checks_checksums() {
     // All worked out already: Tab changes what is shown in place, with no
     // job and the same popup, and Shift+Tab or Left goes back.
     press(&mut app_state, KeyCode::Tab);
-    assert!(app_state.job.is_none());
+    assert!(app_state.workers.job.is_none());
     press(&mut app_state, KeyCode::BackTab);
     assert_eq!(report(&app_state).report.shown(), Some(crate::checksum::Algorithm::Sha256));
     press(&mut app_state, KeyCode::Left);
@@ -978,7 +978,7 @@ fn alt_s_synchronizes_the_panels() {
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.dialog.is_none());
     let started = std::time::Instant::now();
-    while app_state.job.is_some() {
+    while app_state.workers.job.is_some() {
         app_state.poll_transfer();
         assert!(started.elapsed() < Duration::from_secs(10), "the job never finished");
         std::thread::sleep(Duration::from_millis(5));

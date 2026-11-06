@@ -518,7 +518,7 @@ impl AppState {
         let worker_cancel = Arc::clone(&cancel);
         std::thread::spawn(move || work(JobProgress::new(&sender, &worker_cancel, &worker_answers, clashes)));
 
-        self.job = Some(TransferJob {
+        self.workers.job = Some(TransferJob {
             kind,
             total: None,
             done: 0,
@@ -551,7 +551,7 @@ impl AppState {
     pub fn start_pack(&mut self, sources: Vec<(PathBuf, bool)>, dest: PathBuf, format: crate::fs_ops::PackFormat, replacing: bool) {
         let land = dest.clone();
         self.start_job(TransferKind::Pack, Clashes::Ask, move |progress| run_pack(sources, dest, format, replacing, progress));
-        if let Some(job) = &mut self.job {
+        if let Some(job) = &mut self.workers.job {
             job.after = Some(AfterJob::Land(land));
         }
     }
@@ -560,7 +560,7 @@ impl AppState {
     /// goes, then do `after` with what came out.
     pub fn start_extract(&mut self, archive: PathBuf, items: Vec<(PathBuf, PathBuf)>, clashes: Clashes, after: Option<AfterJob>) {
         self.start_job(TransferKind::Extract, clashes, move |progress| run_extract(archive, items, progress));
-        if let Some(job) = &mut self.job {
+        if let Some(job) = &mut self.workers.job {
             job.after = after;
         }
     }
@@ -585,7 +585,7 @@ impl AppState {
     /// the job stays up for a moment afterwards rather than vanishing at once.
     /// One waiting on a question is answered Abort, which is the same thing.
     pub fn cancel_transfer(&mut self) {
-        if let Some(job) = &mut self.job {
+        if let Some(job) = &mut self.workers.job {
             job.cancel.store(true, Ordering::Relaxed);
             job.answer(Answer::Abort);
         }
@@ -594,7 +594,7 @@ impl AppState {
     /// Take whatever the worker has sent since the last frame. Called once per
     /// frame, so the bar advances at the rate the loop already runs at.
     pub fn poll_transfer(&mut self) {
-        let Some(job) = &mut self.job else {
+        let Some(job) = &mut self.workers.job else {
             return;
         };
 
@@ -629,7 +629,7 @@ impl AppState {
         let Some(result) = finished else {
             return;
         };
-        let job = self.job.take().expect("checked at the top");
+        let job = self.workers.job.take().expect("checked at the top");
 
         // An entry copied out to be looked at changed nothing anyone can
         // see: the panels, their selections and sizes stay as they are.
@@ -708,7 +708,7 @@ mod job_tests {
         app_state.dir_sizes.insert(dir.clone(), 100);
         app_state.start_delete(vec![(dir.join("doomed"), false)]);
         let started = std::time::Instant::now();
-        while app_state.job.is_some() {
+        while app_state.workers.job.is_some() {
             assert!(started.elapsed() < std::time::Duration::from_secs(10), "delete never finished");
             std::thread::sleep(std::time::Duration::from_millis(5));
             app_state.poll_transfer();

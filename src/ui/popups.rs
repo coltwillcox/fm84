@@ -261,7 +261,7 @@ fn progress_bar(fraction: f64, width: usize) -> String {
 /// job starts, so the many that finish at once never flash a popup on the way
 /// past.
 pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
-    let Some(job) = &app_state.job else {
+    let Some(job) = &app_state.workers.job else {
         return;
     };
     if let Some(clash) = &job.clash {

@@ -28,11 +28,11 @@ fn a_job_asks_about_a_failure_and_goes_on_when_told_to_skip() {
             app_state.poll_transfer();
         }
     };
-    wait(&mut app_state, &|app_state| app_state.job.as_ref().is_some_and(|job| job.problem.is_some()));
-    assert_eq!(app_state.job.as_ref().unwrap().problem.as_ref().unwrap().path, tree.join("pipe"));
+    wait(&mut app_state, &|app_state| app_state.workers.job.as_ref().is_some_and(|job| job.problem.is_some()));
+    assert_eq!(app_state.workers.job.as_ref().unwrap().problem.as_ref().unwrap().path, tree.join("pipe"));
 
-    app_state.job.as_mut().unwrap().answer(crate::app::Answer::Skip);
-    wait(&mut app_state, &|app_state| app_state.job.is_none());
+    app_state.workers.job.as_mut().unwrap().answer(crate::app::Answer::Skip);
+    wait(&mut app_state, &|app_state| app_state.workers.job.is_none());
     assert_eq!(app_state.error.as_deref(), Some("Copy finished, 1 entry skipped"));
     assert!(dir.join("copy").join("a.txt").exists());
     assert!(dir.join("copy").join("z.txt").exists());
@@ -40,9 +40,9 @@ fn a_job_asks_about_a_failure_and_goes_on_when_told_to_skip() {
     // Esc on the question stops the job there, and says it was cancelled
     // rather than reporting the failure it was asked about.
     app_state.start_transfer(vec![(tree.clone(), dir.join("again"), true)], true, crate::app::Clashes::Ask);
-    wait(&mut app_state, &|app_state| app_state.job.as_ref().is_some_and(|job| job.problem.is_some()));
+    wait(&mut app_state, &|app_state| app_state.workers.job.as_ref().is_some_and(|job| job.problem.is_some()));
     app_state.cancel_transfer();
-    wait(&mut app_state, &|app_state| app_state.job.is_none());
+    wait(&mut app_state, &|app_state| app_state.workers.job.is_none());
     assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy cancelled"), "{:?}", app_state.error);
 
     std::fs::remove_dir_all(&dir).unwrap();
@@ -67,8 +67,8 @@ fn esc_answers_a_question_still_on_its_way() {
     app_state.cancel_transfer();
 
     let started = std::time::Instant::now();
-    while app_state.job.is_some() {
-        assert!(app_state.job.as_ref().is_some_and(|job| job.clash.is_none()), "the question came up after Esc");
+    while app_state.workers.job.is_some() {
+        assert!(app_state.workers.job.as_ref().is_some_and(|job| job.clash.is_none()), "the question came up after Esc");
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never ended");
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_transfer();
@@ -108,7 +108,7 @@ fn files_in_the_way_are_asked_about_one_at_a_time() {
         let mut app_state = AppState::new();
         app_state.start_transfer(vec![(from.to_path_buf(), onto.to_path_buf(), true)], true, clashes);
         let (mut asked, started) = (0, std::time::Instant::now());
-        while let Some(job) = app_state.job.as_mut() {
+        while let Some(job) = app_state.workers.job.as_mut() {
             assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
             if let Some(clash) = &job.clash {
                 let name = clash.dest.file_name().unwrap().to_string_lossy().into_owned();

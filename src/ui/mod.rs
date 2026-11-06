@@ -152,7 +152,7 @@ fn show_cursor(f: &mut ratatui::Frame<'_>, app_state: &AppState) {
         }
     }
     if !classic
-        && app_state.job.is_none()
+        && app_state.workers.job.is_none()
         && app_state.error.is_none()
         && let Some(position) = field.or(editor.filter(|_| app_state.dialog.is_none()))
     {
@@ -280,7 +280,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
         app_state.drawn.branch_rows = branch_rows;
         // Over everything: a job, which holds the keys while it runs, or an
         // error, which holds them until it is put away.
-        if app_state.job.is_some() {
+        if app_state.workers.job.is_some() {
             render_transfer_popup(f, area, app_state);
         } else if let Some(message) = &app_state.error {
             render_error_popup(f, area, message);

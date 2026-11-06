@@ -256,8 +256,6 @@ pub struct AppState {
     pub drive_strip_right: Strip,
     /// `user@host`, for the top border, and whether that is root.
     pub user_at_host: (String, bool),
-    /// Set while a copy, move or delete is running on its own thread.
-    pub job: Option<TransferJob>,
     /// Directories Space is working out the size of, each on its own thread.
     pub dir_sizing: Vec<DirSizing>,
     /// Directories waiting for a sizing worker to come free, next first.
@@ -429,6 +427,8 @@ pub struct Workers {
     /// How often a watcher looks. Shortened under test, so a change is seen
     /// inside it.
     pub watch_interval: Duration,
+    /// Set while a copy, move or delete is running on its own thread.
+    pub job: Option<TransferJob>,
 }
 
 impl AppState {
@@ -513,6 +513,7 @@ impl AppState {
                 listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
                 detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },
                 watch_interval: crate::constants::REFRESH_INTERVAL,
+                job: None,
             },
             filter_before: String::new(),
             search_input: String::new(),
@@ -531,7 +532,6 @@ impl AppState {
             branch_switch: None,
             bar_drag: None,
             user_at_host: crate::fs_ops::user_at_host(),
-            job: None,
             dir_sizing: Vec::new(),
             dir_size_queue: std::collections::VecDeque::new(),
             image_cache: ImageCache::default(),
@@ -571,7 +571,7 @@ impl AppState {
     /// True while a popup is covering the screen. What is behind one must sit
     /// still: it cannot be seen, and the popup is answering for it.
     pub fn popup_is_open(&self) -> bool {
-        self.error.is_some() || self.job.is_some() || self.dialog.as_ref().is_some_and(Dialog::is_popup)
+        self.error.is_some() || self.workers.job.is_some() || self.dialog.as_ref().is_some_and(Dialog::is_popup)
     }
 
     /// True while a dialog, viewer or editor owns the screen. Added to the
