@@ -388,11 +388,22 @@ impl AppState {
     }
 }
 
+/// `from` to `to`, refused when something else is there already. The preview
+/// has said nothing is, but it tells names apart as the system usually does,
+/// and a drive may not: a FAT stick on Linux takes `ax` and `Ax` for one
+/// name, and a rename would write over the one that got there first.
+fn rename_unless_taken(from: &Path, to: &Path) -> std::io::Result<()> {
+    if path_exists(to) && !crate::fs_ops::is_same_entry(from, to) {
+        return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists, t!("{path} already exists", path = to.display())));
+    }
+    crate::fs_ops::rename_path(from.to_path_buf(), to.to_path_buf())
+}
+
 /// Each straight to its new name, stopping at the first that fails. The
 /// error comes with how many were done.
 fn rename_each(moves: &[(PathBuf, PathBuf)]) -> Result<(), (usize, std::io::Error)> {
     for (done, (from, to)) in moves.iter().enumerate() {
-        crate::fs_ops::rename_path(from.clone(), to.clone()).map_err(|e| (done, e))?;
+        rename_unless_taken(from, to).map_err(|e| (done, e))?;
     }
     Ok(())
 }
@@ -420,7 +431,7 @@ fn rename_through_scratch(moves: &[(PathBuf, PathBuf)]) -> Result<(), (usize, st
         parked.push((scratch, from, to));
     }
     for (done, (scratch, _, to)) in parked.iter().enumerate() {
-        if let Err(e) = crate::fs_ops::rename_path(scratch.clone(), (*to).clone()) {
+        if let Err(e) = rename_unless_taken(scratch, to) {
             for (scratch, from, _) in &parked[done..] {
                 if !path_exists(from) {
                     let _ = crate::fs_ops::rename_path(scratch.clone(), (*from).clone());
@@ -478,5 +489,29 @@ mod tests {
         assert_eq!(new_name("report.txt", 0, "[N].[E]", "rep", "", CaseChange::Upper), "ORT.TXT");
         assert_eq!(new_name("hELLO wORLD.md", 0, "[N]", "", "", CaseChange::First), "Hello world");
         assert_eq!(new_name("it's done", 0, "[N]", "", "", CaseChange::Title), "It's Done");
+    }
+    /// A rename never writes over what is at its new name: where the preview
+    /// could not see two clash - on a drive that does not tell case apart,
+    /// or names alike but for how their accents are made up - the second is
+    /// refused, and what the first put there stays.
+    #[test]
+    fn a_rename_never_writes_over_another() {
+        let dir = std::env::temp_dir().join(format!("fm84-rename-no-clobber-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        type Renamer = fn(&[(PathBuf, PathBuf)]) -> Result<(), (usize, std::io::Error)>;
+        for (how, rename) in [("each", rename_each as Renamer), ("through scratch", rename_through_scratch as Renamer)] {
+            for name in ["one", "two"] {
+                std::fs::write(dir.join(name), name).unwrap();
+            }
+            let moves = [(dir.join("one"), dir.join("same")), (dir.join("two"), dir.join("same"))];
+            let result = rename(&moves);
+            assert!(matches!(result, Err((1, ref e)) if e.kind() == std::io::ErrorKind::AlreadyExists), "{how}: {result:?}");
+            assert_eq!(std::fs::read_to_string(dir.join("same")).unwrap(), "one", "{how}");
+            assert_eq!(std::fs::read_to_string(dir.join("two")).unwrap(), "two", "{how}: put back");
+            std::fs::remove_file(dir.join("same")).unwrap();
+            std::fs::remove_file(dir.join("two")).unwrap();
+        }
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
