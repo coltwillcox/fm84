@@ -117,6 +117,8 @@ struct Settled {
     /// The open popup's list - checksums, a sync plan or a multi-rename:
     /// the rows it had room for, and its scroll kept to them.
     popup_list: Option<(usize, usize)>,
+    /// The diff's scroll, kept so the last row stays at the bottom.
+    diff_scroll: Option<usize>,
 }
 
 impl Settled {
@@ -132,6 +134,9 @@ impl Settled {
         };
         if let (Some((room, scroll)), Some((to_room, to_scroll))) = (self.popup_list, list) {
             (*to_room, *to_scroll) = (room, scroll);
+        }
+        if let (Some(scroll), Screen::Diff(state)) = (self.diff_scroll, &mut app_state.screen) {
+            state.scroll_offset = scroll;
         }
     }
 }
@@ -244,9 +249,10 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut 
             }
             Screen::Editor(_) => drawn.editor_viewport_height = render_editor(f, chunks_main[2], app_state, drawn),
             Screen::Diff(_) => {
-                let (height, width) = render_diff(f, chunks_main[2], app_state);
+                let (height, width, scroll) = render_diff(f, chunks_main[2], app_state);
                 drawn.diff_viewport_height = height;
                 drawn.diff_viewport_width = width;
+                settled.diff_scroll = Some(scroll);
             }
             Screen::Panels => drawn.page_size = render_file_tables(f, chunks_main[2], app_state, drawn),
         }
