@@ -39,9 +39,12 @@ impl Difference {
         let (Some(left), Some(right)) = (self.left, self.right) else {
             return None;
         };
+        // By the gap between them, which a time at the clock's end has too;
+        // adding to one there would run past it.
+        let later = |mine: SystemTime, theirs: SystemTime| mine.duration_since(theirs).is_ok_and(|gap| gap > SAME_TIME);
         match (left.modified, right.modified) {
-            (Some(mine), Some(theirs)) if mine > theirs + SAME_TIME => Some(Side::Left),
-            (Some(mine), Some(theirs)) if theirs > mine + SAME_TIME => Some(Side::Right),
+            (Some(mine), Some(theirs)) if later(mine, theirs) => Some(Side::Left),
+            (Some(mine), Some(theirs)) if later(theirs, mine) => Some(Side::Right),
             _ => None,
         }
     }
@@ -113,7 +116,7 @@ pub fn compare(left: &Path, right: &Path, show_hidden: bool, cancel: &AtomicBool
 fn same(left: Entry, right: Entry) -> bool {
     left.size == right.size
         && match (left.modified, right.modified) {
-            (Some(mine), Some(theirs)) => mine.max(theirs) <= mine.min(theirs) + SAME_TIME,
+            (Some(mine), Some(theirs)) => mine.max(theirs).duration_since(mine.min(theirs)).is_ok_and(|gap| gap <= SAME_TIME),
             _ => true,
         }
 }
@@ -142,7 +145,7 @@ fn entries(dir: &Path, show_hidden: bool) -> Option<BTreeMap<OsString, Entry>> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     fn run(left: &Path, right: &Path) -> (Vec<Difference>, usize) {
@@ -209,5 +212,39 @@ mod tests {
             true
         });
         assert_eq!(updates, 0);
+    }
+    /// The last second the system clock holds, for times at its very end.
+    pub(crate) fn clock_end() -> SystemTime {
+        let (mut low, mut high) = (0u64, u64::MAX);
+        while low < high {
+            let mid = low + (high - low).div_ceil(2);
+            if SystemTime::UNIX_EPOCH.checked_add(Duration::from_secs(mid)).is_some() {
+                low = mid;
+            } else {
+                high = mid - 1;
+            }
+        }
+        SystemTime::UNIX_EPOCH + Duration::from_secs(low)
+    }
+
+    /// A file dated at the end of what the clock holds is compared as any
+    /// other, not by adding to a time that cannot go further.
+    #[test]
+    fn times_at_the_clocks_end_still_compare() {
+        let far = clock_end();
+        let entry = |modified| Entry {
+            is_dir: false,
+            size: 1,
+            modified: Some(modified),
+        };
+        let (near, late) = (entry(far - Duration::from_secs(10)), entry(far));
+        let difference = |left, right| Difference {
+            path: "f".into(),
+            left: Some(left),
+            right: Some(right),
+        };
+        assert_eq!(difference(near, late).newer(), Some(Side::Right));
+        assert_eq!(difference(late, near).newer(), Some(Side::Left));
+        assert!(same(late, late) && !same(near, late));
     }
 }

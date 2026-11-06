@@ -24,9 +24,10 @@ pub(super) fn differences(left: &[Item], right: &[Item]) -> (HashSet<OsString>, 
         };
         let (newer, older) = match (item.is_dir, other.is_dir) {
             (true, true) => continue,
+            // By the gap between the times, as the sync compares them.
             (false, false) => match (item.modified_at, other.modified_at) {
-                (Some(mine), Some(theirs)) if mine > theirs + SAME_TIME => (true, false),
-                (Some(mine), Some(theirs)) if theirs > mine + SAME_TIME => (false, true),
+                (Some(mine), Some(theirs)) if mine.duration_since(theirs).is_ok_and(|gap| gap > SAME_TIME) => (true, false),
+                (Some(mine), Some(theirs)) if theirs.duration_since(mine).is_ok_and(|gap| gap > SAME_TIME) => (false, true),
                 _ => {
                     let differ = item.size_bytes != other.size_bytes;
                     (differ, differ)

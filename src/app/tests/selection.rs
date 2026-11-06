@@ -221,3 +221,19 @@ fn names_that_read_alike_are_selected_apart() {
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Shift+F2 judges a file dated at the end of what the clock holds by its
+/// time, as any other.
+#[test]
+fn compare_times_at_the_clocks_end() {
+    let far = crate::sync::tests::clock_end();
+    let file = |modified| Item {
+        size_bytes: 1,
+        modified_at: Some(modified),
+        ..row("f")
+    };
+    let (on_left, on_right) = crate::app::compare::differences(&[file(far)], &[file(far - std::time::Duration::from_secs(10))]);
+    assert!(on_left.contains(std::ffi::OsStr::new("f")) && on_right.is_empty());
+    let (on_left, on_right) = crate::app::compare::differences(&[file(far - std::time::Duration::from_secs(10))], &[file(far)]);
+    assert!(on_left.is_empty() && on_right.contains(std::ffi::OsStr::new("f")));
+}
