@@ -62,7 +62,8 @@ fn swap_the_panels_and_send_the_other_one_here() {
     app_state.is_left_active = true;
     let chord = |app_state: &mut AppState, c, modifiers| handle_key(app_state, KeyEvent::new(KeyCode::Char(c), modifiers));
     let cursor = |app_state: &AppState, is_left: bool| {
-        let (children, state) = if is_left { (&app_state.left.children, &app_state.left.state) } else { (&app_state.right.children, &app_state.right.state) };
+        let panel = app_state.panel(is_left);
+        let (children, state) = (&panel.children, &panel.state);
         children[state.selected().unwrap()].name_full.clone()
     };
 

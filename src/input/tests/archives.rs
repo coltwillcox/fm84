@@ -6,11 +6,8 @@ use std::path::PathBuf;
 
 /// Put the active panel's cursor on `name`.
 fn on(app_state: &mut AppState, name: &str) {
-    let (children, state) = if app_state.is_left_active {
-        (&app_state.left.children, &mut app_state.left.state)
-    } else {
-        (&app_state.right.children, &mut app_state.right.state)
-    };
+    let panel = app_state.panel_mut(app_state.is_left_active);
+    let (children, state) = (&panel.children, &mut panel.state);
     let index = children.iter().position(|item| item.name_os == name).unwrap_or_else(|| panic!("no {name} in the panel"));
     state.select(Some(index));
 }

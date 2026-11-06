@@ -454,7 +454,8 @@ impl AppState {
     /// the name: that is how the viewer decides everywhere else, and it costs a
     /// fraction of a millisecond a file.
     fn image_neighbour(&self, showing: &Path, forward: bool) -> Option<PathBuf> {
-        let (children, dir) = if self.is_left_active { (&self.left.children, &self.left.dir) } else { (&self.right.children, &self.right.dir) };
+        let panel = self.panel(self.is_left_active);
+        let (children, dir) = (&panel.children, &panel.dir);
         let files: Vec<PathBuf> = children.iter().filter(|item| !item.is_dir).map(|item| item.path_in(dir)).collect();
         let at = files.iter().position(|path| path == showing)?;
 

@@ -129,11 +129,8 @@ pub(super) fn move_cursor(app_state: &mut AppState, move_fn: impl Fn(&mut TableS
     if app_state.panel_busy(app_state.is_left_active) {
         return;
     }
-    let (state, len) = if app_state.is_left_active {
-        (&mut app_state.left.state, app_state.left.children.len())
-    } else {
-        (&mut app_state.right.state, app_state.right.children.len())
-    };
+    let panel = app_state.panel_mut(app_state.is_left_active);
+    let (state, len) = (&mut panel.state, panel.children.len());
     move_fn(state, len);
 }
 
@@ -152,11 +149,8 @@ fn navigate_up_panel(app_state: &mut AppState) {
 
 pub(super) fn enter_directory_panel(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
-    let (state, children, dir) = if is_left {
-        (&app_state.left.state, &app_state.left.children, &app_state.left.dir)
-    } else {
-        (&app_state.right.state, &app_state.right.children, &app_state.right.dir)
-    };
+    let panel = app_state.panel(is_left);
+    let (state, children, dir) = (&panel.state, &panel.children, &panel.dir);
 
     let Some(item) = state.selected().and_then(|index| children.get(index)).cloned() else {
         return;
@@ -194,11 +188,8 @@ pub(super) fn open_file(app_state: &mut AppState, path: PathBuf) {
 /// opens it - what Enter did before it went into archives.
 pub(super) fn open_cursor_externally(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
-    let (state, children, dir) = if is_left {
-        (&app_state.left.state, &app_state.left.children, &app_state.left.dir)
-    } else {
-        (&app_state.right.state, &app_state.right.children, &app_state.right.dir)
-    };
+    let panel = app_state.panel(is_left);
+    let (state, children, dir) = (&panel.state, &panel.children, &panel.dir);
     let Some(item) = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()) else {
         return;
     };
@@ -209,11 +200,8 @@ pub(super) fn open_cursor_externally(app_state: &mut AppState) {
 /// Alt+O: the chooser of programs for the entry under the cursor.
 pub(super) fn open_cursor_with(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
-    let (state, children, dir) = if is_left {
-        (&app_state.left.state, &app_state.left.children, &app_state.left.dir)
-    } else {
-        (&app_state.right.state, &app_state.right.children, &app_state.right.dir)
-    };
+    let panel = app_state.panel(is_left);
+    let (state, children, dir) = (&panel.state, &panel.children, &panel.dir);
     let Some(item) = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()) else {
         return;
     };
@@ -237,11 +225,8 @@ fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
 /// What F5, F6 and F8 work on in the active panel: what is selected, or the
 /// entry under the cursor when nothing is. Never the parent entry.
 pub(super) fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
-    let (children, selected, state, dir) = if app_state.is_left_active {
-        (&app_state.left.children, &app_state.left.selected, &app_state.left.state, &app_state.left.dir)
-    } else {
-        (&app_state.right.children, &app_state.right.selected, &app_state.right.state, &app_state.right.dir)
-    };
+    let panel = app_state.panel(app_state.is_left_active);
+    let (children, selected, state, dir) = (&panel.children, &panel.selected, &panel.state, &panel.dir);
     let chosen: Vec<&crate::app::Item> = if selected.is_empty() {
         state.selected().and_then(|index| children.get(index)).into_iter().collect()
     } else {

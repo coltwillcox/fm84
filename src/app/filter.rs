@@ -53,11 +53,8 @@ impl AppState {
     /// no longer shown is let go: a copy or delete takes the selection, and
     /// should not take what cannot be seen.
     pub fn set_filter(&mut self, is_left: bool, text: &str) {
-        let (dir, children, state) = if is_left {
-            (&self.left.dir, &self.left.children, &self.left.state)
-        } else {
-            (&self.right.dir, &self.right.children, &self.right.state)
-        };
+        let panel = self.panel(is_left);
+        let (dir, children, state) = (&panel.dir, &panel.children, &panel.state);
         let cursor = state.selected().and_then(|index| children.get(index)).map(|item| item.name_os.clone());
         let dir = dir.clone();
         let all = match self.filter_mut(is_left).take() {
@@ -74,11 +71,8 @@ impl AppState {
             None => all,
         };
         let index = cursor.and_then(|name| items.iter().position(|item| item.name_os == name)).or_else(|| items.iter().position(|item| !item.is_parent())).unwrap_or(0);
-        let (children, state, selected) = if is_left {
-            (&mut self.left.children, &mut self.left.state, &mut self.left.selected)
-        } else {
-            (&mut self.right.children, &mut self.right.state, &mut self.right.selected)
-        };
+        let panel = self.panel_mut(is_left);
+        let (children, state, selected) = (&mut panel.children, &mut panel.state, &mut panel.selected);
         *children = items;
         state.select(Some(index));
         prune_selection(selected, children);

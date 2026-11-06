@@ -50,7 +50,8 @@ impl AppState {
     /// the cursor lands on what holds the file it was on.
     pub fn toggle_flat(&mut self) {
         let is_left = self.is_left_active;
-        let (children, state) = if is_left { (&self.left.children, &self.left.state) } else { (&self.right.children, &self.right.state) };
+        let panel = self.panel(is_left);
+        let (children, state) = (&panel.children, &panel.state);
         let cursor = state.selected().and_then(|index| children.get(index)).map(|item| item.name_os.clone());
         let before = self.flat(is_left).cloned();
         let landing = match self.flat_mut(is_left).take() {

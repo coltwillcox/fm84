@@ -243,11 +243,8 @@ impl AppState {
     /// file it is the directory the file is in, landing on the file. The focus
     /// stays where it is. Pointed at the active panel itself, it simply goes in.
     pub fn open_in_panel(&mut self, is_left: bool) {
-        let (children, state, dir) = if self.is_left_active {
-            (&self.left.children, &self.left.state, &self.left.dir)
-        } else {
-            (&self.right.children, &self.right.state, &self.right.dir)
-        };
+        let panel = self.panel(self.is_left_active);
+        let (children, state, dir) = (&panel.children, &panel.state, &panel.dir);
         let item = state.selected().and_then(|index| children.get(index));
         let (target, select) = match item {
             Some(item) if item.is_parent() => match dir.parent() {
@@ -416,7 +413,8 @@ impl AppState {
             }
         }
 
-        let (children, state) = if is_left { (&self.left.children, &self.left.state) } else { (&self.right.children, &self.right.state) };
+        let panel = self.panel(is_left);
+        let (children, state) = (&panel.children, &panel.state);
         let previous_index = state.selected().unwrap_or(0);
         let wanted = if to_file {
             pending.dir.file_name().map(std::ffi::OsStr::to_os_string)
@@ -474,7 +472,8 @@ impl AppState {
         // A tab brings back what was selected in it - when the panel got to
         // where the tab was, and not to some parent of it.
         if let Some(tab) = pending.tab {
-            let (children, selected) = if is_left { (&self.left.children, &mut self.left.selected) } else { (&self.right.children, &mut self.right.selected) };
+            let panel = self.panel_mut(is_left);
+            let (children, selected) = (&panel.children, &mut panel.selected);
             if relocated {
                 selected.clear();
             } else {

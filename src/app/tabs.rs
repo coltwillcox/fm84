@@ -156,11 +156,8 @@ impl AppState {
 
     /// The panel as it stands, as a tab to come back to.
     pub(super) fn panel_as_tab(&self, is_left: bool) -> Tab {
-        let (dir, children, state, selected) = if is_left {
-            (&self.left.dir, &self.left.children, &self.left.state, &self.left.selected)
-        } else {
-            (&self.right.dir, &self.right.children, &self.right.state, &self.right.selected)
-        };
+        let panel = self.panel(is_left);
+        let (dir, children, state, selected) = (&panel.dir, &panel.children, &panel.state, &panel.selected);
         let tabs = &self.panel(is_left).tabs;
         let shown = &tabs.list[tabs.active];
         Tab {
@@ -175,7 +172,8 @@ impl AppState {
     /// Every tab of a panel's directory, the one it shows as it is now, and
     /// which that is - for the strip's labels and the session file.
     pub fn tab_dirs(&self, is_left: bool) -> (Vec<PathBuf>, usize) {
-        let (tabs, dir) = if is_left { (&self.left.tabs, &self.left.dir) } else { (&self.right.tabs, &self.right.dir) };
+        let panel = self.panel(is_left);
+        let (tabs, dir) = (&panel.tabs, &panel.dir);
         let mut dirs: Vec<PathBuf> = tabs.list.iter().map(|tab| tab.dir.clone()).collect();
         dirs[tabs.active] = dir.clone();
         (dirs, tabs.active)

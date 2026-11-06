@@ -135,11 +135,8 @@ pub(super) fn run_user_menu_entry(app_state: &mut AppState) {
         return;
     }
     let files: Vec<std::path::PathBuf> = chosen_items(app_state).into_iter().map(|(path, _)| path).collect();
-    let (children, state, dir) = if is_left {
-        (&app_state.left.children, &app_state.left.state, &app_state.left.dir)
-    } else {
-        (&app_state.right.children, &app_state.right.state, &app_state.right.dir)
-    };
+    let panel = app_state.panel(is_left);
+    let (children, state, dir) = (&panel.children, &panel.state, &panel.dir);
     let file = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()).map(|item| item.path_in(dir));
     if (needs_file && file.is_none()) || (needs_files && files.is_empty()) {
         app_state.display_error(t!("Nothing chosen for {label}", label = entry.label));

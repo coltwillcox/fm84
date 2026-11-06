@@ -371,11 +371,8 @@ impl AppState {
         self.feed_follow(&moves[..renamed]);
         // The cursor stays on the entry it was on, under its new name.
         let is_left = self.is_left_active;
-        let (children, state, dir) = if is_left {
-            (&self.left.children, &self.left.state, &self.left.dir)
-        } else {
-            (&self.right.children, &self.right.state, &self.right.dir)
-        };
+        let panel = self.panel(is_left);
+        let (children, state, dir) = (&panel.children, &panel.state, &panel.dir);
         let landing = state.selected().and_then(|index| children.get(index)).map(|item| {
             let at = item.path_in(dir);
             let now = moves.iter().take(renamed).find(|(from, _)| *from == at).map(|(_, to)| to.clone()).unwrap_or(at);
