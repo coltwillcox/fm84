@@ -93,7 +93,8 @@ impl AppState {
 
     /// Returns (&children, &mut state) for the active panel.
     fn active_panel_mut(&mut self) -> (&[Item], &mut TableState) {
-        if self.is_left_active { (&self.left.children, &mut self.left.state) } else { (&self.right.children, &mut self.right.state) }
+        let panel = self.panel_mut(self.is_left_active);
+        (&panel.children, &mut panel.state)
     }
 
     /// + and - in a panel: ask for a pattern, starting from the last one.
