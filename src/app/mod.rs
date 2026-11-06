@@ -248,7 +248,6 @@ pub struct AppState {
     // instead of recomputing the layout from hardcoded row numbers.
     /// A branch git is still switching to.
     pub branch_switch: Option<PendingSwitch>,
-    pub viewer_content_area: Rect,
     /// The viewer's or the editor's scroll bars, as last drawn.
     pub scroll_bars: Vec<crate::scroll_bar::ScrollBar>,
     /// The bar whose thumb the left button took hold of, as it was then, and
@@ -424,6 +423,9 @@ pub struct Drawn {
     pub sort_headers: Vec<(Rect, SortKey)>,
     /// The editor's text, for a click to place the cursor.
     pub editor_content_area: Rect,
+    /// The viewer's text, for a click or a drag to select in, or to take hold
+    /// of a picture.
+    pub viewer_content_area: Rect,
 }
 
 impl AppState {
@@ -514,7 +516,6 @@ impl AppState {
             last_click_time: None,
             last_click_pos: (0, 0),
             branch_switch: None,
-            viewer_content_area: Rect::default(),
             scroll_bars: Vec::new(),
             bar_drag: None,
             listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },

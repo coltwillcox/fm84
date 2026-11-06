@@ -335,7 +335,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
 /// Selection in the viewer, in columns of the line as drawn, so hex and text
 /// modes behave the same.
 fn handle_viewer_click(app_state: &mut AppState, column: u16, row: u16, extend: bool) {
-    let area = app_state.viewer_content_area;
+    let area = app_state.drawn.viewer_content_area;
     if !area.contains(Position::new(column, row)) {
         return;
     }

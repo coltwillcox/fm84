@@ -352,7 +352,7 @@ fn the_viewer_counts_wide_characters_as_the_columns_they_take() {
     app_state.open_viewer(path.clone()).unwrap();
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 20)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
-    let area = app_state.viewer_content_area;
+    let area = app_state.drawn.viewer_content_area;
     let click = |app_state: &mut AppState, column: u16| {
         crate::input::handle_mouse(
             app_state,

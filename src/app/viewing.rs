@@ -492,7 +492,7 @@ impl AppState {
 
     /// Take hold of a picture at the pointer, ready to drag it about.
     pub fn viewer_pan_start(&mut self, column: u16, row: u16) {
-        let content = self.viewer_content_area;
+        let content = self.drawn.viewer_content_area;
         if let Screen::Viewer(state) = &mut self.screen
             && content.contains(Position::new(column, row))
         {
