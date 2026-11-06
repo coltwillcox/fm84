@@ -2,6 +2,13 @@
 
 use super::*;
 
+/// A press in the panels, for the next one to tell a double click by.
+#[derive(Clone, Copy)]
+pub struct LastClick {
+    at: Instant,
+    position: (u16, u16),
+}
+
 /// The mouse, to what is on top. Nothing behind a popup responds to it - not
 /// clicks and not the wheel, which would otherwise scroll a panel out of
 /// sight of the dialog asking about it. Alt+A's fields and the rows of the
@@ -261,18 +268,10 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
         return;
     }
 
-    // Check for double-click (same position within 500ms)
+    // A double click is a second press in the same place within 500ms.
     let now = Instant::now();
-    let is_double_click = if let Some(last_time) = app_state.last_click_time {
-        let elapsed = now.duration_since(last_time);
-        elapsed < Duration::from_millis(500) && app_state.last_click_pos == (column, row)
-    } else {
-        false
-    };
-
-    // Update last click tracking
-    app_state.last_click_time = Some(now);
-    app_state.last_click_pos = (column, row);
+    let is_double_click = app_state.last_click.is_some_and(|last| now.duration_since(last.at) < Duration::from_millis(500) && last.position == (column, row));
+    app_state.last_click = Some(LastClick { at: now, position: (column, row) });
 
     // Hit-test the panels the last frame actually drew, rather than deriving
     // their position from the layout constants a second time.

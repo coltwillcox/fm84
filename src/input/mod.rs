@@ -16,6 +16,7 @@ use std::time::{Duration, Instant};
 mod file_ops;
 mod launch;
 mod mouse;
+pub use mouse::LastClick;
 mod panel;
 mod screens;
 #[cfg(test)]

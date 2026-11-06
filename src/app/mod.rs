@@ -229,8 +229,8 @@ pub struct AppState {
     /// Every directory either panel has been in this run, newest first, for
     /// Alt+Down.
     pub visited: Vec<PathBuf>,
-    pub last_click_time: Option<Instant>,
-    pub last_click_pos: (u16, u16),
+    /// The last press in the panels, for a double click.
+    pub last_click: Option<crate::input::LastClick>,
     /// The bar whose thumb the left button took hold of, as it was then, and
     /// how many cells from the thumb's start it was taken - followed until
     /// the button comes up.
@@ -537,8 +537,7 @@ impl AppState {
             find_note: None,
             dir_sizes: HashMap::new(),
             visited: Vec::new(),
-            last_click_time: None,
-            last_click_pos: (0, 0),
+            last_click: None,
             bar_drag: None,
             user_at_host: crate::fs_ops::user_at_host(),
             image_cache: ImageCache::default(),
