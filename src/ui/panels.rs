@@ -405,8 +405,8 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
         (!parts.is_empty()).then(|| format!(" {} ", parts.join(", ")))
     };
     let sides = [
-        (&app_state.dir_left, filter_label(true), &app_state.branch_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
-        (&app_state.dir_right, filter_label(false), &app_state.branch_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),
+        (&app_state.left.dir, filter_label(true), &app_state.branch_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
+        (&app_state.right.dir, filter_label(false), &app_state.branch_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),
     ];
     for (branch, (dir, filter, label, length, style, editing, end)) in branches.iter_mut().zip(sides) {
         let (spans, label_at) = side(dir, filter, branch_label(label), length, style, editing, end);
@@ -517,7 +517,7 @@ fn build_viewport_rows(app_state: &AppState, is_left: bool, viewport_height: usi
     let children = if is_left { &app_state.children_left } else { &app_state.children_right };
     let state = if is_left { &app_state.state_left } else { &app_state.state_right };
     let selected_set = if is_left { &app_state.selected_left } else { &app_state.selected_right };
-    let current_dir = if is_left { &app_state.dir_left } else { &app_state.dir_right };
+    let current_dir = &app_state.panel(is_left).dir;
     let selected = state.selected().unwrap_or(0);
     let total = children.len();
 

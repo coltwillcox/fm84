@@ -97,7 +97,7 @@ fn a_click_on_a_path_edits_it() {
 
     click(&mut app_state, bar.x + bar.width - 10);
     assert!(!app_state.is_left_active);
-    assert!(going_to(&app_state).unwrap().starts_with(&*app_state.dir_right.to_string_lossy()));
+    assert!(going_to(&app_state).unwrap().starts_with(&*app_state.right.dir.to_string_lossy()));
     // Typed into, a click on the same path leaves it be.
     press(&mut app_state, KeyCode::Char('x'));
     let typed = going_to(&app_state);
@@ -106,7 +106,7 @@ fn a_click_on_a_path_edits_it() {
     // The other one starts again, there.
     click(&mut app_state, bar.x + 5);
     assert!(app_state.is_left_active);
-    assert!(going_to(&app_state).unwrap().starts_with(&*app_state.dir_left.to_string_lossy()));
+    assert!(going_to(&app_state).unwrap().starts_with(&*app_state.left.dir.to_string_lossy()));
 
     // A click anywhere else puts it away and is a click there too: on a
     // row of the other panel, that panel becomes the active one.

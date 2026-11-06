@@ -103,8 +103,8 @@ fn compare_selects_what_differs() {
 
     // Through the panels: what was selected goes, and the count is said.
     let mut app_state = AppState::new();
-    app_state.dir_left = "/left".into();
-    app_state.dir_right = "/right".into();
+    app_state.left.dir = "/left".into();
+    app_state.right.dir = "/right".into();
     app_state.children_left = left;
     app_state.children_right = right;
     app_state.selected_left.insert("same.txt".into());
@@ -118,7 +118,7 @@ fn compare_selects_what_differs() {
     assert!(app_state.selected_left.is_empty() && app_state.selected_right.is_empty());
     assert_eq!(app_state.find_note.as_deref(), Some("The directories hold the same files"));
 
-    app_state.dir_right = "/left".into();
+    app_state.right.dir = "/left".into();
     app_state.compare_dirs();
     assert_eq!(app_state.find_note.as_deref(), Some("Both panels show the same directory"));
 }

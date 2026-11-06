@@ -151,9 +151,9 @@ impl AppState {
 
         {
             let (state, children, selected_set, current_dir) = if self.is_left_active {
-                (&mut self.state_left, &self.children_left, &mut self.selected_left, &self.dir_left)
+                (&mut self.state_left, &self.children_left, &mut self.selected_left, &self.left.dir)
             } else {
-                (&mut self.state_right, &self.children_right, &mut self.selected_right, &self.dir_right)
+                (&mut self.state_right, &self.children_right, &mut self.selected_right, &self.right.dir)
             };
 
             if let Some(index) = state.selected() {
@@ -201,7 +201,7 @@ impl AppState {
     /// go in turn, top to bottom, a few at once, and each shows in the Size
     /// column as it is counted.
     pub fn size_all_dirs(&mut self) {
-        let (children, dir) = if self.is_left_active { (&self.children_left, &self.dir_left) } else { (&self.children_right, &self.dir_right) };
+        let (children, dir) = if self.is_left_active { (&self.children_left, &self.left.dir) } else { (&self.children_right, &self.right.dir) };
         let paths: Vec<PathBuf> = children.iter().filter(|item| item.is_dir && !item.is_symlink && !item.is_parent()).map(|item| item.path_in(dir)).collect();
         for path in paths {
             if !self.dir_sizing.iter().any(|sizing| sizing.path == path) && !self.dir_size_queue.contains(&path) {
@@ -286,7 +286,7 @@ impl AppState {
     /// run, Alt+Shift+Enter in / and a step elsewhere walked the whole disk
     /// out of sight, with Esc in a panel the only way to stop it.
     pub(super) fn forget_sizes_in(&mut self, dir: &Path) {
-        if self.dir_left == dir || self.dir_right == dir {
+        if self.left.dir == dir || self.right.dir == dir {
             return;
         }
         let inside = |path: &Path| path.parent() == Some(dir);

@@ -52,20 +52,20 @@ fn enter_goes_into_an_archive_and_backspace_comes_out() {
     press(&mut app_state, KeyCode::Enter);
     // As written, not only as compared: a separator on the end of a file's
     // path does not stat, and the next reread climbed out.
-    assert_eq!(app_state.dir_left.as_os_str(), archive.as_os_str());
+    assert_eq!(app_state.left.dir.as_os_str(), archive.as_os_str());
     assert_eq!(app_state.archive_left.as_ref(), Some(&archive));
     assert_eq!(shown(&app_state), ["..", "2024", "readme.txt"]);
 
     on(&mut app_state, "2024");
     press(&mut app_state, KeyCode::Enter);
-    assert_eq!(app_state.dir_left, archive.join("2024"));
+    assert_eq!(app_state.left.dir, archive.join("2024"));
     assert_eq!(shown(&app_state), ["..", "june", "notes.txt"]);
 
     press(&mut app_state, KeyCode::Backspace);
-    assert_eq!(app_state.dir_left, archive);
+    assert_eq!(app_state.left.dir, archive);
     assert_eq!(app_state.children_left[app_state.state_left.selected().unwrap()].name_full, "2024");
     press(&mut app_state, KeyCode::Backspace);
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.archive_left, None);
     assert_eq!(app_state.children_left[app_state.state_left.selected().unwrap()].name_full, "photos.zip");
     std::fs::remove_dir_all(&dir).unwrap();
@@ -85,7 +85,7 @@ fn f3_views_a_file_inside_an_archive() {
     assert_eq!(state.content_lines, ["sand and sea"]);
     assert_eq!(state.file_path.file_name().unwrap(), "beach.txt");
     assert!(!state.file_path.starts_with(&dir));
-    assert_eq!(app_state.dir_left, archive.join("2024/june"));
+    assert_eq!(app_state.left.dir, archive.join("2024/june"));
     // Its scratch directory, and the one they are all in if nothing else in
     // this run has one there too.
     let scratch = state.file_path.parent().unwrap().to_path_buf();
@@ -167,7 +167,7 @@ fn a_damaged_archive_is_not_gone_into() {
     app_state.is_left_active = true;
     app_state.open_dir(true, dir.clone(), Some("broken.zip".as_ref()));
     press(&mut app_state, KeyCode::Enter);
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.archive_left, None);
     assert!(app_state.error.as_deref().unwrap_or_default().contains("not readable as an archive"), "{:?}", app_state.error);
     std::fs::remove_dir_all(&dir).unwrap();
@@ -187,12 +187,12 @@ fn a_changed_or_deleted_archive_is_followed() {
 
     tar(&archive, &[(b"docs/readme", Put::File(b"r"))]);
     app_state.reload_panel(true, None);
-    assert_eq!(app_state.dir_left, archive);
+    assert_eq!(app_state.left.dir, archive);
     assert_eq!(shown(&app_state), ["..", "docs"]);
 
     std::fs::remove_file(&archive).unwrap();
     app_state.reload_panel(true, None);
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.archive_left, None);
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -230,7 +230,7 @@ fn a_path_through_an_archive_is_gone_to() {
     handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL));
     app_state.dialog_input().unwrap().set(archive.join("2024/june").display().to_string());
     press(&mut app_state, KeyCode::Enter);
-    assert_eq!(app_state.dir_left, archive.join("2024/june"));
+    assert_eq!(app_state.left.dir, archive.join("2024/june"));
     assert_eq!(shown(&app_state), ["..", "beach.txt"]);
     std::fs::remove_dir_all(&dir).unwrap();
 }

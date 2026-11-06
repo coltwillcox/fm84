@@ -95,7 +95,7 @@ impl AppState {
         if self.panel_busy(true) || self.panel_busy(false) {
             return;
         }
-        if self.dir_left == self.dir_right {
+        if self.left.dir == self.right.dir {
             self.find_note = Some(t!("Both panels show the same directory").to_string());
             return;
         }

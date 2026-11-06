@@ -67,17 +67,17 @@ fn swap_the_panels_and_send_the_other_one_here() {
     };
 
     chord(&mut app_state, 'u', KeyModifiers::CONTROL);
-    assert_eq!((app_state.dir_left.clone(), app_state.dir_right.clone()), (dir.join("three"), dir.join("one")));
+    assert_eq!((app_state.left.dir.clone(), app_state.right.dir.clone()), (dir.join("three"), dir.join("one")));
     assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active, app_state.tabs_right.list.len()), (2, 1, 1));
     assert!(!app_state.is_left_active);
     assert_eq!(cursor(&app_state, false), "b.txt");
     assert!(app_state.selected_right.contains(std::ffi::OsStr::new("a.txt")) && app_state.selected_left.is_empty());
     // The other tab went across too, as it was.
     app_state.select_tab(true, 0);
-    assert_eq!(app_state.dir_left, dir.join("two"));
+    assert_eq!(app_state.left.dir, dir.join("two"));
 
     chord(&mut app_state, 'i', KeyModifiers::ALT);
-    assert_eq!(app_state.dir_left, dir.join("one"));
+    assert_eq!(app_state.left.dir, dir.join("one"));
     assert_eq!(cursor(&app_state, true), "b.txt");
     assert!(!app_state.is_left_active);
 
@@ -168,47 +168,47 @@ fn go_to_a_path_and_back_and_forward() {
     press(&mut app_state, KeyCode::Char('d'));
     press(&mut app_state, KeyCode::Tab);
     press(&mut app_state, KeyCode::Enter);
-    assert_eq!(app_state.dir_left, dir.join("sub/deeper"));
+    assert_eq!(app_state.left.dir, dir.join("sub/deeper"));
 
     // A path from the panel, `..` and all, to a file: landed on, in the
     // directory it is in.
     ctrl_l(&mut app_state);
     type_in(&mut app_state, "../../a.txt");
     press(&mut app_state, KeyCode::Enter);
-    assert_eq!((app_state.dir_left.clone(), cursor(&app_state)), (dir.clone(), "a".to_string()));
+    assert_eq!((app_state.left.dir.clone(), cursor(&app_state)), (dir.clone(), "a".to_string()));
 
     // Somewhere that is not there is said to be, and the panel stays.
     ctrl_l(&mut app_state);
     type_in(&mut app_state, "nowhere");
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.error.take().unwrap().contains("nowhere"));
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
 
     // Back the way it came, onto what the cursor was on, and forward.
     alt(&mut app_state, KeyCode::Left);
-    assert_eq!(app_state.dir_left, dir.join("sub/deeper"));
+    assert_eq!(app_state.left.dir, dir.join("sub/deeper"));
     alt(&mut app_state, KeyCode::Left);
-    assert_eq!((app_state.dir_left.clone(), cursor(&app_state)), (dir.clone(), "sub".to_string()));
+    assert_eq!((app_state.left.dir.clone(), cursor(&app_state)), (dir.clone(), "sub".to_string()));
     alt(&mut app_state, KeyCode::Right);
-    assert_eq!(app_state.dir_left, dir.join("sub/deeper"));
+    assert_eq!(app_state.left.dir, dir.join("sub/deeper"));
 
     // A step somewhere new drops what was ahead.
     press(&mut app_state, KeyCode::Backspace);
-    assert_eq!(app_state.dir_left, dir.join("sub"));
+    assert_eq!(app_state.left.dir, dir.join("sub"));
     alt(&mut app_state, KeyCode::Right);
-    assert_eq!(app_state.dir_left, dir.join("sub"));
+    assert_eq!(app_state.left.dir, dir.join("sub"));
     alt(&mut app_state, KeyCode::Left);
-    assert_eq!(app_state.dir_left, dir.join("sub/deeper"));
+    assert_eq!(app_state.left.dir, dir.join("sub/deeper"));
 
     // A directory gone since is passed over, rather than stuck on: from
     // sub, back to deeper climbs out of it to sub again, and on to dir.
     std::fs::remove_dir(dir.join("sub/deeper")).unwrap();
     alt(&mut app_state, KeyCode::Right);
-    assert_eq!(app_state.dir_left, dir.join("sub"));
+    assert_eq!(app_state.left.dir, dir.join("sub"));
     alt(&mut app_state, KeyCode::Left);
-    assert_eq!(app_state.dir_left, dir, "the gone one was passed over");
+    assert_eq!(app_state.left.dir, dir, "the gone one was passed over");
     alt(&mut app_state, KeyCode::Right);
-    assert_eq!(app_state.dir_left, dir.join("sub"));
+    assert_eq!(app_state.left.dir, dir.join("sub"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -237,7 +237,7 @@ fn alt_shift_enter_sizes_every_directory() {
         app_state.is_left_active = true;
         app_state.open_dir(true, dir.clone(), None);
         handle_key(&mut app_state, KeyEvent::new(KeyCode::Enter, modifiers));
-        assert_eq!(app_state.dir_left, dir, "it sizes, and does not go in");
+        assert_eq!(app_state.left.dir, dir, "it sizes, and does not go in");
 
         // A few at once, the rest waiting, and shown as waiting.
         assert_eq!(app_state.dir_sizing.len(), crate::constants::SIZE_WORKERS);
@@ -439,7 +439,7 @@ fn alt_down_goes_back_anywhere_that_has_been() {
     press(&mut app_state, KeyCode::Down);
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.dialog.is_none());
-    assert_eq!(app_state.dir_left, dir.join("music/rock"));
+    assert_eq!(app_state.left.dir, dir.join("music/rock"));
 
     // Gone since: said so, and the panel stays.
     std::fs::remove_dir(dir.join("gone")).unwrap();
@@ -449,7 +449,7 @@ fn alt_down_goes_back_anywhere_that_has_been() {
     }
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.error.is_some());
-    assert_eq!(app_state.dir_left, dir.join("music/rock"));
+    assert_eq!(app_state.left.dir, dir.join("music/rock"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

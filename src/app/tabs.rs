@@ -157,9 +157,9 @@ impl AppState {
     /// The panel as it stands, as a tab to come back to.
     pub(super) fn panel_as_tab(&self, is_left: bool) -> Tab {
         let (dir, children, state, selected) = if is_left {
-            (&self.dir_left, &self.children_left, &self.state_left, &self.selected_left)
+            (&self.left.dir, &self.children_left, &self.state_left, &self.selected_left)
         } else {
-            (&self.dir_right, &self.children_right, &self.state_right, &self.selected_right)
+            (&self.right.dir, &self.children_right, &self.state_right, &self.selected_right)
         };
         let tabs = if is_left { &self.tabs_left } else { &self.tabs_right };
         let shown = &tabs.list[tabs.active];
@@ -175,7 +175,7 @@ impl AppState {
     /// Every tab of a panel's directory, the one it shows as it is now, and
     /// which that is - for the strip's labels and the session file.
     pub fn tab_dirs(&self, is_left: bool) -> (Vec<PathBuf>, usize) {
-        let (tabs, dir) = if is_left { (&self.tabs_left, &self.dir_left) } else { (&self.tabs_right, &self.dir_right) };
+        let (tabs, dir) = if is_left { (&self.tabs_left, &self.left.dir) } else { (&self.tabs_right, &self.right.dir) };
         let mut dirs: Vec<PathBuf> = tabs.list.iter().map(|tab| tab.dir.clone()).collect();
         dirs[tabs.active] = dir.clone();
         (dirs, tabs.active)
@@ -302,7 +302,7 @@ impl AppState {
 
     /// The mount a panel is sitting on: the longest one its directory is under.
     pub fn current_mount(&self, is_left: bool) -> Option<usize> {
-        let dir = if is_left { &self.dir_left } else { &self.dir_right };
+        let dir = &self.panel(is_left).dir;
         self.mounts
             .iter()
             .enumerate()

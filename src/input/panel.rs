@@ -139,7 +139,7 @@ pub(super) fn move_cursor(app_state: &mut AppState, move_fn: impl Fn(&mut TableS
 
 fn navigate_up_panel(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
-    let dir = if is_left { &app_state.dir_left } else { &app_state.dir_right };
+    let dir = &app_state.panel(is_left).dir;
 
     // Land on the directory we just came out of.
     let leaving = dir.file_name().map(std::ffi::OsStr::to_os_string);
@@ -153,9 +153,9 @@ fn navigate_up_panel(app_state: &mut AppState) {
 pub(super) fn enter_directory_panel(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
     let (state, children, dir) = if is_left {
-        (&app_state.state_left, &app_state.children_left, &app_state.dir_left)
+        (&app_state.state_left, &app_state.children_left, &app_state.left.dir)
     } else {
-        (&app_state.state_right, &app_state.children_right, &app_state.dir_right)
+        (&app_state.state_right, &app_state.children_right, &app_state.right.dir)
     };
 
     let Some(item) = state.selected().and_then(|index| children.get(index)).cloned() else {
@@ -195,9 +195,9 @@ pub(super) fn open_file(app_state: &mut AppState, path: PathBuf) {
 pub(super) fn open_cursor_externally(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
     let (state, children, dir) = if is_left {
-        (&app_state.state_left, &app_state.children_left, &app_state.dir_left)
+        (&app_state.state_left, &app_state.children_left, &app_state.left.dir)
     } else {
-        (&app_state.state_right, &app_state.children_right, &app_state.dir_right)
+        (&app_state.state_right, &app_state.children_right, &app_state.right.dir)
     };
     let Some(item) = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()) else {
         return;
@@ -210,9 +210,9 @@ pub(super) fn open_cursor_externally(app_state: &mut AppState) {
 pub(super) fn open_cursor_with(app_state: &mut AppState) {
     let is_left = app_state.is_left_active;
     let (state, children, dir) = if is_left {
-        (&app_state.state_left, &app_state.children_left, &app_state.dir_left)
+        (&app_state.state_left, &app_state.children_left, &app_state.left.dir)
     } else {
-        (&app_state.state_right, &app_state.children_right, &app_state.dir_right)
+        (&app_state.state_right, &app_state.children_right, &app_state.right.dir)
     };
     let Some(item) = state.selected().and_then(|index| children.get(index)).filter(|item| !item.is_parent()) else {
         return;
@@ -238,9 +238,9 @@ fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
 /// entry under the cursor when nothing is. Never the parent entry.
 pub(super) fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
     let (children, selected, state, dir) = if app_state.is_left_active {
-        (&app_state.children_left, &app_state.selected_left, &app_state.state_left, &app_state.dir_left)
+        (&app_state.children_left, &app_state.selected_left, &app_state.state_left, &app_state.left.dir)
     } else {
-        (&app_state.children_right, &app_state.selected_right, &app_state.state_right, &app_state.dir_right)
+        (&app_state.children_right, &app_state.selected_right, &app_state.state_right, &app_state.right.dir)
     };
     let chosen: Vec<&crate::app::Item> = if selected.is_empty() {
         state.selected().and_then(|index| children.get(index)).into_iter().collect()
@@ -291,7 +291,7 @@ fn handle_f3_view(app_state: &mut AppState) {
         }
 
         // Build file path
-        let parent_path = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
+        let parent_path = &app_state.panel(app_state.is_left_active).dir;
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_os);
 
@@ -317,7 +317,7 @@ fn handle_f4_edit(app_state: &mut AppState) {
         }
 
         // Build file path
-        let parent_path = if app_state.is_left_active { &app_state.dir_left } else { &app_state.dir_right };
+        let parent_path = &app_state.panel(app_state.is_left_active).dir;
         let mut file_path = parent_path.clone();
         file_path.push(&item.name_os);
 

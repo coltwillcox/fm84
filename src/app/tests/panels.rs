@@ -121,7 +121,7 @@ fn an_unreadable_directory_is_refused_once() {
 
     app_state.open_dir(true, locked.clone(), None);
     assert!(app_state.error.is_some());
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.children_left.len(), listed);
 
     // Closed, and a refresh comes round: it stays closed.
@@ -163,18 +163,18 @@ fn each_tab_keeps_its_own_way_back() {
 
     app_state.new_tab();
     app_state.travel(true);
-    assert_eq!(app_state.dir_left, dir.join("b"), "a new tab has nowhere to go back to");
+    assert_eq!(app_state.left.dir, dir.join("b"), "a new tab has nowhere to go back to");
     app_state.open_dir(true, dir.clone(), None);
 
     app_state.select_tab(true, 0);
     app_state.travel(true);
-    assert_eq!(app_state.dir_left, dir.join("a"));
+    assert_eq!(app_state.left.dir, dir.join("a"));
     app_state.select_tab(true, 1);
     app_state.travel(true);
-    assert_eq!(app_state.dir_left, dir.join("b"));
+    assert_eq!(app_state.left.dir, dir.join("b"));
     // Switching tabs is not a step of either's.
     app_state.travel(true);
-    assert_eq!(app_state.dir_left, dir.join("b"));
+    assert_eq!(app_state.left.dir, dir.join("b"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -196,26 +196,26 @@ fn ctrl_arrows_send_the_entry_under_the_cursor_to_a_panel() {
     // A directory: the other panel goes into it, and the focus stays.
     app_state.state_left.select(at(&app_state, "inner"));
     app_state.open_in_panel(false);
-    assert_eq!(app_state.dir_right, dir.join("inner"));
+    assert_eq!(app_state.right.dir, dir.join("inner"));
     assert!(app_state.is_left_active);
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
 
     // A file: the directory it is in, on the file.
     app_state.state_left.select(at(&app_state, "note.txt"));
     app_state.open_in_panel(false);
-    assert_eq!(app_state.dir_right, dir);
+    assert_eq!(app_state.right.dir, dir);
     assert_eq!(cursor_right(&app_state).as_deref(), Some("note.txt"));
 
     // The parent entry: the parent, on the directory left.
     app_state.state_left.select(at(&app_state, ".."));
     app_state.open_in_panel(false);
-    assert_eq!(app_state.dir_right, std::env::temp_dir());
+    assert_eq!(app_state.right.dir, std::env::temp_dir());
     assert_eq!(cursor_right(&app_state), dir.file_name().map(|name| name.to_string_lossy().into_owned()));
 
     // Pointed at the active panel, it goes in there.
     app_state.state_left.select(at(&app_state, "inner"));
     app_state.open_in_panel(true);
-    assert_eq!(app_state.dir_left, dir.join("inner"));
+    assert_eq!(app_state.left.dir, dir.join("inner"));
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -244,7 +244,7 @@ fn tabs_keep_where_each_was_left() {
     // A new tab: same place, nothing selected, and the first keeps its own.
     app_state.new_tab();
     assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active), (2, 1));
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
     assert!(app_state.selected_left.is_empty());
     assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
 
@@ -255,13 +255,13 @@ fn tabs_keep_where_each_was_left() {
 
     // Back to the first: its directory, cursor and selection.
     app_state.select_tab(true, 0);
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
     assert_eq!(cursor(&app_state).as_deref(), Some("two.txt"));
     assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("one.txt")]);
 
     // Round to the second, and its own come back.
     app_state.cycle_tab(true);
-    assert_eq!(app_state.dir_left, dir.join("inner"));
+    assert_eq!(app_state.left.dir, dir.join("inner"));
     assert_eq!(app_state.selected_left.iter().collect::<Vec<_>>(), [&std::ffi::OsString::from("two.txt")]);
     app_state.cycle_tab(true);
     assert_eq!(app_state.tabs_left.active, 0);
@@ -270,7 +270,7 @@ fn tabs_keep_where_each_was_left() {
     app_state.select_tab(true, 1);
     app_state.close_tab(true, 0);
     assert_eq!((app_state.tabs_left.list.len(), app_state.tabs_left.active), (1, 0));
-    assert_eq!(app_state.dir_left, dir.join("inner"));
+    assert_eq!(app_state.left.dir, dir.join("inner"));
 
     // The last one stays.
     app_state.close_tab(true, 0);
@@ -280,7 +280,7 @@ fn tabs_keep_where_each_was_left() {
     app_state.new_tab();
     app_state.open_dir(true, dir.clone(), None);
     app_state.close_tab(true, 1);
-    assert_eq!(app_state.dir_left, dir.join("inner"));
+    assert_eq!(app_state.left.dir, dir.join("inner"));
     // The other panel's tabs are its own.
     assert_eq!(app_state.tabs_right.list.len(), 1);
 
@@ -319,7 +319,7 @@ fn a_tab_that_cannot_be_read_is_refused_and_kept() {
     app_state.select_tab(true, 1);
     assert!(app_state.error.is_some());
     assert_eq!(app_state.tabs_left.active, 0);
-    assert_eq!(app_state.dir_left, dir);
+    assert_eq!(app_state.left.dir, dir);
     assert_eq!(app_state.selected_left.len(), 1);
     assert_eq!(app_state.tab_dirs(true), (vec![dir.clone(), locked.clone()], 0));
 
@@ -364,7 +364,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     // The panel is as it was, and its tabs cannot be touched.
     app_state.new_tab();
     assert_eq!(app_state.tabs_left.list.len(), 1);
-    assert_eq!((app_state.dir_left.clone(), app_state.children_left.len()), (dir.clone(), listed));
+    assert_eq!((app_state.left.dir.clone(), app_state.children_left.len()), (dir.clone(), listed));
     // Nor does a reread of where it was get in the way of where it is going.
     app_state.reload_panel(true, None);
     assert!(app_state.listing_left.as_ref().is_some_and(|pending| pending.dir == dir.join("far")));
@@ -374,7 +374,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
     sender.send(crate::app::read_listing(&dir.join("far"), &app_state.options, None)).unwrap();
     app_state.poll_listings();
     assert!(!app_state.panel_busy(true));
-    assert_eq!(app_state.dir_left, dir.join("far"));
+    assert_eq!(app_state.left.dir, dir.join("far"));
     assert!(app_state.children_left.iter().any(|item| item.name_full == "there.txt"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
@@ -429,7 +429,7 @@ fn a_late_refusal_or_esc_puts_the_tab_back() {
         }
         assert!(!app_state.panel_busy(true));
         assert_eq!(app_state.tabs_left.active, 0);
-        assert_eq!(app_state.dir_left, dir);
+        assert_eq!(app_state.left.dir, dir);
     }
     std::fs::remove_dir_all(&dir).unwrap();
 }

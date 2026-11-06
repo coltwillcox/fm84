@@ -6,7 +6,7 @@ use super::*;
 fn the_branch_after_the_path_and_who_by_the_logo() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.dir_left = PathBuf::from("/home/colt/fm84");
+    app_state.left.dir = PathBuf::from("/home/colt/fm84");
     app_state.branch_left = Some("main".to_string());
     app_state.user_at_host = ("colt@laserbeak".to_string(), false);
     let row = |width: u16, y: u16, app_state: &mut AppState| {
@@ -38,7 +38,7 @@ fn tabs_are_drawn_and_clicked_where_they_are() {
 
     let mut app_state = AppState::new();
     app_state.is_left_active = true;
-    app_state.dir_left = "/tmp/b".into();
+    app_state.left.dir = "/tmp/b".into();
     app_state.tabs_left = crate::app::Tabs::new(vec!["/a".into(), "/tmp/b".into()], 1);
     tab_strip(&mut app_state, true, Rect::new(0, 1, 40, 1));
 
@@ -59,7 +59,7 @@ fn a_crowded_drive_strip_scrolls() {
     use crate::fs_ops::{Mount, MountKind};
     let mut app_state = AppState::new();
     app_state.options.icon_style = IconStyle::Plain;
-    app_state.dir_left = "/".into();
+    app_state.left.dir = "/".into();
     app_state.mounts = (0..12)
         .map(|index| Mount {
             path: format!("/mnt/{index}").into(),
@@ -436,8 +436,8 @@ fn the_editor_cursor_gives_way_to_a_prompt() {
 fn go_to_is_typed_over_the_panels_own_path() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    app_state.dir_left = std::path::PathBuf::from("/left/dir");
-    app_state.dir_right = std::path::PathBuf::from("/right/dir");
+    app_state.left.dir = std::path::PathBuf::from("/left/dir");
+    app_state.right.dir = std::path::PathBuf::from("/right/dir");
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 20)).unwrap();
     let row = |terminal: &Terminal<ratatui::backend::TestBackend>, y: u16| -> String {
         let buffer = terminal.backend().buffer();

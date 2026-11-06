@@ -217,13 +217,7 @@ impl AppState {
     pub fn panel_dir(&self, is_left: bool) -> PathBuf {
         match self.listing(is_left) {
             Some(pending) if pending.navigate => pending.dir.clone(),
-            _ => {
-                if is_left {
-                    self.dir_left.clone()
-                } else {
-                    self.dir_right.clone()
-                }
-            }
+            _ => self.panel(is_left).dir.clone(),
         }
     }
 
@@ -250,9 +244,9 @@ impl AppState {
     /// stays where it is. Pointed at the active panel itself, it simply goes in.
     pub fn open_in_panel(&mut self, is_left: bool) {
         let (children, state, dir) = if self.is_left_active {
-            (&self.children_left, &self.state_left, &self.dir_left)
+            (&self.children_left, &self.state_left, &self.left.dir)
         } else {
-            (&self.children_right, &self.state_right, &self.dir_right)
+            (&self.children_right, &self.state_right, &self.right.dir)
         };
         let item = state.selected().and_then(|index| children.get(index));
         let (target, select) = match item {
@@ -277,7 +271,7 @@ impl AppState {
         if self.listing(is_left).as_ref().is_some_and(|pending| pending.navigate) {
             return;
         }
-        let dir = if is_left { self.dir_left.clone() } else { self.dir_right.clone() };
+        let dir = self.panel(is_left).dir.clone();
         self.request_listing(is_left, dir, false, prefer.map(std::ffi::OsStr::to_os_string), None, Travel::Stay);
     }
 
@@ -407,11 +401,11 @@ impl AppState {
         if pending.navigate || relocated {
             // Cursor, search and selection all referred to entries elsewhere.
             if is_left {
-                self.dir_left = found.clone();
+                self.left.dir = found.clone();
                 self.selected_left.clear();
                 self.state_left.select(Some(0));
             } else {
-                self.dir_right = found.clone();
+                self.right.dir = found.clone();
                 self.selected_right.clear();
                 self.state_right.select(Some(0));
             }
@@ -631,7 +625,7 @@ impl AppState {
         while let Ok(event) = self.watch_events.try_recv() {
             match event {
                 WatchEvent::Changed { is_left, dir } => {
-                    if dir == *(if is_left { &self.dir_left } else { &self.dir_right }) {
+                    if dir == self.panel(is_left).dir {
                         if is_left {
                             self.stale_left = true;
                         } else {
@@ -642,7 +636,7 @@ impl AppState {
                 // Free space moves without the directory changing - a copy
                 // anywhere else on the same filesystem shifts it.
                 WatchEvent::Disk { is_left, dir, usage } => {
-                    if dir == *(if is_left { &self.dir_left } else { &self.dir_right }) {
+                    if dir == self.panel(is_left).dir {
                         if is_left {
                             self.disk_left = usage;
                         } else {

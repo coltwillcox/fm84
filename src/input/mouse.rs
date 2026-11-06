@@ -323,7 +323,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
                 if children[actual_index].is_dir {
                     enter_directory_panel(app_state);
                 } else {
-                    let dir = if clicked_left { &app_state.dir_left } else { &app_state.dir_right };
+                    let dir = &app_state.panel(clicked_left).dir;
                     let file_path = children[actual_index].path_in(dir);
                     open_file(app_state, file_path);
                 }

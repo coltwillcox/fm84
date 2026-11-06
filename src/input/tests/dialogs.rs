@@ -138,7 +138,7 @@ fn bookmarks_are_kept_moved_forgotten_and_gone_to() {
     // 2 goes to the second, and the dialog closes.
     press(&mut app_state, KeyCode::Char('2'));
     assert!(app_state.dialog.is_none());
-    assert_eq!(app_state.dir_left, dir.join("one"));
+    assert_eq!(app_state.left.dir, dir.join("one"));
 
     // Gone since: said so, and the panel stays put.
     app_state.dialog = Some(Dialog::Bookmarks {
@@ -147,7 +147,7 @@ fn bookmarks_are_kept_moved_forgotten_and_gone_to() {
     });
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.error.is_some());
-    assert_eq!(app_state.dir_left, dir.join("one"));
+    assert_eq!(app_state.left.dir, dir.join("one"));
     press(&mut app_state, KeyCode::Esc);
 
     app_state.dialog = Some(Dialog::Bookmarks {
@@ -209,7 +209,7 @@ fn find_files_finds_and_goes_there() {
     // Enter goes there: its directory, with the cursor on it.
     press(&mut app_state, KeyCode::Enter);
     assert!(app_state.dialog.is_none());
-    assert_eq!(app_state.dir_left, dir.join("a").join("deep"));
+    assert_eq!(app_state.left.dir, dir.join("a").join("deep"));
     let on = app_state.state_left.selected().and_then(|index| app_state.children_left.get(index)).map(|item| item.name_full.clone());
     assert_eq!(on.as_deref(), Some("notes.md"));
 

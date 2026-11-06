@@ -330,8 +330,8 @@ fn saving_updates_the_size_the_panels_show() {
 
     let mut app_state = AppState::new();
     app_state.options = crate::options::Options::default();
-    app_state.dir_left = dir.clone();
-    app_state.dir_right = dir.clone();
+    app_state.left.dir = dir.clone();
+    app_state.right.dir = dir.clone();
     app_state.reload_panel(true, None);
     app_state.reload_panel(false, None);
     let size = |children: &[super::Item]| children.iter().find(|item| item.name_full == "notes.txt").unwrap().size_bytes;

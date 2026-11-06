@@ -210,18 +210,18 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     if app_state.options.remember_dirs
         && let Some((left, right)) = options::load_session()
     {
-        app_state.dir_left = left.dir().to_path_buf();
-        app_state.dir_right = right.dir().to_path_buf();
+        app_state.left.dir = left.dir().to_path_buf();
+        app_state.right.dir = right.dir().to_path_buf();
         app_state.tabs_left = app::Tabs::new(left.tabs, left.active);
         app_state.tabs_right = app::Tabs::new(right.tabs, right.active);
     }
     // A directory on the command line takes the place of the tab that would
     // have shown, and the others stay.
     if let Some(left) = left {
-        app_state.dir_left = left;
+        app_state.left.dir = left;
     }
     if let Some(right) = right {
-        app_state.dir_right = right;
+        app_state.right.dir = right;
     }
     app_state.show_preview = app_state.options.preview_on_start;
 
@@ -281,10 +281,8 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         // archive is in.
         let dir = if app_state.panel_archive(app_state.is_left_active).is_some() {
             app_state.panel_real_dir(app_state.is_left_active)
-        } else if app_state.is_left_active {
-            app_state.dir_left.clone()
         } else {
-            app_state.dir_right.clone()
+            app_state.panel(app_state.is_left_active).dir.clone()
         };
         write_chosen_dir(&file, &dir)?;
     }

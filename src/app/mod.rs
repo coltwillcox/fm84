@@ -210,8 +210,10 @@ pub struct AppState {
     /// Mounts offered in the drive strips, kept current by a watcher thread.
     pub mounts: Vec<Mount>,
     pub is_left_active: bool,
-    pub dir_left: PathBuf,
-    pub dir_right: PathBuf,
+    /// What each panel is showing, everything that goes with it to the other
+    /// side when Ctrl+U swaps them.
+    pub left: Panel,
+    pub right: Panel,
     pub page_size: u16,
     pub state_left: TableState,
     pub state_right: TableState,
@@ -416,7 +418,17 @@ impl Item {
     }
 }
 
+/// One panel: the directory it is in and what it shows of it.
+pub struct Panel {
+    pub dir: PathBuf,
+}
+
 impl AppState {
+    /// The left panel, or the right.
+    pub fn panel(&self, is_left: bool) -> &Panel {
+        if is_left { &self.left } else { &self.right }
+    }
+
     pub fn new() -> Self {
         let mut state_left = TableState::default();
         state_left.select(Some(1));
@@ -446,8 +458,8 @@ impl AppState {
             clipboard: String::new(),
             mounts: Vec::new(),
             is_left_active: true,
-            dir_left: dir_root.clone(),
-            dir_right: dir_root.clone(),
+            left: Panel { dir: dir_root.clone() },
+            right: Panel { dir: dir_root.clone() },
             page_size: 0,
             state_left,
             state_right,
