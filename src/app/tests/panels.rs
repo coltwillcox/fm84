@@ -115,7 +115,7 @@ fn an_unreadable_directory_is_refused_once() {
     app_state.options = Options::default();
     // Watchers that look every few milliseconds, so the ticks the
     // refresh would answer come round inside the test.
-    app_state.watch_interval = std::time::Duration::from_millis(5);
+    app_state.workers.watch_interval = std::time::Duration::from_millis(5);
     app_state.open_dir(true, dir.clone(), None);
     let listed = app_state.left.children.len();
 
@@ -444,7 +444,7 @@ fn changes_and_details_arrive_from_their_threads() {
     std::fs::write(dir.join("notes.txt"), "hello").unwrap();
 
     let mut app_state = AppState::new();
-    app_state.watch_interval = std::time::Duration::from_millis(5);
+    app_state.workers.watch_interval = std::time::Duration::from_millis(5);
     app_state.open_dir(true, dir.clone(), Some("notes.txt".as_ref()));
 
     // Made behind fm84's back, and found without anything being pressed.
@@ -458,7 +458,7 @@ fn changes_and_details_arrive_from_their_threads() {
     }
 
     // Without waiting on them: the name at once, the rest when it comes.
-    app_state.detail_wait = std::time::Duration::ZERO;
+    app_state.workers.detail_wait = std::time::Duration::ZERO;
     app_state.show_preview = true;
     let at = app_state.left.children.iter().position(|item| item.name_full == "notes.txt");
     app_state.left.state.select(at);
@@ -576,7 +576,7 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
     assert!(app_state.left.flat.is_none());
 
     // As Ctrl+B leaves it when the walk has not come back yet.
-    app_state.listing_wait = std::time::Duration::ZERO;
+    app_state.workers.listing_wait = std::time::Duration::ZERO;
     app_state.toggle_flat();
     if app_state.panel_busy(true) {
         assert_eq!(app_state.left.listing.as_ref().and_then(|pending| pending.restore_flat.clone()), Some(None));

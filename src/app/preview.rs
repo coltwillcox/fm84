@@ -103,7 +103,7 @@ impl AppState {
             let (name, awaiting) = match target {
                 Some((path, name, is_dir)) => {
                     self.workers.detail_worker.ask((path, is_dir));
-                    wait = self.detail_wait;
+                    wait = self.workers.detail_wait;
                     (name, true)
                 }
                 None => (String::new(), false),
@@ -157,7 +157,7 @@ impl AppState {
             let (label, awaiting) = match target {
                 Some((path, name, is_dir)) => {
                     self.workers.preview_worker.ask((path, is_dir));
-                    wait = self.detail_wait;
+                    wait = self.workers.detail_wait;
                     (name, true)
                 }
                 None => (String::new(), false),

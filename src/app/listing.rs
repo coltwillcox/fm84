@@ -295,7 +295,7 @@ impl AppState {
             _stop: StopOnDrop(cancel),
             restore_flat: None,
         };
-        match pending.answer.recv_timeout(self.listing_wait) {
+        match pending.answer.recv_timeout(self.workers.listing_wait) {
             Ok(listed) => {
                 // One asked for earlier and still on its way read the
                 // directory as it was before this one did. Left waiting, it
@@ -457,7 +457,7 @@ impl AppState {
         }
         let watch = &self.panel(is_left).watch;
         if watch.as_ref().is_none_or(|watch| watch.dir != found) {
-            let watch = crate::background::watch_dir(is_left, found.clone(), probe, listed.stamp, listed.disk, self.watch_interval, self.workers.watch_sender.clone());
+            let watch = crate::background::watch_dir(is_left, found.clone(), probe, listed.stamp, listed.disk, self.workers.watch_interval, self.workers.watch_sender.clone());
             self.panel_mut(is_left).watch = Some(watch);
         }
 
@@ -600,7 +600,7 @@ impl AppState {
         std::thread::spawn(move || {
             let _ = sender.send(crate::fs_ops::complete_path(&text, &base, hidden));
         });
-        if let Ok(Some(completed)) = answer.recv_timeout(self.listing_wait)
+        if let Ok(Some(completed)) = answer.recv_timeout(self.workers.listing_wait)
             && let Some(Dialog::Prompt(PromptKind::GoTo, input)) = &mut self.dialog
         {
             input.set(completed);

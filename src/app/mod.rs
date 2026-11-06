@@ -254,15 +254,6 @@ pub struct AppState {
     // The drive strips as drawn, and which of the drives each one shows.
     pub drive_strip_left: Strip,
     pub drive_strip_right: Strip,
-    /// How long the UI waits on a listing before going on without it.
-    /// Without limit under test, which wants each answer in hand before it
-    /// looks; the same goes for `detail_wait`.
-    pub listing_wait: Duration,
-    /// How long the UI waits on the detail lines and the preview.
-    pub detail_wait: Duration,
-    /// How often a watcher looks. Shortened under test, so a change is seen
-    /// inside it.
-    pub watch_interval: Duration,
     /// `user@host`, for the top border, and whether that is root.
     pub user_at_host: (String, bool),
     /// Set while a copy, move or delete is running on its own thread.
@@ -429,6 +420,15 @@ pub struct Workers {
     /// `watch_events`.
     watch_sender: Sender<WatchEvent>,
     watch_events: Receiver<WatchEvent>,
+    /// How long the UI waits on a listing before going on without it.
+    /// Without limit under test, which wants each answer in hand before it
+    /// looks; the same goes for `detail_wait`.
+    pub listing_wait: Duration,
+    /// How long the UI waits on the detail lines and the preview.
+    pub detail_wait: Duration,
+    /// How often a watcher looks. Shortened under test, so a change is seen
+    /// inside it.
+    pub watch_interval: Duration,
 }
 
 impl AppState {
@@ -510,6 +510,9 @@ impl AppState {
                 _watch_mounts: crate::background::watch_mounts(crate::constants::REFRESH_INTERVAL, watch_sender.clone()),
                 watch_sender,
                 watch_events,
+                listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
+                detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },
+                watch_interval: crate::constants::REFRESH_INTERVAL,
             },
             filter_before: String::new(),
             search_input: String::new(),
@@ -527,9 +530,6 @@ impl AppState {
             last_click_pos: (0, 0),
             branch_switch: None,
             bar_drag: None,
-            listing_wait: if cfg!(test) { Duration::MAX } else { crate::constants::LISTING_WAIT },
-            detail_wait: if cfg!(test) { Duration::MAX } else { crate::constants::DETAIL_WAIT },
-            watch_interval: crate::constants::REFRESH_INTERVAL,
             user_at_host: crate::fs_ops::user_at_host(),
             job: None,
             dir_sizing: Vec::new(),
