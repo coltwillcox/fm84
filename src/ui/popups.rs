@@ -894,13 +894,13 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &m
             SyncAction::Skip if difference.left.is_some() && difference.right.is_some() => ("   ≠   ", style_columns()),
             SyncAction::Skip => ("       ", style_columns()),
         };
-        let newer = difference.left_newer();
+        let newer = difference.newer();
         let side_style = |is_newer: bool| if is_newer { style_file() } else { style_columns() };
         let mut spans = vec![
             Span::styled(format!("{path:<path_width$}"), style_dir()),
-            Span::styled(side(difference.left), side_style(newer != Some(false))),
+            Span::styled(side(difference.left), side_style(newer != Some(Side::Right))),
             Span::styled(arrow, arrow_style),
-            Span::styled(side(difference.right), side_style(newer != Some(true))),
+            Span::styled(side(difference.right), side_style(newer != Some(Side::Left))),
         ];
         if index == plan.cursor {
             for span in &mut spans {

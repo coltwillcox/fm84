@@ -59,9 +59,9 @@ fn default_action(difference: &Difference) -> SyncAction {
     match (difference.left, difference.right) {
         (Some(_), None) => SyncAction::ToRight,
         (None, Some(_)) => SyncAction::ToLeft,
-        (Some(l), Some(r)) if l.is_dir == r.is_dir => match difference.left_newer() {
-            Some(true) => SyncAction::ToRight,
-            Some(false) => SyncAction::ToLeft,
+        (Some(l), Some(r)) if l.is_dir == r.is_dir => match difference.newer() {
+            Some(Side::Left) => SyncAction::ToRight,
+            Some(Side::Right) => SyncAction::ToLeft,
             None => SyncAction::Skip,
         },
         _ => SyncAction::Skip,

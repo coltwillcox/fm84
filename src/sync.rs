@@ -2,6 +2,7 @@
 //! of what to copy which way and what to delete. Walked on a thread of its
 //! own, as Find files is, so a large tree or a slow disk holds up nothing.
 
+use crate::app::Side;
 use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::fs;
@@ -32,15 +33,15 @@ pub struct Difference {
 }
 
 impl Difference {
-    /// Which side is newer, of two files: Some(true) the left, Some(false)
-    /// the right, None when neither is - the same age, or no age to go by.
-    pub fn left_newer(&self) -> Option<bool> {
+    /// Which side is newer, of two files: None when neither is - the same
+    /// age, or no age to go by.
+    pub fn newer(&self) -> Option<Side> {
         let (Some(left), Some(right)) = (self.left, self.right) else {
             return None;
         };
         match (left.modified, right.modified) {
-            (Some(mine), Some(theirs)) if mine > theirs + SAME_TIME => Some(true),
-            (Some(mine), Some(theirs)) if theirs > mine + SAME_TIME => Some(false),
+            (Some(mine), Some(theirs)) if mine > theirs + SAME_TIME => Some(Side::Left),
+            (Some(mine), Some(theirs)) if theirs > mine + SAME_TIME => Some(Side::Right),
             _ => None,
         }
     }
@@ -192,9 +193,9 @@ mod tests {
         let paths: Vec<String> = found.iter().map(|difference| difference.path.to_string_lossy().replace('\\', "/")).collect();
         assert_eq!(paths, ["clash", "newer-left.txt", "only-right", "sizes.txt", "sub/only-left.txt", "sub/deep/newer-right.txt"]);
         let by = |path: &str| found.iter().find(|difference| difference.path == Path::new(path)).unwrap();
-        assert_eq!(by("newer-left.txt").left_newer(), Some(true));
-        assert_eq!(by("sub/deep/newer-right.txt").left_newer(), Some(false));
-        assert_eq!(by("sizes.txt").left_newer(), None);
+        assert_eq!(by("newer-left.txt").newer(), Some(Side::Left));
+        assert_eq!(by("sub/deep/newer-right.txt").newer(), Some(Side::Right));
+        assert_eq!(by("sizes.txt").newer(), None);
         assert!(by("only-right").left.is_none() && by("only-right").right.is_some_and(|side| side.is_dir));
         assert!(by("clash").left.is_some_and(|side| !side.is_dir) && by("clash").right.is_some_and(|side| side.is_dir));
         fs::remove_dir_all(&root).unwrap();
