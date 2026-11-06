@@ -194,8 +194,8 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
 
         // Disk usage sits at the far end of each panel's dash run, dropping to a
         // shorter form and then out entirely as the terminal narrows.
-        let left_disk = disk_readout(app_state.disk_left, left_pad);
-        let right_disk = disk_readout(app_state.disk_right, right_pad);
+        let left_disk = disk_readout(app_state.left.disk, left_pad);
+        let right_disk = disk_readout(app_state.right.disk, right_pad);
         let dashes = |pad: usize, disk: &Option<String>| pad - disk.as_ref().map_or(0, |text| display_width(text) + 1);
 
         let mut status_line = vec![

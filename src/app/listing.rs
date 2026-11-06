@@ -457,11 +457,11 @@ impl AppState {
         let probe = listed.archive.clone().unwrap_or_else(|| found.clone());
         self.request_git_marks(is_left, &found, listed.branch.is_some() && listed.archive.is_none());
         if is_left {
-            self.disk_left = listed.disk;
+            self.left.disk = listed.disk;
             self.branch_left = listed.branch;
             self.archive_left = listed.archive;
         } else {
-            self.disk_right = listed.disk;
+            self.right.disk = listed.disk;
             self.branch_right = listed.branch;
             self.archive_right = listed.archive;
         }
@@ -629,11 +629,7 @@ impl AppState {
                 // anywhere else on the same filesystem shifts it.
                 WatchEvent::Disk { is_left, dir, usage } => {
                     if dir == self.panel(is_left).dir {
-                        if is_left {
-                            self.disk_left = usage;
-                        } else {
-                            self.disk_right = usage;
-                        }
+                        self.panel_mut(is_left).disk = usage;
                     }
                 }
                 WatchEvent::Mounts(mounts) => self.mounts = mounts,

@@ -309,9 +309,6 @@ pub struct AppState {
     detail_worker: Latest<(PathBuf, bool), Option<Description>>,
     /// Where the preview is gathered.
     preview_worker: Latest<(PathBuf, bool), Preview>,
-    // (used, total) bytes for each panel's filesystem.
-    pub disk_left: Option<(u64, u64)>,
-    pub disk_right: Option<(u64, u64)>,
     /// The git branch each panel's directory is on, shown after its path.
     pub branch_left: Option<String>,
     pub branch_right: Option<String>,
@@ -411,6 +408,8 @@ pub struct Panel {
     // Changed on disk since it was read, to be read again once nothing is
     // open over it.
     stale: bool,
+    // (used, total) bytes for the panel's filesystem.
+    pub disk: Option<(u64, u64)>,
 }
 
 impl AppState {
@@ -465,6 +464,7 @@ impl AppState {
                 listing: None,
                 watch: None,
                 stale: false,
+                disk: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -479,6 +479,7 @@ impl AppState {
                 listing: None,
                 watch: None,
                 stale: false,
+                disk: None,
             },
             page_size: 0,
             filter_before: String::new(),
@@ -525,8 +526,6 @@ impl AppState {
             watch_interval: crate::constants::REFRESH_INTERVAL,
             detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
             preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
-            disk_left: None,
-            disk_right: None,
             branch_left: None,
             branch_right: None,
             archive_left: None,
