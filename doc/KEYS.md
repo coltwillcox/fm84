@@ -40,7 +40,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `+` / `-` | Select / deselect by pattern |
 | `*` | Invert the selection of files |
 | `Alt+*` | Invert the selection of files and directories |
-| `Alt+Shift+Enter` / `Alt+Enter` | Size every directory in the panel |
+| `Alt+Shift+Enter` / `Alt+Enter` | Size every directory in the panel, and map the space each entry takes |
 | `Ctrl+C` / `Alt+C` | Copy full paths / names to the clipboard |
 
 ## 📝 File operations
@@ -81,6 +81,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Y` / `N` / `K` | Overwrite / skip / keep both, when a file is already there |
 | `A` / `S` / `B` / `O` | Overwrite all / skip all / keep both all / overwrite all older |
 | `R` / `S` / `A` | Retry / skip / skip all, when an entry fails |
+| `R` / `C` | Check again / go on anyway, when the target has not the room |
 | `D` | Delete permanently, when the trash will not take an entry |
 
 ## 🎨 Viewer

@@ -67,7 +67,7 @@ fn help() -> Vec<(&'static str, Vec<String>)> {
                 t!("Ctrl+T/Ctrl+W - New/close tab").to_string(),
                 format!("  {}", t!("Ctrl+PgUp/PgDn, Alt+1..9 switch")),
                 t!("Space - Select/deselect file").to_string(),
-                format!("  {}", t!("Alt+Shift+Enter size every directory")),
+                format!("  {}", t!("Alt+Shift+Enter size and map every directory")),
                 t!("+/- select/deselect by pattern, * invert").to_string(),
                 format!("  {}", t!("Alt+* invert with directories")),
                 t!("Ctrl+S - Filter the panel by pattern").to_string(),

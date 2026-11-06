@@ -97,8 +97,8 @@ msgstr Alt+R i Find eller Erstat: regex
 msgid  Alt+S - Synchronize the two directories
 msgstr Alt+S - Synkronisér de to mapper
 
-msgid  Alt+Shift+Enter size every directory
-msgstr Alt+Shift+Enter størrelse på alle mapper
+msgid  Alt+Shift+Enter size and map every directory
+msgstr Alt+Shift+Enter størrelse og kort over alle mapper
 
 msgid  Appearance
 msgstr Udseende

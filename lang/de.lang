@@ -98,8 +98,8 @@ msgstr Alt+R in Suchen oder Ersetzen: Regex
 msgid  Alt+S - Synchronize the two directories
 msgstr Alt+S - Die beiden Verzeichnisse synchronisieren
 
-msgid  Alt+Shift+Enter size every directory
-msgstr Alt+Umschalt+Enter Größe aller Verzeichnisse
+msgid  Alt+Shift+Enter size and map every directory
+msgstr Alt+Umschalt+Enter Größe aller Verzeichnisse, mit Platzkarte
 
 msgid  Appearance
 msgstr Darstellung

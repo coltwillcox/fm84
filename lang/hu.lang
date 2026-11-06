@@ -99,8 +99,8 @@ msgstr Alt+R keresésben vagy cserében: regex
 msgid  Alt+S - Synchronize the two directories
 msgstr Alt+S - A két mappa szinkronizálása
 
-msgid  Alt+Shift+Enter size every directory
-msgstr Alt+Shift+Enter minden mappa mérete
+msgid  Alt+Shift+Enter size and map every directory
+msgstr Alt+Shift+Enter minden mappa mérete és térképe
 
 msgid  Appearance
 msgstr Megjelenés

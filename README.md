@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.44.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.45.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -36,7 +36,7 @@
 <td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-1.png" width="380"><br><sub><b>F11 - Options</b><br>Panels, behaviour, appearance, viewer and editor. Every row changes in place with <code>Enter</code> or <code>&larr;</code>/<code>&rarr;</code>.</sub></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="380"><br><sub><b>Outrun</b><br>One of seventeen palettes - hot pink on near-black.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="380"><br><sub><b>Outrun</b><br>One of eighteen palettes - hot pink on near-black.</sub></td>
 <td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-3.png" width="380"><br><sub><b>Nord</b><br>The muted blue-grey end of the same range.</sub></td>
 </tr>
 <tr>
@@ -83,6 +83,8 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 📝 File operations
 - 📋 **Copy, move, rename, delete** - F5, F6, F2, F8 to the trash, Shift+F8 for good, with progress, cancel, and an ask for names already taken
+- 💽 **Room checked first** - a copy that will not fit asks before it writes a byte, not halfway through
+- ✔️ **Verify copies** - an F11 option that reads each copied file back from the disk and checks it, for USB sticks and network mounts
 - 🏷️ **Multi-rename** - F2 on a selection, by `[N]`, `[E]`, `[C]` patterns with find, replace and case
 - 🔗 **Links** - Alt+F5 symbolic, Tab in its dialog for hard
 - 🔐 **Attributes** - Alt+A for permissions, owner, group and time
@@ -92,6 +94,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🧾 **User menu** - Alt+M runs commands of your own with `{file}`, `{files}`, `{dir}`
 - ✅ **Selection** - Space, `+` / `-` by pattern, `*` to invert; Ctrl+C / Alt+C copy paths or names
 - 📂 **Directory sizes** - Space on one, Alt+Shift+Enter on all, counted in the background as `du` counts
+- 🗺️ **Space map** - after Alt+Shift+Enter, a bar behind each row shows what takes the space, as ncdu does
 
 ### 📦 Archives
 - 📂 **Gone into like directories** - zip, 7z and tar in gzip, zstd, xz or bzip2; view, preview, copy out and compare inside them
@@ -116,7 +119,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🪞 **The other panel shows the file under the cursor** - text, hexdump or directory count, never more than 64 KiB read
 
 ### ⚙️ Options (F11)
-- 🎨 **17 themes**, light ones included, and 18 languages built in
+- 🎨 **18 themes**, light ones included, and 23 languages built in
 - 🧩 **Columns, sorting, date and size formats, icons, cursor, terminal, external editor, confirmations** - saved to `~/.config/fm84/config` as plain `key = value`
 
 ---
@@ -171,7 +174,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.44.1
+fm84 --version          # fm84 0.45.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -236,7 +239,7 @@ tar -xzf fm84-v*.tar.gz
 </pre>
 </div>
 
-The default Synthwave palette channels pure 80s energy (F11 swaps it for any of 16 others, light ones included):
+The default Synthwave palette channels pure 80s energy (F11 swaps it for any of 17 others, light ones included):
 - 🖤 **Black background** - `#000000`
 - 💜 **Violet borders** - `#743AD5`
 - 🔮 **Purple selections** - `#9400D3`
@@ -267,5 +270,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.44.1 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.45.0 ▄▀▄▀▄▀</code>
 </p>

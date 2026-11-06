@@ -98,8 +98,8 @@ msgstr Alt+R во Најди или Замени: regex
 msgid  Alt+S - Synchronize the two directories
 msgstr Alt+S - Усогласи ги двете папки
 
-msgid  Alt+Shift+Enter size every directory
-msgstr Alt+Shift+Enter големина на сите папки
+msgid  Alt+Shift+Enter size and map every directory
+msgstr Alt+Shift+Enter големина и карта на сите папки
 
 msgid  Appearance
 msgstr Изглед

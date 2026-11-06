@@ -6,6 +6,21 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.45.0] - 2026-11-06
+
+### ✨ Added
+- 🌐 **Six more languages** - **Nederlands**, **Dansk**, **Gaeilge**, **Română**, **Български** and **Српски (ћирилица)**, every word of each built in, for twenty-three in all. Automatic finds them in a locale by `nl`, `da`, `ga`, `ro` and `bg`; Serbian stays in the Latin alphabet unless the locale asks for Cyrillic, as `sr@cyrillic` or `sr-Cyrl` does. Irish counts take five forms, 7 to 10 apart from 3 to 6 - 3 chomhad, 7 gcomhad, 20 comhad - and Romanian says 20 de fișiere, as 2 to 19 do not
+- 💽 **Room checked before a copy** - a copy, a move to another disk or Alt+S adds up what it will write to each filesystem before writing any of it, and one without the room says how much is needed and how much is free: **R** looks again once some has been made, **C** goes on anyway, **Esc** stops with the reason in the status bar. Asked rather than refused, as a file written over gives its room back and a filesystem may compress
+- ✔️ **Verify copies** - an F11 option that reads each file a copy, a move to another disk or Alt+S writes back from the device - flushed, and let go of from memory, first - and compares its SHA-256 with the original's before it takes its place. One that reads back differently is thrown away and asked about as any failure is, so a move never deletes an original whose copy is bad. The bar counts each byte twice. For USB sticks and network mounts
+- 🗺️ **Space map** - Alt+Shift+Enter also puts a bar behind each row, as long against the largest entry as the entry is, as ncdu draws it, growing as the directories are counted. The lines under the panels give the cursor's entry its share, as `42% of 12 GiB`. It stays with the directory it was asked for in
+- 🎨 **Pacman** - a theme of an arcade maze at night: maze-blue borders and cursor on black, yellow directories, and the four ghosts' red, pink, cyan and orange for the rest
+- 💜 **The FM84 logo in F1** - between the keys and About, its blocks in the theme's directory colour and their shading in its border colour
+
+### 🛠️ Changed
+- 🔤 **Languages in the order of the alphabet** - F11 lists English, then the rest by each one's own name, a Greek or Cyrillic one by how it is spelt in Latin letters
+
+---
+
 ## [0.44.1] - 2026-11-06
 
 ### 🐛 Fixed

@@ -98,8 +98,8 @@ msgstr Alt+R σε Εύρεση ή Αντικατάσταση: regex
 msgid  Alt+S - Synchronize the two directories
 msgstr Alt+S - Συγχρονισμός των δύο φακέλων
 
-msgid  Alt+Shift+Enter size every directory
-msgstr Alt+Shift+Enter μέγεθος όλων των φακέλων
+msgid  Alt+Shift+Enter size and map every directory
+msgstr Alt+Shift+Enter μέγεθος και χάρτης όλων των φακέλων
 
 msgid  Appearance
 msgstr Εμφάνιση

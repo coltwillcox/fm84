@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-06" "fm84 0.44.1" "User Commands"
+.TH FM84 1 "2026-11-06" "fm84 0.45.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -309,6 +309,13 @@ counts: a file with several hard links once, and nothing on
 .IR /proc ,
 .I /sys
 and the like.
+It also turns on the space map: a bar behind each row, as long against the
+largest entry as the entry is, as
+.BR ncdu (1)
+draws it.
+The cursor's row keeps its colour; the lines under the panels give its share
+of the whole.
+The map stays with the directory, gone while the panel is elsewhere.
 .TP
 .B + \-
 Select or deselect by pattern:
@@ -423,7 +430,7 @@ The ones the screen answers are listed along the bottom border;
 a click on one presses it.
 .TP 18
 .B F1
-Help: the keys, then
+Help: the keys, the FM84 logo in the theme's colours, then
 .BR About ,
 with the version, licence and where fm84 lives.
 Like every popup it sits over the panels and is no taller than they are;
@@ -495,6 +502,12 @@ Edit the file, in the built\-in editor or the one set under F11.
 .B F5
 Copy to the other panel, or wherever the dialog is told.
 A single file can be given a new name on the way.
+Before anything is written, what goes to each filesystem is set against
+what can still be written there, and a copy without the room asks first.
+With
+.B Verify copies
+on, each file is read back from where it went and checked against the
+original before it takes its place.
 .TP
 .B Alt+F5 Ctrl+Shift+F5
 Make a symbolic link to what is chosen, asking where as F5 does: for one
@@ -631,6 +644,11 @@ Cancel it.
 .B R S A
 Retry, Skip, or Skip all, when an entry fails.
 .TP
+.B R C
+Check again, or go on anyway, when the target has not the room for what
+is about to be written - asked before anything is.
+Esc stops, the reason left in the status bar.
+.TP
 .B Y N K A S B O
 Overwrite, Skip, Keep both, Overwrite all, Skip all, Keep both all, or
 Overwrite all older, when a file is already there.
@@ -728,19 +746,29 @@ In the editor they move the view and leave the cursor where it is.
 F11 opens the options, changed in place with Enter, Space, Left or Right and
 saved as they change.
 Among them: hidden files, sort order, columns, git marks, date format and size units;
-confirmations, delete to trash, what to do when a destination exists, the
-terminal and editor commands, remembering directories; the theme, icons,
+confirmations, delete to trash, what to do when a destination exists,
+verifying copies, the terminal and editor commands, remembering directories; the theme, icons,
 clock, and the cursor's shape and whether it blinks; tab width, line numbers,
 what the scroll bars are drawn with, highlighting and image settings.
 .B Language
 is Automatic, which follows the environment (see
 .BR ENVIRONMENT ),
-or one of English, Serbian in the Latin alphabet, Croatian, Macedonian,
-Slovenian, Czech, Slovak, Polish, Hungarian, Greek, Turkish, German, French,
-Italian, Spanish, Brazilian Portuguese, Swedish and Norwegian Bokm\(oal; the
-keys stay the same in any of them.
+or one of English, Bulgarian, Czech, Danish, German, Greek, Spanish, French,
+Irish, Croatian, Italian, Hungarian, Macedonian, Dutch, Norwegian
+Bokm\(oal, Polish, Brazilian Portuguese, Romanian, Slovak, Slovenian, Serbian
+in the Cyrillic alphabet, Serbian in the Latin alphabet, Swedish and Turkish,
+in that order - by each one's own name; the keys stay the same in any of
+them.
 The list scrolls within the panels when it does not fit, with Up and Down or
 the mouse wheel.
+.PP
+.B Verify copies
+reads each file a copy, a move to another disk or a synchronize writes back
+from the device, flushed and let go of from memory first, and compares its
+SHA\-256 with the original's before it takes its place.
+One that reads back differently is thrown away and asked about as any
+failure is.
+Slower: for USB sticks and network mounts.
 .PP
 The cursor, in fields and in the editor, is the terminal's own: a bar, a
 block or an underline.
@@ -828,29 +856,39 @@ The language fm84 is shown in, while F11's Language is Automatic: the first
 of LANGUAGE's colon\-separated list that fm84 has words for, unless the
 locale is C; otherwise the first of the other three that is set.
 A locale is taken by its language:
-.BR sr ,
-.BR hr ,
-.BR mk ,
-.BR sl ,
+.BR bg ,
 .BR cs ,
-.BR sk ,
-.BR pl ,
-.BR hu ,
-.BR el ,
-.BR tr ,
+.BR da ,
 .BR de ,
-.BR fr ,
-.BR it ,
+.BR el ,
 .BR es ,
-.BR pt ,
-.B sv
-and
+.BR fr ,
+.BR ga ,
+.BR hr ,
+.BR it ,
+.BR hu ,
+.BR mk ,
+.BR nl ,
 .B nb
 or
 .BR no ,
+.BR pl ,
+.BR pt ,
+.BR ro ,
+.BR sk ,
+.BR sl ,
+.BR sr ,
+.B sv
+and
+.BR tr ,
 as
 .BR de_AT.UTF\-8 ;
 anything else is English.
+Serbian is in the Latin alphabet unless the locale asks for Cyrillic, as
+.B sr@cyrillic
+or
+.B sr\-Cyrl
+does.
 .TP
 .B XDG_DATA_HOME
 Where the trash is, as the freedesktop.org trash specification has it.
