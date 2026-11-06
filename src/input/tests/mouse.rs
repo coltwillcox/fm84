@@ -305,7 +305,7 @@ fn a_click_on_the_branch_lists_branches_to_switch_to() {
         _ => None,
     };
     draw(&mut app_state);
-    assert_eq!(app_state.branch_left.as_deref(), Some("main"));
+    assert_eq!(app_state.left.branch.as_deref(), Some("main"));
 
     // The branch on the path bar, clicked: the list, on the one checked out.
     let branch = app_state.branch_hits[0].expect("the branch is drawn");
@@ -321,7 +321,7 @@ fn a_click_on_the_branch_lists_branches_to_switch_to() {
     click(&mut app_state, feature);
     assert!(app_state.dialog.is_none());
     assert_eq!(app_state.error, None);
-    assert_eq!(app_state.branch_left.as_deref(), Some("feature"));
+    assert_eq!(app_state.left.branch.as_deref(), Some("feature"));
     assert_eq!(std::fs::read_to_string(dir.join("file.txt")).unwrap(), "feature\n");
 
     // An edit that the switch would lose: git refuses, and says so.
@@ -334,7 +334,7 @@ fn a_click_on_the_branch_lists_branches_to_switch_to() {
     press(&mut app_state, KeyCode::Enter);
     let refused = app_state.error.clone().expect("git said why");
     assert!(refused.contains("file.txt"), "{refused}");
-    assert_eq!(app_state.branch_left.as_deref(), Some("feature"));
+    assert_eq!(app_state.left.branch.as_deref(), Some("feature"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

@@ -309,9 +309,6 @@ pub struct AppState {
     detail_worker: Latest<(PathBuf, bool), Option<Description>>,
     /// Where the preview is gathered.
     preview_worker: Latest<(PathBuf, bool), Preview>,
-    /// The git branch each panel's directory is on, shown after its path.
-    pub branch_left: Option<String>,
-    pub branch_right: Option<String>,
     /// The archive each panel's directory runs through, when it is inside
     /// one, as its listing found it. Read-only there: everything that would
     /// write asks this first, and never the disk.
@@ -410,6 +407,8 @@ pub struct Panel {
     stale: bool,
     // (used, total) bytes for the panel's filesystem.
     pub disk: Option<(u64, u64)>,
+    /// The git branch the panel's directory is on, shown after its path.
+    pub branch: Option<String>,
 }
 
 impl AppState {
@@ -465,6 +464,7 @@ impl AppState {
                 watch: None,
                 stale: false,
                 disk: None,
+                branch: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -480,6 +480,7 @@ impl AppState {
                 watch: None,
                 stale: false,
                 disk: None,
+                branch: None,
             },
             page_size: 0,
             filter_before: String::new(),
@@ -526,8 +527,6 @@ impl AppState {
             watch_interval: crate::constants::REFRESH_INTERVAL,
             detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
             preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
-            branch_left: None,
-            branch_right: None,
             archive_left: None,
             archive_right: None,
             user_at_host: crate::fs_ops::user_at_host(),

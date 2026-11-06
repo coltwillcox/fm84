@@ -7,7 +7,7 @@ fn the_branch_after_the_path_and_who_by_the_logo() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.left.dir = PathBuf::from("/home/colt/fm84");
-    app_state.branch_left = Some("main".to_string());
+    app_state.left.branch = Some("main".to_string());
     app_state.user_at_host = ("colt@laserbeak".to_string(), false);
     let row = |width: u16, y: u16, app_state: &mut AppState| {
         let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(width, 30)).unwrap();

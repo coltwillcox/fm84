@@ -458,11 +458,11 @@ impl AppState {
         self.request_git_marks(is_left, &found, listed.branch.is_some() && listed.archive.is_none());
         if is_left {
             self.left.disk = listed.disk;
-            self.branch_left = listed.branch;
+            self.left.branch = listed.branch;
             self.archive_left = listed.archive;
         } else {
             self.right.disk = listed.disk;
-            self.branch_right = listed.branch;
+            self.right.branch = listed.branch;
             self.archive_right = listed.archive;
         }
         let watch = &self.panel(is_left).watch;

@@ -405,8 +405,8 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
         (!parts.is_empty()).then(|| format!(" {} ", parts.join(", ")))
     };
     let sides = [
-        (&app_state.left.dir, filter_label(true), &app_state.branch_left, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
-        (&app_state.right.dir, filter_label(false), &app_state.branch_right, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),
+        (&app_state.left.dir, filter_label(true), &app_state.left.branch, length_left, color_left, going_to.filter(|_| is_left_active), "─┬──"),
+        (&app_state.right.dir, filter_label(false), &app_state.right.branch, length_right, color_right, going_to.filter(|_| !is_left_active), "─┤"),
     ];
     for (branch, (dir, filter, label, length, style, editing, end)) in branches.iter_mut().zip(sides) {
         let (spans, label_at) = side(dir, filter, branch_label(label), length, style, editing, end);
