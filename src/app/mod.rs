@@ -279,8 +279,6 @@ pub struct AppState {
     pub branch_switch: Option<PendingSwitch>,
     /// The column headings a click sorts by, both panels', as last drawn.
     pub sort_headers: Vec<(Rect, SortKey)>,
-    pub viewport_start_left: usize,
-    pub viewport_start_right: usize,
     pub editor_content_area: Rect,
     pub viewer_content_area: Rect,
     /// The viewer's or the editor's scroll bars, as last drawn.
@@ -415,6 +413,7 @@ pub struct Panel {
     // The name the filesystem holds, not the one shown: two names that are not
     // valid UTF-8 can read the same, and picking one would pick both.
     pub selected: HashSet<OsString>,
+    pub viewport_start: usize,
 }
 
 impl AppState {
@@ -464,6 +463,7 @@ impl AppState {
                 flat: None,
                 git: PanelGit::default(),
                 selected: HashSet::new(),
+                viewport_start: 0,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -473,6 +473,7 @@ impl AppState {
                 flat: None,
                 git: PanelGit::default(),
                 selected: HashSet::new(),
+                viewport_start: 0,
             },
             page_size: 0,
             filter_before: String::new(),
@@ -507,8 +508,6 @@ impl AppState {
             branch_rows: Vec::new(),
             branch_switch: None,
             sort_headers: Vec::new(),
-            viewport_start_left: 0,
-            viewport_start_right: 0,
             editor_content_area: Rect::default(),
             viewer_content_area: Rect::default(),
             scroll_bars: Vec::new(),

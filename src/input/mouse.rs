@@ -308,7 +308,7 @@ fn handle_mouse_click(app_state: &mut AppState, column: u16, row: u16) {
     }
 
     // The offset the panel was rendered with, not a second guess at it.
-    let start = if clicked_left { app_state.viewport_start_left } else { app_state.viewport_start_right };
+    let start = app_state.panel(clicked_left).viewport_start;
     let actual_index = start + clicked_table_row;
 
     // Select the row if within bounds
