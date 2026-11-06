@@ -102,7 +102,7 @@ impl AppState {
         if self.cursor_detail.as_ref().is_none_or(|detail| detail.path != path) {
             let (name, awaiting) = match target {
                 Some((path, name, is_dir)) => {
-                    self.detail_worker.ask((path, is_dir));
+                    self.workers.detail_worker.ask((path, is_dir));
                     wait = self.detail_wait;
                     (name, true)
                 }
@@ -123,7 +123,7 @@ impl AppState {
         if !self.cursor_detail.as_ref().is_some_and(|detail| detail.awaiting) {
             return;
         }
-        let Some(((path, _), described)) = self.detail_worker.answer(wait) else {
+        let Some(((path, _), described)) = self.workers.detail_worker.answer(wait) else {
             return;
         };
         let date_format = self.options.date_format;

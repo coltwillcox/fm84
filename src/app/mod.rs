@@ -213,6 +213,7 @@ pub struct AppState {
     pub left: Panel,
     pub right: Panel,
     pub drawn: Drawn,
+    pub workers: Workers,
     /// The filter there was when Ctrl+S's prompt opened, for Esc to put back.
     pub filter_before: String,
     pub search_input: String,
@@ -268,8 +269,6 @@ pub struct AppState {
     /// How often a watcher looks. Shortened under test, so a change is seen
     /// inside it.
     pub watch_interval: Duration,
-    /// Where the detail lines are gathered.
-    detail_worker: Latest<(PathBuf, bool), Option<Description>>,
     /// Where the preview is gathered.
     preview_worker: Latest<(PathBuf, bool), Preview>,
     /// `user@host`, for the top border, and whether that is root.
@@ -426,6 +425,12 @@ pub struct Drawn {
     pub scroll_bars: Vec<crate::scroll_bar::ScrollBar>,
 }
 
+/// The threads working for the UI, and how long it waits on them.
+pub struct Workers {
+    /// Where the detail lines are gathered.
+    detail_worker: Latest<(PathBuf, bool), Option<Description>>,
+}
+
 impl AppState {
     /// The left panel, or the right.
     pub fn panel(&self, is_left: bool) -> &Panel {
@@ -499,6 +504,9 @@ impl AppState {
                 archive: None,
             },
             drawn: Drawn { find_files_page: 10, ..Drawn::default() },
+            workers: Workers {
+                detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
+            },
             filter_before: String::new(),
             search_input: String::new(),
             select_pattern: "*".to_string(),
@@ -521,7 +529,6 @@ impl AppState {
             watch_sender,
             watch_events,
             watch_interval: crate::constants::REFRESH_INTERVAL,
-            detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
             preview_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| read_preview(path, *is_dir)),
             user_at_host: crate::fs_ops::user_at_host(),
             job: None,
