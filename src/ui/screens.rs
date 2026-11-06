@@ -205,7 +205,7 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mu
     (height, text_width)
 }
 
-pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) -> usize {
+pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState, drawn: &mut Drawn) -> usize {
     let line_numbers = app_state.options.line_numbers;
     let mut bars = Vec::new();
     let bar_style = app_state.options.scroll_bar;
@@ -322,7 +322,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         (0, Rect::default())
     };
 
-    app_state.drawn.editor_content_area = content_area;
-    app_state.drawn.scroll_bars = bars;
+    drawn.editor_content_area = content_area;
+    drawn.scroll_bars = bars;
     viewport_height
 }

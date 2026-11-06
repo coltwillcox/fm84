@@ -1,7 +1,7 @@
 //! Drawing: the screen laid out from top to bottom, the styles everything is
 //! drawn in, and the cursor placed once a frame is done.
 
-use crate::app::{AppState, AttributeKind, AttributesForm, BranchList, Dialog, FindFiles, PromptKind, Screen, Side, TextInput, TransferKind};
+use crate::app::{AppState, AttributeKind, AttributesForm, BranchList, Dialog, Drawn, FindFiles, PromptKind, Screen, Side, TextInput, TransferKind};
 use crate::constants::*;
 use crate::display::{palette, tab_width};
 use crate::options::{Clock, DateFormat, IconStyle, OPTION_ROWS, Options, ScrollBarStyle, SortKey};
@@ -81,22 +81,27 @@ fn style_match() -> Style {
     Style::new().add_modifier(Modifier::UNDERLINED | Modifier::BOLD)
 }
 
+/// Draw a frame. What it drew, and where, is drawn into a `Drawn` of its
+/// own, taken out of the state while the frame is drawn and put back after,
+/// for the keys and the mouse to read.
 pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppState) {
+    let mut drawn = std::mem::take(&mut app_state.drawn);
     // Update cached clock
     let current_time = match app_state.options.clock {
         Clock::Hours24 => Local::now().format(" %H:%M:%S ").to_string(),
         Clock::Hours12 => Local::now().format(" %I:%M:%S %p ").to_string(),
         Clock::Off => String::new(),
     };
-    if app_state.drawn.cached_clock != current_time {
-        app_state.drawn.cached_clock = current_time;
+    if drawn.cached_clock != current_time {
+        drawn.cached_clock = current_time;
     }
 
     crate::display::set_classic_cursor(app_state.options.cursor == crate::options::CursorShape::Classic);
     let _ = terminal.draw(|f| {
-        draw_frame(f, app_state);
+        draw_frame(f, app_state, &mut drawn);
         show_cursor(f, app_state);
     });
+    app_state.drawn = drawn;
 }
 
 /// Show the cursor where the frame marked it. A field's wins over the
@@ -170,7 +175,7 @@ fn screen_layout(area: Rect) -> std::rc::Rc<[Rect]> {
         .split(area)
 }
 
-fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
+fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState, drawn: &mut Drawn) {
     {
         let area = f.area();
         paint_background(f, area);
@@ -187,33 +192,33 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
 
         let chunks_main = screen_layout(area);
 
-        render_top_panel(f, chunks_main[0], app_state);
+        render_top_panel(f, chunks_main[0], app_state, drawn);
         let going_to = match &app_state.dialog {
             Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input),
             _ => None,
         };
-        app_state.drawn.branch_hits = render_path_bar(f, chunks_main[1], app_state, going_to);
-        app_state.drawn.path_bar_area = chunks_main[1];
+        drawn.branch_hits = render_path_bar(f, chunks_main[1], app_state, going_to);
+        drawn.path_bar_area = chunks_main[1];
         // Only the viewer and the editor have bars, and they put theirs back.
-        app_state.drawn.scroll_bars.clear();
+        drawn.scroll_bars.clear();
         match app_state.screen {
             Screen::Viewer(_) => {
                 let (height, width, content_area, bars) = render_viewer(f, chunks_main[2], app_state);
-                app_state.drawn.viewer_viewport_height = height;
-                app_state.drawn.viewer_viewport_width = width;
-                app_state.drawn.viewer_content_area = content_area;
-                app_state.drawn.scroll_bars = bars;
+                drawn.viewer_viewport_height = height;
+                drawn.viewer_viewport_width = width;
+                drawn.viewer_content_area = content_area;
+                drawn.scroll_bars = bars;
             }
-            Screen::Editor(_) => app_state.drawn.editor_viewport_height = render_editor(f, chunks_main[2], app_state),
+            Screen::Editor(_) => drawn.editor_viewport_height = render_editor(f, chunks_main[2], app_state, drawn),
             Screen::Diff(_) => {
                 let (height, width) = render_diff(f, chunks_main[2], app_state);
-                app_state.drawn.diff_viewport_height = height;
-                app_state.drawn.diff_viewport_width = width;
+                drawn.diff_viewport_height = height;
+                drawn.diff_viewport_width = width;
             }
-            Screen::Panels => app_state.drawn.page_size = render_file_tables(f, chunks_main[2], app_state),
+            Screen::Panels => drawn.page_size = render_file_tables(f, chunks_main[2], app_state, drawn),
         }
         render_bottom_panel(f, chunks_main[3], app_state);
-        render_fkey_bar(f, chunks_main[4], app_state);
+        render_fkey_bar(f, chunks_main[4], app_state, drawn);
         render_detail(f, chunks_main[4].inner(Margin { vertical: 0, horizontal: 2 }), app_state);
 
         // The rename field, the prompt and the drive picker are drawn where
@@ -224,10 +229,10 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
         let mut branch_rows = Vec::new();
         match &app_state.dialog {
             Some(Dialog::Help) => {
-                app_state.drawn.help_room = render_help_popup(f, area, app_state.help_scroll);
+                drawn.help_room = render_help_popup(f, area, app_state.help_scroll);
                 // Kept to what the room allows, so a screen that has grown
                 // does not leave the keys scrolling through lines past the end.
-                app_state.help_scroll = app_state.help_scroll.min(help_lines().len().saturating_sub(app_state.drawn.help_room));
+                app_state.help_scroll = app_state.help_scroll.min(help_lines().len().saturating_sub(drawn.help_room));
             }
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
@@ -274,10 +279,10 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &mut AppState) {
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {
-            app_state.drawn.find_files_page = page;
+            drawn.find_files_page = page;
         }
-        app_state.drawn.attribute_rows = attribute_rows;
-        app_state.drawn.branch_rows = branch_rows;
+        drawn.attribute_rows = attribute_rows;
+        drawn.branch_rows = branch_rows;
         // Over everything: a job, which holds the keys while it runs, or an
         // error, which holds them until it is put away.
         if app_state.workers.job.is_some() {

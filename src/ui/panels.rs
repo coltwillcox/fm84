@@ -285,8 +285,8 @@ pub(super) fn tab_strip(app_state: &mut AppState, side: Side, area: Rect) -> Lin
     Line::from(lay_strip(&mut tabs.strip, area, items, Some(active)))
 }
 
-pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState) {
-    let cached_clock = app_state.drawn.cached_clock.as_str();
+pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &mut AppState, drawn: &Drawn) {
+    let cached_clock = drawn.cached_clock.as_str();
     let logo = Span::styled(format!(" {} ", logo_icon(app_state.options.icon_style)), style_title());
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), style_title());
     let clock = Span::styled(cached_clock, style_title());
@@ -424,7 +424,7 @@ pub(super) fn render_path_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
     branches
 }
 
-pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut AppState) -> u16 {
+pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_state: &mut AppState, drawn: &mut Drawn) -> u16 {
     let chunks = panel_split(chunk);
 
     let columns = visible_columns(&app_state.options, chunks[0].width);
@@ -461,7 +461,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     let block_right = Block::default().borders(Borders::RIGHT).border_style(style_border());
     // Where each heading lands, laid out as the table lays out its columns,
     // for a click to sort by. Not under the preview, which covers one panel.
-    app_state.drawn.sort_headers.clear();
+    drawn.sort_headers.clear();
     for (area, block, side) in [(chunks[0], &block_left, Side::Left), (chunks[2], &block_right, Side::Right)] {
         if app_state.preview.is_some() && side != app_state.active_side {
             continue;
@@ -470,10 +470,10 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
         let cells = Layout::horizontal(widths.clone()).spacing(1).split(Rect { height: 1, ..inner });
         // The icon and Name both sort by name; then a spacer and a column each.
         let name = cells[0].union(cells[1]);
-        app_state.drawn.sort_headers.push((name, SortKey::Name));
+        drawn.sort_headers.push((name, SortKey::Name));
         for (index, column) in columns.iter().enumerate() {
             if let Some(key) = column.sort_key() {
-                app_state.drawn.sort_headers.push((cells[3 + 2 * index], key));
+                drawn.sort_headers.push((cells[3 + 2 * index], key));
             }
         }
     }
@@ -487,11 +487,11 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 
     // Cache the separator string based on height
     let separator_height = chunks[0].height;
-    if app_state.drawn.cached_separator_height != separator_height {
-        app_state.drawn.cached_separator_height = separator_height;
-        app_state.drawn.cached_separator = "│\n".repeat(separator_height.saturating_sub(1) as usize) + "│";
+    if drawn.cached_separator_height != separator_height {
+        drawn.cached_separator_height = separator_height;
+        drawn.cached_separator = "│\n".repeat(separator_height.saturating_sub(1) as usize) + "│";
     }
-    let separator_vertical = Paragraph::new(Text::raw(&app_state.drawn.cached_separator)).style(style_border());
+    let separator_vertical = Paragraph::new(Text::raw(&drawn.cached_separator)).style(style_border());
     f.render_widget(separator_vertical, chunks[1]);
 
     // Build only visible rows for right panel
@@ -509,7 +509,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     }
 
     // Hand the real geometry to the mouse handlers.
-    app_state.drawn.table_areas = [chunks[0], chunks[2]];
+    drawn.table_areas = [chunks[0], chunks[2]];
     app_state.left.viewport_start = offset_left;
     app_state.right.viewport_start = offset_right;
 
