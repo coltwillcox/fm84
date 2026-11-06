@@ -12,7 +12,7 @@ fn a_click_on_the_key_bar_is_the_key() {
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(160, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
     let label = |terminal: &ratatui::Terminal<ratatui::backend::TestBackend>, cell: ratatui::layout::Rect| -> String { (cell.x..cell.right()).map(|x| terminal.backend().buffer()[(x, cell.y)].symbol().to_string()).collect() };
-    let hit = |app_state: &AppState, key: u8| app_state.fkey_hits.iter().find(|(_, k)| *k == key).map(|(cell, _)| *cell);
+    let hit = |app_state: &AppState, key: u8| app_state.drawn.fkey_hits.iter().find(|(_, k)| *k == key).map(|(cell, _)| *cell);
     let click = |app_state: &mut AppState, cell: ratatui::layout::Rect| {
         crate::input::handle_mouse(
             app_state,
@@ -25,7 +25,7 @@ fn a_click_on_the_key_bar_is_the_key() {
         )
     };
 
-    assert_eq!(app_state.fkey_hits.len(), 12);
+    assert_eq!(app_state.drawn.fkey_hits.len(), 12);
     assert_eq!(label(&terminal, hit(&app_state, 8).unwrap()), " F8 Trash ");
     app_state.options.delete_to_trash = false;
     crate::ui::render_ui(&mut terminal, &mut app_state);
@@ -51,7 +51,7 @@ fn a_click_on_the_key_bar_is_the_key() {
     assert!(app_state.is_viewing());
     let keys = |terminal: &mut ratatui::Terminal<ratatui::backend::TestBackend>, app_state: &mut AppState| {
         crate::ui::render_ui(terminal, app_state);
-        app_state.fkey_hits.iter().map(|(_, key)| *key).collect::<Vec<_>>()
+        app_state.drawn.fkey_hits.iter().map(|(_, key)| *key).collect::<Vec<_>>()
     };
     assert_eq!(keys(&mut terminal, &mut app_state), [3, 10]);
     app_state.viewer_mut().unwrap().mode = crate::viewer::ViewMode::Image;
@@ -63,9 +63,9 @@ fn a_click_on_the_key_bar_is_the_key() {
     // Narrow, labels are dropped whole from the end.
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(60, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
-    let shown = app_state.fkey_hits.len();
+    let shown = app_state.drawn.fkey_hits.len();
     assert!((1..12).contains(&shown));
-    let (last, _) = app_state.fkey_hits[shown - 1];
+    let (last, _) = app_state.drawn.fkey_hits[shown - 1];
     assert!(label(&terminal, last).ends_with(' ') && last.right() < 60);
 }
 

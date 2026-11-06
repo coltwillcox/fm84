@@ -355,7 +355,7 @@ pub(super) fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
         labels.push((key, label));
     }
 
-    app_state.fkey_hits.clear();
+    app_state.drawn.fkey_hits.clear();
     let room = area.width.saturating_sub(2);
     let total = (used - 2) as u16;
     let mut x = area.x + 1 + room.saturating_sub(total) / 2;
@@ -364,7 +364,7 @@ pub(super) fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
         let width = (display_width(&label) as u16).min(area.right().saturating_sub(x));
         let cell = Rect::new(x, y, width, 1);
         f.render_widget(Paragraph::new(Span::styled(label, style_title())), cell);
-        app_state.fkey_hits.push((cell, key));
+        app_state.drawn.fkey_hits.push((cell, key));
         x += width + 1;
     }
 }

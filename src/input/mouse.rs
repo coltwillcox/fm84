@@ -57,7 +57,7 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     // prompt, which would take the key as one of theirs.
     if mouse_event.kind == MouseEventKind::Down(MouseButton::Left)
         && app_state.dialog.is_none()
-        && let Some(&(_, key)) = app_state.fkey_hits.iter().find(|(cell, _)| cell.contains(Position::new(column, row)))
+        && let Some(&(_, key)) = app_state.drawn.fkey_hits.iter().find(|(cell, _)| cell.contains(Position::new(column, row)))
     {
         return handle_key(app_state, KeyEvent::new(KeyCode::F(key), KeyModifiers::NONE));
     }
