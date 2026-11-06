@@ -129,12 +129,20 @@ impl MultiRename {
             .enumerate()
             .map(|(index, entry)| new_name(&entry.old, index, &self.fields[0].text, &self.fields[1].text, &self.fields[2].text, self.case))
             .collect();
-        let targets: Vec<PathBuf> = self.entries.iter().zip(&names).map(|(entry, name)| entry.path.with_file_name(name)).collect();
         let changing: Vec<bool> = self.entries.iter().zip(&names).map(|(entry, name)| *name != entry.old).collect();
+        // One left as it is stays at its own path - not one made again from
+        // its name as text, which for a name that is not UTF-8 is another.
+        let targets: Vec<PathBuf> = self
+            .entries
+            .iter()
+            .zip(&names)
+            .zip(&changing)
+            .map(|((entry, name), &changing)| if changing { entry.path.with_file_name(name) } else { entry.path.clone() })
+            .collect();
         // What is moving away frees its name for another to take - told
         // apart as the filesystem tells names apart, as the rest are.
-        let leaving: HashSet<String> = self.entries.iter().zip(&changing).filter(|(_, changing)| **changing).map(|(entry, _)| fold_for_fs(&entry.path)).collect();
-        let mut seen: HashMap<String, usize> = HashMap::new();
+        let leaving: HashSet<OsString> = self.entries.iter().zip(&changing).filter(|(_, changing)| **changing).map(|(entry, _)| fold_for_fs(&entry.path)).collect();
+        let mut seen: HashMap<OsString, usize> = HashMap::new();
         for target in &targets {
             *seen.entry(fold_for_fs(target)).or_default() += 1;
         }
@@ -165,9 +173,14 @@ impl MultiRename {
 
 /// A path as the filesystem tells names apart: on Windows and macOS, in
 /// either case alike.
-fn fold_for_fs(path: &Path) -> String {
-    let text = path.to_string_lossy();
-    if cfg!(any(windows, target_os = "macos")) { text.to_lowercase() } else { text.into_owned() }
+fn fold_for_fs(path: &Path) -> OsString {
+    // There, names are text. Elsewhere they are bytes, compared as they are,
+    // so two that only read alike as text stay apart.
+    if cfg!(any(windows, target_os = "macos")) {
+        path.to_string_lossy().to_lowercase().into()
+    } else {
+        path.as_os_str().to_os_string()
+    }
 }
 
 /// `old`'s name and extension: the extension after the last dot, and none
@@ -355,7 +368,7 @@ impl AppState {
             .collect();
         // On a filesystem that does not tell case apart, `b` is in the way
         // of `a` going to `B` until it has gone itself.
-        let sources: HashSet<String> = moves.iter().map(|(from, _)| fold_for_fs(from)).collect();
+        let sources: HashSet<OsString> = moves.iter().map(|(from, _)| fold_for_fs(from)).collect();
         let chained = moves.iter().any(|(from, to)| to != from && sources.contains(&fold_for_fs(to)));
         let result = if chained { rename_through_scratch(&moves) } else { rename_each(&moves) };
 
@@ -513,5 +526,37 @@ mod tests {
             std::fs::remove_file(dir.join("two")).unwrap();
         }
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+    /// Two names that are not valid UTF-8 read alike as text, but are not the
+    /// same name: left as they are, they are in nobody's way, and the rest
+    /// can still be renamed.
+    #[cfg(unix)]
+    #[test]
+    fn names_alike_only_as_text_do_not_clash() {
+        use std::os::unix::ffi::OsStrExt;
+        let dir = Path::new("/nowhere");
+        let unreadable = |bytes: &[u8]| {
+            let name = std::ffi::OsStr::from_bytes(bytes);
+            RenameEntry {
+                path: dir.join(name),
+                old: name.to_string_lossy().into_owned(),
+                readable: false,
+            }
+        };
+        let entries = vec![
+            unreadable(b"a\xff"),
+            unreadable(b"a\xfe"),
+            RenameEntry {
+                path: dir.join("b.txt"),
+                old: "b.txt".into(),
+                readable: true,
+            },
+        ];
+        let mut rename = MultiRename::new(entries);
+        rename.fields[1].set("b".to_string());
+        rename.fields[2].set("c".to_string());
+        let preview = rename.preview();
+        assert_eq!(preview[2].0, "c.txt");
+        assert!(preview.iter().all(|(_, problem)| problem.is_none()), "{:?}", preview.iter().map(|(_, problem)| *problem).collect::<Vec<_>>());
     }
 }
