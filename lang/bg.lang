@@ -1875,3 +1875,30 @@ msgstr Пръсни изтритото завинаги
 
 msgid  Turbo: brighter neon, scanlines
 msgstr Турбо: по-ярък неон, сканиращи линии
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] too
+msgstr [Exif:date] [Tag:artist] [Pdf:title] също
+
+msgid  F on text follows it as it grows
+msgstr F върху текст го следи, докато расте
+
+msgid  Ctrl+Z - Undo the last rename, copy, move or trash
+msgstr Ctrl+Z - Отмени последното преименуване, копиране, преместване или кошче
+
+msgid  Alt+D - Find duplicate files
+msgstr Alt+D - Намери еднакви файлове
+
+msgid  Alt+R - Dossier: the directory summed up
+msgstr Alt+R - Досие: папката накратко
+
+msgid  Alt+G - Git: stage, unstage, discard, compare
+msgstr Alt+G - Git: добави, извади, отхвърли, сравни
+
+msgid  R opens a branch, tag or commit as a folder
+msgstr R отваря клон, етикет или къмит като папка
+
+msgid  Alt+B - Into the basket; Alt+Shift+B shows it
+msgstr Alt+B - В кошницата; Alt+Shift+B я показва
+
+msgid  Ctrl+E - Edit the names as text
+msgstr Ctrl+E - Редактирай имената като текст

@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-06" "fm84 0.45.0" "User Commands"
+.TH FM84 1 "2026-11-09" "fm84 0.46.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -365,6 +365,52 @@ Inside an archive too.
 At most 100000 files are listed.
 Ctrl+B again goes back; going anywhere else drops it.
 .TP
+.B Ctrl+Z
+Undo the last rename, copy, move or move to the trash, and again the one
+before, up to 32 jobs back: a copy is deleted, a move or a rename put back,
+what went to the trash restored from it (not on macOS, which says so).
+A step whose target has changed since is refused and asked about.
+What wrote over a file, or merged into a directory, is not kept to undo.
+.TP
+.B Ctrl+E
+The panel's names in the editor, a numbered line each: edit a line to rename,
+delete it to delete, duplicate it to copy.
+Saving shows the plan; Enter runs it as one job, Esc goes back to the lines.
+A line that cannot be had says which, and nothing runs.
+.TP
+.B Alt+B Alt+Shift+B
+Alt+B puts what is chosen in the basket, from any directory; Alt+Shift+B shows
+the basket in the panel, all of it selected, for F5, F6 or Alt+P at once, and
+again goes back.
+Alt+B in the basket takes entries out of it, not off the disk.
+.TP
+.B Alt+D
+Find the files under the directory, or among what is selected, that are the
+same as another: by size, then by SHA\-256.
+The groups are fed to the panel with all but one of each selected.
+Empty files, links and second names of one file are left out.
+.TP
+.B Alt+R
+A dossier of the directory: the kinds of file that take its room, the
+largest and the newest, its code's languages by lines, git's commits over
+the last eight weeks, and the copies in it.
+.TP
+.B Alt+G
+Git on what is chosen:
+.B S
+stages it,
+.B U
+unstages it,
+.B D
+throws away the changes that are not staged, after asking, and
+.B C
+shows the file beside HEAD's.
+.B R
+lists the branches, tags, stashes and last commits, narrowed as typed, and
+opens the one chosen - or a revision typed, as HEAD~3 - as a read\-only
+folder, as an archive is gone into, at
+.IR <top>/@git:<revision> .
+.TP
 .B Alt+H
 Work out the checksums of what is chosen, a directory's files all the way
 down, as a job: SHA-256, SHA-512 and MD5 at once, in one reading of each
@@ -451,7 +497,26 @@ letters 2 to 5,
 .B [N3\-]
 from the third on,
 .B [C10+5:3]
-counting from 10 by fives in three digits.
+counting from 10 by fives in three digits;
+.B [Exif:date]
+when a photograph was taken, with
+.BR [Exif:day] ,
+.BR [Exif:time] ,
+.B [Exif:make]
+and
+.BR [Exif:model] ;
+.BR [Tag:artist] ,
+.BR [Tag:title] ,
+.BR [Tag:album] ,
+.B [Tag:track]
+and
+.B [Tag:year]
+from a song's tags; and
+.B [Pdf:title]
+and
+.B [Pdf:author]
+from a PDF.
+A file that does not say what is asked is marked, not renamed.
 Find and Replace come after the pattern, and a change of case last.
 A table shows each old name beside its new one, marking those that cannot
 be had \- given twice, taken by something else, or not a plain name \- and
@@ -667,7 +732,9 @@ Hex view on or off; for an image, cycle Image, Text and Hex.
 Wrap long lines, or scroll them sideways.
 .TP
 .B F
-Fit or fill an image.
+Fit or fill an image; on text, follow the file as it grows, as
+.BR "tail \-f" ;
+scrolling up stops it.
 .TP
 .B + \-
 Zoom an image in or out.
@@ -750,6 +817,18 @@ confirmations, delete to trash, what to do when a destination exists,
 verifying copies, the terminal and editor commands, remembering directories; the theme, icons,
 clock, and the cursor's shape and whether it blinks; tab width, line numbers,
 what the scroll bars are drawn with, highlighting and image settings.
+.PP
+.B Info column, from commands
+adds a column filled by the commands in the
+.I columns
+file, by extension; E on its row edits them.
+.BR "Outrun progress bar" ,
+.B Burst what is deleted for good
+and
+.B Turbo
+are for fun, all off to start with: a job drawn as a car driving towards the
+sun, the rows of a delete for good bursting first, and the neon turned up
+with scanlines over the panels.
 .B Language
 is Automatic, which follows the environment (see
 .BR ENVIRONMENT ),
@@ -826,6 +905,15 @@ The first line that fits is what Enter and Shift+Enter use.
 The command runs in the shell in the file's directory, with
 .B {file}
 where the file goes, or on the end; a leading \fB!\fR runs it in this terminal.
+.TP
+.I $XDG_CONFIG_HOME/fm84/columns
+The commands that fill the Info column, by extension, a line each as
+.IR "jpg png = identify \-format '%wx%h' {file}" ;
+the first line a command prints is what the column shows.
+Made with examples the first time F11 edits it.
+.TP
+.I $XDG_CONFIG_HOME/fm84/scores
+F1's high scores, counted as the jobs finish.
 .SH ENVIRONMENT
 .TP
 .B XDG_CONFIG_HOME

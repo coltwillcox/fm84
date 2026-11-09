@@ -1953,3 +1953,30 @@ msgstr Razpoči trajno izbrisano
 
 msgid  Turbo: brighter neon, scanlines
 msgstr Turbo: svetlejši neon, črte skeniranja
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] too
+msgstr [Exif:date] [Tag:artist] [Pdf:title] tudi
+
+msgid  F on text follows it as it grows
+msgstr F na besedilu ga sledi, ko raste
+
+msgid  Ctrl+Z - Undo the last rename, copy, move or trash
+msgstr Ctrl+Z - Razveljavi zadnje preimenovanje, kopiranje, premik ali koš
+
+msgid  Alt+D - Find duplicate files
+msgstr Alt+D - Najdi dvojnike
+
+msgid  Alt+R - Dossier: the directory summed up
+msgstr Alt+R - Dosje: mapa na kratko
+
+msgid  Alt+G - Git: stage, unstage, discard, compare
+msgstr Alt+G - Git: pripravi, odstrani, zavrzi, primerjaj
+
+msgid  R opens a branch, tag or commit as a folder
+msgstr R odpre vejo, oznako ali commit kot mapo
+
+msgid  Alt+B - Into the basket; Alt+Shift+B shows it
+msgstr Alt+B - V košarico; Alt+Shift+B jo pokaže
+
+msgid  Ctrl+E - Edit the names as text
+msgstr Ctrl+E - Uredi imena kot besedilo

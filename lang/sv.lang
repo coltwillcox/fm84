@@ -1876,3 +1876,30 @@ msgstr Spräng det som raderas för gott
 
 msgid  Turbo: brighter neon, scanlines
 msgstr Turbo: klarare neon, sveplinjer
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] too
+msgstr [Exif:date] [Tag:artist] [Pdf:title] också
+
+msgid  F on text follows it as it grows
+msgstr F på text följer den medan den växer
+
+msgid  Ctrl+Z - Undo the last rename, copy, move or trash
+msgstr Ctrl+Z - Ångra senaste namnbyte, kopia, flytt eller papperskorg
+
+msgid  Alt+D - Find duplicate files
+msgstr Alt+D - Hitta dubbletter
+
+msgid  Alt+R - Dossier: the directory summed up
+msgstr Alt+R - Översikt: mappen sammanfattad
+
+msgid  Alt+G - Git: stage, unstage, discard, compare
+msgstr Alt+G - Git: köa, ta ur kö, kasta, jämför
+
+msgid  R opens a branch, tag or commit as a folder
+msgstr R öppnar en gren, en tagg eller en commit som mapp
+
+msgid  Alt+B - Into the basket; Alt+Shift+B shows it
+msgstr Alt+B - I korgen; Alt+Shift+B visar den
+
+msgid  Ctrl+E - Edit the names as text
+msgstr Ctrl+E - Redigera namnen som text

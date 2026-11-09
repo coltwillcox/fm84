@@ -1876,3 +1876,30 @@ msgstr Kalıcı silineni patlat
 
 msgid  Turbo: brighter neon, scanlines
 msgstr Turbo: daha parlak neon, tarama çizgileri
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] too
+msgstr [Exif:date] [Tag:artist] [Pdf:title] de
+
+msgid  F on text follows it as it grows
+msgstr Metinde F onu büyüdükçe izler
+
+msgid  Ctrl+Z - Undo the last rename, copy, move or trash
+msgstr Ctrl+Z - Son yeniden adlandırma, kopyalama, taşıma ya da çöpü geri al
+
+msgid  Alt+D - Find duplicate files
+msgstr Alt+D - Kopya dosyaları bul
+
+msgid  Alt+R - Dossier: the directory summed up
+msgstr Alt+R - Dosya raporu: dizin özetle
+
+msgid  Alt+G - Git: stage, unstage, discard, compare
+msgstr Alt+G - Git: hazırla, çıkar, at, karşılaştır
+
+msgid  R opens a branch, tag or commit as a folder
+msgstr R bir dalı, etiketi ya da commit'i klasör olarak açar
+
+msgid  Alt+B - Into the basket; Alt+Shift+B shows it
+msgstr Alt+B - Sepete; Alt+Shift+B gösterir
+
+msgid  Ctrl+E - Edit the names as text
+msgstr Ctrl+E - Adları metin olarak düzenle

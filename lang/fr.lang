@@ -1877,3 +1877,30 @@ msgstr Faire éclater ce qui est supprimé définitivement
 
 msgid  Turbo: brighter neon, scanlines
 msgstr Turbo : néon plus vif, lignes de balayage
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] too
+msgstr [Exif:date] [Tag:artist] [Pdf:title] aussi
+
+msgid  F on text follows it as it grows
+msgstr F sur un texte le suit à mesure qu'il grandit
+
+msgid  Ctrl+Z - Undo the last rename, copy, move or trash
+msgstr Ctrl+Z - Annuler le dernier renommage, copie, déplacement ou corbeille
+
+msgid  Alt+D - Find duplicate files
+msgstr Alt+D - Chercher les doublons
+
+msgid  Alt+R - Dossier: the directory summed up
+msgstr Alt+R - Dossier : le répertoire en bref
+
+msgid  Alt+G - Git: stage, unstage, discard, compare
+msgstr Alt+G - Git : indexer, désindexer, abandonner, comparer
+
+msgid  R opens a branch, tag or commit as a folder
+msgstr R ouvre une branche, une étiquette ou un commit comme dossier
+
+msgid  Alt+B - Into the basket; Alt+Shift+B shows it
+msgstr Alt+B - Dans le panier ; Alt+Maj+B le montre
+
+msgid  Ctrl+E - Edit the names as text
+msgstr Ctrl+E - Modifier les noms comme texte

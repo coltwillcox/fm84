@@ -1876,3 +1876,30 @@ msgstr Распрсни го трајно избришаното
 
 msgid  Turbo: brighter neon, scanlines
 msgstr Турбо: посветол неон, линии на скенирање
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] too
+msgstr [Exif:date] [Tag:artist] [Pdf:title] исто
+
+msgid  F on text follows it as it grows
+msgstr F на текст го следи додека расте
+
+msgid  Ctrl+Z - Undo the last rename, copy, move or trash
+msgstr Ctrl+Z - Врати го последното преименување, копирање, преместување или корпа
+
+msgid  Alt+D - Find duplicate files
+msgstr Alt+D - Најди дупликати
+
+msgid  Alt+R - Dossier: the directory summed up
+msgstr Alt+R - Досие: папката накратко
+
+msgid  Alt+G - Git: stage, unstage, discard, compare
+msgstr Alt+G - Git: подготви, отстрани, отфрли, спореди
+
+msgid  R opens a branch, tag or commit as a folder
+msgstr R отвора гранка, ознака или комит како папка
+
+msgid  Alt+B - Into the basket; Alt+Shift+B shows it
+msgstr Alt+B - Во кошничката; Alt+Shift+B ја прикажува
+
+msgid  Ctrl+E - Edit the names as text
+msgstr Ctrl+E - Уреди ги имињата како текст

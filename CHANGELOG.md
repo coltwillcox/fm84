@@ -6,6 +6,30 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.46.0] - 2026-11-09
+
+### ✨ Added
+- ↩️ **Undo** - **Ctrl+Z** in the panels takes back the last rename, copy, move or move to the trash, and the one before it, up to 32 jobs back. Copies are deleted, moves and renames put back - names that were swapped or went round in a chain together - and what went to the trash restored, on Linux and Windows; macOS says it cannot. A step whose target has changed since - a copy worked on, a name taken - is refused and asked about, so an undo never takes what was not the job's. A copy or move that wrote over something, or merged into it, is not kept to undo
+- 📝 **The directory as text** - **Ctrl+E** opens the panel's names in the editor, a numbered line each, as vidir has them: edit a line to rename, delete it to delete, duplicate it to copy. Saving shows the plan, Enter runs it as one job - deletes, then the renames together, then the copies - and Esc goes back to the lines. A line that cannot be had says which and why. Ctrl+Z takes it all back
+- 👯 **Duplicate finder** - **Alt+D** groups the files of the directory, or of what is selected, by size, confirms them by SHA-256, and feeds the groups to the panel with all but one of each selected, ready for F8. Empty files, links and second names of one file are left out
+- 🧺 **File basket** - **Alt+B** gathers what is chosen from anywhere; **Alt+Shift+B** shows the basket in the panel, all of it selected, for F5, F6 or Alt+P, and Alt+B there takes out of it. It follows renames, and lets go of what is gone
+- 📜 **Follow mode** - **F** on text in the Viewer follows the file as it grows, as `tail -f`, matches still marked; a log turned over or cut short is read again from its start. Scrolling up stops it
+- 🌿 **Git from the panel** - **Alt+G** stages, unstages or throws away the changes of what is chosen, asking first before that, or shows the file side by side with HEAD's
+- 🕰️ **Any commit as a folder** - **R** on Alt+G lists the branches, remote branches, tags, stashes and last commits, each with its age and subject, narrowed as typed, and opens the one chosen as a read-only folder, as an archive is gone into: F3 views a file as it was, F5 copies it out, Shift+F3 compares it with today's. A revision typed - `HEAD~3`, a hash - opens as written
+- 🗂️ **Dossier** - **Alt+R** sums the directory up: what kinds of file take its room, the largest and the newest, its code's languages by lines, git's commits over the last eight weeks, and how much of it is a copy of something else
+- 🧮 **Info column** - an F11 option, filled per extension by the commands in the new `columns` file - a picture's size, a song's length, a PDF's pages - run in the background and kept until a file changes. Sortable, numbers as numbers
+- 🏷️ **Rename by what is inside** - multi-rename takes `[Exif:date]`, `[Exif:day]`, `[Exif:time]`, `[Exif:make]`, `[Exif:model]`, `[Tag:artist]`, `[Tag:title]`, `[Tag:album]`, `[Tag:track]`, `[Tag:year]`, `[Pdf:title]` and `[Pdf:author]`, read from JPEG, PNG, WebP and raw EXIF, ID3, FLAC, Ogg and MP4 tags, and PDFs. A file without what is asked of it is refused rather than left with no name
+- 🕹️ **High scores** - F1 ends in an arcade table of what has been done with fm84 - bytes copied and moved, files renamed, things deleted, copies found, the longest job - and eight achievements. INSERT COIN while it is empty. Kept in `scores` beside the config
+- 🚗 **Outrun progress bar** - an F11 option: a job drawn as a car driving down a neon grid towards the sun, the further the more done. Esc swerves it off the road
+- 💥 **Burst what is deleted for good** - an F11 option: the rows burst into pixels before a delete for good takes them. Never for the trash
+- ⚡ **Turbo** - an F11 option: every theme's neon turned up, scanlines over the panels, the logo blinking in F1
+
+### 🛠️ Changed
+- 🎹 **Keys apart from what they do** - in F1, in every popup's keys, in the F-key bar and in the Viewer's and Editor's bars, each key drawn in a colour of its own, in every language
+- 💜 **F1's headings** - centred over their parts, a blank line under each
+
+---
+
 ## [0.45.0] - 2026-11-06
 
 ### ✨ Added

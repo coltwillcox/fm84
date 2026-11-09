@@ -1914,3 +1914,30 @@ msgstr Fă să explodeze ce se șterge definitiv
 
 msgid  Turbo: brighter neon, scanlines
 msgstr Turbo: neon mai strălucitor, linii de baleiaj
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] too
+msgstr [Exif:date] [Tag:artist] [Pdf:title] de asemenea
+
+msgid  F on text follows it as it grows
+msgstr F pe text îl urmărește cât crește
+
+msgid  Ctrl+Z - Undo the last rename, copy, move or trash
+msgstr Ctrl+Z - Anulează ultima redenumire, copiere, mutare sau coș
+
+msgid  Alt+D - Find duplicate files
+msgstr Alt+D - Găsește fișiere duplicate
+
+msgid  Alt+R - Dossier: the directory summed up
+msgstr Alt+R - Fișă: directorul pe scurt
+
+msgid  Alt+G - Git: stage, unstage, discard, compare
+msgstr Alt+G - Git: pregătește, scoate, renunță, compară
+
+msgid  R opens a branch, tag or commit as a folder
+msgstr R deschide o ramură, o etichetă sau un commit ca dosar
+
+msgid  Alt+B - Into the basket; Alt+Shift+B shows it
+msgstr Alt+B - În coș; Alt+Shift+B îl arată
+
+msgid  Ctrl+E - Edit the names as text
+msgstr Ctrl+E - Editează numele ca text

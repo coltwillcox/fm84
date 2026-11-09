@@ -190,8 +190,9 @@ For fish, fm84 --shell-init fish | source; for PowerShell, put
 fm84 --shell-init powershell | Out-String | Invoke-Expression in $PROFILE.
 
 Config: {config}
-Beside it: session, bookmarks, menu (Alt+M's commands) and open (the
-programs files open with, by extension).
+Beside it: session, bookmarks, menu (Alt+M's commands), open (the programs
+files open with, by extension), columns (the commands that fill the Info
+column) and scores (F1's high scores).
 The language follows LANGUAGE, LC_ALL, LC_MESSAGES and LANG, unless F11's
 Language picks one: English, Bulgarian (bg), Czech (cs), Danish (da), German
 (de), Greek (el), Spanish (es), French (fr), Irish (ga), Croatian (hr),

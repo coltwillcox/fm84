@@ -28,6 +28,8 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `[a-z0-9]` | Quick search |
 | `Ctrl+S` | Filter the panel by a pattern, as it is typed (`Esc` puts back the one there was) |
 | `Ctrl+B` | Flat view: every file under the directory in one list; again to go back |
+| `Ctrl+E` | The names as text in the editor: edit a line to rename, delete it to delete, duplicate it to copy; saving shows the plan (`Enter` runs it, `Esc` back to the lines) |
+| `Ctrl+Z` | Undo the last rename, copy, move or move to the trash |
 | `Esc` | Clear search / close dialogs, the Viewer and the Editor / stop directory sizing / stop waiting on a directory that has not answered |
 | `Ctrl+R` | Reload both panels |
 | `Ctrl+F3` / `Ctrl+F4` / `Ctrl+F5` / `Ctrl+F6` | Sort by name / extension / date / size, again to reverse (or click a heading) |
@@ -42,6 +44,8 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Alt+*` | Invert the selection of files and directories |
 | `Alt+Shift+Enter` / `Alt+Enter` | Size every directory in the panel, and map the space each entry takes |
 | `Ctrl+C` / `Alt+C` | Copy full paths / names to the clipboard |
+| `Alt+B` | Put what is chosen in the basket; in the basket, take it out |
+| `Alt+Shift+B` | Show the basket in the panel, all of it selected; again to go back |
 
 ## 📝 File operations
 
@@ -72,6 +76,18 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Alt+P` | Pack what is chosen into an archive (`Tab` changes the format) |
 | `Alt+H` | Checksums of what is chosen (`Tab` / `Shift+Tab` the algorithm, `C` copies, `Enter` writes), or check a checksum file |
 | `Alt+M` | User menu: run commands of your own (`E` edits them) |
+| `Alt+D` | Find duplicate files, fed to the panel with all but one of each selected |
+| `Alt+R` | Dossier: the directory summed up (`↑` `↓` scroll, `Esc` close) |
+| `Alt+G` | Git on what is chosen: `S` stage, `U` unstage, `D` discard changes (asks first), `C` compare with HEAD, `R` open a revision as a folder |
+
+## 🌿 Opening a revision (Alt+G, R)
+
+| Key | Action |
+|-----|--------|
+| Typing | Narrow the branches, tags, stashes and commits to those whose name or subject has each word |
+| `↑` / `↓`, `PageUp` / `PageDown` | Choose |
+| `Enter` | Open the one chosen as a read-only folder; with nothing listed, the revision as typed |
+| `Esc` | Close |
 
 ## ⏳ While a job runs
 
@@ -89,7 +105,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | Key | Action |
 |-----|--------|
 | `X` | Toggle hex view; cycle Image, Text, Hex for images |
-| `F` | Fit or fill an image |
+| `F` | Fit or fill an image; on text, follow the file as it grows (scrolling up stops it) |
 | `+` / `-` | Zoom an image in or out |
 | `W` | Wrap long lines, or scroll them sideways |
 | `PageUp` / `PageDown` | Previous / next picture in the folder |

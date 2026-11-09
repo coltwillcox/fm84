@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.45.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.46.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -73,6 +73,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 💿 **Drive strip** - click a mount, or Alt+F1 / Alt+F2; removable and optical media get their own icons
 - 🚀 **Open with** - Shift+Enter or Ctrl+O as the system would, Alt+O to pick a program, your own per extension in `open`
 - 🌿 **Git** - the branch after the path (click it to switch), and M/S/?/!/U marks on each name
+- 🧑‍🔧 **Git from the panel** - Alt+G stages, unstages, discards or compares with HEAD; **R** opens any branch, tag, stash or commit as a read-only folder
 - 👤 **user@host** beside the logo, reversed when root
 
 ### 🔍 Search and filter
@@ -80,12 +81,17 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🧪 **Ctrl+S filter** - narrow the panel to a pattern as it is typed
 - 🌳 **Ctrl+B flat view** - every file under the directory in one list; sort by size to find what takes the space
 - 🔭 **Alt+F7 find files** - by name, content or regex, size and age, on a thread of its own; `F` feeds the results to the panel
+- 👯 **Alt+D duplicates** - files the same as another, fed to the panel with all but one of each selected
+- 🗂️ **Alt+R dossier** - the directory summed up: kinds of file, the largest and newest, languages, git activity, copies
 
 ### 📝 File operations
 - 📋 **Copy, move, rename, delete** - F5, F6, F2, F8 to the trash, Shift+F8 for good, with progress, cancel, and an ask for names already taken
+- ↩️ **Undo** - Ctrl+Z takes back the last rename, copy, move or move to the trash, refusing what has changed since
+- 📝 **The directory as text** - Ctrl+E edits the names in the editor: change a line to rename, delete it to delete, duplicate it to copy
+- 🧺 **Basket** - Alt+B gathers files from anywhere, Alt+Shift+B shows them all, to copy, move or pack at once
 - 💽 **Room checked first** - a copy that will not fit asks before it writes a byte, not halfway through
 - ✔️ **Verify copies** - an F11 option that reads each copied file back from the disk and checks it, for USB sticks and network mounts
-- 🏷️ **Multi-rename** - F2 on a selection, by `[N]`, `[E]`, `[C]` patterns with find, replace and case
+- 🏷️ **Multi-rename** - F2 on a selection, by `[N]`, `[E]`, `[C]` patterns with find, replace and case - and `[Exif:date]`, `[Tag:artist]`, `[Pdf:title]` from inside the files
 - 🔗 **Links** - Alt+F5 symbolic, Tab in its dialog for hard
 - 🔐 **Attributes** - Alt+A for permissions, owner, group and time
 - #️⃣ **Checksums** - Alt+H for SHA-256, SHA-512 and MD5, or check a `SHA256SUMS`
@@ -103,6 +109,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 🖥️ Panels
 - 👀 **Live** - reread when the directory changes on disk; slow or dead mounts never freeze fm84
 - 🧱 **Columns** - Name, Ext, Size, Modified, Attributes; Ctrl+F3…F6 or a click on a heading sorts
+- 🧮 **Info column** - filled by your own commands per extension: a picture's size, a song's length, a PDF's pages
 - 🔎 **Detail lines** - full name, exact size, timestamp, owner, mode and link target under the panels
 - 📊 **Status bar** - selection, disk usage and a clickable F-key bar
 - 🛡️ **Any name** - not-UTF-8 names work as themselves, escape sequences in names are drawn harmless
@@ -110,6 +117,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 🎨 Viewer (F3)
 - 📄 **Text, hex, and images as coloured ASCII** - PNG, JPEG, GIF, WebP, BMP; fit, fill, zoom, drag, page through a folder
 - 🔎 **Find, regex, go to line, wrap, selection** - and a prompt before anything huge is loaded
+- 📜 **Follow** - `F` on a log keeps the view at its end as it grows, as `tail -f`
 
 ### ✍️ Editor (F4)
 - 🌈 **Syntax highlighting**, undo/redo, find and replace with regex, indent and comment lines
@@ -121,6 +129,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### ⚙️ Options (F11)
 - 🎨 **18 themes**, light ones included, and 23 languages built in
 - 🧩 **Columns, sorting, date and size formats, icons, cursor, terminal, external editor, confirmations** - saved to `~/.config/fm84/config` as plain `key = value`
+- 🕹️ **For fun** - an Outrun progress bar, rows that burst when deleted for good, Turbo neon with scanlines, and arcade high scores in F1
 
 ---
 
@@ -136,6 +145,8 @@ The everyday ones - [KEYS.md](https://github.com/coltwillcox/fm84/blob/master/do
 | `F2` / `F3` / `F4` | Rename / view / edit |
 | `F5` / `F6` / `F7` | Copy / move / new directory |
 | `F8` / `Shift+F8` | Trash / delete permanently |
+| `Ctrl+Z` | Undo the last file operation |
+| `Ctrl+E` | Edit the names as text |
 | `F9` / `F10` | Terminal / quit |
 | `F11` / `F12` | Options / preview |
 | `Ctrl+L` | Go to a path |
@@ -174,7 +185,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.45.0
+fm84 --version          # fm84 0.46.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -270,5 +281,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.45.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.46.0 ▄▀▄▀▄▀</code>
 </p>

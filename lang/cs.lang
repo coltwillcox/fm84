@@ -1914,3 +1914,30 @@ msgstr Rozprsknout trvale smazané
 
 msgid  Turbo: brighter neon, scanlines
 msgstr Turbo: jasnější neon, řádkování
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] too
+msgstr [Exif:date] [Tag:artist] [Pdf:title] také
+
+msgid  F on text follows it as it grows
+msgstr F u textu ho sleduje, jak roste
+
+msgid  Ctrl+Z - Undo the last rename, copy, move or trash
+msgstr Ctrl+Z - Vrátit poslední přejmenování, kopii, přesun nebo koš
+
+msgid  Alt+D - Find duplicate files
+msgstr Alt+D - Najít duplicitní soubory
+
+msgid  Alt+R - Dossier: the directory summed up
+msgstr Alt+R - Přehled: složka v kostce
+
+msgid  Alt+G - Git: stage, unstage, discard, compare
+msgstr Alt+G - Git: připravit, odebrat, zahodit, porovnat
+
+msgid  R opens a branch, tag or commit as a folder
+msgstr R otevře větev, značku nebo commit jako složku
+
+msgid  Alt+B - Into the basket; Alt+Shift+B shows it
+msgstr Alt+B - Do košíku; Alt+Shift+B ho ukáže
+
+msgid  Ctrl+E - Edit the names as text
+msgstr Ctrl+E - Upravit názvy jako text
