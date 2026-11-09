@@ -2007,3 +2007,6 @@ msgstr Heslo pre „{name}“:
 
 msgid  Enter - Open
 msgstr Enter - Otvoriť
+
+msgid  Cannot pack "{path}" into itself
+msgstr „{path}“ sa nedá zabaliť sám do seba

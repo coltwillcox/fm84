@@ -615,6 +615,11 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
             Ok(_) => return app_state.display_error(t!("Already exists: {path} - another name, or Overwrite or Keep both under F11", path = dest.display())),
             Err(_) => (dest, false),
         };
+        // Written over, an archive that is one of what goes into it would be
+        // packed with nothing: the walk leaves out the archive being made.
+        if let Some((source, _)) = sources.iter().find(|(source, _)| is_same_entry(source, &dest)) {
+            return app_state.display_error(t!("Cannot pack \"{path}\" into itself", path = source.display()));
+        }
         archives.push(PackArchive { sources, dest, replacing });
     }
     // Gone into straight after, it opens with the password it was made with.

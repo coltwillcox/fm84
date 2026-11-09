@@ -1968,3 +1968,6 @@ msgstr Het wachtwoord voor "{name}":
 
 msgid  Enter - Open
 msgstr Enter - Openen
+
+msgid  Cannot pack "{path}" into itself
+msgstr Kan "{path}" niet in zichzelf inpakken

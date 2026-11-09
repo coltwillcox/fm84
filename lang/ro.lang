@@ -2007,3 +2007,6 @@ msgstr Parola pentru „{name}”:
 
 msgid  Enter - Open
 msgstr Enter - Deschide
+
+msgid  Cannot pack "{path}" into itself
+msgstr Nu se poate împacheta „{path}” în el însuși

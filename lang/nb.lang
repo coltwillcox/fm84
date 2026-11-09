@@ -1968,3 +1968,6 @@ msgstr Passordet til «{name}»:
 
 msgid  Enter - Open
 msgstr Enter - Åpne
+
+msgid  Cannot pack "{path}" into itself
+msgstr Kan ikke pakke "{path}" inn i seg selv

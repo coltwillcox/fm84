@@ -1968,3 +1968,6 @@ msgstr Паролата за "{name}":
 
 msgid  Enter - Open
 msgstr Enter - Отвори
+
+msgid  Cannot pack "{path}" into itself
+msgstr „{path}“ не може да се пакетира в себе си

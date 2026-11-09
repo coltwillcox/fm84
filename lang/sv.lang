@@ -1969,3 +1969,6 @@ msgstr Lösenordet till ”{name}”:
 
 msgid  Enter - Open
 msgstr Enter - Öppna
+
+msgid  Cannot pack "{path}" into itself
+msgstr Kan inte packa ”{path}” in i sig själv

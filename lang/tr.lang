@@ -1969,3 +1969,6 @@ msgstr "{name}" için parola:
 
 msgid  Enter - Open
 msgstr Enter - Aç
+
+msgid  Cannot pack "{path}" into itself
+msgstr "{path}" kendi içine paketlenemez

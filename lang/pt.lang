@@ -1969,3 +1969,6 @@ msgstr A senha de "{name}":
 
 msgid  Enter - Open
 msgstr Enter - Abrir
+
+msgid  Cannot pack "{path}" into itself
+msgstr Não é possível compactar “{path}” dentro de si mesmo

@@ -1970,3 +1970,6 @@ msgstr „{name}” jelszava:
 
 msgid  Enter - Open
 msgstr Enter - Megnyitás
+
+msgid  Cannot pack "{path}" into itself
+msgstr Nem tömöríthető önmagába: „{path}”

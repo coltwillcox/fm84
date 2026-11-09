@@ -2006,3 +2006,6 @@ msgstr Лозинка за „{name}“:
 
 msgid  Enter - Open
 msgstr Enter - Отвори
+
+msgid  Cannot pack "{path}" into itself
+msgstr Не могу да спакујем „{path}“ у самог себе

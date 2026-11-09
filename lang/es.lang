@@ -1970,3 +1970,6 @@ msgstr La contraseña de «{name}»:
 
 msgid  Enter - Open
 msgstr Intro - Abrir
+
+msgid  Cannot pack "{path}" into itself
+msgstr No se puede comprimir «{path}» en sí mismo

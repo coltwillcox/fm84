@@ -675,3 +675,26 @@ fn a_password_is_asked_for_and_given() {
     crate::archive::forget_password(&out.join("new.7z"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// What is packed is never the archive it goes into: Overwrite on, both
+/// panels in one directory, a zip packed under its own name is refused -
+/// rather than written over with an archive of nothing, the walk leaving
+/// out the archive being made.
+#[test]
+fn an_archive_is_not_packed_into_itself() {
+    let dir = scratch("pack-into-itself");
+    zip(&dir.join("box.zip"), &[("a.txt", Put::File(b"a"))]);
+    let before = std::fs::read(dir.join("box.zip")).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options.on_existing = crate::options::OnExisting::Overwrite;
+    app_state.open_dir(Side::Right, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), Some("box.zip".as_ref()));
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('p'), KeyModifiers::ALT));
+    assert_eq!(app_state.dialog_input().unwrap().text, dir.join("box.zip").display().to_string());
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert!(app_state.error.as_deref().unwrap_or_default().contains("into itself"), "{:?}", app_state.error);
+    assert_eq!(std::fs::read(dir.join("box.zip")).unwrap(), before);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

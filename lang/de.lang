@@ -1969,3 +1969,6 @@ msgstr Das Passwort für „{name}“:
 
 msgid  Enter - Open
 msgstr Enter - Öffnen
+
+msgid  Cannot pack "{path}" into itself
+msgstr "{path}" kann nicht in sich selbst gepackt werden

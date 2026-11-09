@@ -2083,3 +2083,6 @@ msgstr An pasfhocal do "{name}":
 
 msgid  Enter - Open
 msgstr Enter - Oscail
+
+msgid  Cannot pack "{path}" into itself
+msgstr Ní féidir "{path}" a phacáil isteach ann féin

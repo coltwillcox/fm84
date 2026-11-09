@@ -1969,3 +1969,6 @@ msgstr Ο κωδικός για το «{name}»:
 
 msgid  Enter - Open
 msgstr Enter - Άνοιγμα
+
+msgid  Cannot pack "{path}" into itself
+msgstr Το "{path}" δεν συμπιέζεται μέσα στον εαυτό του

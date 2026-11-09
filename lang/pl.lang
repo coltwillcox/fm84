@@ -2007,3 +2007,6 @@ msgstr Hasło do „{name}”:
 
 msgid  Enter - Open
 msgstr Enter - Otwórz
+
+msgid  Cannot pack "{path}" into itself
+msgstr Nie można spakować „{path}” do niego samego
