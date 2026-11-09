@@ -583,6 +583,8 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
     };
     // A password, typed the same twice, for what can hold one.
     let password = match password.text.as_str() {
+        // Typed only the second time, as much a mistake as two that differ.
+        "" if !again.text.is_empty() => return app_state.display_error(t!("The two passwords are not the same").to_string()),
         "" => None,
         _ if !matches!(format, PackFormat::Zip | PackFormat::SevenZ) => return app_state.display_error(t!("Only a .zip or a .7z can have a password").to_string()),
         typed if typed != again.text => return app_state.display_error(t!("The two passwords are not the same").to_string()),

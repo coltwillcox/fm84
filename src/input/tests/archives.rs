@@ -662,6 +662,11 @@ fn a_password_is_asked_for_and_given() {
     fill(&mut app_state, "new.7z", "one", "two");
     assert!(app_state.error.as_deref().unwrap_or_default().contains("not the same"), "{:?}", app_state.error);
     app_state.reset_error();
+    // Typed only the second time, it is not left out without a word.
+    fill(&mut app_state, "new.7z", "", "one");
+    assert!(app_state.error.as_deref().unwrap_or_default().contains("not the same"), "{:?}", app_state.error);
+    assert!(app_state.workers.job.is_none());
+    app_state.reset_error();
     fill(&mut app_state, "new.tar.gz", "one", "one");
     assert!(app_state.error.as_deref().unwrap_or_default().contains(".zip or a .7z"), "{:?}", app_state.error);
     app_state.reset_error();
