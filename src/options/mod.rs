@@ -299,6 +299,8 @@ pub struct Options {
     pub cursor_blink: bool,
     /// A job's progress drawn as a car driving towards the sun.
     pub outrun_bar: bool,
+    /// The rows of what is deleted for good burst into pixels first.
+    pub burst_delete: bool,
     pub tab_width: usize,
     /// The gutter in the viewer and the editor.
     pub line_numbers: bool,
@@ -355,6 +357,7 @@ impl Default for Options {
             cursor: CursorShape::Bar,
             cursor_blink: true,
             outrun_bar: false,
+            burst_delete: false,
             tab_width: 4,
             line_numbers: true,
             scroll_bar: ScrollBarStyle::Heavy,

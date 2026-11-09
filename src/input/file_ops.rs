@@ -126,6 +126,8 @@ pub(super) fn handle_delete_confirm(app_state: &mut AppState) {
     if let Some(Dialog::Delete { items, to_trash }) = app_state.dialog.take() {
         if to_trash {
             app_state.start_trash(items);
+        } else if app_state.options.burst_delete {
+            app_state.explode_then_delete(items);
         } else {
             app_state.start_delete(items);
         }

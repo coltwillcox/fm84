@@ -35,6 +35,7 @@ pub enum OptionRow {
     Cursor,
     CursorBlink,
     OutrunBar,
+    BurstDelete,
     TabWidth,
     LineNumbers,
     ScrollBars,
@@ -45,7 +46,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 38] = [
+pub const OPTION_ROWS: [OptionRow; 39] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -76,6 +77,7 @@ pub const OPTION_ROWS: [OptionRow; 38] = [
     OptionRow::Cursor,
     OptionRow::CursorBlink,
     OptionRow::OutrunBar,
+    OptionRow::BurstDelete,
     OptionRow::TabWidth,
     OptionRow::LineNumbers,
     OptionRow::ScrollBars,
@@ -119,6 +121,7 @@ impl OptionRow {
             OptionRow::Cursor => t!("Cursor"),
             OptionRow::CursorBlink => t!("Cursor blinks"),
             OptionRow::OutrunBar => t!("Outrun progress bar"),
+            OptionRow::BurstDelete => t!("Burst what is deleted for good"),
             OptionRow::TabWidth => t!("Tab width"),
             OptionRow::LineNumbers => t!("Line numbers"),
             OptionRow::ScrollBars => t!("Scroll bars"),
@@ -234,6 +237,7 @@ impl Options {
             .to_string(),
             OptionRow::CursorBlink => on_off(self.cursor_blink),
             OptionRow::OutrunBar => on_off(self.outrun_bar),
+            OptionRow::BurstDelete => on_off(self.burst_delete),
             OptionRow::TabWidth => self.tab_width.to_string(),
             OptionRow::LineNumbers => on_off(self.line_numbers),
             // Shown as it is drawn, both ways.
@@ -334,6 +338,7 @@ impl Options {
             }
             OptionRow::CursorBlink => self.cursor_blink = !self.cursor_blink,
             OptionRow::OutrunBar => self.outrun_bar = !self.outrun_bar,
+            OptionRow::BurstDelete => self.burst_delete = !self.burst_delete,
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,
             OptionRow::ScrollBars => self.scroll_bar = step(&ScrollBarStyle::ALL, self.scroll_bar, forward),

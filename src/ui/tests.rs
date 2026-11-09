@@ -1057,3 +1057,28 @@ fn the_bottom_bars_tell_keys_from_what_they_do() {
     assert_eq!(Some(colour_of(&mut app_state, "Ln 1")), said);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A row deleted for good bursts in place of what it showed, and the rows
+/// beside it are drawn as ever.
+#[test]
+fn a_row_deleted_for_good_bursts() {
+    let dir = std::env::temp_dir().join(format!("fm84-burst-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("doomed.txt"), "x").unwrap();
+    std::fs::write(dir.join("spared.txt"), "x").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.explode_then_delete(vec![(dir.join("doomed.txt"), false)]);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer();
+    let screen: String = (0..30).map(|y| (0..120).map(|x| buffer[(x, y)].symbol().to_string()).collect::<String>() + "\n").collect();
+    assert!(!screen.contains("doomed"), "{screen}");
+    assert!(screen.contains("spared"), "{screen}");
+    assert!(screen.contains('█'), "{screen}");
+    app_state.explosion = None;
+    std::fs::remove_dir_all(&dir).unwrap();
+}

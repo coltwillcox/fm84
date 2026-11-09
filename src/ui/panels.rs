@@ -667,6 +667,28 @@ fn build_viewport_rows(app_state: &AppState, side: Side, viewport_height: usize,
             child.size.clone()
         };
 
+        // Deleted for good: the row bursting, every cell of it, in place of
+        // what it showed.
+        if let Some(explosion) = app_state.explosion.as_ref().filter(|explosion| explosion.side == side && explosion.names.contains(&child.name_os)) {
+            let colours = [palette().selected_marker, palette().rename_background, palette().directory];
+            let (progress, frame) = (explosion.progress(), explosion.started.elapsed().as_millis() as u64 / 100);
+            let burst = |width: usize, seed: u64| {
+                let spans: Vec<Span<'static>> = crate::app::blast(width, progress, seed, frame)
+                    .into_iter()
+                    .map(|(glyph, colour)| Span::styled(glyph.to_string(), Style::default().fg(colours[usize::from(colour)])))
+                    .collect();
+                Cell::from(Line::from(spans))
+            };
+            let seed = index as u64 * 16;
+            let mut cells = vec![burst(2, seed), burst(name_width as usize, seed + 1)];
+            for (at, column) in columns.iter().enumerate() {
+                cells.push(border_cell.clone());
+                cells.push(burst(column.width(&app_state.options) as usize, seed + 2 + at as u64));
+            }
+            rows.push(Row::new(cells));
+            continue;
+        }
+
         let mut cells = vec![Cell::from(Span::styled(icon, Style::default().fg(text_color))), name_cell];
         for column in columns {
             let value = match column {

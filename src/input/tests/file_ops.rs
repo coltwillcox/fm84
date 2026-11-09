@@ -1013,3 +1013,40 @@ fn alt_s_synchronizes_the_panels() {
     }
     std::fs::remove_dir_all(&root).unwrap();
 }
+
+/// A delete for good bursts its rows first only with F11's option on; off,
+/// as it is to start with, the delete starts at once.
+#[test]
+fn bursting_a_delete_is_an_option() {
+    let dir = std::env::temp_dir().join(format!("fm84-burst-option-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    assert!(!app_state.options.burst_delete);
+    app_state.active_side = crate::app::Side::Left;
+    app_state.open_dir(crate::app::Side::Left, dir.clone(), None);
+    let finish = |app_state: &mut AppState| {
+        while app_state.workers.job.is_some() {
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
+    };
+
+    for burst in [false, true] {
+        let file = dir.join(format!("{burst}.txt"));
+        std::fs::write(&file, "x").unwrap();
+        app_state.reload_panel(crate::app::Side::Left, None);
+        app_state.options.burst_delete = burst;
+        app_state.dialog = Some(Dialog::Delete {
+            items: vec![(file.clone(), false)],
+            to_trash: false,
+        });
+        crate::input::handle_delete_confirm(&mut app_state);
+        assert_eq!(app_state.explosion.is_some(), burst);
+        assert_eq!(app_state.workers.job.is_some(), !burst);
+        app_state.explosion = None;
+        finish(&mut app_state);
+    }
+    std::fs::remove_dir_all(&dir).unwrap();
+}

@@ -47,6 +47,11 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
 fn handle_key(app_state: &mut AppState, key: KeyEvent) -> bool {
     // What the last search came to stays up until the next key.
     app_state.find_note = None;
+    // Rows bursting are on their way out, the delete about to start: no key
+    // gets in before it.
+    if app_state.explosion.is_some() {
+        return true;
+    }
 
     // A character carrying Ctrl or Alt is a chord, not text. Only the chords
     // bound are acted on, and the rest are dropped instead of falling through

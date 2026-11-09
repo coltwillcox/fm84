@@ -31,6 +31,7 @@ mod dir_edit;
 mod dossier;
 mod duplicates;
 mod editing;
+mod explosion;
 mod filter;
 mod find;
 mod find_files;
@@ -57,8 +58,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*,
-    selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
+    archives::*, attribute_form::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*, multi_rename::*,
+    open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -277,6 +278,8 @@ pub struct AppState {
     pub info_cache: HashMap<(PathBuf, u64, Option<SystemTime>, String), String>,
     /// F1's high scores, all told.
     pub scores: crate::options::Scores,
+    /// Rows bursting before a delete for good takes them.
+    pub explosion: Option<Explosion>,
 }
 
 #[derive(Debug, Clone)]
@@ -638,6 +641,7 @@ impl AppState {
             undo: Vec::new(),
             basket: Vec::new(),
             info_cache: HashMap::new(),
+            explosion: None,
             scores: if cfg!(test) { crate::options::Scores::default() } else { crate::options::Scores::load() },
             drive_strips: [Strip::default(), Strip::default()],
         }
@@ -672,7 +676,7 @@ impl AppState {
     /// True while a popup is covering the screen. What is behind one must sit
     /// still: it cannot be seen, and the popup is answering for it.
     pub fn popup_is_open(&self) -> bool {
-        self.error.is_some() || self.workers.job.is_some() || self.dialog.as_ref().is_some_and(Dialog::is_popup)
+        self.error.is_some() || self.workers.job.is_some() || self.explosion.is_some() || self.dialog.as_ref().is_some_and(Dialog::is_popup)
     }
 
     /// True while a dialog, viewer or editor owns the screen. Added to the
