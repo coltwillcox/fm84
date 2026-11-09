@@ -153,6 +153,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
                 } else {
                     if viewer_state.mode == ViewMode::Text {
                         segments.push(if viewer_state.wrap { t!("W [Wrap]") } else { t!("W Wrap") });
+                        segments.push(if viewer_state.follow.is_some() { t!("F [Follow]") } else { t!("F Follow") });
                     }
                     segments.push(t!("Ctrl+F Find"));
                 }

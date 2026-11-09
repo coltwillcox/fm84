@@ -294,6 +294,77 @@ impl AppState {
         }
     }
 
+    /// F on text: follow the file as it grows, at its end, or stop.
+    pub fn viewer_toggle_follow(&mut self) {
+        let height = self.drawn.viewer_viewport_height;
+        if let Screen::Viewer(state) = &mut self.screen
+            && state.mode == ViewMode::Text
+            && !state.from_edit
+        {
+            state.follow = match state.follow {
+                Some(_) => None,
+                None => {
+                    state.scroll_offset = state.total_lines.saturating_sub(height);
+                    Some(crate::viewer::Follow::of(&state.file_path))
+                }
+            };
+        }
+    }
+
+    /// Following, a few times a second: what has been written to the file
+    /// since, taken in, and the view taken to the end - only when something
+    /// came, so a search or a look elsewhere stays put until then. A file
+    /// cut short, or put in its place as a log is when it turns over, is
+    /// read again from the start. One gone is gone quietly, as tail -f has it.
+    pub fn poll_follow(&mut self) {
+        const EVERY: Duration = Duration::from_millis(250);
+        let (height, width) = (self.drawn.viewer_viewport_height, self.drawn.viewer_viewport_width);
+        let Screen::Viewer(state) = &mut self.screen else {
+            return;
+        };
+        let Some(follow) = &mut state.follow else {
+            return;
+        };
+        if follow.checked.is_some_and(|checked| checked.elapsed() < EVERY) {
+            return;
+        }
+        follow.checked = Some(Instant::now());
+        let Ok(metadata) = std::fs::metadata(&state.file_path) else {
+            return;
+        };
+        let size = metadata.len();
+        let id = crate::viewer::file_id(&metadata);
+        let replaced = follow.id != id;
+        follow.id = id;
+        if size < state.file_size || replaced {
+            let Ok(mut fresh) = crate::viewer::load_file_content(&state.file_path, None) else {
+                return;
+            };
+            if fresh.mode != ViewMode::Text {
+                return;
+            }
+            (fresh.wrap, fresh.follow) = (state.wrap, state.follow.take());
+            *state = fresh;
+        } else if size > state.file_size {
+            use std::io::{Read, Seek, SeekFrom};
+            let mut added = Vec::new();
+            let read = std::fs::File::open(&state.file_path).and_then(|mut file| {
+                file.seek(SeekFrom::Start(state.file_size))?;
+                file.take(size - state.file_size).read_to_end(&mut added)
+            });
+            if read.is_err() || added.is_empty() {
+                return;
+            }
+            state.append(&added);
+        } else {
+            return;
+        }
+        if state.wrapping() && width > 0 {
+            state.rewrap(width);
+        }
+        state.scroll_offset = state.total_lines.saturating_sub(height);
+    }
+
     /// Switch an image between fitting inside the viewer and filling it. The
     /// redraw itself happens in fit_viewer_image before the next frame.
     pub fn viewer_toggle_fill(&mut self) {
@@ -339,6 +410,8 @@ impl AppState {
 
     pub fn viewer_scroll_up(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
+            // Back up the file is away from its end, and not following it.
+            state.follow = None;
             state.scroll_offset = state.scroll_offset.saturating_sub(1);
         }
     }
@@ -352,12 +425,14 @@ impl AppState {
 
     pub fn viewer_page_up(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
+            state.follow = None;
             state.scroll_offset = state.scroll_offset.saturating_sub(self.drawn.viewer_viewport_height);
         }
     }
 
     pub fn viewer_home(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
+            state.follow = None;
             state.scroll_offset = 0;
             state.horizontal_offset = 0;
         }
@@ -410,6 +485,8 @@ impl AppState {
                 // Rows broken from the lines of one mode mean nothing in
                 // another's; the next frame breaks them again if it wraps.
                 state.unwrap_rows();
+                // Only text is followed.
+                state.follow = None;
                 state.mode = next;
                 state.total_lines = state.line_count();
                 // Positions in one mode's lines mean nothing in another's.
@@ -534,6 +611,7 @@ impl AppState {
         let (height, width) = (self.drawn.viewer_viewport_height, self.drawn.viewer_viewport_width);
         if let Screen::Viewer(state) = &mut self.screen {
             if vertical {
+                state.follow = None;
                 state.scroll_offset = offset.min(state.total_lines.saturating_sub(height));
             } else if !state.wrapping() {
                 state.horizontal_offset = offset.min(state.content_width().saturating_sub(width));

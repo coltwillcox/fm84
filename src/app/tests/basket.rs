@@ -2,7 +2,6 @@
 //! in a panel with all of it chosen.
 
 use super::*;
-use std::ffi::OsString;
 use std::path::PathBuf;
 
 /// What the panel shows of it, by the paths each entry stands for, and

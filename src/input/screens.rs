@@ -11,7 +11,9 @@ pub(super) fn viewer_key(app_state: &mut AppState, key: KeyEvent) {
         // F3 here cannot also close the viewer.
         KeyCode::F(3) => app_state.find(!key.modifiers.contains(KeyModifiers::SHIFT), false),
         KeyCode::Char('x') | KeyCode::Char('X') => app_state.viewer_next_mode(),
-        KeyCode::Char('f') | KeyCode::Char('F') => app_state.viewer_toggle_fill(),
+        // F fits or fills a picture, and follows text as it grows.
+        KeyCode::Char('f') | KeyCode::Char('F') if app_state.viewer_shows_image() => app_state.viewer_toggle_fill(),
+        KeyCode::Char('f') | KeyCode::Char('F') => app_state.viewer_toggle_follow(),
         // Wrap long lines, or scroll them sideways.
         KeyCode::Char('w') | KeyCode::Char('W') => app_state.viewer_toggle_wrap(),
         // Zoom a picture. The unshifted keys count too, so it is one key

@@ -80,6 +80,43 @@ pub struct ViewerState {
     pub rows: Vec<(usize, usize, usize)>,
     /// The width `rows` were broken to; 0 when they are not there.
     pub rows_width: usize,
+    /// F on text: following the file as it grows, as tail -f does.
+    pub follow: Option<Follow>,
+}
+
+/// Following a file that grows: when it was last looked at, and the bytes
+/// read of a character the file has not finished writing.
+#[derive(Debug, Default)]
+pub struct Follow {
+    pub checked: Option<std::time::Instant>,
+    pending: Vec<u8>,
+    /// The file followed, where the system says which it is: another put in
+    /// its place - a log turned over - is read from its start.
+    pub id: Option<(u64, u64)>,
+}
+
+impl Follow {
+    /// Following the file at `path` from where it now ends.
+    pub fn of(path: &Path) -> Self {
+        Follow {
+            id: std::fs::metadata(path).ok().and_then(|metadata| file_id(&metadata)),
+            ..Default::default()
+        }
+    }
+}
+
+/// Which file `metadata` is, where the system says.
+pub fn file_id(metadata: &std::fs::Metadata) -> Option<(u64, u64)> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        Some((metadata.dev(), metadata.ino()))
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = metadata;
+        None
+    }
 }
 
 pub fn is_binary_file(path: &Path) -> Result<bool, Error> {
@@ -146,6 +183,7 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
                 wrap: false,
                 rows: Vec::new(),
                 rows_width: 0,
+                follow: None,
             });
         }
 
@@ -173,6 +211,7 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
             wrap: false,
             rows: Vec::new(),
             rows_width: 0,
+            follow: None,
         });
     }
 
@@ -222,6 +261,7 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
         wrap: false,
         rows: Vec::new(),
         rows_width: 0,
+        follow: None,
     })
 }
 
@@ -275,6 +315,35 @@ pub fn preview_of(mut head: Vec<u8>, max_lines: usize) -> Preview {
 }
 
 impl ViewerState {
+    /// What has been written to the file since it was read, taken onto the
+    /// end: the last line, which may not have been finished, carried on. A
+    /// character cut in half by the read waits for the rest of it.
+    pub fn append(&mut self, bytes: &[u8]) {
+        self.file_size += bytes.len() as u64;
+        let Some(follow) = &mut self.follow else { return };
+        follow.pending.extend_from_slice(bytes);
+        let whole = match std::str::from_utf8(&follow.pending) {
+            Ok(_) => follow.pending.len(),
+            Err(error) if error.error_len().is_none() => error.valid_up_to(),
+            Err(_) => follow.pending.len(),
+        };
+        let text = String::from_utf8_lossy(&follow.pending[..whole]).into_owned();
+        follow.pending.drain(..whole);
+        if text.is_empty() {
+            return;
+        }
+        // Lines as the file was first read into them: split at each newline,
+        // with the carriage return of a Windows ending let go of.
+        let carried = self.content_lines.pop().unwrap_or_default() + &text;
+        let from = self.content_lines.len();
+        self.content_lines.extend(carried.split('\n').map(|line| line.strip_suffix('\r').unwrap_or(line).to_string()));
+        let widest = self.content_lines[from..].iter().map(|line| crate::utils::line_display_width(line)).max().unwrap_or(0);
+        self.max_line_width = self.max_line_width.max(widest);
+        if self.rows.is_empty() {
+            self.total_lines = self.line_count();
+        }
+    }
+
     /// The selection in document order, or None when nothing is selected.
     pub fn selected_range(&self) -> Option<((usize, usize), (usize, usize))> {
         let (anchor, cursor) = self.selection?;

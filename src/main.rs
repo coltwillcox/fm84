@@ -237,6 +237,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.refresh_cursor_detail();
         app_state.refresh_preview();
         app_state.poll_transfer();
+        app_state.poll_follow();
         app_state.poll_branch_switch();
         app_state.poll_find_files();
         app_state.poll_sync();
