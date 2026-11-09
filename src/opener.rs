@@ -387,21 +387,23 @@ pub fn exec_args(words: &[String], path: &Path, name: &str, icon: Option<&str>, 
             }
             _ => {}
         }
-        let mut out = String::new();
+        // Put together as the system's own string: a path in it - one not
+        // UTF-8 too - goes in as it is.
+        let mut out = OsString::new();
         let mut chars = word.chars();
         while let Some(c) = chars.next() {
             if c != '%' {
-                out.push(c);
+                out.push(c.encode_utf8(&mut [0; 4]));
                 continue;
             }
             match chars.next() {
-                Some('%') => out.push('%'),
+                Some('%') => out.push("%"),
                 Some('f' | 'F' | 'u' | 'U') => {
-                    out.push_str(&path.to_string_lossy());
+                    out.push(path.as_os_str());
                     took_file = true;
                 }
-                Some('c') => out.push_str(name),
-                Some('k') => out.push_str(&entry.to_string_lossy()),
+                Some('c') => out.push(name),
+                Some('k') => out.push(entry.as_os_str()),
                 _ => {}
             }
         }
@@ -412,7 +414,7 @@ pub fn exec_args(words: &[String], path: &Path, name: &str, icon: Option<&str>, 
         if out.is_empty() && !word.is_empty() {
             continue;
         }
-        args.push(out.into());
+        args.push(out);
     }
     if !took_file {
         args.push(path.as_os_str().to_owned());
@@ -509,6 +511,20 @@ mod tests {
         assert_eq!(openers[1].detail, "viewer --open %u");
         assert!(desktop_openers(&[], &data, &config).is_empty());
         std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    /// A name that is not UTF-8 reaches the program as it is, inside a
+    /// word too - `--file=%f` - not as a lossy reading of it that names no
+    /// file at all.
+    #[cfg(unix)]
+    #[test]
+    fn a_name_that_is_not_utf8_reaches_the_program_whole() {
+        use std::os::unix::ffi::{OsStrExt, OsStringExt};
+        let file = Path::new(std::ffi::OsStr::from_bytes(b"/home/me/caf\xe9.txt"));
+        let words = ["app".to_string(), "--file=%f".to_string(), "%f".to_string()];
+        let args = exec_args(&words, file, "App", None, Path::new("/apps/app.desktop"));
+        assert_eq!(args[1].clone().into_vec(), b"--file=/home/me/caf\xe9.txt");
+        assert_eq!(args[2].as_bytes(), file.as_os_str().as_bytes());
     }
 
     #[test]
