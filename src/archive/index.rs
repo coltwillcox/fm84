@@ -389,7 +389,7 @@ fn zip_time(time: zip::DateTime) -> Option<SystemTime> {
 /// must not be written anywhere: `..`, or a part that is not a plain name on
 /// this system - a drive, a separator of its own. A leading `/` is dropped,
 /// as tar does. Empty for the root itself.
-pub(super) fn inner_path(raw: &[u8]) -> Option<PathBuf> {
+pub(crate) fn inner_path(raw: &[u8]) -> Option<PathBuf> {
     let mut path = PathBuf::new();
     for part in raw.split(|&byte| byte == b'/') {
         if part.is_empty() || part == b"." {

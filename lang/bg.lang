@@ -1926,3 +1926,19 @@ msgstr После изтрий завинаги каквото влезе
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Опция  Space - Промяна
+
+msgctxt job
+msgid   Update archive
+msgstr  Обновяване на архив
+
+msgid  Updating the archive
+msgstr Архивът се обновява
+
+msgid  Cannot update the archive
+msgstr Архивът не може да се обнови
+
+msgid  A {format} is read but cannot be written
+msgstr {format} се чете, но не може да се записва
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Първо го копирайте от архива: каквото влиза в архив, трябва да е на диска

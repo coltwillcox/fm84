@@ -23,6 +23,22 @@ impl AppState {
         }
     }
 
+    /// The archive the panel is in, for what would write into it: Err, said
+    /// why, for one that cannot be written - a git commit, a `.tar.zst`.
+    /// Ok(None) on the disk.
+    pub fn archive_to_write(&mut self, side: Side) -> Result<Option<PathBuf>, ()> {
+        let Some(archive) = self.panel_archive(side).cloned() else {
+            return Ok(None);
+        };
+        match crate::fs_ops::writable_format(&archive) {
+            Ok(_) => Ok(Some(archive)),
+            Err(message) => {
+                self.display_error(message);
+                Err(())
+            }
+        }
+    }
+
     /// Refuse, with a word, what would write into the archive the panel is
     /// in. True when it did.
     pub fn refuse_in_archive(&mut self, side: Side) -> bool {

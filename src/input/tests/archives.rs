@@ -113,44 +113,148 @@ fn f5_copies_out_and_f6_is_refused() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
-/// Everything that would write into an archive says it is read-only and
-/// leaves it as it was - from inside it, and from the other panel into it.
+/// What would change an entry where it is - renaming it, editing it, its
+/// attributes, a link to it - says the archive is read-only, and leaves it
+/// as it was; so does everything in a `.tar.zst`, which is read but never
+/// written.
 #[test]
-fn nothing_writes_into_an_archive() {
+fn what_changes_an_entry_in_place_is_refused() {
     let (dir, archive, mut app_state) = setup("read-only");
     let before = std::fs::read(&archive).unwrap();
     app_state.open_dir(Side::Left, archive.clone(), Some("readme.txt".as_ref()));
-
-    let keys = [
-        (KeyCode::F(2), KeyModifiers::NONE),
-        (KeyCode::F(4), KeyModifiers::NONE),
-        (KeyCode::F(4), KeyModifiers::SHIFT),
-        (KeyCode::F(5), KeyModifiers::ALT),
-        (KeyCode::F(7), KeyModifiers::NONE),
-        (KeyCode::F(8), KeyModifiers::NONE),
-        (KeyCode::F(8), KeyModifiers::SHIFT),
-        (KeyCode::Delete, KeyModifiers::NONE),
-        (KeyCode::Char('a'), KeyModifiers::ALT),
-    ];
+    let keys = [(KeyCode::F(2), KeyModifiers::NONE), (KeyCode::F(4), KeyModifiers::NONE), (KeyCode::F(5), KeyModifiers::ALT), (KeyCode::Char('a'), KeyModifiers::ALT)];
     for (code, modifiers) in keys {
         handle_key(&mut app_state, KeyEvent::new(code, modifiers));
         assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()), "{code:?} {modifiers:?}");
         assert!(app_state.dialog.is_none() && app_state.workers.job.is_none() && matches!(app_state.screen, Screen::Panels), "{code:?} {modifiers:?}");
         app_state.reset_error();
     }
+    assert_eq!(std::fs::read(&archive).unwrap(), before);
 
-    // From the other side: a file copied or moved into the archive.
+    let zst = dir.join("box.tar.zst");
+    tar(&zst, &[(b"inside.txt", Put::File(b"inside"))]);
+    let before = std::fs::read(&zst).unwrap();
+    app_state.open_dir(Side::Left, zst.clone(), Some("inside.txt".as_ref()));
+    for (code, modifiers) in [(KeyCode::F(7), KeyModifiers::NONE), (KeyCode::F(4), KeyModifiers::SHIFT), (KeyCode::F(8), KeyModifiers::NONE), (KeyCode::Delete, KeyModifiers::NONE)] {
+        handle_key(&mut app_state, KeyEvent::new(code, modifiers));
+        assert!(app_state.error.as_deref().unwrap_or_default().contains(".tar.zst"), "{code:?}: {:?}", app_state.error);
+        assert!(app_state.dialog.is_none() && app_state.workers.job.is_none(), "{code:?}");
+        app_state.reset_error();
+    }
     std::fs::write(dir.join("out/new.txt"), "new").unwrap();
     app_state.open_dir(Side::Right, dir.join("out"), Some("new.txt".as_ref()));
     app_state.active_side = Side::Right;
-    for code in [KeyCode::F(5), KeyCode::F(6)] {
-        press(&mut app_state, code);
-        press(&mut app_state, KeyCode::Enter);
-        assert_eq!(app_state.error.as_deref(), Some(crate::app::read_only()), "{code:?}");
-        assert!(app_state.workers.job.is_none());
-        app_state.reset_error();
+    press(&mut app_state, KeyCode::F(5));
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.as_deref().unwrap_or_default().contains(".tar.zst"), "{:?}", app_state.error);
+    assert!(app_state.workers.job.is_none());
+    assert_eq!(std::fs::read(&zst).unwrap(), before);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// F5 and F6 into an archive in the other panel put what is chosen in it,
+/// a move taking it off the disk; one already there is asked about. F7
+/// and Shift+F4 make a directory and a file in it, landed on; F8 deletes
+/// from it, asked first whatever F11 says. From inside one archive into
+/// another is refused: what goes in has to be on the disk.
+#[test]
+fn the_keys_write_into_an_archive() {
+    let (dir, archive, mut app_state) = setup("writing");
+    let names = |app_state: &AppState| {
+        let mut names = shown(app_state);
+        names.sort();
+        names
+    };
+    let out = dir.join("out");
+    std::fs::write(out.join("new.txt"), "new").unwrap();
+    std::fs::create_dir_all(out.join("folder")).unwrap();
+    std::fs::write(out.join("folder/inside.txt"), "inside").unwrap();
+    app_state.open_dir(Side::Left, archive.join("2024"), None);
+    app_state.open_dir(Side::Right, out.clone(), Some("new.txt".as_ref()));
+    app_state.active_side = Side::Right;
+
+    press(&mut app_state, KeyCode::F(5));
+    assert_eq!(app_state.dialog_input().unwrap().text, archive.join("2024/new.txt").display().to_string());
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert!(out.join("new.txt").exists());
+    assert_eq!(names(&app_state), ["..", "june", "new.txt", "notes.txt"]);
+
+    // Again: asked about, and left.
+    press(&mut app_state, KeyCode::F(5));
+    press(&mut app_state, KeyCode::Enter);
+    let started = std::time::Instant::now();
+    while app_state.workers.job.as_ref().is_some_and(|job| job.clash.is_none()) {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "never asked");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
     }
-    assert_eq!(std::fs::read(&archive).unwrap(), before);
+    press(&mut app_state, KeyCode::Char('n'));
+    finish(&mut app_state);
+    assert!(app_state.error.as_deref().unwrap_or_default().ends_with("1 entry skipped"), "{:?}", app_state.error);
+    app_state.reset_error();
+
+    // A directory moved in: in the archive, off the disk.
+    on(&mut app_state, "folder");
+    press(&mut app_state, KeyCode::F(6));
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert!(!out.join("folder").exists());
+    assert_eq!(names(&app_state), ["..", "folder", "june", "new.txt", "notes.txt"]);
+
+    // Made inside, and landed on.
+    app_state.active_side = Side::Left;
+    press(&mut app_state, KeyCode::F(7));
+    for c in "made".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    let at = app_state.left.state.selected().unwrap();
+    assert_eq!(app_state.left.children[at].name_full, "made");
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(4), KeyModifiers::SHIFT));
+    for c in "blank.txt".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(names(&app_state), ["..", "blank.txt", "folder", "june", "made", "new.txt", "notes.txt"]);
+    // A name it has is refused before anything is written.
+    press(&mut app_state, KeyCode::F(7));
+    for c in "made".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Already exists"), "{:?}", app_state.error);
+    assert!(app_state.workers.job.is_none());
+    app_state.reset_error();
+
+    // Deleted from it: asked, even with Confirm delete off.
+    app_state.options.confirm_delete = false;
+    on(&mut app_state, "june");
+    press(&mut app_state, KeyCode::F(8));
+    assert!(matches!(app_state.dialog, Some(crate::app::Dialog::Delete { to_trash: false, .. })));
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert_eq!(names(&app_state), ["..", "blank.txt", "folder", "made", "new.txt", "notes.txt"]);
+    let index = crate::archive::index(&archive).unwrap();
+    assert!(index.find(std::path::Path::new("2024/june/beach.txt")).is_none());
+    assert!(index.find(std::path::Path::new("2024/folder/inside.txt")).is_some());
+    assert!(index.find(std::path::Path::new("readme.txt")).is_some());
+
+    // From one archive into another.
+    let other = dir.join("other.zip");
+    zip(&other, &[("x.txt", Put::File(b"x"))]);
+    app_state.open_dir(Side::Right, other.clone(), Some("x.txt".as_ref()));
+    app_state.active_side = Side::Right;
+    press(&mut app_state, KeyCode::F(5));
+    press(&mut app_state, KeyCode::Enter);
+    assert!(app_state.error.as_deref().unwrap_or_default().starts_with("Copy it out of the archive first"), "{:?}", app_state.error);
+    assert!(app_state.workers.job.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

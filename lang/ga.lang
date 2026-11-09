@@ -2041,3 +2041,19 @@ msgstr Ansin scrios go buan a ndeachaigh isteach
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Rogha  Space - Athraigh
+
+msgctxt job
+msgid   Update archive
+msgstr  Nuashonraigh cartlann
+
+msgid  Updating the archive
+msgstr An chartlann á nuashonrú
+
+msgid  Cannot update the archive
+msgstr Ní féidir an chartlann a nuashonrú
+
+msgid  A {format} is read but cannot be written
+msgstr Léitear {format} ach ní féidir é a scríobh
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Cóipeáil amach as an gcartlann é ar dtús: caithfidh a dtéann isteach i gcartlann a bheith ar an diosca

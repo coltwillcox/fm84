@@ -19,7 +19,8 @@ mod mounts;
 mod owners;
 mod pack;
 mod paths;
+mod repack;
 mod transfer;
 mod writing;
 
-pub use self::{delete::*, extract::*, listing::*, mounts::*, owners::*, pack::*, paths::*, transfer::*, writing::*};
+pub use self::{delete::*, extract::*, listing::*, mounts::*, owners::*, pack::*, paths::*, repack::*, transfer::*, writing::*};

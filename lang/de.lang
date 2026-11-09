@@ -1927,3 +1927,19 @@ msgstr Danach Eingepacktes endgültig löschen
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Option  Leertaste - Ändern
+
+msgctxt job
+msgid   Update archive
+msgstr  Archiv aktualisieren
+
+msgid  Updating the archive
+msgstr Archiv wird aktualisiert
+
+msgid  Cannot update the archive
+msgstr Archiv kann nicht aktualisiert werden
+
+msgid  A {format} is read but cannot be written
+msgstr Ein {format} wird gelesen, kann aber nicht geschrieben werden
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Erst aus dem Archiv kopieren: was in ein Archiv kommt, muss auf der Platte liegen

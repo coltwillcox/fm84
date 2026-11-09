@@ -71,8 +71,8 @@ pub enum AfterJob {
         shown: (PathBuf, PathBuf),
         then: Option<(PathBuf, Vec<(PathBuf, PathBuf)>)>,
     },
-    /// Not from an archive: an archive packed, landed on in whichever panel
-    /// shows where it went.
+    /// Not from an archive: an archive packed, or what was made in one,
+    /// landed on in whichever panel shows where it went.
     Land(PathBuf),
 }
 
@@ -95,6 +95,8 @@ pub enum TransferKind {
     Extract,
     /// Making one.
     Pack,
+    /// Writing into one: copied or moved in, deleted from it, made in it.
+    Update,
     /// Working out checksums, or checking them.
     Checksum,
     /// Alt+S's plan: copies either way, and deletes.
@@ -119,6 +121,7 @@ impl TransferKind {
             TransferKind::Trash => tc!("job", "Move to trash"),
             TransferKind::Extract => tc!("job", "Extract"),
             TransferKind::Pack => tc!("job", "Pack"),
+            TransferKind::Update => tc!("job", "Update archive"),
             TransferKind::Checksum => tc!("job", "Checksum"),
             TransferKind::Sync => tc!("job", "Synchronize"),
             TransferKind::Undo => tc!("job", "Undo"),
@@ -570,6 +573,21 @@ fn run_pack(archives: Vec<PackArchive>, how: PackHow, mut progress: JobProgress<
     progress.finish(Ok(Transfer::Done));
 }
 
+/// The worker thread behind writing into an archive: what changes is
+/// worked out first - what comes in walked, names already taken asked about
+/// - which gives the bar its total, and then the archive is written again.
+fn run_repack(archive: PathBuf, edits: crate::fs_ops::Repack, move_after: bool, mut progress: JobProgress<'_>) {
+    let outcome = match crate::fs_ops::plan_repack(&archive, &edits, &mut progress) {
+        Ok(Some(plan)) => {
+            let _ = progress.updates.send(JobUpdate::Total(plan.bytes));
+            crate::fs_ops::repack(&plan, move_after, &mut progress)
+        }
+        Ok(None) => Ok(Transfer::Cancelled),
+        Err(error) => Err(error),
+    };
+    progress.finish(outcome);
+}
+
 /// The worker thread behind a copy or move.
 ///
 /// Renames come first and on their own. A move within one filesystem is a
@@ -749,6 +767,16 @@ impl AppState {
     pub fn start_pack(&mut self, archives: Vec<PackArchive>, how: PackHow) {
         let land = archives.first().map(|archive| archive.dest.clone());
         self.start_job(TransferKind::Pack, Clashes::Ask, move |progress| run_pack(archives, how, progress));
+        if let Some(job) = &mut self.workers.job {
+            job.after = land.map(AfterJob::Land);
+        }
+    }
+
+    /// Write `edits` into `archive` - moving in, when `move_after`, what is
+    /// put in - names it already has going by `clashes`; then land on
+    /// `land`, when there is one.
+    pub fn start_repack(&mut self, archive: PathBuf, edits: crate::fs_ops::Repack, move_after: bool, clashes: Clashes, land: Option<PathBuf>) {
+        self.start_job(TransferKind::Update, clashes, move |progress| run_repack(archive, edits, move_after, progress));
         if let Some(job) = &mut self.workers.job {
             job.after = land.map(AfterJob::Land);
         }

@@ -1928,3 +1928,19 @@ msgstr Puis supprimer définitivement ce qui y est entré
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Option  Espace - Changer
+
+msgctxt job
+msgid   Update archive
+msgstr  Mise à jour de l'archive
+
+msgid  Updating the archive
+msgstr Mise à jour de l'archive
+
+msgid  Cannot update the archive
+msgstr Impossible de mettre à jour l'archive
+
+msgid  A {format} is read but cannot be written
+msgstr Un {format} se lit mais ne peut pas être écrit
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Copiez-le d'abord hors de l'archive : ce qui entre dans une archive doit être sur le disque

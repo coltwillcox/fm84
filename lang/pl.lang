@@ -1965,3 +1965,19 @@ msgstr Potem trwale usuń to, co weszło
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Opcja  Spacja - Zmień
+
+msgctxt job
+msgid   Update archive
+msgstr  Aktualizacja archiwum
+
+msgid  Updating the archive
+msgstr Aktualizowanie archiwum
+
+msgid  Cannot update the archive
+msgstr Nie można zaktualizować archiwum
+
+msgid  A {format} is read but cannot be written
+msgstr {format} da się czytać, ale nie zapisać
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Najpierw skopiuj to z archiwum: to, co trafia do archiwum, musi być na dysku

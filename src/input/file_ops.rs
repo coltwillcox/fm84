@@ -41,7 +41,8 @@ pub(super) fn toggle_create(app_state: &mut AppState, is_dir: bool) {
         app_state.dialog = None;
         return;
     }
-    if app_state.refuse_in_archive(app_state.active_side) {
+    // Inside an archive, made in it.
+    if app_state.archive_to_write(app_state.active_side).is_err() {
         return;
     }
     app_state.dialog = Some(Dialog::Create { is_dir, input: TextInput::new() });
@@ -111,8 +112,18 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
 /// is set to: there is no getting it back.
 pub(super) fn open_delete(app_state: &mut AppState, permanently: bool) {
     let items = chosen_items(app_state);
-    if items.is_empty() || app_state.refuse_in_archive(app_state.active_side) {
+    if items.is_empty() {
         return;
+    }
+    // Inside an archive there is no trash to go to, and no getting it back:
+    // always asked, as Shift+F8 is.
+    match app_state.archive_to_write(app_state.active_side) {
+        Err(()) => return,
+        Ok(Some(_)) => {
+            app_state.dialog = Some(Dialog::Delete { items, to_trash: false });
+            return;
+        }
+        Ok(None) => {}
     }
     let to_trash = app_state.options.delete_to_trash && !permanently;
     app_state.dialog = Some(Dialog::Delete { items, to_trash });
@@ -125,7 +136,10 @@ pub(super) fn handle_delete_confirm(app_state: &mut AppState) {
     // The removals, the panel reload and the selections are all handled by the
     // job as it finishes, the same as a copy or a move.
     if let Some(Dialog::Delete { items, to_trash }) = app_state.dialog.take() {
-        if to_trash {
+        if let Some(archive) = app_state.panel_archive(app_state.active_side).cloned() {
+            let remove = items.iter().filter_map(|(path, _)| path.strip_prefix(&archive).ok()).filter(|inner| !inner.as_os_str().is_empty()).map(Path::to_path_buf).collect();
+            app_state.start_repack(archive, crate::fs_ops::Repack { remove, ..Default::default() }, false, Clashes::Ask, None);
+        } else if to_trash {
             app_state.start_trash(items);
         } else if app_state.options.burst_delete {
             app_state.explode_then_delete(items);
@@ -152,6 +166,16 @@ pub(super) fn handle_create_confirm(app_state: &mut AppState) {
 
     let parent_path = &app_state.panel(app_state.active_side).dir;
     let path = parent_path.join(&name);
+    if let Some(archive) = app_state.panel_archive(app_state.active_side).cloned() {
+        let Ok(inner) = path.strip_prefix(&archive) else {
+            return;
+        };
+        if crate::archive::entry_at(&path).is_some() {
+            return app_state.display_error(t!("Already exists: {name}", name));
+        }
+        let make = vec![(inner.to_path_buf(), is_dir)];
+        return app_state.start_repack(archive, crate::fs_ops::Repack { make, ..Default::default() }, false, Clashes::Ask, Some(path));
+    }
     let result = if is_dir { create_directory(path) } else { create_file(path) };
     match result {
         Ok(_) => app_state.reload_panel(app_state.active_side, Some(name.as_ref())),
@@ -222,9 +246,8 @@ pub(super) fn handle_transfer_confirm(app_state: &mut AppState) {
 fn go_transfer(app_state: &mut AppState, sources: &[(PathBuf, bool)], destination: &Path, names_dir: bool, is_copy: bool) {
     // Into an archive: the other panel inside one, or a path typed through
     // one. Asked of the disk, as transfer_targets asks it.
-    if crate::archive::locate(destination).is_some() {
-        app_state.display_error(read_only().to_string());
-        return;
+    if let Some(located) = crate::archive::locate(destination) {
+        return into_archive(app_state, sources, located, names_dir, is_copy);
     }
     match transfer_targets(sources, destination, names_dir) {
         Ok(items) => submit_transfer(app_state, items, is_copy),
@@ -240,7 +263,16 @@ fn go_transfer(app_state: &mut AppState, sources: &[(PathBuf, bool)], destinatio
 /// about one at a time as the job reaches them, written over, or - for Refuse
 /// - the whole job refused before it starts.
 fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool) {
-    // Into an archive, whichever way the destination was arrived at.
+    // Into an archive, whichever way the destination was arrived at: a
+    // single file to a name there, as F5 opens on. Not one onto an archive
+    // of the same name, which is a file like any other to write over.
+    if let [(source, dest, is_dir)] = &items[..]
+        && let Some(located) = crate::archive::locate(dest)
+        && !located.inner.as_os_str().is_empty()
+    {
+        let sources = [(source.clone(), *is_dir)];
+        return into_archive(app_state, &sources, located, false, is_copy);
+    }
     if items.iter().any(|(_, dest, _)| dest.parent().is_some_and(|dir| crate::archive::locate(dir).is_some())) {
         return app_state.display_error(read_only().to_string());
     }
@@ -262,6 +294,65 @@ fn submit_transfer(app_state: &mut AppState, items: Vec<(PathBuf, PathBuf, bool)
         OnExisting::KeepBoth => app_state.start_transfer(items, is_copy, Clashes::KeepBothAll),
         OnExisting::Ask | OnExisting::Refuse => app_state.start_transfer(items, is_copy, Clashes::Ask),
     }
+}
+
+/// F5 or F6 into an archive: each source into the directory the path
+/// names there under its own name, or a single file to a name of its own.
+/// What no answer could make safe is refused before anything is written -
+/// the archive into itself, a file and a directory in each other's place -
+/// and names it already has go by F11's "When destination exists", asked
+/// about one at a time as the job reaches them. Moved, what went in is
+/// taken off the disk once the archive is written.
+fn into_archive(app_state: &mut AppState, sources: &[(PathBuf, bool)], located: crate::archive::Located, names_dir: bool, is_copy: bool) {
+    use crate::archive::EntryKind;
+    if app_state.panel_archive(app_state.active_side).is_some() {
+        return app_state.display_error(t!("Copy it out of the archive first: what goes into an archive has to be on the disk").to_string());
+    }
+    let crate::archive::Located { archive, inner } = located;
+    if let Err(message) = crate::fs_ops::writable_format(&archive) {
+        return app_state.display_error(message);
+    }
+    let index = match crate::archive::index(&archive) {
+        Ok(index) => index,
+        Err(error) => return app_state.display_error(error.to_string()),
+    };
+    let destination = archive.join(&inner);
+    let targets: Vec<(PathBuf, PathBuf)> = if index.is_dir(&inner) {
+        sources.iter().filter_map(|(source, _)| Some((source.clone(), inner.join(source.file_name()?)))).collect()
+    } else if names_dir {
+        return app_state.display_error(t!("No such directory: {path}", path = destination.display()));
+    } else if let [(source, _)] = sources {
+        match inner.parent() {
+            Some(parent) if index.is_dir(parent) => vec![(source.clone(), inner.clone())],
+            _ => return app_state.display_error(t!("No such directory: {path}", path = destination.parent().unwrap_or(&destination).display())),
+        }
+    } else {
+        return app_state.display_error(t!("{count} items need a directory to go into, and {path} is not one", count = sources.len(), path = destination.display()));
+    };
+    let mut taken = Vec::new();
+    for (source, name) in &targets {
+        if archive.starts_with(source) {
+            return app_state.display_error(t!("Cannot copy \"{path}\" into itself", path = source.display()));
+        }
+        let Some(at) = index.find(name) else {
+            continue;
+        };
+        let dest = archive.join(name);
+        let coming_dir = source.symlink_metadata().is_ok_and(|metadata| metadata.is_dir());
+        match (coming_dir, index.entry(at).kind == EntryKind::Dir) {
+            (false, true) => return app_state.display_error(t!("Cannot replace directory {path} with a file", path = dest.display())),
+            (true, false) => return app_state.display_error(t!("Cannot replace file {path} with a directory", path = dest.display())),
+            _ => taken.push(dest),
+        }
+    }
+    let edits = crate::fs_ops::Repack { add: targets, ..Default::default() };
+    let clashes = match app_state.options.on_existing {
+        OnExisting::Refuse if !taken.is_empty() => return app_state.display_error(t!("Destination already exists: {path}", path = taken[0].display())),
+        OnExisting::Overwrite => Clashes::ReplaceAll,
+        OnExisting::KeepBoth => Clashes::KeepBothAll,
+        OnExisting::Ask | OnExisting::Refuse => Clashes::Ask,
+    };
+    app_state.start_repack(archive, edits, !is_copy, clashes, None);
 }
 
 /// F5 from a panel inside an archive: copy the entries out. What no answer

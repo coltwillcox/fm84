@@ -1927,3 +1927,19 @@ msgstr Μετά οριστική διαγραφή όσων μπήκαν
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Επιλογή  Space - Αλλαγή
+
+msgctxt job
+msgid   Update archive
+msgstr  Ενημέρωση αρχειοθήκης
+
+msgid  Updating the archive
+msgstr Ενημέρωση της αρχειοθήκης
+
+msgid  Cannot update the archive
+msgstr Αδύνατη η ενημέρωση της αρχειοθήκης
+
+msgid  A {format} is read but cannot be written
+msgstr Ένα {format} διαβάζεται αλλά δεν γράφεται
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Αντιγράψτε το πρώτα έξω από την αρχειοθήκη: ό,τι μπαίνει σε αρχειοθήκη πρέπει να είναι στον δίσκο

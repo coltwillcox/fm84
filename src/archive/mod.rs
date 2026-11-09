@@ -11,6 +11,7 @@ mod index;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use index::inner_path;
 pub use index::{Entry, EntryKind, Index};
 
 use std::fs::{self, File};
@@ -369,7 +370,7 @@ fn read_7z_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(us
 /// A tar read through whatever it was compressed with. Every one of them
 /// reads on past the end of its first stream: files joined end to end, as
 /// pigz, pzstd and pbzip2 write them, are one archive.
-fn tar_reader(archive: &Path, kind: Kind) -> io::Result<Box<dyn Read>> {
+pub(crate) fn tar_reader(archive: &Path, kind: Kind) -> io::Result<Box<dyn Read>> {
     let file = open(archive)?;
     Ok(match kind {
         Kind::TarGz => Box::new(flate2::read::MultiGzDecoder::new(file)),

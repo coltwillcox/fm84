@@ -1964,3 +1964,19 @@ msgstr Затим трајно обриши оно што је ушло
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Опција  Space - Промени
+
+msgctxt job
+msgid   Update archive
+msgstr  Ажурирање архиве
+
+msgid  Updating the archive
+msgstr Ажурирам архиву
+
+msgid  Cannot update the archive
+msgstr Архива не може да се ажурира
+
+msgid  A {format} is read but cannot be written
+msgstr {format} се чита, али не може да се упише
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Прво је копирај из архиве: оно што иде у архиву мора да буде на диску

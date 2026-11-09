@@ -1965,3 +1965,19 @@ msgstr Potom trvale smazat, co se zabalilo
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Volba  Space - Změnit
+
+msgctxt job
+msgid   Update archive
+msgstr  Aktualizace archivu
+
+msgid  Updating the archive
+msgstr Aktualizuje se archiv
+
+msgid  Cannot update the archive
+msgstr Archiv nelze aktualizovat
+
+msgid  A {format} is read but cannot be written
+msgstr {format} se dá číst, ale ne zapsat
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Nejdřív ho zkopírujte z archivu: co jde do archivu, musí být na disku

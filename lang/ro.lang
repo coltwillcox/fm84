@@ -1965,3 +1965,19 @@ msgstr Apoi șterge definitiv ce a intrat
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Opțiune  Space - Schimbă
+
+msgctxt job
+msgid   Update archive
+msgstr  Actualizare arhivă
+
+msgid  Updating the archive
+msgstr Se actualizează arhiva
+
+msgid  Cannot update the archive
+msgstr Arhiva nu poate fi actualizată
+
+msgid  A {format} is read but cannot be written
+msgstr Un {format} se citește, dar nu poate fi scris
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Copiați-l mai întâi din arhivă: ce intră într-o arhivă trebuie să fie pe disc

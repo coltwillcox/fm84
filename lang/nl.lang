@@ -1926,3 +1926,19 @@ msgstr Daarna het ingepakte definitief verwijderen
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Optie  Space - Wijzigen
+
+msgctxt job
+msgid   Update archive
+msgstr  Archief bijwerken
+
+msgid  Updating the archive
+msgstr Archief wordt bijgewerkt
+
+msgid  Cannot update the archive
+msgstr Kan het archief niet bijwerken
+
+msgid  A {format} is read but cannot be written
+msgstr Een {format} wordt gelezen, maar kan niet worden geschreven
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Haal het eerst uit het archief: wat in een archief komt, moet op de schijf staan

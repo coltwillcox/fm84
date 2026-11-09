@@ -2004,3 +2004,19 @@ msgstr Nato trajno izbriši, kar je šlo vanj
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Možnost  Space - Spremeni
+
+msgctxt job
+msgid   Update archive
+msgstr  Posodobitev arhiva
+
+msgid  Updating the archive
+msgstr Posodabljam arhiv
+
+msgid  Cannot update the archive
+msgstr Arhiva ni mogoče posodobiti
+
+msgid  A {format} is read but cannot be written
+msgstr {format} se bere, ne more pa se zapisati
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Najprej ga kopiraj iz arhiva: kar gre v arhiv, mora biti na disku

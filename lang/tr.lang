@@ -1927,3 +1927,19 @@ msgstr Sonra içine gireni kalıcı olarak sil
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Seçenek  Space - Değiştir
+
+msgctxt job
+msgid   Update archive
+msgstr  Arşivi güncelle
+
+msgid  Updating the archive
+msgstr Arşiv güncelleniyor
+
+msgid  Cannot update the archive
+msgstr Arşiv güncellenemiyor
+
+msgid  A {format} is read but cannot be written
+msgstr Bir {format} okunur ama yazılamaz
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Önce arşivden dışarı kopyalayın: arşive girecek olan diskte olmalı

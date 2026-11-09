@@ -1926,3 +1926,19 @@ msgstr Slett så det som ble pakket, for godt
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Valg  Space - Endre
+
+msgctxt job
+msgid   Update archive
+msgstr  Oppdater arkiv
+
+msgid  Updating the archive
+msgstr Oppdaterer arkivet
+
+msgid  Cannot update the archive
+msgstr Kan ikke oppdatere arkivet
+
+msgid  A {format} is read but cannot be written
+msgstr En {format} kan leses, men ikke skrives
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Kopier det ut av arkivet først: det som skal i et arkiv, må ligge på disken

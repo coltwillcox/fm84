@@ -1928,3 +1928,19 @@ msgstr Utána a becsomagoltak végleges törlése
 
 msgid  ↑↓ - Option  Space - Change
 msgstr ↑↓ - Beállítás  Szóköz - Módosítás
+
+msgctxt job
+msgid   Update archive
+msgstr  Archívum frissítése
+
+msgid  Updating the archive
+msgstr Az archívum frissítése
+
+msgid  Cannot update the archive
+msgstr Az archívum nem frissíthető
+
+msgid  A {format} is read but cannot be written
+msgstr Egy {format} olvasható, de nem írható
+
+msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
+msgstr Előbb másold ki az archívumból: aminek archívumba kell kerülnie, annak a lemezen kell lennie
