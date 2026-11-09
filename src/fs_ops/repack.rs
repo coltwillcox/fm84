@@ -65,6 +65,14 @@ pub fn plan_repack(archive: &Path, edits: &Repack, report: Report<'_>) -> Result
     // Through a link it is the file the link points at that is written.
     let archive = fs::canonicalize(archive)?;
     let index = crate::archive::index(&archive)?;
+    // New entries go in under the password the old ones have: a wrong one
+    // would leave the archive under two. Tried before anything is asked.
+    let password = if crate::archive::is_encrypted(&archive) {
+        crate::archive::check_password(&archive)?;
+        crate::archive::password(&archive)
+    } else {
+        None
+    };
     let Some(mut added) = plan_named(&edits.add, &archive, format, None, report)? else {
         return Ok(None);
     };
@@ -111,7 +119,6 @@ pub fn plan_repack(archive: &Path, edits: &Repack, report: Report<'_>) -> Result
             return Err(Error::new(ErrorKind::AlreadyExists, t!("Already exists: {name}", name = name.display())));
         }
     }
-    let password = if crate::archive::is_encrypted(&archive) { crate::archive::password(&archive) } else { None };
     let mut plan = RepackPlan {
         password,
         archive,

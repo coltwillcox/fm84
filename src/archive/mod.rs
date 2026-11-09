@@ -319,6 +319,25 @@ pub fn needs_password(archive: &Path, inners: &[PathBuf]) -> bool {
     inners.iter().any(|inner| index.subtree(inner).into_iter().any(|at| index.entry(at).encrypted))
 }
 
+/// Whether the password kept for a zip opens it, tried on one of its
+/// encrypted entries - which checks it from the entry's header, before a
+/// byte is read. Wrong, it is let go of and said so. A 7z needs nothing of
+/// the kind: what is read of it with the wrong one fails on its own.
+pub fn check_password(archive: &Path) -> io::Result<()> {
+    let Some(password) = password(archive).filter(|_| kind_of(archive) == Some(Kind::Zip)) else {
+        return Ok(());
+    };
+    let index = index(archive)?;
+    let Some(position) = index.subtree(Path::new("")).into_iter().map(|at| index.entry(at)).find(|entry| entry.encrypted).and_then(|entry| entry.position) else {
+        return Ok(());
+    };
+    let mut zip = zip::ZipArchive::new(open(archive)?).map_err(zip_error)?;
+    match zip.by_index_decrypt(position, password.as_bytes()) {
+        Ok(_) => Ok(()),
+        Err(error) => Err(forgetting(archive, zip_error(error))),
+    }
+}
+
 /// Whether anything in `archive` is encrypted.
 pub fn is_encrypted(archive: &Path) -> bool {
     lockable(archive) && index(archive).is_ok_and(|index| index.subtree(Path::new("")).into_iter().any(|at| index.entry(at).encrypted))

@@ -460,3 +460,31 @@ fn a_pax_size_is_kept() {
     assert_eq!(contents(&archive), listed(&[("big.txt", "eleven byte"), ("new.txt", "new")]));
     fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Written into with the wrong password, an encrypted zip - whose entries
+/// are carried across without being opened - is left as it was, rather
+/// than taking new entries under a second password; the wrong one is let
+/// go of.
+#[test]
+fn a_wrong_password_writes_nothing_into_a_zip() {
+    use crate::archive::{forget_password, locked, password, set_password};
+    let dir = scratch("repack-wrong-password");
+    fs::write(dir.join("old.txt"), "old").unwrap();
+    fs::write(dir.join("new.txt"), "new").unwrap();
+    let archive = dir.join("locked.zip");
+    let mut ask = |_: Step<'_>| true;
+    let plan = plan_pack(&[(dir.join("old.txt"), false)], &archive, PackFormat::Zip, None, &mut ask).unwrap().unwrap();
+    pack(&plan, &archive, PackFormat::Zip, PackLevel::Fast, Some("sesame"), false, &mut ask).unwrap();
+    let before = fs::read(&archive).unwrap();
+    set_password(&archive, "sesmae");
+    let edits = Repack {
+        add: vec![(dir.join("new.txt"), PathBuf::from("new.txt"))],
+        ..Repack::default()
+    };
+    let error = write_into(&archive, &edits, false, &mut Asking::new(Clash::Abort)).unwrap_err();
+    assert_eq!(locked(&error).map(|locked| locked.wrong), Some(true), "{error}");
+    assert_eq!(fs::read(&archive).unwrap(), before);
+    assert_eq!(password(&archive), None);
+    forget_password(&archive);
+    fs::remove_dir_all(&dir).unwrap();
+}
