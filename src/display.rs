@@ -9,6 +9,7 @@ use ratatui::style::Color;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 
 /// Every colour the interface uses, one palette per theme.
+#[derive(Clone)]
 pub struct Palette {
     /// Painted behind everything, unless F11 leaves the terminal's own.
     pub background: Color,
@@ -434,6 +435,50 @@ thread_local! {
     static CLASSIC_CURSOR: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
+thread_local! {
+    /// F11's Turbo: every theme's neon turned up. Per thread, as the cursor
+    /// is, for the tests that draw side by side.
+    static TURBO: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Whether Turbo is on, for the frame being drawn.
+pub fn turbo() -> bool {
+    TURBO.with(std::cell::Cell::get)
+}
+
+/// A colour turned up: further from grey, and on a dark background as
+/// bright as it will go. On a light one it is only made stronger - brighter
+/// there would be harder to read.
+fn boosted(color: Color, light: bool) -> Color {
+    let Color::Rgb(red, green, blue) = color else { return color };
+    let channels = [red, green, blue].map(f64::from);
+    let grey = channels.iter().sum::<f64>() / 3.0;
+    let stronger = channels.map(|channel| (grey + (channel - grey) * 1.4).clamp(0.0, 255.0));
+    let top = stronger.iter().copied().fold(1.0, f64::max);
+    let scale = if light { 1.0 } else { 255.0 / top };
+    let [red, green, blue] = stronger.map(|channel| (channel * scale).round().clamp(0.0, 255.0) as u8);
+    Color::Rgb(red, green, blue)
+}
+
+/// `palette` with what is drawn in it - text, borders, marks - turned up,
+/// and what is drawn behind it left as it was.
+fn turned_up(palette: &Palette) -> Palette {
+    let up = |color| boosted(color, palette.light);
+    Palette {
+        border: up(palette.border),
+        columns: up(palette.columns),
+        directory: up(palette.directory),
+        directory_dark: up(palette.directory_dark),
+        directory_bracket: up(palette.directory_bracket),
+        file: up(palette.file),
+        rename_background: up(palette.rename_background),
+        selected_foreground: up(palette.selected_foreground),
+        title: up(palette.title),
+        selected_marker: up(palette.selected_marker),
+        ..palette.clone()
+    }
+}
+
 pub fn set_classic_cursor(classic: bool) {
     CLASSIC_CURSOR.with(|cell| cell.set(classic));
 }
@@ -452,11 +497,19 @@ pub fn apply(options: &Options) {
     THEME_BACKGROUND.store(options.theme_background, Ordering::Relaxed);
     TAB_WIDTH.store(options.tab_width, Ordering::Relaxed);
     DECIMAL_SIZES.store(options.size_units == SizeUnits::Decimal, Ordering::Relaxed);
+    TURBO.with(|cell| cell.set(options.turbo));
 }
 
 pub fn palette() -> &'static Palette {
     let index = THEME.load(Ordering::Relaxed) as usize;
-    palette_of(Theme::ALL.get(index).copied().unwrap_or(Theme::Synthwave))
+    let theme = Theme::ALL.get(index).copied().unwrap_or(Theme::Synthwave);
+    if turbo() {
+        // Each theme's turned up once, the first time it is asked for.
+        static TURNED_UP: std::sync::OnceLock<Vec<Palette>> = std::sync::OnceLock::new();
+        let all = TURNED_UP.get_or_init(|| Theme::ALL.iter().map(|&theme| turned_up(palette_of(theme))).collect());
+        return &all[index.min(all.len() - 1)];
+    }
+    palette_of(theme)
 }
 
 /// The colour to paint behind everything, or None to leave the terminal's.
@@ -612,5 +665,20 @@ mod tests {
             let name = palette_of(theme).syntax_theme;
             assert!(themes.themes.contains_key(name), "{}: no syntect theme {name}", theme.label());
         }
+    }
+}
+
+#[cfg(test)]
+mod turbo_tests {
+    use super::*;
+
+    #[test]
+    fn a_colour_turned_up_is_brighter_on_dark_and_stronger_on_light() {
+        let Color::Rgb(red, green, blue) = boosted(Color::Rgb(200, 40, 200), false) else { panic!() };
+        assert_eq!(red.max(green).max(blue), 255, "as bright as it goes");
+        assert!(green < 40, "further from grey");
+        let Color::Rgb(red, _, _) = boosted(Color::Rgb(200, 40, 200), true) else { panic!() };
+        assert!(red <= 230, "no brighter on a light background: {red}");
+        assert_eq!(boosted(Color::Reset, false), Color::Reset);
     }
 }

@@ -301,6 +301,9 @@ pub struct Options {
     pub outrun_bar: bool,
     /// The rows of what is deleted for good burst into pixels first.
     pub burst_delete: bool,
+    /// Turbo: the theme's neon turned up, scanlines over the panels, and
+    /// the logo blinking in F1.
+    pub turbo: bool,
     pub tab_width: usize,
     /// The gutter in the viewer and the editor.
     pub line_numbers: bool,
@@ -358,6 +361,7 @@ impl Default for Options {
             cursor_blink: true,
             outrun_bar: false,
             burst_delete: false,
+            turbo: false,
             tab_width: 4,
             line_numbers: true,
             scroll_bar: ScrollBarStyle::Heavy,

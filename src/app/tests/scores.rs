@@ -31,7 +31,8 @@ fn jobs_count_onto_the_high_scores() {
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    assert!(f1(&mut app_state).contains("INSERT COIN"));
+    // In F1's lines rather than one frame of it: it blinks.
+    assert!(crate::ui::help_lines(&app_state.scores).iter().any(|(text, kind)| text == "INSERT COIN" && *kind == crate::ui::HelpLine::Coin));
 
     app_state.start_transfer(vec![(dir.join("a.txt"), dir.join("b.txt"), false)], true, crate::app::Clashes::Ask);
     finish(&mut app_state);

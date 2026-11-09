@@ -250,6 +250,16 @@ impl Settled {
     }
 }
 
+/// Turbo's scanlines: every other row of `area` dimmed, as a CRT draws.
+fn scanlines(f: &mut ratatui::Frame<'_>, area: Rect) {
+    let buffer = f.buffer_mut();
+    for y in (area.top()..area.bottom()).skip(1).step_by(2) {
+        for x in area.left()..area.right() {
+            buffer[(x, y)].set_style(Style::new().add_modifier(Modifier::DIM));
+        }
+    }
+}
+
 /// Show the cursor where the frame marked it. A field's wins over the
 /// editor's, as a prompt over the editor is where the typing goes; and the
 /// editor's shows only with nothing over it, as a question such as Save
@@ -363,7 +373,12 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
                 drawn.diff_viewport_width = width;
                 settled.diff_scroll = Some(scroll);
             }
-            Screen::Panels => drawn.page_size = render_file_tables(f, chunks_main[2], app_state, drawn),
+            Screen::Panels => {
+                drawn.page_size = render_file_tables(f, chunks_main[2], app_state, drawn);
+                if app_state.options.turbo {
+                    scanlines(f, chunks_main[2]);
+                }
+            }
         }
         render_bottom_panel(f, chunks_main[3], app_state);
         render_fkey_bar(f, chunks_main[4], app_state, drawn);

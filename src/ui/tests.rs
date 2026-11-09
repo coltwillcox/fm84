@@ -356,7 +356,9 @@ fn popups_share_a_width_and_keep_to_the_panels() {
     render_ui(&mut terminal, &mut app_state);
     let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
     let help = help_lines(&Default::default());
-    assert!(screen.contains(help[help.len() - 1].0.trim()), "F1's last line");
+    // The last line that stays put: INSERT COIN, last of all, blinks.
+    let last = help.iter().rev().find(|(text, kind)| *kind != HelpLine::Coin && !text.trim().is_empty()).unwrap();
+    assert!(screen.contains(last.0.trim()), "F1's last line");
     assert!(screen.contains(" About "), "the About heading");
     assert!(screen.contains(&format!("v{}", env!("CARGO_PKG_VERSION"))), "F1's About");
     assert!(screen.contains(&format!("-{}/{} ", help.len(), help.len())), "F1's corner");
@@ -1081,4 +1083,45 @@ fn a_row_deleted_for_good_bursts() {
     assert!(screen.contains('█'), "{screen}");
     app_state.explosion = None;
     std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// F11's Turbo: the neon turned up, the panels in scanlines, and the logo
+/// in F1 blinking - and none of it with Turbo off.
+#[test]
+fn turbo_turns_the_neon_up() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    let plain = (palette().title, palette().background);
+    app_state.options.turbo = true;
+    crate::display::apply(&app_state.options);
+    assert_ne!(palette().title, plain.0, "text turned up");
+    assert_eq!(palette().background, plain.1, "what is behind it left alone");
+
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer().clone();
+    // Inside the panels, every other row dimmed.
+    let dimmed = |y: u16| (1..99).all(|x| buffer[(x, y)].modifier.contains(Modifier::DIM));
+    let rows: Vec<bool> = (6..12).map(dimmed).collect();
+    assert!(rows.windows(2).all(|pair| pair[0] != pair[1]), "{rows:?}");
+
+    // The logo in F1 goes out and comes back, by the clock: drawn over a
+    // second, some frames have its blocks lit and some not.
+    app_state.dialog = Some(Dialog::Help);
+    app_state.help_scroll = help_lines(&app_state.scores).iter().position(|(_, kind)| *kind == HelpLine::Logo).unwrap();
+    let mut seen = std::collections::HashSet::new();
+    let started = std::time::Instant::now();
+    while seen.len() < 2 && started.elapsed() < std::time::Duration::from_millis(1500) {
+        render_ui(&mut terminal, &mut app_state);
+        let buffer = terminal.backend().buffer().clone();
+        let block = (0..30).flat_map(|y| (0..100).map(move |x| (x, y))).find(|&(x, y)| buffer[(x, y)].symbol() == "█").unwrap();
+        seen.insert(buffer[block].modifier.contains(Modifier::BOLD));
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    assert_eq!(seen.len(), 2, "the logo blinks");
+
+    app_state.options.turbo = false;
+    crate::display::apply(&app_state.options);
+    assert_eq!(palette().title, plain.0);
 }

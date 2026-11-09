@@ -162,6 +162,7 @@ impl Options {
                 "cursor_blink" => options.cursor_blink = flag(options.cursor_blink),
                 "outrun_bar" => options.outrun_bar = flag(options.outrun_bar),
                 "burst_delete" => options.burst_delete = flag(options.burst_delete),
+                "turbo" => options.turbo = flag(options.turbo),
                 "tab_width" => options.tab_width = number(1..=16).map_or(options.tab_width, |n| n as usize),
                 "line_numbers" => options.line_numbers = flag(options.line_numbers),
                 "scroll_bar" => options.scroll_bar = ScrollBarStyle::ALL.into_iter().find(|style| style.key() == value).unwrap_or(options.scroll_bar),
@@ -270,6 +271,8 @@ impl Options {
              outrun_bar = {}\n\
              # What is deleted for good bursts into pixels first.\n\
              burst_delete = {}\n\
+             # Brighter neon, scanlines over the panels, the logo blinking.\n\
+             turbo = {}\n\
              \n\
              # Viewer and editor\n\
              tab_width = {}\n\
@@ -318,6 +321,7 @@ impl Options {
             self.cursor_blink,
             self.outrun_bar,
             self.burst_delete,
+            self.turbo,
             self.tab_width,
             self.line_numbers,
             self.scroll_bar.key(),

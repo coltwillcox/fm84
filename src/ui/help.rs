@@ -226,14 +226,23 @@ pub fn key_runs(text: &str) -> Vec<(String, bool)> {
     runs
 }
 
+/// Whether something blinking is lit this moment: half a second on, half
+/// off. Kept by the clock, as the frames come at least ten times a second,
+/// rather than by the terminal - many do not blink, and the blink modifiers
+/// are the marks the cursors are found by.
+fn blink_lit() -> bool {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(true, |since| since.as_millis() / 500 % 2 == 0)
+}
+
 /// A row of the logo, centred in `width`: its solid blocks in the colour
 /// directories have, the lines that shade them in the border's.
-fn logo_row(row: &str, width: usize) -> Line<'static> {
+fn logo_row(row: &str, width: usize, lit: bool) -> Line<'static> {
     let used = row.chars().count();
     let before = width.saturating_sub(used) / 2;
     let after = width.saturating_sub(used + before);
-    let solid = Style::default().fg(palette().directory).add_modifier(Modifier::BOLD);
     let shade = Style::default().fg(palette().border);
+    // Out, its blocks are drawn as their shading is.
+    let solid = if lit { Style::default().fg(palette().directory).add_modifier(Modifier::BOLD) } else { shade };
     let mut spans = vec![Span::raw(" ".repeat(before))];
     let mut run = String::new();
     let mut run_solid = None;
@@ -286,7 +295,8 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
         .skip(first)
         .take(room)
         .map(|(text, kind)| match kind {
-            HelpLine::Logo => logo_row(text, max_len),
+            // Turbo has it blinking, as an attract screen's.
+            HelpLine::Logo => logo_row(text, max_len, !crate::display::turbo() || blink_lit()),
             // Centred over what it heads, as the logo is.
             HelpLine::Heading => Line::from(Span::styled(format!("{text:^max_len$}"), style_title().add_modifier(Modifier::BOLD))),
             HelpLine::Item => Line::from(Span::styled(format!("{text:<max_len$}"), style_title())),
@@ -302,11 +312,8 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
                 // Centred in the block, and blinking, as on the cabinet.
                 let used = text.chars().count();
                 let before = max_len.saturating_sub(used) / 2;
-                Line::from(vec![
-                    Span::raw(" ".repeat(before)),
-                    Span::styled(text.clone(), style_key().add_modifier(Modifier::SLOW_BLINK)),
-                    Span::raw(" ".repeat(max_len.saturating_sub(used + before))),
-                ])
+                let shown = if blink_lit() { text.clone() } else { " ".repeat(used) };
+                Line::from(vec![Span::raw(" ".repeat(before)), Span::styled(shown, style_key()), Span::raw(" ".repeat(max_len.saturating_sub(used + before)))])
             }
             HelpLine::Key => {
                 let pad = " ".repeat(max_len.saturating_sub(text.chars().count()));
