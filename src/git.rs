@@ -227,6 +227,53 @@ pub fn commit_times(dir: &Path, weeks: usize) -> Result<Vec<i64>, String> {
     Ok(output.lines().filter_map(|line| line.trim().parse().ok()).collect())
 }
 
+/// The commit `revision` names - a branch, a tag, `HEAD~3`, `stash@{0}` -
+/// in the repository `dir` is in.
+pub fn resolve(dir: &Path, revision: &str) -> Result<String, String> {
+    let named = format!("{revision}^{{commit}}");
+    match git(dir, &["rev-parse", "--verify", "--quiet", "--end-of-options", named.as_str()]) {
+        Ok(commit) if !commit.trim().is_empty() => Ok(commit.trim().to_string()),
+        _ => Err(t!("No such revision: {revision}", revision)),
+    }
+}
+
+/// Everything in `commit`'s tree, directories too, as `git ls-tree` lists
+/// it: NUL-separated, each with its size, and from the top whatever `dir`
+/// is in the repository.
+pub fn tree(dir: &Path, commit: &str) -> Result<Vec<u8>, String> {
+    git_bytes(dir, &["ls-tree", "-r", "-t", "-l", "-z", "--full-tree", commit])
+}
+
+/// When `commit` was made.
+pub fn commit_time(dir: &Path, commit: &str) -> Option<std::time::SystemTime> {
+    let seconds: u64 = git(dir, &["show", "-s", "--format=%ct", commit]).ok()?.trim().parse().ok()?;
+    Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(seconds))
+}
+
+/// git writing the contents of `object` - a file as a commit has it - to
+/// the pipe of the process given back.
+pub fn blob(dir: &Path, object: &str) -> std::io::Result<std::process::Child> {
+    Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["cat-file", "blob", object])
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_OPTIONAL_LOCKS", "0")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+}
+
+/// The top of the repository `dir` is in, and where `dir` is below it.
+pub fn top_and_prefix(dir: &Path) -> Result<(PathBuf, PathBuf), String> {
+    let top = git(dir, &["rev-parse", "--show-toplevel"])?;
+    let top = PathBuf::from(top.trim_end_matches(['\n', '\r']));
+    let prefix = git_bytes(dir, &["rev-parse", "--show-prefix"])?;
+    let prefix = from_git(prefix.strip_suffix(b"\n").unwrap_or(&prefix));
+    Ok((top, prefix))
+}
+
 /// Run git in `dir`, giving back what it wrote, or what it said went wrong.
 /// Nothing it could ask for is answered: a prompt would wait for good on a
 /// terminal fm84 is drawing on.

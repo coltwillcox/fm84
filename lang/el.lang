@@ -1782,3 +1782,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - από το ίδιο το αρχε
 
 msgid  not in the file
 msgstr δεν υπάρχει στο αρχείο
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Κλάδος, ετικέτα, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Άνοιγμα    Esc - Άκυρο
+
+msgid  No such revision: {revision}
+msgstr Δεν υπάρχει η αναθεώρηση: {revision}
+
+msgid  Open a revision as a folder
+msgstr Άνοιγμα αναθεώρησης ως φακέλου
+
+msgid  R - Open a revision as a folder
+msgstr R - Άνοιγμα αναθεώρησης ως φακέλου

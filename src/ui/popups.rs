@@ -135,6 +135,28 @@ pub(super) fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message
     popup_body(f, popup_area, vec![Line::from(Span::styled(printable_name(message), style_title()))]);
 }
 
+/// R on Alt+G: the revision to open, typed.
+pub(super) fn render_revision_popup(f: &mut ratatui::Frame<'_>, area: Rect, input: &TextInput) {
+    let popup_area = popup_rect(20, area);
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Open a revision as a folder")), style_title())).centered())
+        .borders(Borders::ALL)
+        .style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+    let typed = input.cursor_spans(style_input(), style_input_cursor());
+    let width = popup_inner(popup_area).width as usize;
+    let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+    let mut spans = typed;
+    spans.push(Span::raw(" ".repeat(width.saturating_sub(typed_width))));
+    let input_line = Line::from(spans).style(style_input());
+    popup_body(
+        f,
+        popup_area,
+        vec![Line::from(Span::styled(t!("A branch, a tag, HEAD~3, stash@{0}"), style_file())), input_line, key_hints(t!("Enter - Open    Esc - Cancel"))],
+    );
+}
+
 pub(super) fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir: bool, input: &TextInput) {
     let popup_area = popup_rect(20, area);
     let popup_block = Block::default()
@@ -219,6 +241,7 @@ pub(super) fn render_git_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[
     } else {
         lines.push(key_hints(t!("S - Stage    U - Unstage    D - Discard changes")));
         lines.push(key_hints(t!("C - Compare with HEAD    Esc - Close")));
+        lines.push(key_hints(t!("R - Open a revision as a folder")));
     }
     popup_body(f, popup_area, lines);
 }

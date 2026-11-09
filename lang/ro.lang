@@ -1820,3 +1820,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - din fișierul însuși
 
 msgid  not in the file
 msgstr nu e în fișier
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr O ramură, o etichetă, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Deschide    Esc - Anulează
+
+msgid  No such revision: {revision}
+msgstr Nu există revizia: {revision}
+
+msgid  Open a revision as a folder
+msgstr Deschide o revizie ca dosar
+
+msgid  R - Open a revision as a folder
+msgstr R - Deschide o revizie ca dosar

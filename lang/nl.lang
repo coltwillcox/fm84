@@ -1781,3 +1781,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - uit het bestand zelf
 
 msgid  not in the file
 msgstr niet in het bestand
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Een branch, een tag, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Openen    Esc - Annuleren
+
+msgid  No such revision: {revision}
+msgstr Revisie bestaat niet: {revision}
+
+msgid  Open a revision as a folder
+msgstr Revisie als map openen
+
+msgid  R - Open a revision as a folder
+msgstr R - Revisie als map openen

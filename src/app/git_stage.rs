@@ -59,6 +59,39 @@ impl AppState {
         }
     }
 
+    /// R on the popup: the revision to open, HEAD to start from.
+    pub fn ask_revision(&mut self) {
+        let mut input = TextInput::new();
+        input.set("HEAD".to_string());
+        self.dialog = Some(Dialog::Revision(input));
+    }
+
+    /// Enter on the revision: the commit it names, as a read-only folder in
+    /// the active panel, at the directory the panel was in - or as near it
+    /// as the commit has. From inside one commit, another is gone to there.
+    pub fn open_revision(&mut self) {
+        let Some(Dialog::Revision(input)) = self.dialog.take() else {
+            return;
+        };
+        let revision = input.text.trim().to_string();
+        if revision.is_empty() {
+            return;
+        }
+        let side = self.active_side;
+        let dir = self.panel_dir(side);
+        let place = match crate::archive::locate(&dir).filter(|located| crate::archive::git_revision(&located.archive).is_some()) {
+            Some(located) => Ok((located.archive.parent().map(Path::to_path_buf).unwrap_or_default(), located.inner)),
+            None => crate::git::top_and_prefix(&dir),
+        };
+        let (top, prefix) = match place.and_then(|(top, prefix)| crate::git::resolve(&top, &revision).map(|_| (top, prefix))) {
+            Ok(place) => place,
+            Err(message) => return self.display_error(message),
+        };
+        let folder = crate::archive::git_folder(&top, &revision);
+        let target = if prefix.as_os_str().is_empty() { folder } else { folder.join(prefix) };
+        self.open_dir(side, target, None);
+    }
+
     /// C on the popup: the file side by side with itself as HEAD has it,
     /// the commit on the left as the older side.
     pub fn git_compare_head(&mut self) {

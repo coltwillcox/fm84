@@ -1782,3 +1782,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - från själva filen
 
 msgid  not in the file
 msgstr finns inte i filen
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr En gren, en tagg, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Öppna    Esc - Avbryt
+
+msgid  No such revision: {revision}
+msgstr Ingen sådan revision: {revision}
+
+msgid  Open a revision as a folder
+msgstr Öppna en revision som mapp
+
+msgid  R - Open a revision as a folder
+msgstr R - Öppna en revision som mapp

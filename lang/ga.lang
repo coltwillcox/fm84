@@ -1896,3 +1896,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - ón gcomhad féin
 
 msgid  not in the file
 msgstr níl sé sa chomhad
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Craobh, clib, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Oscail    Esc - Cealaigh
+
+msgid  No such revision: {revision}
+msgstr Níl a leithéid de leagan ann: {revision}
+
+msgid  Open a revision as a folder
+msgstr Oscail leagan mar fhillteán
+
+msgid  R - Open a revision as a folder
+msgstr R - Oscail leagan mar fhillteán

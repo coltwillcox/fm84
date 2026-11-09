@@ -1820,3 +1820,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - iz same datoteke
 
 msgid  not in the file
 msgstr nije u datoteci
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Grana, oznaka, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Otvori    Esc - Odustani
+
+msgid  No such revision: {revision}
+msgstr Nema takve revizije: {revision}
+
+msgid  Open a revision as a folder
+msgstr Otvori reviziju kao mapu
+
+msgid  R - Open a revision as a folder
+msgstr R - Otvori reviziju kao mapu

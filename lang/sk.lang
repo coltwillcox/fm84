@@ -1820,3 +1820,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - zo samotného súboru
 
 msgid  not in the file
 msgstr v súbore nie je
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Vetva, značka, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Otvoriť    Esc - Zrušiť
+
+msgid  No such revision: {revision}
+msgstr Taká revízia neexistuje: {revision}
+
+msgid  Open a revision as a folder
+msgstr Otvoriť revíziu ako priečinok
+
+msgid  R - Open a revision as a folder
+msgstr R - Otvoriť revíziu ako priečinok

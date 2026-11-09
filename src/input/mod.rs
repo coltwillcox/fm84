@@ -360,8 +360,14 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Char('u' | 'U') => app_state.git_act(crate::app::GitAction::Unstage),
             KeyCode::Char('d' | 'D') => app_state.git_act(crate::app::GitAction::Discard),
             KeyCode::Char('c' | 'C') => app_state.git_compare_head(),
+            KeyCode::Char('r' | 'R') => app_state.ask_revision(),
             KeyCode::Esc => app_state.dialog = None,
             _ => {}
+        },
+        Some(Dialog::Revision(_)) => match code {
+            KeyCode::Enter => app_state.open_revision(),
+            KeyCode::Esc => app_state.dialog = None,
+            _ => edit_text(app_state, code),
         },
         Some(Dialog::Pack { .. }) => match code {
             KeyCode::Enter => handle_pack_confirm(app_state),

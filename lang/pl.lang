@@ -1820,3 +1820,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - z samego pliku
 
 msgid  not in the file
 msgstr brak w pliku
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Gałąź, znacznik, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Otwórz    Esc - Anuluj
+
+msgid  No such revision: {revision}
+msgstr Nie ma takiej rewizji: {revision}
+
+msgid  Open a revision as a folder
+msgstr Otwórz rewizję jako folder
+
+msgid  R - Open a revision as a folder
+msgstr R - Otwórz rewizję jako folder

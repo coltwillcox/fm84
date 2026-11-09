@@ -1783,3 +1783,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - magából a fájlból
 
 msgid  not in the file
 msgstr nincs a fájlban
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Ág, címke, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Megnyitás    Esc - Mégse
+
+msgid  No such revision: {revision}
+msgstr Nincs ilyen revízió: {revision}
+
+msgid  Open a revision as a folder
+msgstr Revízió megnyitása mappaként
+
+msgid  R - Open a revision as a folder
+msgstr R - Revízió megnyitása mappaként

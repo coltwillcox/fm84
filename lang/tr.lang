@@ -1782,3 +1782,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - dosyanın kendisinden
 
 msgid  not in the file
 msgstr dosyada yok
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Bir dal, bir etiket, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Aç    Esc - İptal
+
+msgid  No such revision: {revision}
+msgstr Böyle bir sürüm yok: {revision}
+
+msgid  Open a revision as a folder
+msgstr Bir sürümü klasör olarak aç
+
+msgid  R - Open a revision as a folder
+msgstr R - Bir sürümü klasör olarak aç

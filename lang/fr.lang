@@ -1783,3 +1783,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - tiré du fichier lui-même
 
 msgid  not in the file
 msgstr absent du fichier
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Une branche, une étiquette, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Entrée - Ouvrir    Échap - Annuler
+
+msgid  No such revision: {revision}
+msgstr Révision introuvable : {revision}
+
+msgid  Open a revision as a folder
+msgstr Ouvrir une révision comme dossier
+
+msgid  R - Open a revision as a folder
+msgstr R - Ouvrir une révision comme dossier

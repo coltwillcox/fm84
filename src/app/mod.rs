@@ -142,6 +142,9 @@ pub enum Dialog {
     Checksums(Box<ChecksumView>),
     /// Ctrl+E's plan, saved from the editor and waiting on Enter.
     DirEdit(Box<EditPlan>),
+    /// R on Alt+G: the revision to open as a folder - a branch, a tag,
+    /// `HEAD~3`, `stash@{0}`.
+    Revision(TextInput),
     /// Alt+R: a directory summed up.
     Dossier(Box<DossierView>),
     /// Alt+G on what is chosen: what git is to do with it, and whether the
@@ -649,7 +652,9 @@ impl AppState {
     /// typed into: a name, a pattern, something to find, a text option.
     pub fn dialog_input(&mut self) -> Option<&mut TextInput> {
         match self.dialog.as_mut()? {
-            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Extract { input, .. } | Dialog::Pack { input, .. } | Dialog::Prompt(_, input) => Some(input),
+            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Extract { input, .. } | Dialog::Pack { input, .. } | Dialog::Prompt(_, input) | Dialog::Revision(input) => {
+                Some(input)
+            }
             Dialog::Options { editing } => editing.as_mut(),
             Dialog::History(list) => Some(&mut list.input),
             Dialog::Attributes(form) => form.fields.get_mut(form.focus).map(|field| &mut field.input),

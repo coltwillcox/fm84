@@ -1781,3 +1781,18 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] - от самия файл
 
 msgid  not in the file
 msgstr не е във файла
+
+msgid  A branch, a tag, HEAD~3, stash@{0}
+msgstr Клон, етикет, HEAD~3, stash@{0}
+
+msgid  Enter - Open    Esc - Cancel
+msgstr Enter - Отвори    Esc - Отказ
+
+msgid  No such revision: {revision}
+msgstr Няма такава ревизия: {revision}
+
+msgid  Open a revision as a folder
+msgstr Отвори ревизия като папка
+
+msgid  R - Open a revision as a folder
+msgstr R - Отвори ревизия като папка

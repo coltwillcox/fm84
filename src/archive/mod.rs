@@ -29,11 +29,34 @@ pub enum Kind {
     TarXz,
     TarBz2,
     SevenZ,
+    /// A git commit - a branch, a tag, a stash - as its tree was: a folder
+    /// at `<top of the repository>/@git:<revision>`, which is not on the disk.
+    Git,
+}
+
+/// What a git commit's folder is named with, the revision after it.
+pub const GIT_PREFIX: &str = "@git:";
+
+/// The folder for `revision` of the repository whose top is `top`. A slash
+/// in a revision - `feature/tabs` - would make it two folders, so it is
+/// written `%2F`, and a `%` as `%25`.
+pub fn git_folder(top: &Path, revision: &str) -> PathBuf {
+    top.join(format!("{GIT_PREFIX}{}", revision.replace('%', "%25").replace('/', "%2F")))
+}
+
+/// The repository and the revision a commit's folder stands for.
+pub fn git_revision(folder: &Path) -> Option<(PathBuf, String)> {
+    let name = folder.file_name()?.to_str()?;
+    let revision = name.strip_prefix(GIT_PREFIX).filter(|revision| !revision.is_empty())?;
+    Some((folder.parent()?.to_path_buf(), revision.replace("%2F", "/").replace("%2f", "/").replace("%25", "%")))
 }
 
 /// The kind of archive a file is, by its name. The name is only a claim:
 /// what is not one fails to read, and says so.
 pub fn kind_of(path: &Path) -> Option<Kind> {
+    if git_revision(path).is_some() {
+        return Some(Kind::Git);
+    }
     let name = path.file_name()?.to_string_lossy().to_lowercase();
     let named = |endings: &[&str]| endings.iter().any(|ending| name.ends_with(ending));
     if named(&[".zip"]) {
@@ -71,6 +94,13 @@ pub fn locate(path: &Path) -> Option<Located> {
     let mut inner = Vec::new();
     let mut here = path;
     loop {
+        // A commit's folder is not on the disk, but the repository it is in is.
+        if git_revision(here).is_some() && here.parent().is_some_and(Path::is_dir) {
+            return Some(Located {
+                archive: here.to_path_buf(),
+                inner: inner.iter().rev().collect(),
+            });
+        }
         match fs::metadata(here) {
             Ok(metadata) if metadata.is_file() && kind_of(here).is_some() => {
                 return Some(Located {
@@ -98,14 +128,28 @@ static CACHE: Mutex<Vec<(Key, Arc<Index>)>> = Mutex::new(Vec::new());
 /// The index of `archive`, read on first asking.
 pub fn index(archive: &Path) -> io::Result<Arc<Index>> {
     let kind = kind_of(archive).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, t!("Not an archive: {path}", path = archive.display())))?;
-    let metadata = fs::metadata(archive)?;
-    let key = (archive.to_path_buf(), metadata.modified().ok(), metadata.len());
+    // A commit never changes; a branch moves on, and is read again once it
+    // names another commit.
+    let (key, commit) = match git_revision(archive) {
+        Some((top, revision)) => {
+            let commit = crate::git::resolve(&top, &revision).map_err(io::Error::other)?;
+            let hash = commit.bytes().fold(0u64, |hash, byte| hash.wrapping_mul(31).wrapping_add(u64::from(byte)));
+            ((archive.to_path_buf(), None, hash), Some((top, commit)))
+        }
+        None => {
+            let metadata = fs::metadata(archive)?;
+            ((archive.to_path_buf(), metadata.modified().ok(), metadata.len()), None)
+        }
+    };
     if let Some((_, index)) = CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner).iter().find(|(cached, _)| *cached == key) {
         return Ok(Arc::clone(index));
     }
     // Read without the lock held: another archive asked for meanwhile need
     // not wait on this one.
-    let index = Arc::new(Index::read(archive, kind)?);
+    let index = Arc::new(match commit {
+        Some((top, commit)) => Index::read_git(&top, &commit)?,
+        None => Index::read(archive, kind)?,
+    });
     let mut cache = CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     cache.retain(|(cached, _)| cached.0 != key.0);
     cache.push((key, Arc::clone(&index)));
@@ -193,6 +237,7 @@ pub fn read_entries(archive: &Path, kind: Kind, positions: &[usize], visit: &mut
             Ok(())
         }
         Kind::SevenZ => read_7z_entries(archive, positions, visit),
+        Kind::Git => read_git_entries(archive, positions, visit),
         _ => {
             let mut pending: std::collections::BTreeSet<usize> = positions.iter().copied().collect();
             while !pending.is_empty() {
@@ -237,6 +282,35 @@ pub fn read_entries(archive: &Path, kind: Kind, positions: &[usize], visit: &mut
             Ok(())
         }
     }
+}
+
+/// The git side of read_entries: each file read out of the repository by
+/// the object it is, in the order asked.
+fn read_git_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(usize, io::Result<&mut dyn Read>) -> Next) -> io::Result<()> {
+    let index = index(archive)?;
+    let (top, _) = git_revision(archive).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, t!("Not an archive: {path}", path = archive.display())))?;
+    for &position in positions {
+        loop {
+            let next = match index.object(position).map(|object| crate::git::blob(&top, object)) {
+                Some(Ok(mut child)) => {
+                    let mut stdout = child.stdout.take().expect("piped");
+                    let next = visit(position, Ok(&mut stdout));
+                    // Not read to its end, git would wait to write the rest.
+                    drop(stdout);
+                    let _ = child.wait();
+                    next
+                }
+                Some(Err(error)) => visit(position, Err(error)),
+                None => visit(position, Err(io::Error::new(io::ErrorKind::NotFound, t!("The archive ends before it")))),
+            };
+            match next {
+                Next::Go => break,
+                Next::Again => {}
+                Next::Stop => return Ok(()),
+            }
+        }
+    }
+    Ok(())
 }
 
 /// The 7z side of read_entries. The archive hands out its entries in its

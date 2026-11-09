@@ -73,6 +73,8 @@ pub struct Index {
     /// `..` in it, or a drive - or one that would have to be written through
     /// a link, or over a directory with a file.
     pub refused: usize,
+    /// For a git commit, the object each file is, by its position.
+    objects: Vec<String>,
 }
 
 impl Index {
@@ -83,7 +85,54 @@ impl Index {
             by_path: HashMap::new(),
             children: HashMap::new(),
             refused: 0,
+            objects: Vec::new(),
         }
+    }
+
+    /// The git object the file at `position` is.
+    pub fn object(&self, position: usize) -> Option<&str> {
+        self.objects.get(position).map(String::as_str)
+    }
+
+    /// A commit's tree, from `git ls-tree`: its files, directories, links -
+    /// whose target is what the object holds - and submodules, which are
+    /// another repository's and listed as nothing to read. Every entry dated
+    /// when the commit was made.
+    pub(super) fn read_git(top: &Path, commit: &str) -> io::Result<Self> {
+        let listing = crate::git::tree(top, commit).map_err(io::Error::other)?;
+        let modified = crate::git::commit_time(top, commit);
+        let mut index = Index::new(Kind::Git);
+        for record in listing.split(|&byte| byte == 0).filter(|record| !record.is_empty()) {
+            // `<mode> <type> <object> <size>\t<path>`, the size padded.
+            let Some(tab) = record.iter().position(|&byte| byte == b'\t') else { continue };
+            let head = String::from_utf8_lossy(&record[..tab]).into_owned();
+            let mut fields = head.split_whitespace();
+            let (Some(mode), Some(kind), Some(object), Some(size)) = (fields.next(), fields.next(), fields.next(), fields.next()) else {
+                continue;
+            };
+            let mode = u32::from_str_radix(mode, 8).unwrap_or(0);
+            let (kind, position) = match kind {
+                "tree" => (EntryKind::Dir, None),
+                "blob" if mode & 0o170000 == 0o120000 => (EntryKind::Link, Some(index.objects.len())),
+                "blob" => (EntryKind::File, Some(index.objects.len())),
+                _ => (EntryKind::Other, None),
+            };
+            if position.is_some() {
+                index.objects.push(object.to_string());
+            }
+            index.add(Entry {
+                path: path_from_bytes(&record[tab + 1..]),
+                kind,
+                size: size.parse().unwrap_or(0),
+                modified,
+                mode: Some(if kind == EntryKind::Dir { 0o755 } else { mode & 0o7777 }),
+                owner: None,
+                link: None,
+                position,
+                encrypted: false,
+            });
+        }
+        Ok(index)
     }
 
     pub fn entry(&self, at: usize) -> &Entry {
