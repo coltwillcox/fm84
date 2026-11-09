@@ -380,7 +380,32 @@ fn a_tar_is_never_asked_for_a_password() {
     tar(&archive, &[(b"a.txt", Put::File(b"a"))]);
     assert!(!super::needs_password(&archive, &[PathBuf::new()]));
     assert!(!super::is_encrypted(&archive));
-    let cached = super::CACHE.lock().unwrap().iter().any(|((path, _, _), _)| *path == archive);
+    let cached = super::CACHE.lock().unwrap().iter().any(|((path, ..), _)| *path == archive);
     assert!(!cached);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// An archive written over by a rename - as fm84 writes one - is read
+/// again, even the same size and in the same tick of the clock as the one
+/// before it, which is all the modified time can tell apart.
+#[test]
+fn an_archive_written_over_is_read_again_however_soon() {
+    let dir = scratch("written-over");
+    let archive = dir.join("box.tar");
+    tar(&archive, &[(b"a.txt", Put::File(b"a"))]);
+    let before = index(&archive).unwrap();
+    assert!(before.find(Path::new("a.txt")).is_some());
+    let next = dir.join("next.tar");
+    tar(&next, &[(b"b.txt", Put::File(b"b"))]);
+    assert_eq!(std::fs::metadata(&next).unwrap().len(), std::fs::metadata(&archive).unwrap().len());
+    let when = std::fs::metadata(&archive).unwrap().modified().unwrap();
+    std::fs::File::options().write(true).open(&next).unwrap().set_modified(when).unwrap();
+    std::fs::rename(&next, &archive).unwrap();
+    let after = index(&archive).unwrap();
+    assert!(after.find(Path::new("b.txt")).is_some(), "the archive as it was before");
+
+    // And when told, whatever the disk says.
+    forget_index(&archive);
+    assert!(!CACHE.lock().unwrap().iter().any(|((path, ..), _)| *path == archive));
     std::fs::remove_dir_all(&dir).unwrap();
 }

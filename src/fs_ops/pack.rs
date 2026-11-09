@@ -264,6 +264,8 @@ pub fn pack(plan: &PackPlan, dest: &Path, format: PackFormat, level: PackLevel, 
     match written.and_then(|file| file.sync_all()) {
         Ok(()) => {
             place(&temp, dest, replacing)?;
+            // One written over is read again, not what was kept of it.
+            crate::archive::forget_index(dest);
             Ok(Transfer::Done)
         }
         Err(error) => {

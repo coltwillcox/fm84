@@ -120,10 +120,34 @@ pub fn locate(path: &Path) -> Option<Located> {
 
 /// Indexes read lately, so going in and out of a directory inside a large
 /// .tar.gz does not decompress the whole of it each time. Keyed by the
-/// archive's size and modified time as well as its path: one written since is
-/// read again.
+/// archive's size, modified time and - on Unix - inode as well as its path:
+/// one written since is read again. The time alone is too coarse for that:
+/// one written over within the same tick of the clock, the same size, has
+/// the same one. Written by a rename, as fm84 and most tools write one, it
+/// is another inode.
 const CACHED: usize = 4;
-type Key = (PathBuf, Option<SystemTime>, u64);
+type Key = (PathBuf, Option<SystemTime>, u64, u64);
+
+#[cfg(unix)]
+fn inode(metadata: &fs::Metadata) -> u64 {
+    use std::os::unix::fs::MetadataExt;
+    metadata.ino()
+}
+
+#[cfg(not(unix))]
+fn inode(_metadata: &fs::Metadata) -> u64 {
+    0
+}
+
+/// Let go of what is kept of `archive`, by whatever path it was read: it
+/// has just been written, and is to be read again.
+pub fn forget_index(archive: &Path) {
+    let real = fs::canonicalize(archive).ok();
+    CACHE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .retain(|((path, ..), _)| path != archive && (real.is_none() || fs::canonicalize(path).ok() != real));
+}
 static CACHE: Mutex<Vec<(Key, Arc<Index>)>> = Mutex::new(Vec::new());
 
 /// The index of `archive`, read on first asking.
@@ -135,11 +159,11 @@ pub fn index(archive: &Path) -> io::Result<Arc<Index>> {
         Some((top, revision)) => {
             let commit = crate::git::resolve(&top, &revision).map_err(io::Error::other)?;
             let hash = commit.bytes().fold(0u64, |hash, byte| hash.wrapping_mul(31).wrapping_add(u64::from(byte)));
-            ((archive.to_path_buf(), None, hash), Some((top, commit)))
+            ((archive.to_path_buf(), None, hash, 0), Some((top, commit)))
         }
         None => {
             let metadata = fs::metadata(archive)?;
-            ((archive.to_path_buf(), metadata.modified().ok(), metadata.len()), None)
+            ((archive.to_path_buf(), metadata.modified().ok(), metadata.len(), inode(&metadata)), None)
         }
     };
     if let Some((_, index)) = CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner).iter().find(|(cached, _)| *cached == key) {

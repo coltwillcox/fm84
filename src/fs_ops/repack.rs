@@ -155,6 +155,7 @@ pub fn repack(plan: &RepackPlan, move_after: bool, report: Report<'_>) -> Result
     match written.and_then(|file| file.sync_all()) {
         Ok(()) => {
             place(&temp, archive, true)?;
+            crate::archive::forget_index(archive);
             if move_after { remove_packed(&plan.added, report) } else { Ok(Transfer::Done) }
         }
         Err(error) => {
