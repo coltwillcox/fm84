@@ -344,18 +344,29 @@ fn what_was_left_out_is_not_removed() {
 }
 
 /// A write that fails under the zstd encoder - which would panic on it -
-/// comes back as the error it was, and nothing goes down.
+/// comes back as the error it was, whether the writes stop on it or only
+/// the end does, and nothing goes down.
 #[cfg(target_os = "linux")]
 #[test]
 fn a_zstd_write_that_fails_says_so() {
     let full = File::options().write(true).open("/dev/full").unwrap();
     let mut zst = Compressor::new(full, PackFormat::TarZst, PackLevel::Normal).unwrap();
-    let wrote = (0..64).try_for_each(|_| zst.write_all(&[7u8; 64 * 1024]));
-    let finished = zst.finish();
-    assert!(wrote.is_err() || finished.is_err());
-    if let Err(error) = finished {
-        assert!(error.to_string().contains("space") || error.kind() == ErrorKind::StorageFull || error.to_string().contains("Could not write"), "{error}");
-    }
+    // What does not compress, so the encoder writes as it goes.
+    let mut seed = 0x2545_f491_4f6c_dd1du64;
+    let noise: Vec<u8> = (0..64 * 1024)
+        .map(|_| {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            seed as u8
+        })
+        .collect();
+    let error = match (0..256).try_for_each(|_| zst.write_all(&noise)) {
+        // As Pack stops: on the write, the end never reached.
+        Err(error) => error,
+        Ok(()) => zst.finish().unwrap_err(),
+    };
+    assert_eq!(error.kind(), ErrorKind::StorageFull, "{error}");
 }
 
 /// With a password a zip's files and a 7z's whole are encrypted: without

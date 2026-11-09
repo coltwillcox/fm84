@@ -455,32 +455,43 @@ impl ZstdWriter {
         }
     }
 
-    /// What is pending sent; Err once the encoder has stopped taking it.
+    /// What is pending sent; once the encoder has stopped taking it, the
+    /// error it stopped on.
     fn send(&mut self) -> io::Result<()> {
         if self.failed.load(Ordering::Relaxed) {
-            return Err(Error::other(t!("Could not write the archive")));
+            return Err(self.stopped());
         }
         let piece = std::mem::replace(&mut self.pending, Vec::with_capacity(ZSTD_PIECE));
         match &self.sender {
             Some(sender) if sender.send(piece).is_ok() => Ok(()),
-            _ => Err(Error::other(t!("Could not write the archive"))),
+            _ => Err(self.stopped()),
+        }
+    }
+
+    /// Why the encoder stopped: waited for - its feed ended, it ends at
+    /// once - for the error it met, which says what went wrong where a
+    /// refused send says only that it had.
+    fn stopped(&mut self) -> Error {
+        self.sender = None;
+        match self.encoder.take().map(std::thread::JoinHandle::join) {
+            Some(Ok(Err(error))) => error,
+            _ => Error::other(t!("Could not write the archive")),
         }
     }
 
     /// The end of the stream: the encoder's own error, if it met one, or
     /// the file it wrote to.
     fn finish(mut self) -> io::Result<io::BufWriter<File>> {
-        let sent = if self.pending.is_empty() { Ok(()) } else { self.send() };
+        // A send refused has waited for the encoder already, and brings its
+        // error back.
+        if !self.pending.is_empty() {
+            self.send()?;
+        }
         self.sender = None;
-        let encoded = match self.encoder.take().map(std::thread::JoinHandle::join) {
+        match self.encoder.take().map(std::thread::JoinHandle::join) {
             Some(Ok(encoded)) => encoded,
             _ => Err(Error::other(t!("Could not write the archive"))),
-        };
-        // The encoder's error says what went wrong; the send's only that it
-        // had stopped.
-        let file = encoded?;
-        sent?;
-        Ok(file)
+        }
     }
 }
 
