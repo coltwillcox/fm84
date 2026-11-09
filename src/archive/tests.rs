@@ -370,3 +370,17 @@ fn a_tar_time_past_the_clock_is_no_time() {
     assert_eq!(modified("near.txt"), Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_700_000_000)));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A tar is never encrypted, and asking whether one needs a password does
+/// not read it - which for a large one would hold the UI still.
+#[test]
+fn a_tar_is_never_asked_for_a_password() {
+    let dir = scratch("never-locked");
+    let archive = dir.join("big.tar.gz");
+    tar(&archive, &[(b"a.txt", Put::File(b"a"))]);
+    assert!(!super::needs_password(&archive, &[PathBuf::new()]));
+    assert!(!super::is_encrypted(&archive));
+    let cached = super::CACHE.lock().unwrap().iter().any(|((path, _, _), _)| *path == archive);
+    assert!(!cached);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

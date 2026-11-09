@@ -269,10 +269,17 @@ pub(crate) fn sevenz_password(archive: &Path) -> sevenz_rust2::Password {
     password(archive).map_or_else(sevenz_rust2::Password::empty, |password| sevenz_rust2::Password::from(password.as_str()))
 }
 
+/// Whether `archive` is a kind that can be encrypted at all: a zip or a
+/// 7z. Asked by name, so a tar - whose index means reading it all through,
+/// too slow for the UI thread these are asked on - is never read for it.
+fn lockable(archive: &Path) -> bool {
+    matches!(kind_of(archive), Some(Kind::Zip | Kind::SevenZ))
+}
+
 /// Whether the entries at `inners`, or anything under them, need a
 /// password fm84 has not been given. False for an archive it cannot read.
 pub fn needs_password(archive: &Path, inners: &[PathBuf]) -> bool {
-    if password(archive).is_some() {
+    if !lockable(archive) || password(archive).is_some() {
         return false;
     }
     let Ok(index) = index(archive) else {
@@ -283,7 +290,7 @@ pub fn needs_password(archive: &Path, inners: &[PathBuf]) -> bool {
 
 /// Whether anything in `archive` is encrypted.
 pub fn is_encrypted(archive: &Path) -> bool {
-    index(archive).is_ok_and(|index| index.subtree(Path::new("")).into_iter().any(|at| index.entry(at).encrypted))
+    lockable(archive) && index(archive).is_ok_and(|index| index.subtree(Path::new("")).into_iter().any(|at| index.entry(at).encrypted))
 }
 
 pub(crate) fn sevenz_error(error: sevenz_rust2::Error) -> io::Error {
