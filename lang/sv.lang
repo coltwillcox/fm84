@@ -1669,3 +1669,13 @@ msgstr Vyn för Ctrl+B kan inte redigeras som text
 
 msgid  Enter - Apply
 msgstr Enter - Verkställ
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Hitta dubbletter
+
+msgid  Looking for duplicates
+msgstr Letar efter dubbletter
+
+msgid  No duplicates found
+msgstr Inga dubbletter hittades

@@ -1746,3 +1746,13 @@ msgstr Pogleda Ctrl+B ni mogoče urejati kot besedilo
 
 msgid  Enter - Apply
 msgstr Enter - Uveljavi
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Najdi dvojnike
+
+msgid  Looking for duplicates
+msgstr Iskanje dvojnikov
+
+msgid  No duplicates found
+msgstr Ni najdenih dvojnikov

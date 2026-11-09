@@ -1668,3 +1668,13 @@ msgstr Ctrl+B-visningen kan ikke redigeres som tekst
 
 msgid  Enter - Apply
 msgstr Enter - Bruk
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Finn duplikater
+
+msgid  Looking for duplicates
+msgstr Leter etter duplikater
+
+msgid  No duplicates found
+msgstr Ingen duplikater funnet

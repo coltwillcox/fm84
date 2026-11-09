@@ -1706,3 +1706,13 @@ msgstr Prikaz Ctrl+B ne može da se uređuje kao tekst
 
 msgid  Enter - Apply
 msgstr Enter - Primeni
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Pronađi duplikate
+
+msgid  Looking for duplicates
+msgstr Traženje duplikata
+
+msgid  No duplicates found
+msgstr Nema duplikata

@@ -1707,3 +1707,13 @@ msgstr Vederea Ctrl+B nu poate fi editată ca text
 
 msgid  Enter - Apply
 msgstr Enter - Aplică
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Găsește duplicatele
+
+msgid  Looking for duplicates
+msgstr Se caută duplicatele
+
+msgid  No duplicates found
+msgstr Nu s-au găsit duplicate

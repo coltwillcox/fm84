@@ -1670,3 +1670,13 @@ msgstr La vista de Ctrl+B no se puede editar como texto
 
 msgid  Enter - Apply
 msgstr Intro - Aplicar
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Buscar duplicados
+
+msgid  Looking for duplicates
+msgstr Buscando duplicados
+
+msgid  No duplicates found
+msgstr No se encontraron duplicados

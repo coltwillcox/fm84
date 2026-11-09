@@ -139,6 +139,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'p' {
             open_pack(app_state);
         }
+        // Alt+D, the files the same as another.
+        if in_panel && c == 'd' {
+            app_state.find_duplicates();
+        }
         // Alt+I sends the other panel to this one's directory.
         if in_panel && c == 'i' {
             app_state.same_dir_in_other_panel();

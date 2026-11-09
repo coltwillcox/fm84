@@ -1669,3 +1669,13 @@ msgstr Η προβολή του Ctrl+B δεν επεξεργάζεται ως κ
 
 msgid  Enter - Apply
 msgstr Enter - Εφαρμογή
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Εύρεση διπλότυπων
+
+msgid  Looking for duplicates
+msgstr Αναζήτηση διπλότυπων
+
+msgid  No duplicates found
+msgstr Δεν βρέθηκαν διπλότυπα

@@ -27,6 +27,7 @@ mod bookmarks;
 mod branches;
 mod compare;
 mod dir_edit;
+mod duplicates;
 mod editing;
 mod filter;
 mod find;
@@ -52,8 +53,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, branches::*, dir_edit::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*,
-    user_menu::*, viewing::*,
+    archives::*, attribute_form::*, branches::*, dir_edit::*, duplicates::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*,
+    text_input::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the

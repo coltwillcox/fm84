@@ -2,6 +2,7 @@ use super::{AppState, Item, Side, prune_selection, recentre, slot_at};
 use crate::options::Options;
 use std::collections::HashSet;
 
+mod duplicates;
 mod jobs;
 mod panels;
 mod selection;

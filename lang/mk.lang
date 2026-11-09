@@ -1669,3 +1669,13 @@ msgstr Приказот на Ctrl+B не може да се уредува ка�
 
 msgid  Enter - Apply
 msgstr Enter - Примени
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Најди дупликати
+
+msgid  Looking for duplicates
+msgstr Барање дупликати
+
+msgid  No duplicates found
+msgstr Не се најдени дупликати

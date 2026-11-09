@@ -1707,3 +1707,13 @@ msgstr Pohľad Ctrl+B sa nedá upraviť ako text
 
 msgid  Enter - Apply
 msgstr Enter - Použiť
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Nájsť duplikáty
+
+msgid  Looking for duplicates
+msgstr Hľadanie duplikátov
+
+msgid  No duplicates found
+msgstr Nenašli sa žiadne duplikáty

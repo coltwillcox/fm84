@@ -1670,3 +1670,13 @@ msgstr A Ctrl+B nézete nem szerkeszthető szövegként
 
 msgid  Enter - Apply
 msgstr Enter - Alkalmaz
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Ismétlődések keresése
+
+msgid  Looking for duplicates
+msgstr Ismétlődések keresése folyamatban
+
+msgid  No duplicates found
+msgstr Nincsenek ismétlődések

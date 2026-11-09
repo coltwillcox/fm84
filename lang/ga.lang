@@ -1783,3 +1783,13 @@ msgstr Ní féidir amharc Ctrl+B a chur in eagar mar théacs
 
 msgid  Enter - Apply
 msgstr Enter - Cuir i bhfeidhm
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Aimsigh dúblaigh
+
+msgid  Looking for duplicates
+msgstr Dúblaigh á lorg
+
+msgid  No duplicates found
+msgstr Níor aimsíodh aon dúblach

@@ -1669,3 +1669,13 @@ msgstr Ctrl+B görünümü metin olarak düzenlenemez
 
 msgid  Enter - Apply
 msgstr Enter - Uygula
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Kopyaları bul
+
+msgid  Looking for duplicates
+msgstr Kopyalar aranıyor
+
+msgid  No duplicates found
+msgstr Kopya bulunamadı

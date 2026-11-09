@@ -40,6 +40,8 @@ pub struct TransferJob {
     checksums: Option<Box<crate::checksum::Report>>,
     /// What it did, for Ctrl+Z to take back.
     did: Vec<Done>,
+    /// What a search for duplicates found, fed to the panel once it is done.
+    duplicates: Option<Duplicates>,
 }
 
 /// A checksum report on screen, and how far down it is scrolled.
@@ -99,6 +101,8 @@ pub enum TransferKind {
     Undo,
     /// Ctrl+E's plan: deletes, renames and copies.
     DirEdit,
+    /// Alt+D, looking for files the same as another.
+    Duplicates,
 }
 
 impl TransferKind {
@@ -115,6 +119,7 @@ impl TransferKind {
             TransferKind::Sync => tc!("job", "Synchronize"),
             TransferKind::Undo => tc!("job", "Undo"),
             TransferKind::DirEdit => tc!("job", "Edit as text"),
+            TransferKind::Duplicates => tc!("job", "Find duplicates"),
         }
     }
 }
@@ -220,6 +225,8 @@ pub(super) enum JobUpdate {
     Checksums(Box<crate::checksum::Report>),
     /// One more thing done, for the journal.
     Did(Done),
+    /// What a search for duplicates found.
+    Duplicates(Duplicates),
     Finished(Result<Transfer, String>),
 }
 
@@ -650,6 +657,7 @@ impl AppState {
             after: None,
             checksums: None,
             did: Vec::new(),
+            duplicates: None,
         });
     }
 
@@ -733,6 +741,7 @@ impl AppState {
                 Ok(JobUpdate::Skipped) => job.skipped += 1,
                 Ok(JobUpdate::Checksums(report)) => job.checksums = Some(report),
                 Ok(JobUpdate::Did(done)) => job.did.push(done),
+                Ok(JobUpdate::Duplicates(found)) => job.duplicates = Some(found),
                 Ok(JobUpdate::Finished(result)) => {
                     finished = Some(result);
                     break;
@@ -764,7 +773,7 @@ impl AppState {
 
         // An entry copied out to be looked at changed nothing anyone can
         // see: the panels, their selections and sizes stay as they are.
-        if job.kind != TransferKind::Checksum && job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
+        if !matches!(job.kind, TransferKind::Checksum | TransferKind::Duplicates) && job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
             // Both panels: a move empties one and fills the other, and a copy
             // into the same directory shows up on the side it came from.
             self.reload_panel(Side::Left, None);
@@ -784,6 +793,13 @@ impl AppState {
         if let (Ok(Transfer::Done), Some(report)) = (&result, job.checksums) {
             self.dialog = Some(Dialog::Checksums(Box::new(ChecksumView { report: *report, scroll: 0, room: 1 })));
             return;
+        }
+        // Fed to the panel; anything that could not be read is said over it.
+        if let (Ok(Transfer::Done), Some(found)) = (&result, job.duplicates.take()) {
+            self.feed_duplicates(found);
+            if job.skipped == 0 {
+                return;
+            }
         }
         match (&result, job.after) {
             (Ok(Transfer::Done), Some(AfterJob::View(path))) if job.skipped == 0 => return self.request_open(path, false),

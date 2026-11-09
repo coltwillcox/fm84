@@ -1707,3 +1707,13 @@ msgstr Widoku Ctrl+B nie można edytować jako tekstu
 
 msgid  Enter - Apply
 msgstr Enter - Zastosuj
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Znajdź duplikaty
+
+msgid  Looking for duplicates
+msgstr Szukanie duplikatów
+
+msgid  No duplicates found
+msgstr Nie znaleziono duplikatów

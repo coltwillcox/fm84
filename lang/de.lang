@@ -1669,3 +1669,13 @@ msgstr Die Ansicht von Strg+B kann nicht als Text bearbeitet werden
 
 msgid  Enter - Apply
 msgstr Enter - Anwenden
+
+msgctxt job
+msgid   Find duplicates
+msgstr  Duplikate finden
+
+msgid  Looking for duplicates
+msgstr Duplikate werden gesucht
+
+msgid  No duplicates found
+msgstr Keine Duplikate gefunden
