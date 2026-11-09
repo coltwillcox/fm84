@@ -463,6 +463,8 @@ pub(super) fn open_pack(app_state: &mut AppState) {
     let base = pack_base(&sources, &app_state.panel_dir(side));
     let mut input = TextInput::new();
     input.set(app_state.panel_dir(!side).join(format!("{base}{}", PackFormat::Zip.extension())).to_string_lossy().into_owned());
+    let mut leave_out = TextInput::new();
+    leave_out.set(app_state.recall.pack_leave_out.clone());
     app_state.dialog = Some(Dialog::Pack(Box::new(PackForm {
         sources,
         input,
@@ -471,6 +473,9 @@ pub(super) fn open_pack(app_state: &mut AppState) {
         level: app_state.recall.pack_level,
         separate: false,
         move_after: false,
+        leave_out,
+        password: TextInput::new(),
+        again: TextInput::new(),
     })));
 }
 
@@ -551,7 +556,17 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
     let Some(Dialog::Pack(form)) = app_state.dialog.take() else {
         return;
     };
-    let PackForm { sources, input, level, separate, move_after, .. } = *form;
+    let PackForm {
+        sources,
+        input,
+        level,
+        separate,
+        move_after,
+        leave_out,
+        password,
+        again,
+        ..
+    } = *form;
     if input.text.trim().is_empty() {
         return;
     }
@@ -566,7 +581,16 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
         Some(dir) => return app_state.display_error(t!("No such directory: {path}", path = dir.display())),
         None => return app_state.display_error(t!("Cannot pack into {path}", path = typed.display())),
     };
+    // A password, typed the same twice, for what can hold one.
+    let password = match password.text.as_str() {
+        "" => None,
+        _ if !matches!(format, PackFormat::Zip | PackFormat::SevenZ) => return app_state.display_error(t!("Only a .zip or a .7z can have a password").to_string()),
+        typed if typed != again.text => return app_state.display_error(t!("The two passwords are not the same").to_string()),
+        typed => Some(typed.to_string()),
+    };
+    let leave_out = leave_out.text.trim().to_string();
     app_state.recall.pack_level = level;
+    app_state.recall.pack_leave_out.clone_from(&leave_out);
     let wanted: Vec<(Vec<(PathBuf, bool)>, PathBuf)> = if separate {
         sources
             .into_iter()
@@ -593,7 +617,14 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
         };
         archives.push(PackArchive { sources, dest, replacing });
     }
-    app_state.start_pack(archives, PackHow { format, level, move_after });
+    // Gone into straight after, it opens with the password it was made with.
+    if let Some(password) = &password {
+        for archive in &archives {
+            crate::archive::set_password(&archive.dest, password);
+        }
+    }
+    let leave_out = (!leave_out.is_empty()).then_some(leave_out);
+    app_state.start_pack(archives, PackHow { format, level, move_after, leave_out, password });
 }
 
 /// Alt+H: the checksums of what is chosen - SHA-256 to start with - or, on

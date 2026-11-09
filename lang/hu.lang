@@ -501,8 +501,6 @@ msgstr Szerkesztő (F4)
 msgid  Empty terminal command
 msgstr Üres terminálparancs
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Titkosított: az fm84 jelszó nélkül nem tudja olvasni
 
 msgid  Enter - Copy
 msgstr Enter - Másolás
@@ -1939,8 +1937,36 @@ msgstr Az archívum frissítése
 msgid  Cannot update the archive
 msgstr Az archívum nem frissíthető
 
-msgid  A {format} is read but cannot be written
-msgstr Egy {format} olvasható, de nem írható
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Előbb másold ki az archívumból: aminek archívumba kell kerülnie, annak a lemezen kell lennie
+
+msgid  Encrypted: it needs its password
+msgstr Titkosítva: kell hozzá a jelszava
+
+msgid  Wrong password
+msgstr Rossz jelszó
+
+msgid  Could not write the archive
+msgstr Az archívumot nem sikerült kiírni
+
+msgid  Leave out
+msgstr Kihagyás
+
+msgid  Password
+msgstr Jelszó
+
+msgid  Again
+msgstr Még egyszer
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Csak .zip vagy .7z kaphat jelszót
+
+msgid  The two passwords are not the same
+msgstr A két jelszó nem egyezik
+
+msgid  The password for "{name}":
+msgstr „{name}” jelszava:
+
+msgid  Enter - Open
+msgstr Enter - Megnyitás

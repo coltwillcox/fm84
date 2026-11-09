@@ -500,8 +500,6 @@ msgstr Eagarthóir (F4)
 msgid  Empty terminal command
 msgstr Ordú teirminéil folamh
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Criptithe: ní féidir le fm84 é a léamh gan an focal faire
 
 msgid  Enter - Copy
 msgstr Enter - Cóipeáil
@@ -2052,8 +2050,36 @@ msgstr An chartlann á nuashonrú
 msgid  Cannot update the archive
 msgstr Ní féidir an chartlann a nuashonrú
 
-msgid  A {format} is read but cannot be written
-msgstr Léitear {format} ach ní féidir é a scríobh
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Cóipeáil amach as an gcartlann é ar dtús: caithfidh a dtéann isteach i gcartlann a bheith ar an diosca
+
+msgid  Encrypted: it needs its password
+msgstr Criptithe: teastaíonn a phasfhocal uaidh
+
+msgid  Wrong password
+msgstr Pasfhocal mícheart
+
+msgid  Could not write the archive
+msgstr Níorbh fhéidir an chartlann a scríobh
+
+msgid  Leave out
+msgstr Fág amach
+
+msgid  Password
+msgstr Pasfhocal
+
+msgid  Again
+msgstr Arís
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Ní féidir pasfhocal a bheith ach ag .zip nó .7z
+
+msgid  The two passwords are not the same
+msgstr Níl an dá phasfhocal mar an gcéanna
+
+msgid  The password for "{name}":
+msgstr An pasfhocal do "{name}":
+
+msgid  Enter - Open
+msgstr Enter - Oscail

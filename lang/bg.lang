@@ -499,8 +499,6 @@ msgstr Редактор (F4)
 msgid  Empty terminal command
 msgstr Празна команда за терминал
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Шифрован: fm84 не може да го прочете без паролата
 
 msgid  Enter - Copy
 msgstr Enter - Копиране
@@ -1937,8 +1935,36 @@ msgstr Архивът се обновява
 msgid  Cannot update the archive
 msgstr Архивът не може да се обнови
 
-msgid  A {format} is read but cannot be written
-msgstr {format} се чете, но не може да се записва
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Първо го копирайте от архива: каквото влиза в архив, трябва да е на диска
+
+msgid  Encrypted: it needs its password
+msgstr Шифрован: трябва му паролата
+
+msgid  Wrong password
+msgstr Грешна парола
+
+msgid  Could not write the archive
+msgstr Архивът не можа да се запише
+
+msgid  Leave out
+msgstr Изключи
+
+msgid  Password
+msgstr Парола
+
+msgid  Again
+msgstr Отново
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Само .zip или .7z може да има парола
+
+msgid  The two passwords are not the same
+msgstr Двете пароли не са еднакви
+
+msgid  The password for "{name}":
+msgstr Паролата за "{name}":
+
+msgid  Enter - Open
+msgstr Enter - Отвори

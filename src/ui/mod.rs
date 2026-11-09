@@ -413,6 +413,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             Some(Dialog::MultiRename(rename)) => settled.popup_list = Some(render_multi_rename_popup(f, area, rename)),
             Some(Dialog::Pack(form)) => render_pack_popup(f, area, form),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
+            Some(Dialog::Password(ask)) => render_password_popup(f, area, &ask.archive, &ask.input, ask.wrong),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
             Some(Dialog::DiskChanged { opened, now, .. }) => render_disk_changed_popup(f, area, app_state, *opened, *now),
             Some(Dialog::FindFiles(find)) => match find.as_ref() {

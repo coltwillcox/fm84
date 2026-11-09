@@ -23,6 +23,25 @@ impl AppState {
         }
     }
 
+    /// Ask for `archive`'s password, and do `then` once it is given.
+    pub fn ask_password(&mut self, archive: PathBuf, wrong: bool, then: Box<dyn FnOnce(&mut AppState)>) {
+        self.dialog = Some(Dialog::Password(Box::new(PasswordAsk { archive, input: TextInput::new(), wrong, then })));
+    }
+
+    /// Enter on the password: kept for the archive while fm84 runs, and
+    /// what was waiting on it done.
+    pub fn confirm_password(&mut self) {
+        let Some(Dialog::Password(ask)) = self.dialog.take() else {
+            return;
+        };
+        if ask.input.text.is_empty() {
+            self.dialog = Some(Dialog::Password(ask));
+            return;
+        }
+        crate::archive::set_password(&ask.archive, &ask.input.text);
+        (ask.then)(self);
+    }
+
     /// The archive the panel is in, for what would write into it: Err, said
     /// why, for one that cannot be written - a git commit, a `.tar.zst`.
     /// Ok(None) on the disk.

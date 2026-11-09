@@ -115,8 +115,7 @@ fn f5_copies_out_and_f6_is_refused() {
 
 /// What would change an entry where it is - renaming it, editing it, its
 /// attributes, a link to it - says the archive is read-only, and leaves it
-/// as it was; so does everything in a `.tar.zst`, which is read but never
-/// written.
+/// as it was.
 #[test]
 fn what_changes_an_entry_in_place_is_refused() {
     let (dir, archive, mut app_state) = setup("read-only");
@@ -131,24 +130,6 @@ fn what_changes_an_entry_in_place_is_refused() {
     }
     assert_eq!(std::fs::read(&archive).unwrap(), before);
 
-    let zst = dir.join("box.tar.zst");
-    tar(&zst, &[(b"inside.txt", Put::File(b"inside"))]);
-    let before = std::fs::read(&zst).unwrap();
-    app_state.open_dir(Side::Left, zst.clone(), Some("inside.txt".as_ref()));
-    for (code, modifiers) in [(KeyCode::F(7), KeyModifiers::NONE), (KeyCode::F(4), KeyModifiers::SHIFT), (KeyCode::F(8), KeyModifiers::NONE), (KeyCode::Delete, KeyModifiers::NONE)] {
-        handle_key(&mut app_state, KeyEvent::new(code, modifiers));
-        assert!(app_state.error.as_deref().unwrap_or_default().contains(".tar.zst"), "{code:?}: {:?}", app_state.error);
-        assert!(app_state.dialog.is_none() && app_state.workers.job.is_none(), "{code:?}");
-        app_state.reset_error();
-    }
-    std::fs::write(dir.join("out/new.txt"), "new").unwrap();
-    app_state.open_dir(Side::Right, dir.join("out"), Some("new.txt".as_ref()));
-    app_state.active_side = Side::Right;
-    press(&mut app_state, KeyCode::F(5));
-    press(&mut app_state, KeyCode::Enter);
-    assert!(app_state.error.as_deref().unwrap_or_default().contains(".tar.zst"), "{:?}", app_state.error);
-    assert!(app_state.workers.job.is_none());
-    assert_eq!(std::fs::read(&zst).unwrap(), before);
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -439,11 +420,11 @@ fn alt_p_packs_into_the_other_panel() {
     alt_p(&mut app_state);
     assert_eq!(typed(&mut app_state), out.join("photos.zip"));
     let mut seen = Vec::new();
-    for _ in 0..6 {
+    for _ in 0..7 {
         press(&mut app_state, KeyCode::Tab);
         seen.push(typed(&mut app_state).file_name().unwrap().to_string_lossy().into_owned());
     }
-    assert_eq!(seen, ["photos.7z", "photos.tar.gz", "photos.tar.xz", "photos.tar.bz2", "photos.tar", "photos.zip"]);
+    assert_eq!(seen, ["photos.7z", "photos.tar.gz", "photos.tar.xz", "photos.tar.bz2", "photos.tar.zst", "photos.tar", "photos.zip"]);
     press(&mut app_state, KeyCode::Tab);
     press(&mut app_state, KeyCode::Enter);
     finish(&mut app_state);
@@ -512,7 +493,10 @@ fn alt_p_packs_one_for_each_and_moves() {
         press(&mut app_state, KeyCode::Insert);
     }
     let alt_p = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('p'), KeyModifiers::ALT));
-    let typed = |app_state: &mut AppState| PathBuf::from(&app_state.dialog_input().unwrap().text);
+    let typed = |app_state: &mut AppState| match &app_state.dialog {
+        Some(Dialog::Pack(form)) => PathBuf::from(&form.input.text),
+        _ => panic!("no pack dialog"),
+    };
     let form = |app_state: &AppState| match &app_state.dialog {
         Some(Dialog::Pack(form)) => (form.focus, form.level, form.separate, form.move_after),
         _ => panic!("no pack dialog"),
@@ -540,7 +524,9 @@ fn alt_p_packs_one_for_each_and_moves() {
     press(&mut app_state, KeyCode::Char(' '));
     assert_eq!(form(&app_state), (PACK_MOVE_ROW, PackLevel::Best, true, true));
     // Round past the last row to the name.
-    press(&mut app_state, KeyCode::Down);
+    for _ in 0..4 {
+        press(&mut app_state, KeyCode::Down);
+    }
     assert_eq!(form(&app_state).0, 0);
     press(&mut app_state, KeyCode::Enter);
     finish(&mut app_state);
@@ -598,5 +584,94 @@ fn ctrl_b_lists_every_file_in_an_archive() {
     let scratch = state.file_path.parent().unwrap().to_path_buf();
     std::fs::remove_dir_all(&scratch).unwrap();
     let _ = std::fs::remove_dir(scratch.parent().unwrap());
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Make an archive of `files` with `password`, as Alt+P would.
+fn locked(dest: &std::path::Path, files: &[(PathBuf, bool)], password: &str) {
+    let format = crate::fs_ops::PackFormat::of(dest).unwrap();
+    let mut ask = |_: crate::fs_ops::Step<'_>| true;
+    let plan = crate::fs_ops::plan_pack(files, dest, format, None, &mut ask).unwrap().unwrap();
+    crate::fs_ops::pack(&plan, dest, format, crate::fs_ops::PackLevel::Fast, Some(password), false, &mut ask).unwrap();
+    crate::archive::forget_password(dest);
+}
+
+fn type_in(app_state: &mut AppState, text: &str) {
+    for c in text.chars() {
+        press(app_state, KeyCode::Char(c));
+    }
+}
+
+/// A 7z with its names encrypted asks for its password as it is gone into,
+/// again when the one given is wrong, and goes in with the right one. A
+/// zip's files ask as they are copied out. The pack dialog makes one with
+/// a password typed the same twice, and only a zip or a 7z.
+#[test]
+fn a_password_is_asked_for_and_given() {
+    use crate::app::Dialog;
+    let dir = scratch("passwords");
+    let (here, out) = (dir.join("here"), dir.join("out"));
+    std::fs::create_dir_all(&here).unwrap();
+    std::fs::create_dir_all(&out).unwrap();
+    std::fs::write(here.join("secret.txt"), "hush").unwrap();
+    locked(&here.join("box.7z"), &[(here.join("secret.txt"), false)], "sesame");
+    locked(&here.join("box.zip"), &[(here.join("secret.txt"), false)], "sesame");
+    let mut app_state = AppState::new();
+    app_state.open_dir(Side::Right, out.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, here.clone(), Some("box.7z".as_ref()));
+    let asked = |app_state: &AppState| match &app_state.dialog {
+        Some(Dialog::Password(ask)) => Some(ask.wrong),
+        _ => None,
+    };
+
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(asked(&app_state), Some(false), "{:?}", app_state.error);
+    assert_eq!(app_state.left.dir, here);
+    type_in(&mut app_state, "open up");
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(asked(&app_state), Some(true));
+    type_in(&mut app_state, "sesame");
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(app_state.error, None);
+    assert_eq!(app_state.left.dir, here.join("box.7z"));
+    assert!(shown(&app_state).contains(&"secret.txt".to_string()));
+
+    // The zip lists its names, and asks as a file is copied out.
+    app_state.open_dir(Side::Left, here.join("box.zip"), Some("secret.txt".as_ref()));
+    press(&mut app_state, KeyCode::F(5));
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(asked(&app_state), Some(false));
+    assert!(app_state.workers.job.is_none());
+    type_in(&mut app_state, "sesame");
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert_eq!(std::fs::read_to_string(out.join("secret.txt")).unwrap(), "hush");
+
+    // Packed with one: typed the same twice, and into what can hold one.
+    app_state.open_dir(Side::Left, here.clone(), Some("secret.txt".as_ref()));
+    let fill = |app_state: &mut AppState, name: &str, password: &str, again: &str| {
+        handle_key(app_state, KeyEvent::new(KeyCode::Char('p'), KeyModifiers::ALT));
+        let Some(Dialog::Pack(form)) = &mut app_state.dialog else { panic!("no pack dialog") };
+        form.input.set(out.join(name).display().to_string());
+        form.password.set(password.to_string());
+        form.again.set(again.to_string());
+        press(app_state, KeyCode::Enter);
+    };
+    fill(&mut app_state, "new.7z", "one", "two");
+    assert!(app_state.error.as_deref().unwrap_or_default().contains("not the same"), "{:?}", app_state.error);
+    app_state.reset_error();
+    fill(&mut app_state, "new.tar.gz", "one", "one");
+    assert!(app_state.error.as_deref().unwrap_or_default().contains(".zip or a .7z"), "{:?}", app_state.error);
+    app_state.reset_error();
+    fill(&mut app_state, "new.7z", "one", "one");
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    // Kept for it: gone into without being asked.
+    app_state.open_dir(Side::Left, out.join("new.7z"), None);
+    assert_eq!(asked(&app_state), None);
+    assert!(shown(&app_state).contains(&"secret.txt".to_string()));
+    crate::archive::forget_password(&out.join("new.7z"));
     std::fs::remove_dir_all(&dir).unwrap();
 }

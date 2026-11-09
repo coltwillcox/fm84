@@ -500,8 +500,6 @@ msgstr Editor (F4)
 msgid  Empty terminal command
 msgstr Comando de terminal vazio
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Criptografado: o fm84 não consegue ler sem a senha
 
 msgid  Enter - Copy
 msgstr Enter - Copiar
@@ -1938,8 +1936,36 @@ msgstr Atualizando o arquivo compactado
 msgid  Cannot update the archive
 msgstr Não é possível atualizar o arquivo compactado
 
-msgid  A {format} is read but cannot be written
-msgstr Um {format} é lido, mas não pode ser gravado
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Copie-o para fora do arquivo compactado primeiro: o que entra num arquivo precisa estar no disco
+
+msgid  Encrypted: it needs its password
+msgstr Criptografado: precisa da senha
+
+msgid  Wrong password
+msgstr Senha errada
+
+msgid  Could not write the archive
+msgstr Não foi possível gravar o arquivo compactado
+
+msgid  Leave out
+msgstr Excluir
+
+msgid  Password
+msgstr Senha
+
+msgid  Again
+msgstr De novo
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Só um .zip ou um .7z pode ter senha
+
+msgid  The two passwords are not the same
+msgstr As duas senhas não são iguais
+
+msgid  The password for "{name}":
+msgstr A senha de "{name}":
+
+msgid  Enter - Open
+msgstr Enter - Abrir

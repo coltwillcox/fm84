@@ -500,8 +500,6 @@ msgstr Editor (F4)
 msgid  Empty terminal command
 msgstr Prázdný příkaz terminálu
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Šifrováno: fm84 ho bez hesla nepřečte
 
 msgid  Enter - Copy
 msgstr Enter - Kopírovat
@@ -1976,8 +1974,36 @@ msgstr Aktualizuje se archiv
 msgid  Cannot update the archive
 msgstr Archiv nelze aktualizovat
 
-msgid  A {format} is read but cannot be written
-msgstr {format} se dá číst, ale ne zapsat
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Nejdřív ho zkopírujte z archivu: co jde do archivu, musí být na disku
+
+msgid  Encrypted: it needs its password
+msgstr Zašifrováno: potřebuje své heslo
+
+msgid  Wrong password
+msgstr Špatné heslo
+
+msgid  Could not write the archive
+msgstr Archiv se nepodařilo zapsat
+
+msgid  Leave out
+msgstr Vynechat
+
+msgid  Password
+msgstr Heslo
+
+msgid  Again
+msgstr Znovu
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Heslo může mít jen .zip nebo .7z
+
+msgid  The two passwords are not the same
+msgstr Ta dvě hesla nejsou stejná
+
+msgid  The password for "{name}":
+msgstr Heslo pro „{name}“:
+
+msgid  Enter - Open
+msgstr Enter - Otevřít

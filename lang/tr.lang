@@ -500,8 +500,6 @@ msgstr Düzenleyici (F4)
 msgid  Empty terminal command
 msgstr Boş uçbirim komutu
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Şifreli: fm84 parola olmadan okuyamaz
 
 msgid  Enter - Copy
 msgstr Enter - Kopyala
@@ -1938,8 +1936,36 @@ msgstr Arşiv güncelleniyor
 msgid  Cannot update the archive
 msgstr Arşiv güncellenemiyor
 
-msgid  A {format} is read but cannot be written
-msgstr Bir {format} okunur ama yazılamaz
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Önce arşivden dışarı kopyalayın: arşive girecek olan diskte olmalı
+
+msgid  Encrypted: it needs its password
+msgstr Şifreli: parolası gerekiyor
+
+msgid  Wrong password
+msgstr Yanlış parola
+
+msgid  Could not write the archive
+msgstr Arşiv yazılamadı
+
+msgid  Leave out
+msgstr Dışarıda bırak
+
+msgid  Password
+msgstr Parola
+
+msgid  Again
+msgstr Tekrar
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Yalnızca bir .zip ya da .7z parola alabilir
+
+msgid  The two passwords are not the same
+msgstr İki parola aynı değil
+
+msgid  The password for "{name}":
+msgstr "{name}" için parola:
+
+msgid  Enter - Open
+msgstr Enter - Aç

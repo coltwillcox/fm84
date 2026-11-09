@@ -107,8 +107,8 @@ fn archives(dir: &Path) -> Vec<PathBuf> {
         .map(|format| {
             let dest = dir.join(format!("box{}", format.extension()));
             let mut ask = |_: Step<'_>| true;
-            let plan = plan_pack(&sources, &dest, *format, &mut ask).unwrap().unwrap();
-            pack(&plan, &dest, *format, PackLevel::Fast, false, &mut ask).unwrap();
+            let plan = plan_pack(&sources, &dest, *format, None, &mut ask).unwrap().unwrap();
+            pack(&plan, &dest, *format, PackLevel::Fast, None, false, &mut ask).unwrap();
             dest
         })
         .collect();
@@ -367,9 +367,9 @@ fn through_a_link_the_archive_itself_is_written() {
 }
 
 /// A name made that is taken already is refused before anything is
-/// written; a `.tar.zst` is not written at all.
+/// written; a `.tar.zst` made by something else is written into as any is.
 #[test]
-fn what_cannot_be_written_is_refused() {
+fn a_name_made_that_is_taken_is_refused() {
     let dir = scratch("repack-refused");
     let boxes = archives(&dir);
     let edits = Repack {
@@ -378,11 +378,49 @@ fn what_cannot_be_written_is_refused() {
     };
     let error = write_into(&boxes[0], &edits, false, &mut Asking::new(Clash::Abort)).unwrap_err();
     assert_eq!(error.kind(), ErrorKind::AlreadyExists);
-    let zst = dir.join("box.tar.zst");
+    let zst = dir.join("theirs.tar.zst");
     tar(&zst, &[(b"a.txt", Put::File(b"a"))]);
-    let error = write_into(&zst, &Repack::default(), false, &mut Asking::new(Clash::Abort)).unwrap_err();
-    assert_eq!(error.kind(), ErrorKind::Unsupported);
-    assert!(writable_format(&zst).is_err());
+    let edits = Repack {
+        make: vec![(PathBuf::from("b"), true)],
+        ..Repack::default()
+    };
+    assert_eq!(write_into(&zst, &edits, false, &mut Asking::new(Clash::Abort)).unwrap(), Transfer::Done);
+    assert_eq!(contents(&zst), listed(&[("a.txt", "a"), ("b", "/")]));
+    assert_eq!(writable_format(&zst), Ok(PackFormat::TarZst));
     assert_eq!(writable_format(&boxes[0]), Ok(PackFormat::Zip));
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Written into, an encrypted archive stays so: what is kept is read with
+/// its password, and what comes in is encrypted with it.
+#[test]
+fn an_encrypted_archive_is_written_into_with_its_password() {
+    use crate::archive::{forget_password, set_password};
+    let dir = scratch("repack-password");
+    fs::create_dir_all(dir.join("in")).unwrap();
+    fs::write(dir.join("in/old.txt"), "old").unwrap();
+    fs::write(dir.join("new.txt"), "new").unwrap();
+    for name in ["locked.zip", "locked.7z"] {
+        let archive = dir.join(name);
+        let format = PackFormat::of(&archive).unwrap();
+        let mut ask = |_: Step<'_>| true;
+        let plan = plan_pack(&[(dir.join("in/old.txt"), false)], &archive, format, None, &mut ask).unwrap().unwrap();
+        pack(&plan, &archive, format, PackLevel::Fast, Some("sesame"), false, &mut ask).unwrap();
+        set_password(&archive, "sesame");
+        let edits = Repack {
+            add: vec![(dir.join("new.txt"), PathBuf::from("new.txt"))],
+            ..Repack::default()
+        };
+        assert_eq!(write_into(&archive, &edits, false, &mut Asking::new(Clash::Abort)).unwrap(), Transfer::Done, "{name}");
+        assert_eq!(contents(&archive), listed(&[("new.txt", "new"), ("old.txt", "old")]), "{name}");
+        let index = crate::archive::index(&archive).unwrap();
+        assert!(index.entry(index.find(Path::new("new.txt")).unwrap()).encrypted, "{name}");
+        forget_password(&archive);
+        // A 7z's names are locked again with it - asked of the file, past
+        // the index kept from reading it with the password.
+        if format == PackFormat::SevenZ {
+            assert!(sevenz_rust2::ArchiveReader::new(File::open(&archive).unwrap(), sevenz_rust2::Password::empty()).is_err());
+        }
+    }
     fs::remove_dir_all(&dir).unwrap();
 }

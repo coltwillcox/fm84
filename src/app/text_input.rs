@@ -15,6 +15,14 @@ impl TextInput {
         Self { text: String::new(), cursor: 0 }
     }
 
+    /// The same, each character drawn as a dot: a password being typed.
+    pub fn masked(&self) -> TextInput {
+        TextInput {
+            text: "\u{2022}".repeat(self.text.chars().count()),
+            cursor: self.cursor,
+        }
+    }
+
     pub fn set(&mut self, value: String) {
         self.cursor = value.chars().count();
         self.text = value;

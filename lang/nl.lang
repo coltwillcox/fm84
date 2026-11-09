@@ -499,8 +499,6 @@ msgstr Editor (F4)
 msgid  Empty terminal command
 msgstr Lege terminalopdracht
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Versleuteld: fm84 kan het niet lezen zonder het wachtwoord
 
 msgid  Enter - Copy
 msgstr Enter - Kopiëren
@@ -1937,8 +1935,36 @@ msgstr Archief wordt bijgewerkt
 msgid  Cannot update the archive
 msgstr Kan het archief niet bijwerken
 
-msgid  A {format} is read but cannot be written
-msgstr Een {format} wordt gelezen, maar kan niet worden geschreven
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Haal het eerst uit het archief: wat in een archief komt, moet op de schijf staan
+
+msgid  Encrypted: it needs its password
+msgstr Versleuteld: het heeft zijn wachtwoord nodig
+
+msgid  Wrong password
+msgstr Verkeerd wachtwoord
+
+msgid  Could not write the archive
+msgstr Kon het archief niet schrijven
+
+msgid  Leave out
+msgstr Weglaten
+
+msgid  Password
+msgstr Wachtwoord
+
+msgid  Again
+msgstr Nogmaals
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Alleen een .zip of een .7z kan een wachtwoord hebben
+
+msgid  The two passwords are not the same
+msgstr De twee wachtwoorden zijn niet gelijk
+
+msgid  The password for "{name}":
+msgstr Het wachtwoord voor "{name}":
+
+msgid  Enter - Open
+msgstr Enter - Openen

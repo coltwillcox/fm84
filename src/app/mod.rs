@@ -98,7 +98,10 @@ pub const PACK_NAME_ROW: usize = 0;
 pub const PACK_LEVEL_ROW: usize = 1;
 pub const PACK_SEPARATE_ROW: usize = 2;
 pub const PACK_MOVE_ROW: usize = 3;
-pub const PACK_ROWS: usize = 4;
+pub const PACK_LEAVE_OUT_ROW: usize = 4;
+pub const PACK_PASSWORD_ROW: usize = 5;
+pub const PACK_AGAIN_ROW: usize = 6;
+pub const PACK_ROWS: usize = 7;
 
 /// Alt+P: what is packed, the archive's name - or, one for each, the
 /// directory they go in as `dir/*.zip` - and how.
@@ -114,6 +117,39 @@ pub struct PackForm {
     pub separate: bool,
     /// What went in deleted once it is packed.
     pub move_after: bool,
+    /// Patterns for what is not packed: `.git;*.o;target/`.
+    pub leave_out: TextInput,
+    /// For a zip or a 7z, encrypted with it; typed twice.
+    pub password: TextInput,
+    pub again: TextInput,
+}
+
+impl PackForm {
+    /// The field the keys type into, when the row they go to is one.
+    pub fn field_mut(&mut self) -> Option<&mut TextInput> {
+        match self.focus {
+            PACK_NAME_ROW => Some(&mut self.input),
+            PACK_LEAVE_OUT_ROW => Some(&mut self.leave_out),
+            PACK_PASSWORD_ROW => Some(&mut self.password),
+            PACK_AGAIN_ROW => Some(&mut self.again),
+            _ => None,
+        }
+    }
+
+    pub fn on_field(&self) -> bool {
+        matches!(self.focus, PACK_NAME_ROW | PACK_LEAVE_OUT_ROW | PACK_PASSWORD_ROW | PACK_AGAIN_ROW)
+    }
+}
+
+/// An encrypted archive's password, asked for before what reads it - going
+/// into it, copying out of it, writing into it - which goes ahead once it
+/// is given.
+pub struct PasswordAsk {
+    pub archive: PathBuf,
+    pub input: TextInput,
+    /// The one given before did not open it.
+    pub wrong: bool,
+    pub then: Box<dyn FnOnce(&mut AppState)>,
 }
 
 /// The one dialog open over the screen, if any, carrying what it is asking
@@ -162,6 +198,8 @@ pub enum Dialog {
     /// Alt+P: the archive to pack what is chosen into, its format by the
     /// ending of its name, and how.
     Pack(Box<PackForm>),
+    /// The password an encrypted archive needs, and what was being done.
+    Password(Box<PasswordAsk>),
     /// Alt+H: checksums worked out, or a checksum file checked.
     Checksums(Box<ChecksumView>),
     /// Ctrl+E's plan, saved from the editor and waiting on Enter.
@@ -545,6 +583,8 @@ pub struct Recall {
     pub viewer_wrap: bool,
     /// How hard Alt+P last packed.
     pub pack_level: crate::fs_ops::PackLevel,
+    /// What Alt+P last left out.
+    pub pack_leave_out: String,
 }
 
 impl AppState {
@@ -636,6 +676,7 @@ impl AppState {
                 find_regex: false,
                 viewer_wrap: false,
                 pack_level: crate::fs_ops::PackLevel::Normal,
+                pack_leave_out: String::new(),
             },
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
@@ -686,7 +727,8 @@ impl AppState {
     pub fn dialog_input(&mut self) -> Option<&mut TextInput> {
         match self.dialog.as_mut()? {
             Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Extract { input, .. } | Dialog::Prompt(_, input) => Some(input),
-            Dialog::Pack(form) => Some(&mut form.input),
+            Dialog::Pack(form) => form.field_mut(),
+            Dialog::Password(ask) => Some(&mut ask.input),
             Dialog::Revision(list) => Some(&mut list.input),
             Dialog::Options { editing } => editing.as_mut(),
             Dialog::History(list) => Some(&mut list.input),

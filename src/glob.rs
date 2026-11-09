@@ -55,6 +55,13 @@ impl Glob {
         Self::parse(&widened.join(";"), true, &plain)
     }
 
+    /// What Pack leaves out, as `tar --exclude` has it: a pattern without
+    /// `/` is for files and directories alike - `.git`, `*.o` - and one
+    /// ending in `/` for directories alone. Nothing is widened: `o` is `o`.
+    pub fn exclude(text: &str) -> Option<Self> {
+        Self::parse(text, true, &[])
+    }
+
     /// `plain` says, pattern by pattern, which were plain words widened to
     /// look anywhere - and so anywhere in a path too.
     fn parse(text: &str, either: bool, plain: &[bool]) -> Option<Self> {

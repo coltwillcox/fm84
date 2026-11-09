@@ -286,7 +286,16 @@ impl Index {
         const UNIX_EXTENSION: u32 = 0x8000;
         const LINK: u32 = 0o120000;
         let mut index = Index::new(Kind::SevenZ);
-        let reader = sevenz_rust2::ArchiveReader::new(open(archive)?, sevenz_rust2::Password::empty()).map_err(sevenz_error)?;
+        // A 7z can keep even its names encrypted, which takes the password
+        // to list.
+        let reader = sevenz_rust2::ArchiveReader::new(open(archive)?, super::sevenz_password(archive)).map_err(|error| super::forgetting(archive, sevenz_error(error)))?;
+        let sealed: Vec<bool> = reader
+            .archive()
+            .blocks
+            .iter()
+            .map(|block| block.coders.iter().any(|coder| coder.encoder_method_id() == sevenz_rust2::EncoderMethod::ID_AES256_SHA256))
+            .collect();
+        let block_of = &reader.archive().stream_map.file_block_index;
         for (position, file) in reader.archive().files.iter().enumerate() {
             // What an update deleted, not something in the archive.
             if file.is_anti_item {
@@ -316,7 +325,7 @@ impl Index {
                 owner: None,
                 link: None,
                 position: Some(position),
-                encrypted: false,
+                encrypted: block_of.get(position).copied().flatten().is_some_and(|block| sealed.get(block).copied().unwrap_or(false)),
             });
         }
         Ok(index)

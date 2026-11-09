@@ -24,12 +24,9 @@ pub struct Repack {
 }
 
 /// The format an archive is written back in, or why it cannot be: a git
-/// commit is history, and a `.tar.zst` is read but never written.
+/// commit is history.
 pub fn writable_format(archive: &Path) -> Result<PackFormat, String> {
-    match crate::archive::kind_of(archive) {
-        Some(crate::archive::Kind::TarZst) => Err(t!("A {format} is read but cannot be written", format = ".tar.zst")),
-        _ => PackFormat::of(archive).ok_or_else(|| t!("Archives are read-only").to_string()),
-    }
+    PackFormat::of(archive).ok_or_else(|| t!("Archives are read-only").to_string())
 }
 
 /// Everything a rewrite needs, worked out before a byte is written.
@@ -42,6 +39,9 @@ pub struct RepackPlan {
     replaced: HashSet<PathBuf>,
     added: PackPlan,
     make: Vec<(PathBuf, bool)>,
+    /// What an encrypted archive is opened with, and what goes into it
+    /// encrypted with.
+    password: Option<String>,
     /// What the bar goes to: the files kept and the files coming in.
     pub bytes: u64,
 }
@@ -65,7 +65,7 @@ pub fn plan_repack(archive: &Path, edits: &Repack, report: Report<'_>) -> Result
     // Through a link it is the file the link points at that is written.
     let archive = fs::canonicalize(archive)?;
     let index = crate::archive::index(&archive)?;
-    let Some(mut added) = plan_named(&edits.add, &archive, format, report)? else {
+    let Some(mut added) = plan_named(&edits.add, &archive, format, None, report)? else {
         return Ok(None);
     };
     let incoming: HashSet<PathBuf> = added.members.iter().map(|member| member.name.clone()).collect();
@@ -111,7 +111,9 @@ pub fn plan_repack(archive: &Path, edits: &Repack, report: Report<'_>) -> Result
             return Err(Error::new(ErrorKind::AlreadyExists, t!("Already exists: {name}", name = name.display())));
         }
     }
+    let password = if crate::archive::is_encrypted(&archive) { crate::archive::password(&archive) } else { None };
     let mut plan = RepackPlan {
+        password,
         archive,
         format,
         remove: edits.remove.clone(),
@@ -257,7 +259,7 @@ fn rezip(plan: &RepackPlan, file: File, level: PackLevel, report: &Shared<'_, '_
         zip.raw_copy_file(entry).map_err(zip_error)?;
         advance(report, cancelled, size)?;
     }
-    append_zip(&mut zip, &plan.added.members, level, report, cancelled)?;
+    append_zip(&mut zip, &plan.added.members, level, plan.password.as_deref(), report, cancelled)?;
     for (name, is_dir) in &plan.make {
         let mut options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated).unix_permissions(made_mode(*is_dir));
         if let Some(time) = zip_time(now()) {
@@ -278,11 +280,11 @@ fn rezip(plan: &RepackPlan, file: File, level: PackLevel, report: &Shared<'_, '_
 fn re7z(plan: &RepackPlan, file: File, level: PackLevel, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
     use sevenz_rust2::{ArchiveEntry, SourceReader};
     let sevenz_error = crate::archive::sevenz_error;
-    let reader = sevenz_rust2::ArchiveReader::new(io::BufReader::new(File::open(&plan.archive)?), sevenz_rust2::Password::empty()).map_err(sevenz_error)?;
+    let reader = sevenz_rust2::ArchiveReader::new(io::BufReader::new(File::open(&plan.archive)?), crate::archive::sevenz_password(&plan.archive)).map_err(sevenz_error)?;
     let old: Vec<ArchiveEntry> = reader.archive().files.clone();
     drop(reader);
 
-    let mut writer = sevenz_writer(file, level)?;
+    let mut writer = sevenz_writer(file, level, plan.password.as_deref())?;
     let (sender, receiver) = mpsc::sync_channel(8);
     let feed = Feed { receiver, chunk: RefCell::new((Vec::new(), 0)) };
     let mut entries = Vec::new();

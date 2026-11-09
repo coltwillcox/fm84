@@ -184,6 +184,7 @@ pub(crate) fn zip_error(error: zip::result::ZipError) -> io::Error {
     match error {
         zip::result::ZipError::Io(error) => error,
         zip::result::ZipError::UnsupportedArchive(zip::result::ZipError::PASSWORD_REQUIRED) => encrypted(),
+        zip::result::ZipError::InvalidPassword => wrong_password(),
         other => io::Error::new(io::ErrorKind::InvalidData, other.to_string()),
     }
 }
@@ -198,8 +199,91 @@ pub enum Next {
     Stop,
 }
 
+/// An archive that wants a password fm84 has not got - none given, or
+/// the one given not right. Carried inside an io::Error, so what asks for
+/// one can tell it from any other failure.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Locked {
+    pub wrong: bool,
+}
+
+impl std::fmt::Display for Locked {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(if self.wrong { t!("Wrong password") } else { t!("Encrypted: it needs its password") })
+    }
+}
+
+impl std::error::Error for Locked {}
+
+/// The Locked an error is, if it is one.
+pub fn locked(error: &io::Error) -> Option<Locked> {
+    error.get_ref().and_then(|inner| inner.downcast_ref::<Locked>()).copied()
+}
+
 fn encrypted() -> io::Error {
-    io::Error::new(io::ErrorKind::Unsupported, t!("Encrypted: fm84 cannot read it without the password"))
+    io::Error::new(io::ErrorKind::PermissionDenied, Locked { wrong: false })
+}
+
+fn wrong_password() -> io::Error {
+    io::Error::new(io::ErrorKind::PermissionDenied, Locked { wrong: true })
+}
+
+/// Passwords given this run, by the archive they open. Kept in memory
+/// only, and forgotten when one turns out wrong.
+static PASSWORDS: Mutex<Vec<(PathBuf, String)>> = Mutex::new(Vec::new());
+
+/// The archive itself, whichever way it is named: a link to it, or a path
+/// that is not its shortest, finds the same password.
+fn password_key(archive: &Path) -> PathBuf {
+    fs::canonicalize(archive).unwrap_or_else(|_| archive.to_path_buf())
+}
+
+pub fn set_password(archive: &Path, password: &str) {
+    let key = password_key(archive);
+    let mut passwords = PASSWORDS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    passwords.retain(|(path, _)| *path != key);
+    passwords.push((key, password.to_string()));
+}
+
+pub fn password(archive: &Path) -> Option<String> {
+    let key = password_key(archive);
+    PASSWORDS.lock().unwrap_or_else(std::sync::PoisonError::into_inner).iter().find(|(path, _)| *path == key).map(|(_, password)| password.clone())
+}
+
+pub fn forget_password(archive: &Path) {
+    let key = password_key(archive);
+    PASSWORDS.lock().unwrap_or_else(std::sync::PoisonError::into_inner).retain(|(path, _)| *path != key);
+}
+
+/// `error` as it is, the password it was read with forgotten when that was
+/// the wrong one, so the next try asks again.
+fn forgetting(archive: &Path, error: io::Error) -> io::Error {
+    if locked(&error).is_some_and(|locked| locked.wrong) {
+        forget_password(archive);
+    }
+    error
+}
+
+/// The 7z password for `archive`, or none.
+pub(crate) fn sevenz_password(archive: &Path) -> sevenz_rust2::Password {
+    password(archive).map_or_else(sevenz_rust2::Password::empty, |password| sevenz_rust2::Password::from(password.as_str()))
+}
+
+/// Whether the entries at `inners`, or anything under them, need a
+/// password fm84 has not been given. False for an archive it cannot read.
+pub fn needs_password(archive: &Path, inners: &[PathBuf]) -> bool {
+    if password(archive).is_some() {
+        return false;
+    }
+    let Ok(index) = index(archive) else {
+        return false;
+    };
+    inners.iter().any(|inner| index.subtree(inner).into_iter().any(|at| index.entry(at).encrypted))
+}
+
+/// Whether anything in `archive` is encrypted.
+pub fn is_encrypted(archive: &Path) -> bool {
+    index(archive).is_ok_and(|index| index.subtree(Path::new("")).into_iter().any(|at| index.entry(at).encrypted))
 }
 
 pub(crate) fn sevenz_error(error: sevenz_rust2::Error) -> io::Error {
@@ -207,8 +291,8 @@ pub(crate) fn sevenz_error(error: sevenz_rust2::Error) -> io::Error {
         sevenz_rust2::Error::Io(error, _) | sevenz_rust2::Error::FileOpen(error, _) => error,
         // Built without AES, an encrypted 7z reads as one packed by a method
         // fm84 does not have - which is so, and says nothing useful.
-        sevenz_rust2::Error::PasswordRequired | sevenz_rust2::Error::MaybeBadPassword(_) => encrypted(),
-        sevenz_rust2::Error::UnsupportedCompressionMethod(method) if method.starts_with("AES") => encrypted(),
+        sevenz_rust2::Error::PasswordRequired => encrypted(),
+        sevenz_rust2::Error::MaybeBadPassword(_) => wrong_password(),
         other => io::Error::new(io::ErrorKind::InvalidData, other.to_string()),
     }
 }
@@ -222,11 +306,16 @@ pub fn read_entries(archive: &Path, kind: Kind, positions: &[usize], visit: &mut
     match kind {
         Kind::Zip => {
             let mut zip = zip::ZipArchive::new(open(archive)?).map_err(zip_error)?;
+            let password = password(archive);
             for &position in positions {
                 loop {
-                    let next = match zip.by_index(position) {
+                    let opened = match &password {
+                        Some(password) => zip.by_index_decrypt(position, password.as_bytes()),
+                        None => zip.by_index(position),
+                    };
+                    let next = match opened {
                         Ok(mut file) => visit(position, Ok(&mut file)),
-                        Err(error) => visit(position, Err(zip_error(error))),
+                        Err(error) => visit(position, Err(forgetting(archive, zip_error(error)))),
                     };
                     match next {
                         Next::Go => break,
@@ -323,7 +412,7 @@ fn read_7z_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(us
     let mut pending: std::collections::BTreeSet<usize> = positions.iter().copied().collect();
     while !pending.is_empty() {
         let mut again = std::collections::BTreeSet::new();
-        let mut reader = sevenz_rust2::ArchiveReader::new(open(archive)?, sevenz_rust2::Password::empty()).map_err(sevenz_error)?;
+        let mut reader = sevenz_rust2::ArchiveReader::new(open(archive)?, sevenz_password(archive)).map_err(|error| forgetting(archive, sevenz_error(error)))?;
         let (base, count) = (reader.archive().files.as_ptr() as usize, reader.archive().files.len());
         let mut stopped = false;
         let walked = reader.for_each_entries(|entry, contents| {
@@ -349,7 +438,7 @@ fn read_7z_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(us
         // The rest could not be reached: a block that would not decode, a
         // method fm84 does not have, a password it was not given.
         if let Err(error) = walked {
-            let error = sevenz_error(error);
+            let error = forgetting(archive, sevenz_error(error));
             for position in std::mem::take(&mut pending) {
                 if let Next::Stop = visit(position, Err(io::Error::new(error.kind(), error.to_string()))) {
                     return Ok(());

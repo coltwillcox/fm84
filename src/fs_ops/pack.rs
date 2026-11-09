@@ -6,8 +6,7 @@ use super::transfer::place;
 use super::*;
 use std::cell::{Cell, RefCell};
 
-/// What Pack can make: everything fm84 reads but a zstd tar, whose
-/// pure-Rust encoder cannot say when a write fails.
+/// What Pack can make: everything fm84 reads.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PackFormat {
     Zip,
@@ -16,11 +15,12 @@ pub enum PackFormat {
     TarGz,
     TarXz,
     TarBz2,
+    TarZst,
 }
 
 impl PackFormat {
     /// In the order Tab goes through them in the dialog.
-    pub const ALL: [PackFormat; 6] = [PackFormat::Zip, PackFormat::SevenZ, PackFormat::TarGz, PackFormat::TarXz, PackFormat::TarBz2, PackFormat::Tar];
+    pub const ALL: [PackFormat; 7] = [PackFormat::Zip, PackFormat::SevenZ, PackFormat::TarGz, PackFormat::TarXz, PackFormat::TarBz2, PackFormat::TarZst, PackFormat::Tar];
 
     /// The format a name asks for, by its ending.
     pub fn of(path: &Path) -> Option<Self> {
@@ -32,7 +32,8 @@ impl PackFormat {
             Kind::TarGz => PackFormat::TarGz,
             Kind::TarXz => PackFormat::TarXz,
             Kind::TarBz2 => PackFormat::TarBz2,
-            Kind::TarZst | Kind::Git => return None,
+            Kind::TarZst => PackFormat::TarZst,
+            Kind::Git => return None,
         })
     }
 
@@ -44,6 +45,7 @@ impl PackFormat {
             PackFormat::TarGz => ".tar.gz",
             PackFormat::TarXz => ".tar.xz",
             PackFormat::TarBz2 => ".tar.bz2",
+            PackFormat::TarZst => ".tar.zst",
         }
     }
 
@@ -62,12 +64,14 @@ impl PackFormat {
             PackFormat::TarGz => Kind::TarGz,
             PackFormat::TarXz => Kind::TarXz,
             PackFormat::TarBz2 => Kind::TarBz2,
+            PackFormat::TarZst => Kind::TarZst,
         }
     }
 
-    /// A plain tar only lays files end to end: there is no level to it.
-    pub fn compresses(self) -> bool {
-        self != PackFormat::Tar
+    /// Whether the level means anything to it: a plain tar only lays files
+    /// end to end, and the pure-Rust zstd encoder has the one level.
+    pub fn has_levels(self) -> bool {
+        !matches!(self, PackFormat::Tar | PackFormat::TarZst)
     }
 }
 
@@ -138,16 +142,19 @@ pub struct PackPlan {
 /// archive is begun, so an archive made inside a directory being packed is
 /// not found and packed into itself; one already at `dest` is left out too.
 /// None when cancelled.
-pub fn plan_pack(sources: &[(PathBuf, bool)], dest: &Path, format: PackFormat, report: Report<'_>) -> Result<Option<PackPlan>, Error> {
+pub fn plan_pack(sources: &[(PathBuf, bool)], dest: &Path, format: PackFormat, leave_out: Option<&crate::glob::Glob>, report: Report<'_>) -> Result<Option<PackPlan>, Error> {
     let named: Vec<(PathBuf, PathBuf)> = sources.iter().filter_map(|(source, _)| Some((source.clone(), PathBuf::from(source.file_name()?)))).collect();
-    plan_named(&named, dest, format, report)
+    plan_named(&named, dest, format, leave_out, report)
 }
 
 /// As plan_pack, each source going in under the name given with it.
-pub(super) fn plan_named(sources: &[(PathBuf, PathBuf)], dest: &Path, format: PackFormat, report: Report<'_>) -> Result<Option<PackPlan>, Error> {
+/// `leave_out` is matched against each name as it goes in - `docs/a.txt` -
+/// and what it matches is not walked, nor is anything under it.
+pub(super) fn plan_named(sources: &[(PathBuf, PathBuf)], dest: &Path, format: PackFormat, leave_out: Option<&crate::glob::Glob>, report: Report<'_>) -> Result<Option<PackPlan>, Error> {
     let mut members = Vec::new();
+    let mut walking = Walking { dest, format, leave_out, members: &mut members };
     for (source, name) in sources {
-        if !walk(source, name.clone(), dest, format, report, &mut members)? {
+        if !walk(source, name.clone(), &mut walking, report)? {
             return Ok(None);
         }
     }
@@ -155,8 +162,17 @@ pub(super) fn plan_named(sources: &[(PathBuf, PathBuf)], dest: &Path, format: Pa
     Ok(Some(PackPlan { members, bytes }))
 }
 
+/// What every step of a walk goes by, and what it finds.
+struct Walking<'w> {
+    dest: &'w Path,
+    format: PackFormat,
+    leave_out: Option<&'w crate::glob::Glob>,
+    members: &'w mut Vec<Member>,
+}
+
 /// False when cancelled.
-fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Report<'_>, members: &mut Vec<Member>) -> Result<bool, Error> {
+fn walk(path: &Path, name: PathBuf, walking: &mut Walking<'_>, report: Report<'_>) -> Result<bool, Error> {
+    let (dest, format) = (walking.dest, walking.format);
     // Asked between entries, so Esc stops a walk through a large tree.
     if !report.step(Step::Advanced(0)) {
         return Ok(false);
@@ -164,6 +180,14 @@ fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Rep
     if path == dest {
         return Ok(true);
     }
+    if let Some(glob) = walking.leave_out {
+        // A link is never a directory here: it goes in as a link.
+        let is_dir = path.symlink_metadata().is_ok_and(|metadata| metadata.is_dir());
+        if glob.matches(&name.to_string_lossy(), is_dir) {
+            return Ok(true);
+        }
+    }
+    let members = &mut *walking.members;
     if format.needs_utf8() && name.to_str().is_none() {
         let refused = Error::new(ErrorKind::InvalidData, t!("{name} is not a name a {format} can hold: it is not UTF-8", name = name.display(), format = format.extension()));
         attempt(path, report, |_| -> Result<(), Error> { Err(Error::new(refused.kind(), refused.to_string())) })?;
@@ -200,7 +224,7 @@ fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Rep
             let Some((entry, _)) = next_entry(path, entry, report)? else {
                 continue;
             };
-            if !walk(&entry.path(), name.join(entry.file_name()), dest, format, report, members)? {
+            if !walk(&entry.path(), name.join(entry.file_name()), walking, report)? {
                 return Ok(false);
             }
         }
@@ -226,14 +250,15 @@ fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Rep
 }
 
 /// Write the archive `plan` describes to `dest`, written over only when
-/// `replacing` - the caller has been told it may.
-pub fn pack(plan: &PackPlan, dest: &Path, format: PackFormat, level: PackLevel, replacing: bool, report: Report<'_>) -> Result<Transfer, Error> {
+/// `replacing` - the caller has been told it may - and with `password`, for
+/// a zip or a 7z, encrypted: AES-256, and a 7z's names with it.
+pub fn pack(plan: &PackPlan, dest: &Path, format: PackFormat, level: PackLevel, password: Option<&str>, replacing: bool, report: Report<'_>) -> Result<Transfer, Error> {
     let (temp, file) = temp_beside(dest)?;
     let cancelled = Cell::new(false);
     let report = RefCell::new(report);
     let written = match format {
-        PackFormat::Zip => write_zip(file, &plan.members, level, &report, &cancelled),
-        PackFormat::SevenZ => write_7z(file, &plan.members, level, &report, &cancelled),
+        PackFormat::Zip => write_zip(file, &plan.members, level, password, &report, &cancelled),
+        PackFormat::SevenZ => write_7z(file, &plan.members, level, password, &report, &cancelled),
         _ => Compressor::new(file, format, level).and_then(|compressor| write_tar(compressor, &plan.members, &report, &cancelled)).and_then(Compressor::finish),
     };
     match written.and_then(|file| file.sync_all()) {
@@ -336,6 +361,7 @@ pub(super) enum Compressor {
     Gz(flate2::write::GzEncoder<io::BufWriter<File>>),
     Xz(Box<lzma_rust2::XzWriter<io::BufWriter<File>>>),
     Bz2(bzip2::write::BzEncoder<io::BufWriter<File>>),
+    Zst(ZstdWriter),
 }
 
 impl Compressor {
@@ -346,6 +372,7 @@ impl Compressor {
             PackFormat::TarGz => Compressor::Gz(flate2::write::GzEncoder::new(file, flate2::Compression::new(preset))),
             PackFormat::TarXz => Compressor::Xz(Box::new(lzma_rust2::XzWriter::new(file, lzma_rust2::XzOptions::with_preset(preset))?)),
             PackFormat::TarBz2 => Compressor::Bz2(bzip2::write::BzEncoder::new(file, bzip2::Compression::new(preset))),
+            PackFormat::TarZst => Compressor::Zst(ZstdWriter::new(file)),
             _ => Compressor::Plain(file),
         })
     }
@@ -357,6 +384,7 @@ impl Compressor {
             Compressor::Gz(gz) => gz.finish()?,
             Compressor::Xz(xz) => xz.finish()?,
             Compressor::Bz2(bz) => bz.finish()?,
+            Compressor::Zst(zst) => zst.finish()?,
         };
         buffered.into_inner().map_err(io::IntoInnerError::into_error)
     }
@@ -369,6 +397,7 @@ impl Write for Compressor {
             Compressor::Gz(gz) => gz.write(buf),
             Compressor::Xz(xz) => xz.write(buf),
             Compressor::Bz2(bz) => bz.write(buf),
+            Compressor::Zst(zst) => zst.write(buf),
         }
     }
 
@@ -378,7 +407,163 @@ impl Write for Compressor {
             Compressor::Gz(gz) => gz.flush(),
             Compressor::Xz(xz) => xz.flush(),
             Compressor::Bz2(bz) => bz.flush(),
+            Compressor::Zst(zst) => zst.flush(),
         }
+    }
+}
+
+/// zstd through ruzstd, the one pure-Rust encoder, which pulls what it
+/// compresses from a reader and panics when that reader or its writer
+/// fails. So it runs on a thread of its own, fed through a channel, writing
+/// through a drain that never fails: the first failure is kept, the rest
+/// thrown away and the feed ended, and it is told once the encoder is done.
+pub(super) struct ZstdWriter {
+    pending: Vec<u8>,
+    sender: Option<std::sync::mpsc::SyncSender<Vec<u8>>>,
+    encoder: Option<std::thread::JoinHandle<Result<io::BufWriter<File>, Error>>>,
+    failed: std::sync::Arc<AtomicBool>,
+}
+
+const ZSTD_PIECE: usize = 128 * 1024;
+
+impl ZstdWriter {
+    fn new(file: io::BufWriter<File>) -> Self {
+        let (sender, receiver) = std::sync::mpsc::sync_channel::<Vec<u8>>(4);
+        let failed = std::sync::Arc::new(AtomicBool::new(false));
+        let drain_failed = std::sync::Arc::clone(&failed);
+        let encoder = std::thread::spawn(move || {
+            let mut source = ZstdSource {
+                receiver,
+                piece: Vec::new(),
+                at: 0,
+                failed: std::sync::Arc::clone(&drain_failed),
+            };
+            let mut drain = ZstdDrain { inner: file, error: None, failed: drain_failed };
+            ruzstd::encoding::compress(&mut source, &mut drain, ruzstd::encoding::CompressionLevel::Fastest);
+            match drain.error {
+                Some(error) => Err(error),
+                None => drain.inner.flush().map(|()| drain.inner),
+            }
+        });
+        ZstdWriter {
+            pending: Vec::with_capacity(ZSTD_PIECE),
+            sender: Some(sender),
+            encoder: Some(encoder),
+            failed,
+        }
+    }
+
+    /// What is pending sent; Err once the encoder has stopped taking it.
+    fn send(&mut self) -> io::Result<()> {
+        if self.failed.load(Ordering::Relaxed) {
+            return Err(Error::other(t!("Could not write the archive")));
+        }
+        let piece = std::mem::replace(&mut self.pending, Vec::with_capacity(ZSTD_PIECE));
+        match &self.sender {
+            Some(sender) if sender.send(piece).is_ok() => Ok(()),
+            _ => Err(Error::other(t!("Could not write the archive"))),
+        }
+    }
+
+    /// The end of the stream: the encoder's own error, if it met one, or
+    /// the file it wrote to.
+    fn finish(mut self) -> io::Result<io::BufWriter<File>> {
+        let sent = if self.pending.is_empty() { Ok(()) } else { self.send() };
+        self.sender = None;
+        let encoded = match self.encoder.take().map(std::thread::JoinHandle::join) {
+            Some(Ok(encoded)) => encoded,
+            _ => Err(Error::other(t!("Could not write the archive"))),
+        };
+        // The encoder's error says what went wrong; the send's only that it
+        // had stopped.
+        let file = encoded?;
+        sent?;
+        Ok(file)
+    }
+}
+
+impl Write for ZstdWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let room = buf.len().min(ZSTD_PIECE - self.pending.len());
+        self.pending.extend_from_slice(&buf[..room]);
+        if self.pending.len() == ZSTD_PIECE {
+            self.send()?;
+        }
+        Ok(room)
+    }
+
+    /// Nothing to push through: the encoder writes whole blocks as it goes.
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Let go of unfinished - cancelled, or failed - the encoder ends its
+/// frame on what it had, and is waited for, so the file it holds is shut
+/// before the temporary is removed.
+impl Drop for ZstdWriter {
+    fn drop(&mut self) {
+        self.sender = None;
+        if let Some(encoder) = self.encoder.take() {
+            let _ = encoder.join();
+        }
+    }
+}
+
+/// What the encoder reads: the pieces sent, ending when nothing more is
+/// coming or the drain has failed.
+struct ZstdSource {
+    receiver: std::sync::mpsc::Receiver<Vec<u8>>,
+    piece: Vec<u8>,
+    at: usize,
+    failed: std::sync::Arc<AtomicBool>,
+}
+
+impl Read for ZstdSource {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        while self.at >= self.piece.len() {
+            if self.failed.load(Ordering::Relaxed) {
+                return Ok(0);
+            }
+            match self.receiver.recv() {
+                Ok(piece) => (self.piece, self.at) = (piece, 0),
+                Err(_) => return Ok(0),
+            }
+        }
+        let room = buf.len().min(self.piece.len() - self.at);
+        buf[..room].copy_from_slice(&self.piece[self.at..self.at + room]);
+        self.at += room;
+        Ok(room)
+    }
+}
+
+/// Where the encoder writes: never failing, but keeping the first failure
+/// and writing nothing after it.
+struct ZstdDrain {
+    inner: io::BufWriter<File>,
+    error: Option<Error>,
+    failed: std::sync::Arc<AtomicBool>,
+}
+
+impl Write for ZstdDrain {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        if self.error.is_none()
+            && let Err(error) = self.inner.write_all(buf)
+        {
+            self.error = Some(error);
+            self.failed.store(true, Ordering::Relaxed);
+        }
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        if self.error.is_none()
+            && let Err(error) = self.inner.flush()
+        {
+            self.error = Some(error);
+            self.failed.store(true, Ordering::Relaxed);
+        }
+        Ok(())
     }
 }
 
@@ -438,18 +623,24 @@ pub(super) fn unix_mode(_metadata: &fs::Metadata) -> Option<u32> {
 
 /// A zip, deflated, with each file's mode and time - to the even second
 /// from 1980 on, which is all a zip can hold.
-fn write_zip(file: File, members: &[Member], level: PackLevel, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
+fn write_zip(file: File, members: &[Member], level: PackLevel, password: Option<&str>, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
     let mut zip = zip::ZipWriter::new(io::BufWriter::new(file));
-    append_zip(&mut zip, members, level, report, cancelled)?;
+    append_zip(&mut zip, members, level, password, report, cancelled)?;
     zip.finish().map_err(crate::archive::zip_error)?.into_inner().map_err(io::IntoInnerError::into_error)
 }
 
 /// The members that go in, onto the end of a zip being written.
-pub(super) fn append_zip<W: Write + io::Seek>(zip: &mut zip::ZipWriter<W>, members: &[Member], level: PackLevel, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<(), Error> {
+pub(super) fn append_zip<W: Write + io::Seek>(zip: &mut zip::ZipWriter<W>, members: &[Member], level: PackLevel, password: Option<&str>, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<(), Error> {
     use zip::write::SimpleFileOptions;
     let zip_error = crate::archive::zip_error;
     for member in members.iter().filter(|member| member.goes_in()) {
         let mut options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated).compression_level(Some(i64::from(level.preset())));
+        // Each file's contents: a zip keeps its names in the clear.
+        if let Some(password) = password
+            && matches!(member.kind, MemberKind::File)
+        {
+            options = options.with_aes_encryption(zip::AesMode::Aes256, password);
+        }
         if let Some(time) = member.metadata.modified().ok().and_then(zip_time) {
             options = options.last_modified_time(time);
         }
@@ -484,9 +675,9 @@ pub(super) fn zip_time(time: std::time::SystemTime) -> Option<zip::DateTime> {
 /// A 7z, packed solid as 7-Zip packs one: every file in one LZMA2 stream,
 /// opened only as the stream reaches it. A mode goes in the top half of the
 /// attributes, flagged as 7-Zip flags it on Unix.
-fn write_7z(file: File, members: &[Member], level: PackLevel, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
+fn write_7z(file: File, members: &[Member], level: PackLevel, password: Option<&str>, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
     let sevenz_error = crate::archive::sevenz_error;
-    let mut writer = sevenz_writer(file, level)?;
+    let mut writer = sevenz_writer(file, level, password)?;
     let mut entries = Vec::new();
     let mut sources = Vec::new();
     gather_7z(&mut writer, members, report, cancelled, &mut entries, &mut sources)?;
@@ -496,10 +687,21 @@ fn write_7z(file: File, members: &[Member], level: PackLevel, report: &Shared<'_
     writer.finish()
 }
 
-pub(super) fn sevenz_writer(file: File, level: PackLevel) -> Result<sevenz_rust2::ArchiveWriter<File>, Error> {
-    use sevenz_rust2::encoder_options::Lzma2Options;
+/// A 7z writer packing at `level`, and with a password encrypting the
+/// stream and the list of names both, as `7z -p -mhe=on` does.
+pub(super) fn sevenz_writer(file: File, level: PackLevel, password: Option<&str>) -> Result<sevenz_rust2::ArchiveWriter<File>, Error> {
+    use sevenz_rust2::encoder_options::{AesEncoderOptions, Lzma2Options};
     let mut writer = sevenz_rust2::ArchiveWriter::new(file).map_err(crate::archive::sevenz_error)?;
-    writer.set_content_methods(vec![Lzma2Options::from_level(level.preset()).into()]);
+    let lzma2 = Lzma2Options::from_level(level.preset()).into();
+    match password {
+        Some(password) => {
+            writer.set_content_methods(vec![AesEncoderOptions::new(sevenz_rust2::Password::from(password)).into(), lzma2]);
+            writer.set_encrypt_header(true);
+        }
+        None => {
+            writer.set_content_methods(vec![lzma2]);
+        }
+    }
     Ok(writer)
 }
 

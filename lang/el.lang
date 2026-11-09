@@ -500,8 +500,6 @@ msgstr Επεξεργαστής (F4)
 msgid  Empty terminal command
 msgstr Κενή εντολή τερματικού
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Κρυπτογραφημένο: το fm84 δεν το διαβάζει χωρίς τον κωδικό
 
 msgid  Enter - Copy
 msgstr Enter - Αντιγραφή
@@ -1938,8 +1936,36 @@ msgstr Ενημέρωση της αρχειοθήκης
 msgid  Cannot update the archive
 msgstr Αδύνατη η ενημέρωση της αρχειοθήκης
 
-msgid  A {format} is read but cannot be written
-msgstr Ένα {format} διαβάζεται αλλά δεν γράφεται
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Αντιγράψτε το πρώτα έξω από την αρχειοθήκη: ό,τι μπαίνει σε αρχειοθήκη πρέπει να είναι στον δίσκο
+
+msgid  Encrypted: it needs its password
+msgstr Κρυπτογραφημένο: χρειάζεται τον κωδικό του
+
+msgid  Wrong password
+msgstr Λάθος κωδικός
+
+msgid  Could not write the archive
+msgstr Δεν ήταν δυνατή η εγγραφή της αρχειοθήκης
+
+msgid  Leave out
+msgstr Παράλειψη
+
+msgid  Password
+msgstr Κωδικός
+
+msgid  Again
+msgstr Ξανά
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Μόνο ένα .zip ή ένα .7z μπορεί να έχει κωδικό
+
+msgid  The two passwords are not the same
+msgstr Οι δύο κωδικοί δεν είναι ίδιοι
+
+msgid  The password for "{name}":
+msgstr Ο κωδικός για το «{name}»:
+
+msgid  Enter - Open
+msgstr Enter - Άνοιγμα

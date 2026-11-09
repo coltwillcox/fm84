@@ -493,8 +493,6 @@ msgstr Uređivač (F4)
 msgid  Empty terminal command
 msgstr Prazna komanda terminala
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Šifrovano: fm84 ne može da je pročita bez lozinke
 
 msgid  Enter - Copy
 msgstr Enter - Kopiraj
@@ -1975,8 +1973,36 @@ msgstr Ažuriram arhivu
 msgid  Cannot update the archive
 msgstr Arhiva ne može da se ažurira
 
-msgid  A {format} is read but cannot be written
-msgstr {format} se čita, ali ne može da se upiše
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Prvo je kopiraj iz arhive: ono što ide u arhivu mora da bude na disku
+
+msgid  Encrypted: it needs its password
+msgstr Šifrovano: treba mu lozinka
+
+msgid  Wrong password
+msgstr Pogrešna lozinka
+
+msgid  Could not write the archive
+msgstr Arhiva nije mogla da se upiše
+
+msgid  Leave out
+msgstr Izostavi
+
+msgid  Password
+msgstr Lozinka
+
+msgid  Again
+msgstr Ponovo
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Lozinku može da ima samo .zip ili .7z
+
+msgid  The two passwords are not the same
+msgstr Dve lozinke nisu iste
+
+msgid  The password for "{name}":
+msgstr Lozinka za „{name}“:
+
+msgid  Enter - Open
+msgstr Enter - Otvori

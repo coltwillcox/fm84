@@ -537,13 +537,15 @@ pub struct PackArchive {
     pub replacing: bool,
 }
 
-/// How Alt+P packs: into what, how hard, and whether what went in is then
-/// taken off the disk.
-#[derive(Clone, Copy, Debug)]
+/// How Alt+P packs: into what, how hard, what is left out, with what
+/// password, and whether what went in is then taken off the disk.
+#[derive(Clone, Debug)]
 pub struct PackHow {
     pub format: crate::fs_ops::PackFormat,
     pub level: crate::fs_ops::PackLevel,
     pub move_after: bool,
+    pub leave_out: Option<String>,
+    pub password: Option<String>,
 }
 
 /// The worker thread behind packing: what goes into every archive is found
@@ -552,8 +554,9 @@ pub struct PackHow {
 /// what went into it removed when it is a move.
 fn run_pack(archives: Vec<PackArchive>, how: PackHow, mut progress: JobProgress<'_>) {
     let mut plans = Vec::with_capacity(archives.len());
+    let leave_out = how.leave_out.as_deref().and_then(crate::glob::Glob::exclude);
     for archive in &archives {
-        match crate::fs_ops::plan_pack(&archive.sources, &archive.dest, how.format, &mut progress) {
+        match crate::fs_ops::plan_pack(&archive.sources, &archive.dest, how.format, leave_out.as_ref(), &mut progress) {
             Ok(Some(plan)) => plans.push(plan),
             Ok(None) => return progress.finish(Ok(Transfer::Cancelled)),
             Err(error) => return progress.finish(Err(error)),
@@ -561,7 +564,7 @@ fn run_pack(archives: Vec<PackArchive>, how: PackHow, mut progress: JobProgress<
     }
     let _ = progress.updates.send(JobUpdate::Total(plans.iter().map(|plan| plan.bytes).sum()));
     for (archive, plan) in archives.iter().zip(&plans) {
-        let mut outcome = crate::fs_ops::pack(plan, &archive.dest, how.format, how.level, archive.replacing, &mut progress);
+        let mut outcome = crate::fs_ops::pack(plan, &archive.dest, how.format, how.level, how.password.as_deref(), archive.replacing, &mut progress);
         if how.move_after && matches!(outcome, Ok(Transfer::Done)) {
             outcome = crate::fs_ops::remove_packed(plan, &mut progress);
         }
@@ -776,6 +779,12 @@ impl AppState {
     /// put in - names it already has going by `clashes`; then land on
     /// `land`, when there is one.
     pub fn start_repack(&mut self, archive: PathBuf, edits: crate::fs_ops::Repack, move_after: bool, clashes: Clashes, land: Option<PathBuf>) {
+        // An encrypted archive is read to be written again, and what goes
+        // into it is encrypted with the same password.
+        if crate::archive::password(&archive).is_none() && crate::archive::is_encrypted(&archive) {
+            let again = archive.clone();
+            return self.ask_password(archive, false, Box::new(move |app: &mut AppState| app.start_repack(again, edits, move_after, clashes, land)));
+        }
         self.start_job(TransferKind::Update, clashes, move |progress| run_repack(archive, edits, move_after, progress));
         if let Some(job) = &mut self.workers.job {
             job.after = land.map(AfterJob::Land);
@@ -785,6 +794,12 @@ impl AppState {
     /// Copy entries out of `archive`, each its path inside and where it
     /// goes, then do `after` with what came out.
     pub fn start_extract(&mut self, archive: PathBuf, items: Vec<(PathBuf, PathBuf)>, clashes: Clashes, after: Option<AfterJob>) {
+        // Encrypted, and no password yet: asked for first.
+        let inners: Vec<PathBuf> = items.iter().map(|(inner, _)| inner.clone()).collect();
+        if crate::archive::needs_password(&archive, &inners) {
+            let again = archive.clone();
+            return self.ask_password(archive, false, Box::new(move |app: &mut AppState| app.start_extract(again, items, clashes, after)));
+        }
         self.start_job(TransferKind::Extract, clashes, move |progress| run_extract(archive, items, progress));
         if let Some(job) = &mut self.workers.job {
             job.after = after;

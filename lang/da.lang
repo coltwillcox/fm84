@@ -499,8 +499,6 @@ msgstr Editor (F4)
 msgid  Empty terminal command
 msgstr Tom terminalkommando
 
-msgid  Encrypted: fm84 cannot read it without the password
-msgstr Krypteret: fm84 kan ikke læse den uden adgangskoden
 
 msgid  Enter - Copy
 msgstr Enter - Kopiér
@@ -1937,8 +1935,36 @@ msgstr Opdaterer arkivet
 msgid  Cannot update the archive
 msgstr Kan ikke opdatere arkivet
 
-msgid  A {format} is read but cannot be written
-msgstr En {format} kan læses, men ikke skrives
 
 msgid  Copy it out of the archive first: what goes into an archive has to be on the disk
 msgstr Kopiér den ud af arkivet først: det, der skal i et arkiv, skal ligge på disken
+
+msgid  Encrypted: it needs its password
+msgstr Krypteret: den skal have sin adgangskode
+
+msgid  Wrong password
+msgstr Forkert adgangskode
+
+msgid  Could not write the archive
+msgstr Kunne ikke skrive arkivet
+
+msgid  Leave out
+msgstr Udelad
+
+msgid  Password
+msgstr Adgangskode
+
+msgid  Again
+msgstr Igen
+
+msgid  Only a .zip or a .7z can have a password
+msgstr Kun en .zip eller en .7z kan have en adgangskode
+
+msgid  The two passwords are not the same
+msgstr De to adgangskoder er ikke ens
+
+msgid  The password for "{name}":
+msgstr Adgangskoden til "{name}":
+
+msgid  Enter - Open
+msgstr Enter - Åbn

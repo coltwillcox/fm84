@@ -1313,9 +1313,9 @@ pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, s
 /// is asked for, and under it how hard it is packed, one archive for each,
 /// and whether what went in is then deleted.
 pub(super) fn render_pack_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &crate::app::PackForm) {
-    use crate::app::{PACK_LEVEL_ROW, PACK_MOVE_ROW, PACK_NAME_ROW, PACK_SEPARATE_ROW};
+    use crate::app::{PACK_AGAIN_ROW, PACK_LEAVE_OUT_ROW, PACK_LEVEL_ROW, PACK_MOVE_ROW, PACK_NAME_ROW, PACK_PASSWORD_ROW, PACK_SEPARATE_ROW};
     use crate::fs_ops::{PackFormat, PackLevel};
-    let popup_area = popup_rect(35, area);
+    let popup_area = popup_rect(50, area);
     let sources = &form.sources;
     let count = sources.len();
     let kind = Destination::Pack;
@@ -1358,8 +1358,30 @@ pub(super) fn render_pack_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &c
         PackLevel::Normal => tc!("compression", "Normal"),
         PackLevel::Best => tc!("compression", "Best"),
     };
-    // A plain tar has no level: shown faded, as what it would be.
-    let compresses = PackFormat::of(std::path::Path::new(&form.input.text)).is_none_or(PackFormat::compresses);
+    // A plain tar has no level: shown faded, as what it would be. Nor has
+    // a tar a password.
+    let format = PackFormat::of(std::path::Path::new(&form.input.text));
+    let compresses = format.is_none_or(PackFormat::has_levels);
+    let lockable = format.is_none_or(|format| matches!(format, PackFormat::Zip | PackFormat::SevenZ));
+
+    // A field under its label, the labels the same width; a password's
+    // characters drawn as dots.
+    let labels = [t!("Leave out"), t!("Password"), t!("Again")];
+    let label_width = labels.iter().map(|label| display_width(label)).max().unwrap_or(0) + 2;
+    let room = width.saturating_sub(label_width);
+    let field = |label: &str, input: &TextInput, focus: usize, secret: bool, dim: bool| {
+        let shown = if secret { input.masked() } else { input.clone() };
+        let mut spans = vec![Span::styled(format!("{label}:{}", " ".repeat(label_width.saturating_sub(display_width(label) + 1))), style_columns())];
+        if form.focus == focus {
+            let typed = shown.cursor_spans_within(room, style_input(), style_input_cursor());
+            let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+            spans.extend(typed);
+            spans.push(Span::styled(" ".repeat(room.saturating_sub(typed_width)), style_input()));
+        } else {
+            spans.push(Span::styled(format!("{:<room$}", tail_of(&shown.text, room)), if dim { style_columns() } else { style_file() }));
+        }
+        Line::from(spans)
+    };
 
     popup_body(
         f,
@@ -1370,11 +1392,35 @@ pub(super) fn render_pack_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &c
             row(format!("{}: \u{25C2} {level} \u{25B8}", t!("Compression")), PACK_LEVEL_ROW, !compresses),
             row(format!("{} {}", check(form.separate), t!("One archive for each, named after it")), PACK_SEPARATE_ROW, false),
             row(format!("{} {}", check(form.move_after), t!("Then delete what went in, for good")), PACK_MOVE_ROW, false),
+            field(labels[0], &form.leave_out, PACK_LEAVE_OUT_ROW, false, false),
+            field(labels[1], &form.password, PACK_PASSWORD_ROW, true, !lockable),
+            field(labels[2], &form.again, PACK_AGAIN_ROW, true, !lockable),
             // Two lines: the options' keys, then the dialog's.
             key_hints(t!("↑↓ - Option  Space - Change")),
             key_hints(&[kind.enter(), t!("Tab - Format"), t!("Esc - Cancel")].join("    ")),
         ],
     );
+}
+
+/// The password an encrypted archive is opened with, asked for as it is
+/// gone into or read; the one before said to be wrong when it was.
+pub(super) fn render_password_popup(f: &mut ratatui::Frame<'_>, area: Rect, archive: &std::path::Path, input: &TextInput, wrong: bool) {
+    let popup_area = popup_rect(30, area);
+    let title = format!(" {} ", t!("Password"));
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+    let width = popup_inner(popup_area).width as usize;
+    let typed = input.masked().cursor_spans_within(width, style_input(), style_input_cursor());
+    let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+    let mut spans = typed;
+    spans.push(Span::raw(" ".repeat(width.saturating_sub(typed_width))));
+    let mut lines = vec![Line::from(Span::styled(t!("The password for \"{name}\":", name = shown_name(archive)), style_title())), Line::from(spans).style(style_input())];
+    if wrong {
+        lines.push(Line::from(Span::styled(t!("Wrong password"), style_file())));
+    }
+    lines.push(key_hints(&[t!("Enter - Open"), t!("Esc - Cancel")].join("    ")));
+    popup_body(f, popup_area, lines);
 }
 
 pub(super) fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, large: &crate::app::LargeFile) {

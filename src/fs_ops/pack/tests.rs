@@ -35,10 +35,10 @@ impl Progress for Asking {
 /// Plan and pack, as the job does.
 fn pack_into(sources: &[(PathBuf, bool)], dest: &Path, asking: &mut Asking) -> Result<Transfer, Error> {
     let format = PackFormat::of(dest).expect("named as an archive");
-    let Some(plan) = plan_pack(sources, dest, format, asking)? else {
+    let Some(plan) = plan_pack(sources, dest, format, None, asking)? else {
         return Ok(Transfer::Cancelled);
     };
-    pack(&plan, dest, format, PackLevel::Normal, false, asking)
+    pack(&plan, dest, format, PackLevel::Normal, None, false, asking)
 }
 
 /// Everything in an archive, by fm84's own reading of it: each path with
@@ -141,8 +141,8 @@ fn an_archive_inside_what_is_packed_leaves_itself_out() {
     let dest = dir.join("self.zip");
     let format = PackFormat::Zip;
     let mut asking = Asking::new(Reply::Abort);
-    let plan = plan_pack(&[(dir.clone(), true)], &dest, format, &mut asking).unwrap().unwrap();
-    assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, true, &mut asking).unwrap(), Transfer::Done);
+    let plan = plan_pack(&[(dir.clone(), true)], &dest, format, None, &mut asking).unwrap().unwrap();
+    assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, None, true, &mut asking).unwrap(), Transfer::Done);
     let name = dir.file_name().unwrap().to_string_lossy().into_owned();
     assert_eq!(contents(&dest), [(name.clone(), "/".to_string()), (format!("{name}/a.txt"), "a".to_string())]);
     fs::remove_dir_all(&dir).unwrap();
@@ -240,14 +240,14 @@ fn every_level_packs_what_it_is_given() {
         for level in PackLevel::ALL {
             let dest = dir.join(format!("{level:?}{}", format.extension()));
             let mut asking = Asking::new(Reply::Abort);
-            let plan = plan_pack(&sources, &dest, format, &mut asking).unwrap().unwrap();
-            assert_eq!(pack(&plan, &dest, format, level, false, &mut asking).unwrap(), Transfer::Done, "{format:?} {level:?}");
+            let plan = plan_pack(&sources, &dest, format, None, &mut asking).unwrap().unwrap();
+            assert_eq!(pack(&plan, &dest, format, level, None, false, &mut asking).unwrap(), Transfer::Done, "{format:?} {level:?}");
             assert_eq!(contents(&dest), [("words.txt".to_string(), text.clone())], "{format:?} {level:?}");
             sizes.push(fs::metadata(&dest).unwrap().len());
         }
         // Which is smaller depends on what is packed - LZMA's fast mode can
         // win on text this regular - but the level has to have reached it.
-        if format.compresses() {
+        if format.has_levels() {
             assert_ne!(sizes[0], sizes[2], "{format:?}: {sizes:?}");
         } else {
             assert!(sizes.iter().all(|size| *size == sizes[0]), "{format:?}: {sizes:?}");
@@ -275,8 +275,8 @@ fn what_went_in_is_removed_and_nothing_else() {
     let dest = dir.join("out.tar.gz");
     let format = PackFormat::TarGz;
     let mut asking = Asking::new(Reply::Abort);
-    let plan = plan_pack(&sources, &dest, format, &mut asking).unwrap().unwrap();
-    assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, false, &mut asking).unwrap(), Transfer::Done);
+    let plan = plan_pack(&sources, &dest, format, None, &mut asking).unwrap().unwrap();
+    assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, None, false, &mut asking).unwrap(), Transfer::Done);
     let docs = dir.join("in/docs");
     // After the walk: one file new, one grown.
     fs::write(docs.join("deep/new.txt"), "new").unwrap();
@@ -303,8 +303,8 @@ fn a_tree_moved_in_whole_is_gone() {
         let sources: Vec<(PathBuf, bool)> = sources.clone();
         let dest = dir.join(format!("out{}", format.extension()));
         let mut asking = Asking::new(Reply::Abort);
-        let plan = plan_pack(&sources, &dest, format, &mut asking).unwrap().unwrap();
-        assert_eq!(pack(&plan, &dest, format, PackLevel::Fast, false, &mut asking).unwrap(), Transfer::Done);
+        let plan = plan_pack(&sources, &dest, format, None, &mut asking).unwrap().unwrap();
+        assert_eq!(pack(&plan, &dest, format, PackLevel::Fast, None, false, &mut asking).unwrap(), Transfer::Done);
         assert_eq!(remove_packed(&plan, &mut asking).unwrap(), Transfer::Done);
         assert!(!dir.join("in/docs").exists() && !dir.join("in/top.txt").exists(), "{format:?}");
         // Put back from what was packed, for the next format.
@@ -333,12 +333,97 @@ fn what_was_left_out_is_not_removed() {
         let dest = dir.join(name);
         let format = PackFormat::of(&dest).unwrap();
         let mut asking = Asking::new(Reply::Skip);
-        let plan = plan_pack(&[(box_dir.clone(), true)], &dest, format, &mut asking).unwrap().unwrap();
-        assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, false, &mut asking).unwrap(), Transfer::Done, "{name}");
+        let plan = plan_pack(&[(box_dir.clone(), true)], &dest, format, None, &mut asking).unwrap().unwrap();
+        assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, None, false, &mut asking).unwrap(), Transfer::Done, "{name}");
         assert_eq!(remove_packed(&plan, &mut asking).unwrap(), Transfer::Done, "{name}");
         assert!(!box_dir.join("fine.txt").exists(), "{name}");
         assert!(box_dir.join("locked.txt").symlink_metadata().is_ok(), "{name}");
     }
     fs::set_permissions(box_dir.join("locked.txt"), fs::Permissions::from_mode(0o600)).unwrap();
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A write that fails under the zstd encoder - which would panic on it -
+/// comes back as the error it was, and nothing goes down.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_zstd_write_that_fails_says_so() {
+    let full = File::options().write(true).open("/dev/full").unwrap();
+    let mut zst = Compressor::new(full, PackFormat::TarZst, PackLevel::Normal).unwrap();
+    let wrote = (0..64).try_for_each(|_| zst.write_all(&[7u8; 64 * 1024]));
+    let finished = zst.finish();
+    assert!(wrote.is_err() || finished.is_err());
+    if let Err(error) = finished {
+        assert!(error.to_string().contains("space") || error.kind() == ErrorKind::StorageFull || error.to_string().contains("Could not write"), "{error}");
+    }
+}
+
+/// With a password a zip's files and a 7z's whole are encrypted: without
+/// it nothing is read - a 7z not even listed - and with the wrong one,
+/// that is said and the password let go of; with the right one, all of it.
+#[test]
+fn a_password_locks_a_zip_and_a_7z() {
+    use crate::archive::{forget_password, locked, set_password};
+    let dir = scratch("pack-password");
+    let sources = tree(&dir.join("in"));
+    for name in ["locked.zip", "locked.7z"] {
+        let dest = dir.join(name);
+        let format = PackFormat::of(&dest).unwrap();
+        let mut asking = Asking::new(Reply::Abort);
+        let plan = plan_pack(&sources, &dest, format, None, &mut asking).unwrap().unwrap();
+        assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, Some("sesame"), false, &mut asking).unwrap(), Transfer::Done);
+
+        forget_password(&dest);
+        assert!(crate::archive::is_encrypted(&dest) || format == PackFormat::SevenZ, "{name}");
+        let needs = |dest: &Path| match crate::archive::index(dest) {
+            // A 7z keeps its names locked too.
+            Err(error) => locked(&error),
+            Ok(index) => {
+                let at = index.find(Path::new("docs/notes.txt")).unwrap();
+                assert!(index.entry(at).encrypted, "{name}");
+                assert!(!index.entry(index.find(Path::new("docs")).unwrap()).encrypted, "{name}");
+                let mut found = None;
+                crate::archive::read_entries(dest, index.kind, &[index.entry(at).position.unwrap()], &mut |_, read| {
+                    found = read.err().as_ref().and_then(locked);
+                    crate::archive::Next::Go
+                })
+                .unwrap();
+                found
+            }
+        };
+        assert_eq!(needs(&dest).map(|locked| locked.wrong), Some(false), "{name}");
+        set_password(&dest, "open up");
+        assert_eq!(needs(&dest).map(|locked| locked.wrong), Some(true), "{name}");
+        assert_eq!(crate::archive::password(&dest), None, "{name}: a wrong one is forgotten");
+        set_password(&dest, "sesame");
+        assert!(contents(&dest).contains(&("docs/notes.txt".to_string(), "notes".to_string())), "{name}");
+        forget_password(&dest);
+    }
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// What is left out is not packed, nor anything under it: a name for a
+/// file or a directory alike, one ending in `/` for directories alone, and
+/// a path for one place only.
+#[test]
+fn what_is_left_out_is_not_packed() {
+    let dir = scratch("pack-leave-out");
+    let sources = tree(&dir.join("in"));
+    fs::create_dir_all(dir.join("in/docs/.git")).unwrap();
+    fs::write(dir.join("in/docs/.git/HEAD"), "ref").unwrap();
+    fs::write(dir.join("in/docs/main.o"), "obj").unwrap();
+    fs::create_dir_all(dir.join("in/docs/empty.txt.d")).unwrap();
+    let dest = dir.join("out.tar");
+    let glob = crate::glob::Glob::exclude(".git;*.o;deep/;*.d/;docs/notes.txt").unwrap();
+    let mut asking = Asking::new(Reply::Abort);
+    let plan = plan_pack(&sources, &dest, PackFormat::Tar, Some(&glob), &mut asking).unwrap().unwrap();
+    pack(&plan, &dest, PackFormat::Tar, PackLevel::Normal, None, false, &mut asking).unwrap();
+    let mut expected = vec![("docs", "/"), ("docs/empty.txt", ""), ("top.txt", "top")];
+    if cfg!(unix) {
+        expected.push(("docs/link", "-> notes.txt"));
+    }
+    let mut expected: Vec<(String, String)> = expected.into_iter().map(|(path, held)| (path.to_string(), held.to_string())).collect();
+    expected.sort();
+    assert_eq!(contents(&dest), expected);
     fs::remove_dir_all(&dir).unwrap();
 }

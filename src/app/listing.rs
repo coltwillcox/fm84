@@ -176,6 +176,8 @@ fn read_archive_listing(dir: &Path, located: crate::archive::Located, options: &
         }
         // Said as what it is: an archive fm84 cannot read, not a missing
         // directory.
+        // Locked: kept as it is, for the password to be asked for.
+        Err(e) if crate::archive::locked(&e).is_some() => (dir.to_path_buf(), Err(e)),
         Err(e) => (dir.to_path_buf(), Err(std::io::Error::new(e.kind(), t!("not readable as an archive ({e})", e)))),
     };
     let stamp = std::fs::metadata(&archive).and_then(|metadata| metadata.modified()).ok();
@@ -372,6 +374,23 @@ impl AppState {
             && found == pending.dir
             && let Err(e) = &listed.items
         {
+            // An archive that keeps even its names encrypted: its password,
+            // and in once it is given.
+            if let Some(locked) = crate::archive::locked(e)
+                && let Some(archive) = listed.archive.clone()
+            {
+                self.undo_tab(side, pending.tab);
+                self.forget_travel(side, pending.travel);
+                let (dir, select) = (pending.dir, pending.select);
+                self.ask_password(
+                    archive,
+                    locked.wrong,
+                    Box::new(move |app: &mut AppState| {
+                        app.open_dir(side, dir, select.as_deref());
+                    }),
+                );
+                return false;
+            }
             self.display_error(t!("Cannot open {path}: {e}", path = pending.dir.display(), e));
             self.undo_tab(side, pending.tab);
             self.forget_travel(side, pending.travel);
