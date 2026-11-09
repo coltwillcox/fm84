@@ -1012,3 +1012,41 @@ fn popup_hints_tell_keys_from_what_they_do() {
     let text = "Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel";
     assert_eq!(key_hints(text).spans.into_iter().map(|span| span.content.into_owned()).collect::<String>(), text);
 }
+
+/// The F-key bar and the bar under the editor draw a key apart from what
+/// it does, and leave the name of the file and the position as they were.
+#[test]
+fn the_bottom_bars_tell_keys_from_what_they_do() {
+    let dir = std::env::temp_dir().join(format!("fm84-bar-keys-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("notes.txt"), "hello").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    let (width, height) = (160, 30);
+    let colour_of = |app_state: &mut AppState, text: &str| {
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer().clone();
+        // The lowest row it is on, by its first character's cell.
+        (0..height)
+            .rev()
+            .find_map(|y| {
+                let row: Vec<&str> = (0..width).map(|x| buffer[(x, y)].symbol()).collect();
+                let at = row.join("").find(text)?;
+                let x = row.join("")[..at].chars().count() as u16;
+                Some(buffer[(x, y)].fg)
+            })
+            .unwrap_or_else(|| panic!("{text} not drawn"))
+    };
+    let (key, said) = (style_key().fg, style_title().fg);
+    assert_eq!(Some(colour_of(&mut app_state, "F5 ")), key);
+    assert_eq!(Some(colour_of(&mut app_state, "Copy")), said);
+
+    app_state.open_editor(dir.join("notes.txt")).unwrap();
+    assert_eq!(Some(colour_of(&mut app_state, "Ctrl+F")), key);
+    assert_eq!(Some(colour_of(&mut app_state, "Find")), said);
+    assert_eq!(Some(colour_of(&mut app_state, "notes.txt")), said);
+    assert_eq!(Some(colour_of(&mut app_state, "Ln 1")), said);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

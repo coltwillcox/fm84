@@ -3,7 +3,10 @@
 
 use super::*;
 
-fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments: &[&str]) {
+/// The bar's segments, each set apart by the border, dropped from the end
+/// when they do not fit. Those from `hints_from` on are keys and what they
+/// do, the key first: it is drawn as the popups draw keys.
+fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments: &[&str], hints_from: usize) {
     let mut spans = Vec::new();
     spans.push(Span::styled("├─", style_border()));
     let mut used = 3usize; // "├─" (2) + "┤" (1)
@@ -20,7 +23,10 @@ fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments:
             spans.push(Span::styled("─", style_border()));
         }
         used += needed;
-        spans.push(Span::styled(padded, style_title()));
+        match seg.split_once(' ') {
+            Some((key, what)) if i >= hints_from => spans.extend([Span::styled(" ", style_title()), Span::styled(key.to_string(), style_key()), Span::styled(format!(" {what} "), style_title())]),
+            _ => spans.push(Span::styled(padded, style_title())),
+        }
     }
 
     let fill = (area.width as usize).saturating_sub(used);
@@ -113,7 +119,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             let pos_seg = t!("Ln {line}, Col {column}", line, column);
             let count = editor_state.lines.len();
             let lines_seg = tn!(count, "{count} line", "{count} lines", count);
-            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, t!("F2/Ctrl+S Save"), t!("Ctrl+F Find"), t!("Ctrl+Z/Y Undo"), t!("Esc Exit")]);
+            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, t!("F2/Ctrl+S Save"), t!("Ctrl+F Find"), t!("Ctrl+Z/Y Undo"), t!("Esc Exit")], 3);
         }
     } else if let Screen::Diff(state) = &app_state.screen {
         let at = match (state.current, state.hunks.len()) {
@@ -121,7 +127,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             (None, count) => tn!(count, "{count} difference", "{count} differences", count),
         };
         let rows = t!("Row {at}/{count}", at = state.scroll_offset + 1, count = state.rows.len());
-        render_segmented_status_bar(f, area, &[&at, &rows, t!("F3/N Next"), t!("Shift+F3/P Previous"), t!("Esc Exit")]);
+        render_segmented_status_bar(f, area, &[&at, &rows, t!("F3/N Next"), t!("Shift+F3/P Previous"), t!("Esc Exit")], 2);
     } else if let Some(viewer_state) = app_state.viewer() {
         {
             let filename = shown_name(&viewer_state.file_path);
@@ -130,6 +136,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             let size_seg = format_size(viewer_state.file_size);
             let zoom_seg = t!("+/- Zoom {zoom}%", zoom = viewer_state.image_zoom);
             let mut segments = vec![filename.as_str(), line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()];
+            let hints_from = segments.len();
             // Bracketed half is the view you are in. Omitted on the notice F4
             // raises for a binary, where there is nothing to toggle.
             if !viewer_state.from_edit {
@@ -150,7 +157,7 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
                     segments.push(t!("Ctrl+F Find"));
                 }
             }
-            render_segmented_status_bar(f, area, &segments);
+            render_segmented_status_bar(f, area, &segments, hints_from);
         }
     } else if let Some(listing) = &app_state.panel(app_state.active_side).listing {
         // A directory that has not answered yet - a network mount gone quiet.
@@ -371,7 +378,10 @@ pub(super) fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state:
     for (key, label) in labels {
         let width = (display_width(&label) as u16).min(area.right().saturating_sub(x));
         let cell = Rect::new(x, y, width, 1);
-        f.render_widget(Paragraph::new(Span::styled(label, style_title())), cell);
+        // " F5 Copy ": the F-key as keys are drawn, its name as it was.
+        let (fkey, name) = label.trim_start().split_once(' ').unwrap_or((label.trim_start(), ""));
+        let spans = vec![Span::styled(" ", style_title()), Span::styled(fkey.to_string(), style_key()), Span::styled(format!(" {name}"), style_title())];
+        f.render_widget(Paragraph::new(Line::from(spans)), cell);
         drawn.fkey_hits.push((cell, key));
         x += width + 1;
     }
