@@ -1814,3 +1814,9 @@ msgstr ↑↓ - Ruch    Enter/←→ - Zmień    E - Edytuj polecenia    Esc - Z
 
 msgid  No config directory to keep the commands in
 msgstr Brak katalogu konfiguracji na polecenia
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] - from inside the file
+msgstr [Exif:date] [Tag:artist] [Pdf:title] - z samego pliku
+
+msgid  not in the file
+msgstr brak w pliku

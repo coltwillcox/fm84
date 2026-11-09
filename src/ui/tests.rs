@@ -312,6 +312,7 @@ fn popups_share_a_width_and_keep_to_the_panels() {
                         path: PathBuf::from("/").join(name),
                         old: name.to_string(),
                         readable: true,
+                        meta: Default::default(),
                     })
                     .collect(),
             ))),

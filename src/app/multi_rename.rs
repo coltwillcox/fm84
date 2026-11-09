@@ -65,6 +65,9 @@ pub struct RenameEntry {
     /// False for a name that is not valid UTF-8, which `old` only stands for:
     /// a name made from it would lose what could not be read.
     pub readable: bool,
+    /// What the file says of itself, read the first time a pattern asks -
+    /// and kept, as the table is made again at every key.
+    pub meta: std::cell::OnceCell<crate::metadata::Fields>,
 }
 
 /// Why a new name cannot be had.
@@ -78,6 +81,9 @@ pub enum RenameProblem {
     Taken,
     /// The old name is not valid UTF-8, so the new one cannot be made of it.
     Unreadable,
+    /// The pattern asks for what the file does not say of itself - a
+    /// picture with no EXIF, a song with no tags.
+    NoMetadata,
 }
 
 impl RenameProblem {
@@ -87,6 +93,7 @@ impl RenameProblem {
             RenameProblem::Twice => t!("given twice"),
             RenameProblem::Taken => t!("already exists"),
             RenameProblem::Unreadable => t!("name not readable as text"),
+            RenameProblem::NoMetadata => t!("not in the file"),
         }
     }
 }
@@ -123,12 +130,23 @@ impl MultiRename {
 
     /// Each entry's new name, and what stands in its way, if anything.
     pub fn preview(&self) -> Vec<(String, Option<RenameProblem>)> {
-        let names: Vec<String> = self
+        // Each new name, and whether the pattern asked the file for what it
+        // does not say.
+        let (names, missing): (Vec<String>, Vec<bool>) = self
             .entries
             .iter()
             .enumerate()
-            .map(|(index, entry)| new_name(&entry.old, index, &self.fields[0].text, &self.fields[1].text, &self.fields[2].text, self.case))
-            .collect();
+            .map(|(index, entry)| {
+                let missing = std::cell::Cell::new(false);
+                let lookup = |key: &str| {
+                    let value = entry.meta.get_or_init(|| crate::metadata::read(&entry.path)).get(key).cloned();
+                    missing.set(missing.get() || value.is_none());
+                    value
+                };
+                let name = new_name_with(&entry.old, index, &self.fields[0].text, &self.fields[1].text, &self.fields[2].text, self.case, &lookup);
+                (name, missing.get())
+            })
+            .unzip();
         let changing: Vec<bool> = self.entries.iter().zip(&names).map(|(entry, name)| *name != entry.old).collect();
         // One left as it is stays at its own path - not one made again from
         // its name as text, which for a name that is not UTF-8 is another.
@@ -150,12 +168,15 @@ impl MultiRename {
             .iter()
             .zip(names)
             .zip(targets.iter().zip(changing))
-            .map(|((entry, name), (target, changing))| {
+            .zip(missing)
+            .map(|(((entry, name), (target, changing)), lacking)| {
                 let problem = if !changing {
                     // Left as it is, it is only in the way of another.
                     (seen[&fold_for_fs(target)] > 1).then_some(RenameProblem::Twice)
                 } else if !entry.readable {
                     Some(RenameProblem::Unreadable)
+                } else if lacking {
+                    Some(RenameProblem::NoMetadata)
                 } else if !crate::fs_ops::is_plain_name(&name) {
                     Some(RenameProblem::NotPlain)
                 } else if seen[&fold_for_fs(target)] > 1 {
@@ -202,9 +223,18 @@ pub fn split_name(old: &str) -> (&str, Option<&str>) {
 /// - `[C]` a counter from 1, or `[C10]` from 10, `[C10+5]` by fives, and
 ///   `[C:3]` or `[C10+5:3]` at least three digits, from the front.
 ///
+/// - `[Exif:date]`, `[Tag:artist]`, `[Pdf:title]` and the rest of
+///   metadata::KNOWN, what the file says of itself, as `metadata` gives it.
+///
 /// Anything else in brackets is kept as it is written. Then every `find` is
 /// replaced, and last the case changed.
+#[cfg(test)]
 pub fn new_name(old: &str, index: usize, pattern: &str, find: &str, replace: &str, case: CaseChange) -> String {
+    new_name_with(old, index, pattern, find, replace, case, &|_| None)
+}
+
+/// new_name, with what the file says of itself to hand.
+pub fn new_name_with(old: &str, index: usize, pattern: &str, find: &str, replace: &str, case: CaseChange, metadata: &dyn Fn(&str) -> Option<String>) -> String {
     let (name, extension) = split_name(old);
     let mut out = String::new();
     let mut rest = pattern;
@@ -217,7 +247,7 @@ pub fn new_name(old: &str, index: usize, pattern: &str, find: &str, replace: &st
             break;
         };
         let token = &after[..close];
-        match expand(token, name, extension.unwrap_or_default(), index) {
+        match expand(token, name, extension.unwrap_or_default(), index, metadata) {
             Some(text) => {
                 if extension.is_none() && token == "E" && out.ends_with('.') {
                     out.pop();
@@ -240,7 +270,11 @@ pub fn new_name(old: &str, index: usize, pattern: &str, find: &str, replace: &st
 }
 
 /// What a bracketed token stands for; None for one that is not a token.
-fn expand(token: &str, name: &str, extension: &str, index: usize) -> Option<String> {
+fn expand(token: &str, name: &str, extension: &str, index: usize, metadata: &dyn Fn(&str) -> Option<String>) -> Option<String> {
+    if token.contains(':') && !token.starts_with('C') {
+        let key = crate::metadata::KNOWN.iter().find(|key| key.eq_ignore_ascii_case(token))?;
+        return Some(metadata(key).map(|value| fit_for_name(&value)).unwrap_or_default());
+    }
     let mut chars = token.chars();
     let kind = chars.next()?;
     let spec = chars.as_str();
@@ -250,6 +284,13 @@ fn expand(token: &str, name: &str, extension: &str, index: usize) -> Option<Stri
         'C' => counter(spec, index),
         _ => None,
     }
+}
+
+/// A value as a name can hold it: what no filesystem takes in a name - a
+/// separator, Windows' reserved signs, a control character - made a dash.
+fn fit_for_name(value: &str) -> String {
+    let fit: String = value.chars().map(|c| if c.is_control() || "/\\:*?\"<>|".contains(c) { '-' } else { c }).collect();
+    fit.trim().trim_end_matches('.').to_string()
 }
 
 /// `text`, or the letters of it a range picks: `2-5`, `3-`, `4`. Counted
@@ -301,6 +342,7 @@ impl AppState {
                     old: name.to_string_lossy().into_owned(),
                     readable: name.to_str().is_some(),
                     path,
+                    meta: Default::default(),
                 })
             })
             .collect::<Vec<_>>();
@@ -516,6 +558,44 @@ mod tests {
         assert_eq!(named("a.txt", 0, "[N] [x] [N0] [C+] [unclosed"), "a [x] [N0] [C+] [unclosed");
     }
 
+    /// What the file says of itself goes where its token is, made fit for
+    /// a name; a token for nothing there is left as written.
+    #[test]
+    fn metadata_tokens_fill_from_the_file() {
+        let lookup = |key: &str| match key {
+            "exif:date" => Some("2026-03-14 18.02.11".to_string()),
+            "tag:artist" => Some("AC/DC: Live?".to_string()),
+            _ => None,
+        };
+        let named = |pattern: &str| new_name_with("IMG_0001.JPG", 0, pattern, "", "", CaseChange::Unchanged, &lookup);
+        assert_eq!(named("[Exif:date].[E]"), "2026-03-14 18.02.11.JPG");
+        assert_eq!(named("[tag:ARTIST] - [N]"), "AC-DC- Live- - IMG_0001");
+        assert_eq!(named("[Exif:lens]"), "[Exif:lens]");
+        assert_eq!(named("[Pdf:title]x"), "x");
+    }
+
+    /// A file that does not say what the pattern asks of it is refused, not
+    /// renamed to what is left - `.jpg`, for a picture with no EXIF.
+    #[test]
+    fn a_file_without_the_metadata_asked_for_is_refused() {
+        let dir = std::env::temp_dir().join(format!("fm84-rename-meta-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("plain.jpg"), "not a photograph").unwrap();
+        let entry = RenameEntry {
+            path: dir.join("plain.jpg"),
+            old: "plain.jpg".into(),
+            readable: true,
+            meta: Default::default(),
+        };
+        let mut rename = MultiRename::new(vec![entry]);
+        rename.fields[0].set("[Exif:date].[E]".to_string());
+        assert_eq!(rename.preview()[0].1, Some(RenameProblem::NoMetadata));
+        rename.fields[0].set("[N]-1.[E]".to_string());
+        assert_eq!(rename.preview()[0], ("plain-1.jpg".to_string(), None));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
     #[test]
     fn find_replace_and_case_come_after_the_pattern() {
         assert_eq!(new_name("my_holiday_photo.JPG", 0, "[N].[E]", "_", " ", CaseChange::Title), "My Holiday Photo.Jpg");
@@ -562,6 +642,7 @@ mod tests {
                 path: dir.join(name),
                 old: name.to_string_lossy().into_owned(),
                 readable: false,
+                meta: Default::default(),
             }
         };
         let entries = vec![
@@ -571,6 +652,7 @@ mod tests {
                 path: dir.join("b.txt"),
                 old: "b.txt".into(),
                 readable: true,
+                meta: Default::default(),
             },
         ];
         let mut rename = MultiRename::new(entries);

@@ -1776,3 +1776,9 @@ msgstr ↑↓ - Помести    Enter/←→ - Промени    E - Уред�
 
 msgid  No config directory to keep the commands in
 msgstr Нема папка за поставки за командите
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] - from inside the file
+msgstr [Exif:date] [Tag:artist] [Pdf:title] - од самата датотека
+
+msgid  not in the file
+msgstr не е во датотеката

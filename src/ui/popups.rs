@@ -826,7 +826,11 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
     let case = format!("◂ {} ▸", rename.case.label());
     let case_style = if rename.focus == crate::app::CASE_ROW { style_input() } else { style_file() };
     lines.push(Line::from(vec![Span::styled(label(labels[3]), style_columns()), Span::styled(case, case_style)]));
-    for hint in [t!("[N] name   [E] extension   [C] counter"), t!("[N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits")] {
+    for hint in [
+        t!("[N] name   [E] extension   [C] counter"),
+        t!("[N2-5] letters 2 to 5   [C10+5:3] from 10, by 5, 3 digits"),
+        t!("[Exif:date] [Tag:artist] [Pdf:title] - from inside the file"),
+    ] {
         lines.push(Line::from(Span::styled(cut_to(hint, width), style_columns())));
     }
     lines.push(Line::from(""));

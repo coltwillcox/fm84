@@ -1814,3 +1814,9 @@ msgstr ↑↓ - Pohyb    Enter/←→ - Zmeniť    E - Upraviť príkazy    Esc 
 
 msgid  No config directory to keep the commands in
 msgstr Chýba priečinok nastavení na uloženie príkazov
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] - from inside the file
+msgstr [Exif:date] [Tag:artist] [Pdf:title] - zo samotného súboru
+
+msgid  not in the file
+msgstr v súbore nie je

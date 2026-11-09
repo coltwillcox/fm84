@@ -1776,3 +1776,9 @@ msgstr ↑↓ - Muovi    Invio/←→ - Cambia    E - Modifica i comandi    Esc 
 
 msgid  No config directory to keep the commands in
 msgstr Nessuna cartella di configurazione per i comandi
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] - from inside the file
+msgstr [Exif:date] [Tag:artist] [Pdf:title] - dal file stesso
+
+msgid  not in the file
+msgstr non è nel file

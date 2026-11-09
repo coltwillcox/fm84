@@ -1776,3 +1776,9 @@ msgstr ↑↓ - Mover    Enter/←→ - Mudar    E - Editar os comandos    Esc -
 
 msgid  No config directory to keep the commands in
 msgstr Não há pasta de configuração para guardar os comandos
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] - from inside the file
+msgstr [Exif:date] [Tag:artist] [Pdf:title] - do próprio arquivo
+
+msgid  not in the file
+msgstr não está no arquivo

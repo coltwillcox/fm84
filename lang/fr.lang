@@ -1777,3 +1777,9 @@ msgstr ↑↓ - Parcourir    Entrée/←→ - Changer    E - Modifier les comman
 
 msgid  No config directory to keep the commands in
 msgstr Aucun répertoire de configuration où garder les commandes
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] - from inside the file
+msgstr [Exif:date] [Tag:artist] [Pdf:title] - tiré du fichier lui-même
+
+msgid  not in the file
+msgstr absent du fichier

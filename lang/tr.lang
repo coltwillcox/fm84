@@ -1776,3 +1776,9 @@ msgstr ↑↓ - Gez    Enter/←→ - Değiştir    E - Komutları düzenle    E
 
 msgid  No config directory to keep the commands in
 msgstr Komutları saklayacak yapılandırma dizini yok
+
+msgid  [Exif:date] [Tag:artist] [Pdf:title] - from inside the file
+msgstr [Exif:date] [Tag:artist] [Pdf:title] - dosyanın kendisinden
+
+msgid  not in the file
+msgstr dosyada yok
