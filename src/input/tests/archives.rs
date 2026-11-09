@@ -703,3 +703,54 @@ fn an_archive_is_not_packed_into_itself() {
     assert_eq!(std::fs::read(dir.join("box.zip")).unwrap(), before);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A 7z with its names encrypted is asked for its password before it is
+/// extracted or written into from outside - not only when gone into -
+/// and the work goes ahead once it is given.
+#[test]
+fn a_locked_7z_asks_from_outside_too() {
+    use crate::app::Dialog;
+    let dir = scratch("locked-outside");
+    let (here, out) = (dir.join("here"), dir.join("out"));
+    std::fs::create_dir_all(&here).unwrap();
+    std::fs::create_dir_all(&out).unwrap();
+    std::fs::write(here.join("secret.txt"), "hush").unwrap();
+    std::fs::write(here.join("more.txt"), "more").unwrap();
+    locked(&here.join("box.7z"), &[(here.join("secret.txt"), false)], "sesame");
+    let mut app_state = AppState::new();
+    app_state.open_dir(Side::Right, out.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, here.clone(), Some("box.7z".as_ref()));
+    let asked = |app_state: &AppState| matches!(app_state.dialog, Some(Dialog::Password(_)));
+
+    // Alt+F9 on it, from the directory it is in.
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(9), KeyModifiers::ALT));
+    press(&mut app_state, KeyCode::Enter);
+    assert!(asked(&app_state), "{:?}", app_state.error);
+    type_in(&mut app_state, "sesame");
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert_eq!(std::fs::read_to_string(out.join("secret.txt")).unwrap(), "hush");
+
+    // F5 into it, from the other panel, before it was ever gone into.
+    crate::archive::forget_password(&here.join("box.7z"));
+    crate::archive::forget_index(&here.join("box.7z"));
+    app_state.open_dir(Side::Right, here.join("box.7z"), None);
+    assert!(asked(&app_state));
+    app_state.dialog = None;
+    app_state.open_dir(Side::Left, here.clone(), Some("more.txt".as_ref()));
+    let typed = here.join("box.7z").display().to_string();
+    press(&mut app_state, KeyCode::F(5));
+    app_state.dialog_input().unwrap().set(typed);
+    press(&mut app_state, KeyCode::Enter);
+    assert!(asked(&app_state), "{:?}", app_state.error);
+    type_in(&mut app_state, "sesame");
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    let index = crate::archive::index(&here.join("box.7z")).unwrap();
+    assert!(index.find(std::path::Path::new("more.txt")).is_some());
+    crate::archive::forget_password(&here.join("box.7z"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

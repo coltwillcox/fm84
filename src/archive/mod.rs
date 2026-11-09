@@ -308,13 +308,15 @@ fn lockable(archive: &Path) -> bool {
 }
 
 /// Whether the entries at `inners`, or anything under them, need a
-/// password fm84 has not been given. False for an archive it cannot read.
+/// password fm84 has not been given - all of a 7z that will not even list
+/// its names without one. False for an archive it cannot read otherwise.
 pub fn needs_password(archive: &Path, inners: &[PathBuf]) -> bool {
     if !lockable(archive) || password(archive).is_some() {
         return false;
     }
-    let Ok(index) = index(archive) else {
-        return false;
+    let index = match index(archive) {
+        Ok(index) => index,
+        Err(error) => return locked(&error).is_some(),
     };
     inners.iter().any(|inner| index.subtree(inner).into_iter().any(|at| index.entry(at).encrypted))
 }

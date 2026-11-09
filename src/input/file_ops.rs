@@ -314,6 +314,12 @@ fn into_archive(app_state: &mut AppState, sources: &[(PathBuf, bool)], located: 
     }
     let index = match crate::archive::index(&archive) {
         Ok(index) => index,
+        // Its names locked: its password, and in once it is given.
+        Err(error) if crate::archive::locked(&error).is_some() => {
+            let (sources, wrong) = (sources.to_vec(), crate::archive::locked(&error).is_some_and(|locked| locked.wrong));
+            let located = crate::archive::Located { archive: archive.clone(), inner };
+            return app_state.ask_password(archive, wrong, Box::new(move |app: &mut AppState| into_archive(app, &sources, located, names_dir, is_copy)));
+        }
         Err(error) => return app_state.display_error(error.to_string()),
     };
     let destination = archive.join(&inner);
