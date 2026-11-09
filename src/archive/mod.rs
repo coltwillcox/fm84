@@ -92,8 +92,12 @@ pub struct Located {
 /// nowhere. It stats its way up from `path` until something is there, so it
 /// belongs on a thread wherever a dead mount could be in the way.
 pub fn locate(path: &Path) -> Option<Located> {
+    // A separator on the end - `box.zip/`, typed as a directory is - would
+    // have the disk say the archive is not a directory, and the climb go
+    // past it. Put together again from its parts, the path has none.
+    let path: PathBuf = path.components().collect();
     let mut inner = Vec::new();
-    let mut here = path;
+    let mut here = path.as_path();
     loop {
         // A commit's folder is not on the disk, but the repository it is in is.
         if git_revision(here).is_some() && here.parent().is_some_and(Path::is_dir) {

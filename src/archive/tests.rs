@@ -427,3 +427,23 @@ fn a_password_given_before_the_archive_is_made_is_found_after() {
     forget_password(&real.join("new.7z"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A path into an archive typed with a separator on the end - `box.zip/`,
+/// as a directory is typed, and as F5 opens on one - is still into it.
+#[test]
+fn a_path_ending_in_a_separator_is_into_the_archive() {
+    let dir = scratch("trailing-separator");
+    let archive = dir.join("box.zip");
+    zip(&archive, &[("sub/a.txt", Put::File(b"a"))]);
+    let typed = |path: &Path| PathBuf::from(format!("{}{}", path.display(), std::path::MAIN_SEPARATOR));
+    assert_eq!(locate(&typed(&archive)), Some(Located { archive: archive.clone(), inner: PathBuf::new() }));
+    assert_eq!(
+        locate(&typed(&archive.join("sub"))),
+        Some(Located {
+            archive: archive.clone(),
+            inner: PathBuf::from("sub")
+        })
+    );
+    assert_eq!(locate(&typed(&dir)), None);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
