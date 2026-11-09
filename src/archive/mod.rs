@@ -257,9 +257,16 @@ fn wrong_password() -> io::Error {
 static PASSWORDS: Mutex<Vec<(PathBuf, String)>> = Mutex::new(Vec::new());
 
 /// The archive itself, whichever way it is named: a link to it, or a path
-/// that is not its shortest, finds the same password.
+/// that is not its shortest, finds the same password. One not made yet -
+/// Pack gives the password before the job writes it - by the directory it
+/// will be in, so it is the same key once it is there.
 fn password_key(archive: &Path) -> PathBuf {
-    fs::canonicalize(archive).unwrap_or_else(|_| archive.to_path_buf())
+    fs::canonicalize(archive)
+        .or_else(|_| match (archive.parent(), archive.file_name()) {
+            (Some(dir), Some(name)) => fs::canonicalize(dir).map(|dir| dir.join(name)),
+            _ => Err(io::Error::from(io::ErrorKind::NotFound)),
+        })
+        .unwrap_or_else(|_| archive.to_path_buf())
 }
 
 pub fn set_password(archive: &Path, password: &str) {

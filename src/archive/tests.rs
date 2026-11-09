@@ -409,3 +409,21 @@ fn an_archive_written_over_is_read_again_however_soon() {
     assert!(!CACHE.lock().unwrap().iter().any(|((path, ..), _)| *path == archive));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A password given for an archive not made yet - as Pack gives it, before
+/// the job writes the file - is found by the archive once it is there,
+/// whichever way it is named, through a link to its directory or not.
+#[cfg(unix)]
+#[test]
+fn a_password_given_before_the_archive_is_made_is_found_after() {
+    let dir = scratch("password-ahead");
+    let real = dir.join("real");
+    std::fs::create_dir_all(&real).unwrap();
+    std::os::unix::fs::symlink(&real, dir.join("link")).unwrap();
+    set_password(&dir.join("link/new.7z"), "sesame");
+    std::fs::write(real.join("new.7z"), "made").unwrap();
+    assert_eq!(password(&real.join("new.7z")).as_deref(), Some("sesame"));
+    assert_eq!(password(&dir.join("link/new.7z")).as_deref(), Some("sesame"));
+    forget_password(&real.join("new.7z"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
