@@ -25,6 +25,9 @@ pub struct Glob {
     fold: bool,
     /// A pattern without the `/` takes directories too, as the filter has it.
     either: bool,
+    /// A path is looked for from the start of any of its names, not only
+    /// the first, as `tar --exclude` looks.
+    anywhere: bool,
 }
 
 impl Glob {
@@ -58,8 +61,10 @@ impl Glob {
     /// What Pack leaves out, as `tar --exclude` has it: a pattern without
     /// `/` is for files and directories alike - `.git`, `*.o` - and one
     /// ending in `/` for directories alone. Nothing is widened: `o` is `o`.
+    /// One with a `/` before its end is looked for anywhere in a path, from
+    /// the start of one of its names: `src/*.rs` leaves out `proj/src/a.rs`.
     pub fn exclude(text: &str) -> Option<Self> {
-        Self::parse(text, true, &[])
+        Self::parse(text, true, &[]).map(|glob| Glob { anywhere: true, ..glob })
     }
 
     /// `plain` says, pattern by pattern, which were plain words widened to
@@ -83,15 +88,18 @@ impl Glob {
                 whole: pattern.contains(std::path::is_separator) || plain.get(index).copied().unwrap_or(false),
             })
             .collect();
-        if patterns.is_empty() { None } else { Some(Glob { patterns, fold, either }) }
+        if patterns.is_empty() { None } else { Some(Glob { patterns, fold, either, anywhere: false }) }
     }
 
     pub fn matches(&self, name: &str, is_dir: bool) -> bool {
         let path: Vec<char> = name.chars().map(|c| if std::path::is_separator(c) { '/' } else { fold_if(c, self.fold) }).collect();
         let leaf = &path[path.iter().rposition(|&c| c == '/').map_or(0, |at| at + 1)..];
+        // Where a whole path may start: its beginning, and with `anywhere`
+        // just past each `/`.
+        let starts: Vec<usize> = std::iter::once(0).chain(path.iter().enumerate().filter(|_| self.anywhere).filter(|(_, c)| **c == '/').map(|(at, _)| at + 1)).collect();
         self.patterns
             .iter()
-            .any(|pattern| (pattern.for_dirs == is_dir || (self.either && !pattern.for_dirs)) && matches(&pattern.chars, if pattern.whole { &path } else { leaf }))
+            .any(|pattern| (pattern.for_dirs == is_dir || (self.either && !pattern.for_dirs)) && if pattern.whole { starts.iter().any(|&start| matches(&pattern.chars, &path[start..])) } else { matches(&pattern.chars, leaf) })
     }
 }
 
@@ -193,6 +201,22 @@ mod tests {
 
     fn file(pattern: &str, name: &str) -> bool {
         Glob::new(pattern).unwrap().matches(name, false)
+    }
+
+    /// A pattern to leave out with a `/` in it is looked for anywhere in a
+    /// path, from the start of any of its names, as `tar --exclude` looks:
+    /// `src/*.rs` leaves out `proj/src/a.rs`, deep ones too, and not
+    /// `proj/xsrc/a.rs`.
+    #[test]
+    fn a_path_to_leave_out_is_found_anywhere_in_one() {
+        let glob = Glob::exclude("src/*.rs").unwrap();
+        assert!(glob.matches("src/a.rs", false));
+        assert!(glob.matches("proj/src/a.rs", false));
+        assert!(glob.matches("proj/src/deep/b.rs", false));
+        assert!(!glob.matches("proj/xsrc/a.rs", false));
+        assert!(!glob.matches("proj/src/a.txt", false));
+        // Elsewhere a path is still matched whole.
+        assert!(!Glob::new("src/*.rs").unwrap().matches("proj/src/a.rs", false));
     }
 
     #[test]
