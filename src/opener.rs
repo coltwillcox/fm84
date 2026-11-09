@@ -405,6 +405,13 @@ pub fn exec_args(words: &[String], path: &Path, name: &str, icon: Option<&str>, 
                 _ => {}
             }
         }
+        // A word of nothing but codes no longer used - `%m`, `%d` - goes
+        // with them, rather than reach the program as an empty word it
+        // would take for a file. One quoted empty on purpose was empty to
+        // begin with, and stays.
+        if out.is_empty() && !word.is_empty() {
+            continue;
+        }
         args.push(out.into());
     }
     if !took_file {
@@ -518,8 +525,12 @@ mod tests {
         let args = |words: &[&str], icon| exec_args(&words.iter().map(|word| word.to_string()).collect::<Vec<_>>(), file, "App", icon, entry);
         assert_eq!(
             args(&["app", "%i", "--title=%c", "%f", "100%%", "%d"], Some("app-icon")),
-            ["app", "--icon", "app-icon", "--title=App", "/home/me/a b.txt", "100%", ""].map(OsString::from)
+            ["app", "--icon", "app-icon", "--title=App", "/home/me/a b.txt", "100%"].map(OsString::from)
         );
+        // A code no longer used is taken out of the line, not left as an
+        // empty word the program would take for a file; a word quoted empty
+        // on purpose stays.
+        assert_eq!(args(&["app", "%m", "%v%D", "", "%f"], None), ["app", "", "/home/me/a b.txt"].map(OsString::from));
         // Nothing to take the file: it goes on the end. %k is the entry.
         assert_eq!(args(&["app", "%i", "%k"], None), ["app", "/apps/app.desktop", "/home/me/a b.txt"].map(OsString::from));
     }
