@@ -73,6 +73,46 @@ pub fn uses_entries(command: &str) -> (bool, bool) {
     (file, command.contains("{files}"))
 }
 
+/// `command` with each placeholder a reference to its variable, quoted to
+/// be one word in whatever quoting it stands in - as anyone used to a shell
+/// quotes a file, `"{file}"` or `'{name}'`, without coming apart: bare, in
+/// double quotes of its own; in double quotes, as it is; in single quotes,
+/// which nothing is expanded in, those closed around it and opened again.
+#[cfg(not(windows))]
+fn posix_script(command: &str) -> String {
+    const PLACES: [(&str, &str); 5] = [("{files}", "@"), ("{file}", "FM84_FILE"), ("{name}", "FM84_NAME"), ("{dir}", "FM84_DIR"), ("{other}", "FM84_OTHER")];
+    let mut script = String::with_capacity(command.len());
+    let (mut single, mut double) = (false, false);
+    let mut rest = command;
+    while let Some(c) = rest.chars().next() {
+        if let Some((place, variable)) = PLACES.iter().find(|(place, _)| rest.starts_with(place)) {
+            let reference = format!("${{{variable}}}");
+            script.push_str(&match (single, double) {
+                (true, _) => format!("'\"{reference}\"'"),
+                (_, true) => reference,
+                _ => format!("\"{reference}\""),
+            });
+            rest = &rest[place.len()..];
+            continue;
+        }
+        rest = &rest[c.len_utf8()..];
+        script.push(c);
+        match c {
+            // What a backslash makes plain is not a quote that opens.
+            '\\' if !single => {
+                if let Some(next) = rest.chars().next() {
+                    script.push(next);
+                    rest = &rest[next.len_utf8()..];
+                }
+            }
+            '\'' if !double => single = !single,
+            '"' if !single => double = !double,
+            _ => {}
+        }
+    }
+    script
+}
+
 /// `command` as the shell is to run it, in `values.dir`. The placeholders
 /// are never pasted in as text, where a name with a space or a quote in it
 /// would come apart or run as something else: each becomes a variable the
@@ -94,12 +134,7 @@ pub fn shell_command(command: &str, values: &MenuValues) -> std::process::Comman
             .replace("{other}", "\"%FM84_OTHER%\"")
     };
     #[cfg(not(windows))]
-    let script = command
-        .replace("{files}", "\"$@\"")
-        .replace("{file}", "\"$FM84_FILE\"")
-        .replace("{name}", "\"$FM84_NAME\"")
-        .replace("{dir}", "\"$FM84_DIR\"")
-        .replace("{other}", "\"$FM84_OTHER\"");
+    let script = posix_script(command);
 
     #[cfg(windows)]
     let mut process = {
@@ -121,4 +156,39 @@ pub fn shell_command(command: &str, values: &MenuValues) -> std::process::Comman
     };
     process.env("FM84_FILE", file).env("FM84_NAME", name).env("FM84_DIR", &values.dir).env("FM84_OTHER", &values.other).current_dir(&values.dir);
     process
+}
+
+#[cfg(all(test, unix))]
+mod quoting_tests {
+    use super::*;
+
+    /// What `command` prints, run as shell_command runs it on `name`.
+    fn printed(command: &str, name: &str) -> String {
+        let dir = std::env::temp_dir();
+        let values = MenuValues {
+            file: Some(dir.join(name)),
+            files: vec![dir.join(name), dir.join("second one")],
+            dir: dir.clone(),
+            other: dir,
+        };
+        let output = shell_command(command, &values).output().unwrap();
+        String::from_utf8(output.stdout).unwrap()
+    }
+
+    /// A placeholder quoted by whoever wrote the command - as anyone used to
+    /// a shell quotes a file - still gives the name whole: not split at its
+    /// spaces, nor its `*` spread over the directory, in double quotes; and
+    /// in single quotes the name, not the placeholder's own workings.
+    #[test]
+    fn a_placeholder_in_quotes_is_still_one_word() {
+        let name = "a  b * $HOME";
+        assert_eq!(printed(r#"printf '[%s]' {name}"#, name), "[a  b * $HOME]");
+        assert_eq!(printed(r#"printf '[%s]' "{name}""#, name), "[a  b * $HOME]");
+        assert_eq!(printed(r#"printf '[%s]' "x-{name}.bak""#, name), "[x-a  b * $HOME.bak]");
+        assert_eq!(printed(r#"printf '[%s]' '{name}'"#, name), "[a  b * $HOME]");
+        assert_eq!(printed(r#"printf '[%s]' 'x-{name}'"#, name), "[x-a  b * $HOME]");
+        assert_eq!(printed(r#"printf '[%s]' "{files}""#, name).matches('[').count(), 2);
+        // A quote escaped is not one that opens.
+        assert_eq!(printed(r#"printf '[%s]' \"{name}\""#, name), "[\"a  b * $HOME\"]");
+    }
 }
