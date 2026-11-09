@@ -120,6 +120,8 @@ pub enum UndoKind {
     Copy,
     Move,
     Trash,
+    /// Ctrl+E: deletes to the trash, renames and copies, in that order.
+    Edit,
 }
 
 /// One job's journal: what it did, in the order it did it.
@@ -158,7 +160,7 @@ pub(super) fn now_seconds() -> i64 {
 
 /// Passes a report on with every amount taken out: an undo counts in steps,
 /// and a move back or a copy deleted would count bytes or entries.
-struct InSteps<'a, 'b>(&'a mut (dyn Progress + 'b));
+pub(super) struct InSteps<'a, 'b>(pub(super) &'a mut (dyn Progress + 'b));
 
 impl Progress for InSteps<'_, '_> {
     fn step(&mut self, step: Step<'_>) -> bool {
@@ -218,6 +220,7 @@ fn run_undo(undo: Undo, mut progress: JobProgress<'_>) {
     let _ = progress.updates.send(JobUpdate::Total(undo.steps.len() as u64));
     let outcome = match undo.kind {
         UndoKind::Rename => undo_renames(&undo.steps, &mut progress),
+        UndoKind::Edit => undo_edit(undo.steps, &mut progress),
         _ => undo_each(undo.steps, &mut progress),
     };
     progress.finish(outcome);
@@ -245,6 +248,19 @@ fn undo_renames(steps: &[Done], report: &mut dyn Progress) -> Result<Transfer, E
     }
     rename_all(&back).map_err(|(_, error)| error)?;
     Ok(if report.step(Step::Advanced(steps.len() as u64)) { Transfer::Done } else { Transfer::Cancelled })
+}
+
+/// Ctrl+E's job taken back the other way round: the copies deleted, the
+/// renames put back together, and what went to the trash restored.
+fn undo_edit(steps: Vec<Done>, report: &mut dyn Progress) -> Result<Transfer, Error> {
+    let (copies, rest): (Vec<Done>, Vec<Done>) = steps.into_iter().partition(|step| matches!(step, Done::Copied { .. }));
+    let (renames, trashed): (Vec<Done>, Vec<Done>) = rest.into_iter().partition(|step| matches!(step, Done::Moved { .. }));
+    for outcome in [undo_each(copies, report)?, undo_renames(&renames, report)?, undo_each(trashed, report)?] {
+        if outcome == Transfer::Cancelled {
+            return Ok(Transfer::Cancelled);
+        }
+    }
+    Ok(Transfer::Done)
 }
 
 /// Each step taken back, the last one first.

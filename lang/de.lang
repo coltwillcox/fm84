@@ -1641,3 +1641,31 @@ msgstr "{name}" ist nicht im Papierkorb
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Wiederherstellen aus dem Papierkorb wird unter macOS nicht unterstützt
+
+msgctxt job
+msgid   Edit as text
+msgstr  Als Text bearbeiten
+
+msgid  Applying the edits
+msgstr Änderungen werden angewendet
+
+msgid  Cannot apply the edits
+msgstr Änderungen nicht anwendbar
+
+msgid  Line {line}: {name} - {why}
+msgstr Zeile {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Zeile {line}: keine Eintragsnummer vor dem Namen
+
+msgid  Line {line}: there is no entry {number}
+msgstr Zeile {line}: es gibt keinen Eintrag {number}
+
+msgid  Nothing to change
+msgstr Nichts zu ändern
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Die Ansicht von Strg+B kann nicht als Text bearbeitet werden
+
+msgid  Enter - Apply
+msgstr Enter - Anwenden

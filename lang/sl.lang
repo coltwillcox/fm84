@@ -1718,3 +1718,31 @@ msgstr »{name}« ni v košu
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Obnovitev iz koša v macOS ni podprta
+
+msgctxt job
+msgid   Edit as text
+msgstr  Uredi kot besedilo
+
+msgid  Applying the edits
+msgstr Uveljavljanje sprememb
+
+msgid  Cannot apply the edits
+msgstr Sprememb ni mogoče uveljaviti
+
+msgid  Line {line}: {name} - {why}
+msgstr Vrstica {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Vrstica {line}: pred imenom ni številke vnosa
+
+msgid  Line {line}: there is no entry {number}
+msgstr Vrstica {line}: vnosa {number} ni
+
+msgid  Nothing to change
+msgstr Ni česa spremeniti
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Pogleda Ctrl+B ni mogoče urejati kot besedilo
+
+msgid  Enter - Apply
+msgstr Enter - Uveljavi

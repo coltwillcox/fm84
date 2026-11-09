@@ -1640,3 +1640,31 @@ msgstr "{name}" er ikke i papirkurven
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Gjenoppretting fra papirkurven støttes ikke på macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Rediger som tekst
+
+msgid  Applying the edits
+msgstr Bruker endringene
+
+msgid  Cannot apply the edits
+msgstr Kan ikke bruke endringene
+
+msgid  Line {line}: {name} - {why}
+msgstr Linje {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Linje {line}: mangler oppføringsnummer foran navnet
+
+msgid  Line {line}: there is no entry {number}
+msgstr Linje {line}: det finnes ingen oppføring {number}
+
+msgid  Nothing to change
+msgstr Ingenting å endre
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Ctrl+B-visningen kan ikke redigeres som tekst
+
+msgid  Enter - Apply
+msgstr Enter - Bruk

@@ -1679,3 +1679,31 @@ msgstr „{name}“ není v koši
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Obnovení z koše není v macOS podporováno
+
+msgctxt job
+msgid   Edit as text
+msgstr  Upravit jako text
+
+msgid  Applying the edits
+msgstr Provádění úprav
+
+msgid  Cannot apply the edits
+msgstr Úpravy nelze provést
+
+msgid  Line {line}: {name} - {why}
+msgstr Řádek {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Řádek {line}: před názvem chybí číslo položky
+
+msgid  Line {line}: there is no entry {number}
+msgstr Řádek {line}: položka {number} neexistuje
+
+msgid  Nothing to change
+msgstr Není co měnit
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Pohled Ctrl+B nelze upravit jako text
+
+msgid  Enter - Apply
+msgstr Enter - Použít

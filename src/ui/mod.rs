@@ -136,6 +136,7 @@ impl Settled {
         let list = match &mut app_state.dialog {
             Some(Dialog::Checksums(view)) => Some((&mut view.room, &mut view.scroll)),
             Some(Dialog::Sync(plan)) => Some((&mut plan.room, &mut plan.scroll)),
+            Some(Dialog::DirEdit(plan)) => Some((&mut plan.room, &mut plan.scroll)),
             Some(Dialog::MultiRename(rename)) => Some((&mut rename.room, &mut rename.scroll)),
             _ => None,
         };
@@ -295,6 +296,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             }
             Some(Dialog::Extract { archive, input }) => render_destination_popup(f, area, &[(archive.clone(), false)], Destination::Extract, input, None),
             Some(Dialog::Checksums(view)) => settled.popup_list = Some(render_checksums_popup(f, area, view)),
+            Some(Dialog::DirEdit(plan)) => settled.popup_list = Some(render_dir_edit_popup(f, area, plan)),
             Some(Dialog::Sync(plan)) => settled.popup_list = Some(render_sync_popup(f, area, plan, app_state.options.date_format)),
             Some(Dialog::MultiRename(rename)) => settled.popup_list = Some(render_multi_rename_popup(f, area, rename)),
             Some(Dialog::Pack { sources, input }) => render_destination_popup(f, area, sources, Destination::Pack, input, Some(t!("Tab - Format"))),

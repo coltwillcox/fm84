@@ -1679,3 +1679,31 @@ msgstr „{name}” nie ma w koszu
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Przywracanie z kosza nie jest obsługiwane w macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Edytuj jako tekst
+
+msgid  Applying the edits
+msgstr Wprowadzanie zmian
+
+msgid  Cannot apply the edits
+msgstr Nie można wprowadzić zmian
+
+msgid  Line {line}: {name} - {why}
+msgstr Wiersz {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Wiersz {line}: brak numeru pozycji przed nazwą
+
+msgid  Line {line}: there is no entry {number}
+msgstr Wiersz {line}: nie ma pozycji {number}
+
+msgid  Nothing to change
+msgstr Nie ma czego zmieniać
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Widoku Ctrl+B nie można edytować jako tekstu
+
+msgid  Enter - Apply
+msgstr Enter - Zastosuj

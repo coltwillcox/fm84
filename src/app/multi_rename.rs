@@ -173,7 +173,7 @@ impl MultiRename {
 
 /// A path as the filesystem tells names apart: on Windows and macOS, in
 /// either case alike.
-fn fold_for_fs(path: &Path) -> OsString {
+pub(super) fn fold_for_fs(path: &Path) -> OsString {
     // There, names are text. Elsewhere they are bytes, compared as they are,
     // so two that only read alike as text stay apart.
     if cfg!(any(windows, target_os = "macos")) {

@@ -1641,3 +1641,31 @@ msgstr "{name}" çöpte değil
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr macOS'ta çöpten geri yükleme desteklenmiyor
+
+msgctxt job
+msgid   Edit as text
+msgstr  Metin olarak düzenle
+
+msgid  Applying the edits
+msgstr Değişiklikler uygulanıyor
+
+msgid  Cannot apply the edits
+msgstr Değişiklikler uygulanamıyor
+
+msgid  Line {line}: {name} - {why}
+msgstr Satır {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Satır {line}: adın önünde girdi numarası yok
+
+msgid  Line {line}: there is no entry {number}
+msgstr Satır {line}: {number} numaralı girdi yok
+
+msgid  Nothing to change
+msgstr Değiştirilecek bir şey yok
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Ctrl+B görünümü metin olarak düzenlenemez
+
+msgid  Enter - Apply
+msgstr Enter - Uygula

@@ -1641,3 +1641,31 @@ msgstr "{name}" non è nel cestino
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Il ripristino dal cestino non è supportato su macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Modifica come testo
+
+msgid  Applying the edits
+msgstr Applicazione delle modifiche
+
+msgid  Cannot apply the edits
+msgstr Impossibile applicare le modifiche
+
+msgid  Line {line}: {name} - {why}
+msgstr Riga {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Riga {line}: manca il numero della voce davanti al nome
+
+msgid  Line {line}: there is no entry {number}
+msgstr Riga {line}: non esiste la voce {number}
+
+msgid  Nothing to change
+msgstr Niente da cambiare
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr La vista di Ctrl+B non si può modificare come testo
+
+msgid  Enter - Apply
+msgstr Invio - Applica

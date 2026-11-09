@@ -1679,3 +1679,31 @@ msgstr „{name}” nu este în coșul de gunoi
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Restaurarea din coșul de gunoi nu este acceptată pe macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Editare ca text
+
+msgid  Applying the edits
+msgstr Se aplică modificările
+
+msgid  Cannot apply the edits
+msgstr Modificările nu se pot aplica
+
+msgid  Line {line}: {name} - {why}
+msgstr Linia {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Linia {line}: lipsește numărul intrării din fața numelui
+
+msgid  Line {line}: there is no entry {number}
+msgstr Linia {line}: nu există intrarea {number}
+
+msgid  Nothing to change
+msgstr Nimic de schimbat
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Vederea Ctrl+B nu poate fi editată ca text
+
+msgid  Enter - Apply
+msgstr Enter - Aplică

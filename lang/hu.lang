@@ -1642,3 +1642,31 @@ msgstr „{name}” nincs a lomtárban
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr A lomtárból való visszaállítás macOS-en nem támogatott
+
+msgctxt job
+msgid   Edit as text
+msgstr  Szerkesztés szövegként
+
+msgid  Applying the edits
+msgstr Módosítások alkalmazása
+
+msgid  Cannot apply the edits
+msgstr A módosítások nem alkalmazhatók
+
+msgid  Line {line}: {name} - {why}
+msgstr {line}. sor: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr {line}. sor: a név előtt nincs bejegyzésszám
+
+msgid  Line {line}: there is no entry {number}
+msgstr {line}. sor: nincs {number}. bejegyzés
+
+msgid  Nothing to change
+msgstr Nincs mit módosítani
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr A Ctrl+B nézete nem szerkeszthető szövegként
+
+msgid  Enter - Apply
+msgstr Enter - Alkalmaz

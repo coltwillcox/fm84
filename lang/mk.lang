@@ -1641,3 +1641,31 @@ msgstr „{name}“ не е во корпата
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Враќањето од корпата не е поддржано на macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Уреди како текст
+
+msgid  Applying the edits
+msgstr Примена на измените
+
+msgid  Cannot apply the edits
+msgstr Измените не може да се применат
+
+msgid  Line {line}: {name} - {why}
+msgstr Ред {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Ред {line}: нема број на ставка пред името
+
+msgid  Line {line}: there is no entry {number}
+msgstr Ред {line}: нема ставка {number}
+
+msgid  Nothing to change
+msgstr Нема ништо за менување
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Приказот на Ctrl+B не може да се уредува како текст
+
+msgid  Enter - Apply
+msgstr Enter - Примени

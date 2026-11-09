@@ -76,9 +76,57 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
     (room, scroll)
 }
 
+/// Ctrl+E's plan: what each line came to, one row each. Returns the rows
+/// the list had room for, and its scroll kept to them.
+pub(super) fn render_dir_edit_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &crate::app::EditPlan) -> (usize, usize) {
+    use crate::app::EditOp;
+    let popup_area = popup_rect(60, area);
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let name = |path: &std::path::Path| printable_name(&path.file_name().unwrap_or_default().to_string_lossy());
+    let delete = if plan.to_trash { tc!("job", "Move to trash") } else { tc!("job", "Delete") };
+    let ops: Vec<(&str, String)> = plan
+        .ops
+        .iter()
+        .map(|op| match op {
+            EditOp::Delete(path, _) => (delete, name(path)),
+            EditOp::Rename(from, to) => (t!("Rename"), format!("{} → {}", name(from), name(to))),
+            EditOp::Copy(from, to, _) => (tc!("job", "Copy"), format!("{} → {}", name(from), name(to))),
+        })
+        .collect();
+    let label_width = ops.iter().map(|(label, _)| display_width(label)).max().unwrap_or(0);
+    let keys = keys_in_rows(&[t!("Enter - Apply"), t!("Esc - Back to editing")], inner.width as usize);
+
+    // A blank row and the keys below.
+    let room = (inner.height as usize).saturating_sub(1 + keys.len()).max(1);
+    let scroll = plan.scroll.min(ops.len().saturating_sub(room));
+    let title = format!(" {} ", tc!("job", "Edit as text"));
+    let mut block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    if room < ops.len() {
+        let shown = format!(" {}-{}/{} ", scroll + 1, (scroll + room).min(ops.len()), ops.len());
+        block = block.title_bottom(Line::from(Span::styled(shown, style_columns())).right_aligned());
+    }
+    clear(f, popup_area);
+    f.render_widget(block, popup_area);
+
+    let rows: Vec<Line> = ops
+        .iter()
+        .skip(scroll)
+        .take(room)
+        .map(|(label, detail)| {
+            let pad = " ".repeat(label_width.saturating_sub(display_width(label)) + 2);
+            Line::from(vec![Span::styled(format!("{label}{pad}"), style_columns()), Span::styled(detail.clone(), style_file())])
+        })
+        .collect();
+    f.render_widget(Paragraph::new(rows), inner);
+    let height = (keys.len() as u16).min(inner.height);
+    let bottom = Rect { y: inner.bottom() - height, height, ..inner };
+    f.render_widget(Paragraph::new(keys.into_iter().map(|row| Line::from(Span::styled(row, style_columns()))).collect::<Vec<_>>()), bottom);
+    (room, scroll)
+}
+
 /// Keys laid out as rows of `width` columns, apart as every popup sets them
 /// apart, breaking between keys and never inside one.
-fn keys_in_rows(keys: &[&str], width: usize) -> Vec<String> {
+pub(super) fn keys_in_rows(keys: &[&str], width: usize) -> Vec<String> {
     let mut rows: Vec<String> = Vec::new();
     for key in keys {
         match rows.last_mut() {

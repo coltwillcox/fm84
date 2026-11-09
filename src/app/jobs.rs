@@ -97,6 +97,8 @@ pub enum TransferKind {
     Sync,
     /// Ctrl+Z, taking back the last of the others.
     Undo,
+    /// Ctrl+E's plan: deletes, renames and copies.
+    DirEdit,
 }
 
 impl TransferKind {
@@ -112,6 +114,7 @@ impl TransferKind {
             TransferKind::Checksum => tc!("job", "Checksum"),
             TransferKind::Sync => tc!("job", "Synchronize"),
             TransferKind::Undo => tc!("job", "Undo"),
+            TransferKind::DirEdit => tc!("job", "Edit as text"),
         }
     }
 }
@@ -281,7 +284,7 @@ impl<'a> JobProgress<'a> {
     }
 
     /// Tell the journal of something done.
-    fn did(&self, done: Done) {
+    pub(super) fn did(&self, done: Done) {
         let _ = self.updates.send(JobUpdate::Did(done));
     }
 
@@ -752,6 +755,7 @@ impl AppState {
             TransferKind::Copy => Some(UndoKind::Copy),
             TransferKind::Move => Some(UndoKind::Move),
             TransferKind::Trash => Some(UndoKind::Trash),
+            TransferKind::DirEdit => Some(UndoKind::Edit),
             _ => None,
         };
         if let Some(kind) = undo_kind {
@@ -811,7 +815,7 @@ impl AppState {
                 let (job_title, done) = (job.kind.title(), job.done);
                 self.display_error(match job.kind {
                     TransferKind::Delete => tn!(done, "{job_title} cancelled after {done} entry", "{job_title} cancelled after {done} entries", job_title, done),
-                    TransferKind::Trash | TransferKind::Undo => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
+                    TransferKind::Trash | TransferKind::Undo | TransferKind::DirEdit => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
                     _ => t!("{job_title} cancelled after {size}", job_title, size = crate::utils::format_size(done)),
                 })
             }

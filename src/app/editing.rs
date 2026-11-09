@@ -38,6 +38,8 @@ impl DiskStamp {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Saved {
     Done,
+    /// Nothing written: Ctrl+E's lines made a plan, which is on screen.
+    Planned,
     /// Not written: something else changed the file since the editor read
     /// it, and writing would throw that away. The stamps are the file as it
     /// was read, and as it is now.
@@ -77,6 +79,9 @@ pub struct EditorState {
     /// the horizontal scroll bar can know the widest without measuring the
     /// whole file every frame.
     pub line_widths: Vec<usize>,
+    /// Ctrl+E: the lines are a directory's names, not a file, and saving
+    /// makes a plan of them rather than writing anything.
+    pub dir_edit: Option<Box<DirEdit>>,
 }
 
 /// One undoable edit: the lines it replaced, and where the cursor was. The
@@ -294,6 +299,7 @@ impl AppState {
             redo_stack: Vec::new(),
             disk_stamp,
             line_widths,
+            dir_edit: None,
         });
         Ok(())
     }
@@ -799,6 +805,9 @@ impl AppState {
     /// first. A file gone altogether counts: saving would bring back what
     /// someone meant to delete.
     pub fn editor_save(&mut self) -> Result<Saved, String> {
+        if self.editor().is_some_and(|state| state.dir_edit.is_some()) {
+            return self.plan_dir_edit();
+        }
         if let Some(state) = self.editor() {
             let now = DiskStamp::of(&state.file_path);
             if now != state.disk_stamp {
@@ -811,7 +820,9 @@ impl AppState {
 
     /// Save the file in the editor, whatever is on disk.
     pub fn editor_save_over(&mut self) -> Result<(), String> {
-        if let Screen::Editor(state) = &mut self.screen {
+        if let Screen::Editor(state) = &mut self.screen
+            && state.dir_edit.is_none()
+        {
             let content = state.lines.join(state.line_ending);
             crate::fs_ops::save_file(&state.file_path, content.as_bytes()).map_err(|e| e.to_string())?;
             state.modified = false;

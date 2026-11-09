@@ -26,6 +26,7 @@ mod attribute_form;
 mod bookmarks;
 mod branches;
 mod compare;
+mod dir_edit;
 mod editing;
 mod filter;
 mod find;
@@ -51,8 +52,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*,
-    viewing::*,
+    archives::*, attribute_form::*, branches::*, dir_edit::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*,
+    user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -134,6 +135,8 @@ pub enum Dialog {
     Pack { sources: Vec<(PathBuf, bool)>, input: TextInput },
     /// Alt+H: checksums worked out, or a checksum file checked.
     Checksums(Box<ChecksumView>),
+    /// Ctrl+E's plan, saved from the editor and waiting on Enter.
+    DirEdit(Box<EditPlan>),
     /// A file big enough to be worth asking about before it is opened.
     LargeFile(LargeFile),
     /// Unsaved edits, on the way out of the editor. `then_quit` when it was

@@ -1755,3 +1755,31 @@ msgstr Níl "{name}" sa bhruscar
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Ní féidir athchóiriú ón mbruscar ar macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Cuir in eagar mar théacs
+
+msgid  Applying the edits
+msgstr Na hathruithe á gcur i bhfeidhm
+
+msgid  Cannot apply the edits
+msgstr Ní féidir na hathruithe a chur i bhfeidhm
+
+msgid  Line {line}: {name} - {why}
+msgstr Líne {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Líne {line}: níl uimhir iontrála roimh an ainm
+
+msgid  Line {line}: there is no entry {number}
+msgstr Líne {line}: níl iontráil {number} ann
+
+msgid  Nothing to change
+msgstr Níl aon rud le hathrú
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Ní féidir amharc Ctrl+B a chur in eagar mar théacs
+
+msgid  Enter - Apply
+msgstr Enter - Cuir i bhfeidhm

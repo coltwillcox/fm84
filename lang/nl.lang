@@ -1640,3 +1640,31 @@ msgstr "{name}" staat niet in de prullenbak
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Terugzetten uit de prullenbak wordt niet ondersteund op macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Bewerken als tekst
+
+msgid  Applying the edits
+msgstr Bezig met toepassen van de wijzigingen
+
+msgid  Cannot apply the edits
+msgstr Kan de wijzigingen niet toepassen
+
+msgid  Line {line}: {name} - {why}
+msgstr Regel {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Regel {line}: geen itemnummer voor de naam
+
+msgid  Line {line}: there is no entry {number}
+msgstr Regel {line}: er is geen item {number}
+
+msgid  Nothing to change
+msgstr Niets te wijzigen
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr De weergave van Ctrl+B kan niet als tekst worden bewerkt
+
+msgid  Enter - Apply
+msgstr Enter - Toepassen

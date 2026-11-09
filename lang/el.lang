@@ -1641,3 +1641,31 @@ msgstr Το "{name}" δεν είναι στον κάδο
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Η επαναφορά από τον κάδο δεν υποστηρίζεται στο macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Επεξεργασία ως κείμενο
+
+msgid  Applying the edits
+msgstr Εφαρμογή των αλλαγών
+
+msgid  Cannot apply the edits
+msgstr Αδύνατη η εφαρμογή των αλλαγών
+
+msgid  Line {line}: {name} - {why}
+msgstr Γραμμή {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Γραμμή {line}: δεν υπάρχει αριθμός στοιχείου πριν από το όνομα
+
+msgid  Line {line}: there is no entry {number}
+msgstr Γραμμή {line}: δεν υπάρχει στοιχείο {number}
+
+msgid  Nothing to change
+msgstr Τίποτα προς αλλαγή
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Η προβολή του Ctrl+B δεν επεξεργάζεται ως κείμενο
+
+msgid  Enter - Apply
+msgstr Enter - Εφαρμογή

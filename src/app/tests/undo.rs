@@ -174,3 +174,62 @@ fn each_undo_takes_back_the_job_before() {
     assert!(!dir.join("b").exists() && !dir.join("c").exists());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Ctrl+E from the start: the panel's names in the editor, edited, saved
+/// to a plan, run - and then taken back with Ctrl+Z.
+#[test]
+fn a_directory_edited_as_text_and_undone() {
+    let dir = scratch("dir-edit");
+    for name in ["a", "b", "c"] {
+        std::fs::write(dir.join(name), name).unwrap();
+    }
+    std::fs::create_dir(dir.join("d")).unwrap();
+    let mut app_state = app();
+    app_state.options.delete_to_trash = false;
+    app_state.open_dir(crate::app::Side::Left, dir.clone(), None);
+    app_state.active_side = crate::app::Side::Left;
+    app_state.open_dir_edit();
+    let lines = app_state.editor().unwrap().lines.clone();
+    assert_eq!(lines, ["1 d/", "2 a", "3 b", "4 c"]);
+
+    // a and b swapped, c deleted, d copied.
+    app_state.editor_mut().unwrap().lines = ["1 d/", "1 e/", "2 b", "3 a"].map(String::from).to_vec();
+    assert_eq!(app_state.editor_save(), Ok(crate::app::Saved::Planned));
+    assert!(matches!(app_state.dialog, Some(crate::app::Dialog::DirEdit(_))));
+    app_state.apply_dir_edit();
+    assert!(!app_state.is_editing());
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    let read = |name: &str| std::fs::read_to_string(dir.join(name)).unwrap();
+    assert_eq!((read("a"), read("b")), ("b".into(), "a".into()));
+    assert!(!dir.join("c").exists());
+    assert!(dir.join("e").is_dir());
+
+    // The delete was for good, so only the rest comes back.
+    undo(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert_eq!((read("a"), read("b")), ("a".into(), "b".into()));
+    assert!(!dir.join("e").exists());
+    assert_no_scratch(&dir);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A save with nothing changed says so, and lines that cannot be a plan
+/// keep the editor open with the reason.
+#[test]
+fn a_directory_edit_with_nothing_or_nonsense_in_it() {
+    let dir = scratch("dir-edit-none");
+    std::fs::write(dir.join("a"), "a").unwrap();
+    let mut app_state = app();
+    app_state.open_dir(crate::app::Side::Left, dir.clone(), None);
+    app_state.active_side = crate::app::Side::Left;
+    app_state.open_dir_edit();
+    assert_eq!(app_state.editor_save(), Ok(crate::app::Saved::Done));
+    assert_eq!(app_state.find_note.as_deref(), Some("Nothing to change"));
+    app_state.editor_mut().unwrap().lines = vec!["a".into()];
+    assert_eq!(app_state.editor_save(), Err("Line 1: no entry number in front of the name".into()));
+    assert!(app_state.is_editing());
+    // Nothing was written where the lines came from.
+    assert!(dir.is_dir());
+    std::fs::remove_dir_all(&dir).unwrap();
+}

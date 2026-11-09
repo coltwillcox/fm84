@@ -459,6 +459,25 @@ pub(super) fn open_checksums(app_state: &mut AppState) {
 /// checksum file, Tab or Right for the next algorithm and Shift+Tab or Left
 /// for the one before - all worked out already, so the list changes in
 /// place - and Esc to close.
+/// Ctrl+E's plan: scrolled through, run, or put away to edit some more.
+pub(super) fn dir_edit_key(app_state: &mut AppState, code: KeyCode) {
+    let Some(Dialog::DirEdit(plan)) = &mut app_state.dialog else {
+        return;
+    };
+    match code {
+        KeyCode::Up => plan.scroll = plan.scroll.saturating_sub(1),
+        KeyCode::Down => plan.scroll += 1,
+        KeyCode::PageUp => plan.scroll = plan.scroll.saturating_sub(plan.room),
+        KeyCode::PageDown => plan.scroll += plan.room,
+        KeyCode::Home => plan.scroll = 0,
+        // Held to what there is when it is drawn.
+        KeyCode::End => plan.scroll = usize::MAX,
+        KeyCode::Enter => app_state.apply_dir_edit(),
+        KeyCode::Esc => app_state.dialog = None,
+        _ => {}
+    }
+}
+
 pub(super) fn checksums_key(app_state: &mut AppState, code: KeyCode) {
     let Some(Dialog::Checksums(view)) = &mut app_state.dialog else {
         return;

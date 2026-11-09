@@ -1642,3 +1642,31 @@ msgstr « {name} » n'est pas dans la corbeille
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr La restauration depuis la corbeille n'est pas prise en charge sur macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Modifier comme texte
+
+msgid  Applying the edits
+msgstr Application des modifications
+
+msgid  Cannot apply the edits
+msgstr Impossible d'appliquer les modifications
+
+msgid  Line {line}: {name} - {why}
+msgstr Ligne {line} : {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Ligne {line} : aucun numéro d'entrée devant le nom
+
+msgid  Line {line}: there is no entry {number}
+msgstr Ligne {line} : il n'y a pas d'entrée {number}
+
+msgid  Nothing to change
+msgstr Rien à changer
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr La vue de Ctrl+B ne peut pas être modifiée comme texte
+
+msgid  Enter - Apply
+msgstr Entrée - Appliquer

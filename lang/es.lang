@@ -1642,3 +1642,31 @@ msgstr «{name}» no está en la papelera
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Restaurar desde la papelera no es posible en macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Editar como texto
+
+msgid  Applying the edits
+msgstr Aplicando los cambios
+
+msgid  Cannot apply the edits
+msgstr No se pueden aplicar los cambios
+
+msgid  Line {line}: {name} - {why}
+msgstr Línea {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Línea {line}: falta el número de entrada delante del nombre
+
+msgid  Line {line}: there is no entry {number}
+msgstr Línea {line}: no hay entrada {number}
+
+msgid  Nothing to change
+msgstr Nada que cambiar
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr La vista de Ctrl+B no se puede editar como texto
+
+msgid  Enter - Apply
+msgstr Intro - Aplicar

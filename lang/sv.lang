@@ -1641,3 +1641,31 @@ msgstr ”{name}” finns inte i papperskorgen
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Återställning från papperskorgen stöds inte på macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Redigera som text
+
+msgid  Applying the edits
+msgstr Verkställer ändringarna
+
+msgid  Cannot apply the edits
+msgstr Kan inte verkställa ändringarna
+
+msgid  Line {line}: {name} - {why}
+msgstr Rad {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Rad {line}: inget postnummer före namnet
+
+msgid  Line {line}: there is no entry {number}
+msgstr Rad {line}: det finns ingen post {number}
+
+msgid  Nothing to change
+msgstr Inget att ändra
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr Vyn för Ctrl+B kan inte redigeras som text
+
+msgid  Enter - Apply
+msgstr Enter - Verkställ

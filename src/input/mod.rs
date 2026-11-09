@@ -175,6 +175,8 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             // Ctrl+Z in a panel takes back the last rename, copy, move or
             // move to the trash.
             'z' if in_panel => app_state.undo_last(),
+            // Ctrl+E, the directory's names as text in the editor.
+            'e' if in_panel => app_state.open_dir_edit(),
             'x' if in_editor => app_state.editor_cut(),
             // Ctrl+/ comments the lines, or uncomments them. Most terminals
             // send it as Ctrl+_, which reads as Ctrl+7.
@@ -325,6 +327,7 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             _ => edit_text(app_state, code),
         },
         Some(Dialog::Checksums(_)) => checksums_key(app_state, code),
+        Some(Dialog::DirEdit(_)) => dir_edit_key(app_state, code),
         Some(Dialog::Pack { .. }) => match code {
             KeyCode::Enter => handle_pack_confirm(app_state),
             KeyCode::Tab => cycle_pack_format(app_state),
@@ -637,6 +640,8 @@ fn scroll_help(app_state: &mut AppState, lines: isize) {
 fn save_then(app_state: &mut AppState, then: AfterSave) -> bool {
     match app_state.editor_save() {
         Ok(Saved::Done) => after_save(app_state, then),
+        // The plan is up; Enter on it closes the editor, Esc goes back to it.
+        Ok(Saved::Planned) => true,
         Ok(Saved::ChangedOnDisk { opened, now }) => {
             app_state.dialog = Some(Dialog::DiskChanged { then, opened, now });
             true

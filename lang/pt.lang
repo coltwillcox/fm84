@@ -1641,3 +1641,31 @@ msgstr “{name}” não está na lixeira
 
 msgid  Restoring from the trash is not supported on macOS
 msgstr Restaurar da lixeira não é suportado no macOS
+
+msgctxt job
+msgid   Edit as text
+msgstr  Editar como texto
+
+msgid  Applying the edits
+msgstr Aplicando as alterações
+
+msgid  Cannot apply the edits
+msgstr Não é possível aplicar as alterações
+
+msgid  Line {line}: {name} - {why}
+msgstr Linha {line}: {name} - {why}
+
+msgid  Line {line}: no entry number in front of the name
+msgstr Linha {line}: falta o número da entrada antes do nome
+
+msgid  Line {line}: there is no entry {number}
+msgstr Linha {line}: não há entrada {number}
+
+msgid  Nothing to change
+msgstr Nada para alterar
+
+msgid  Ctrl+B's view cannot be edited as text
+msgstr A vista de Ctrl+B não pode ser editada como texto
+
+msgid  Enter - Apply
+msgstr Enter - Aplicar
