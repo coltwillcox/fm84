@@ -172,8 +172,8 @@ fn score_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
 
 /// F1's lines as they are drawn, and what each is: a heading centred over
 /// each part, with a blank row before every one but the first and one under
-/// it, and the lines under it set in. The logo stands before About, a blank
-/// row either side of it; the high scores come last.
+/// it, and the lines under it set in. The logo stands after the keys, a
+/// blank row either side of it, then the high scores, and About last.
 pub fn help_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
     let mut lines = Vec::new();
     for (index, (heading, items)) in help().into_iter().enumerate() {
@@ -183,14 +183,14 @@ pub fn help_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
         if index == 1 {
             lines.extend(LOGO.iter().map(|row| (row.to_string(), HelpLine::Logo)));
             lines.push((String::new(), HelpLine::Item));
+            lines.extend(score_lines(scores));
+            lines.push((String::new(), HelpLine::Item));
         }
         lines.push((heading.to_string(), HelpLine::Heading));
         lines.push((String::new(), HelpLine::Item));
         let kind = if index == 0 { HelpLine::Key } else { HelpLine::Item };
         lines.extend(items.iter().map(|item| (format!("   {item}"), kind)));
     }
-    lines.push((String::new(), HelpLine::Item));
-    lines.extend(score_lines(scores));
     lines
 }
 

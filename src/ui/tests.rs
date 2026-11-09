@@ -965,16 +965,19 @@ fn the_space_map_draws_a_bar_behind_each_row() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
-/// F1 draws the README's logo between the keys and About, centred, its
+/// F1 draws the README's logo between the keys and the high scores, centred, its
 /// blocks in the directories' colour and the lines shading them in the
 /// border's - whichever theme is on.
 #[test]
 fn f1_draws_the_logo_in_the_theme_colours() {
     let lines = help_lines(&Default::default());
+    let scores = lines.iter().position(|(text, _)| text.trim() == "High scores").unwrap();
     let about = lines.iter().position(|(text, _)| text.trim() == "About").unwrap();
     let logo: Vec<usize> = lines.iter().enumerate().filter(|(_, (_, kind))| *kind == HelpLine::Logo).map(|(at, _)| at).collect();
     assert_eq!(logo.len(), 6);
-    assert_eq!(logo[5] + 2, about, "a blank row, then About");
+    assert_eq!(logo[5] + 2, scores, "a blank row, then the high scores");
+    assert!(scores < about, "About after the high scores");
+    assert!(lines.last().unwrap().0.contains(env!("CARGO_PKG_REPOSITORY")), "About last");
     assert_eq!(lines[logo[0] - 1].0, "", "a blank row after the keys");
     assert!(lines[logo[0] - 2].0.contains("Type to search"), "after the last key");
     // Every heading has a blank row under it, before what it heads.
