@@ -1694,3 +1694,27 @@ msgstr F İzle
 
 msgid  F [Follow]
 msgstr F [İzle]
+
+msgid  Staged
+msgstr Hazırlandı
+
+msgid  Unstaged
+msgstr Hazırlıktan çıkarıldı
+
+msgid  Changes discarded
+msgstr Değişiklikler atıldı
+
+msgid  Only a file can be compared with HEAD
+msgstr Yalnızca bir dosya HEAD ile karşılaştırılabilir
+
+msgid  Not a file in a repository: {path}
+msgstr Depodaki bir dosya değil: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Hazırlanmamış değişiklikler atılsın mı?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Hazırla    U - Hazırlıktan çıkar    D - Değişiklikleri at
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - HEAD ile karşılaştır    Esc - Kapat

@@ -1732,3 +1732,27 @@ msgstr F Urmărește
 
 msgid  F [Follow]
 msgstr F [Urmărește]
+
+msgid  Staged
+msgstr Pregătit
+
+msgid  Unstaged
+msgstr Scos din pregătire
+
+msgid  Changes discarded
+msgstr Modificările au fost renunțate
+
+msgid  Only a file can be compared with HEAD
+msgstr Doar un fișier poate fi comparat cu HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Nu este un fișier dintr-un depozit: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Renunțați la modificările nepregătite?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Pregătește    U - Scoate din pregătire    D - Renunță la modificări
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Compară cu HEAD    Esc - Închide

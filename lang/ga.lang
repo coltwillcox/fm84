@@ -1808,3 +1808,27 @@ msgstr F Lean
 
 msgid  F [Follow]
 msgstr F [Lean]
+
+msgid  Staged
+msgstr Stáitsithe
+
+msgid  Unstaged
+msgstr Bainte den stáitse
+
+msgid  Changes discarded
+msgstr Athruithe caite amach
+
+msgid  Only a file can be compared with HEAD
+msgstr Ní féidir ach comhad a chur i gcomparáid le HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Ní comhad i stór é: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Na hathruithe nach bhfuil stáitsithe a chaitheamh amach?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Stáitsigh    U - Bain den stáitse    D - Caith amach na hathruithe
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Cuir i gcomparáid le HEAD    Esc - Dún

@@ -202,6 +202,27 @@ pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items:
     popup_body(f, popup_area, lines);
 }
 
+/// Alt+G: what is chosen, and what git can do with it - or, once D is
+/// pressed, whether to throw its changes away.
+pub(super) fn render_git_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, bool)], discarding: bool) {
+    let popup_area = popup_rect(30, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(" Git ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let names: Vec<String> = items.iter().map(|(path, _)| shown_name(path)).collect();
+    let mut lines = vec![Line::from(Span::styled(names.join(", "), style_file()))];
+    if discarding {
+        lines.push(Line::from(Span::styled(t!("Discard the changes that are not staged?"), style_title())));
+        lines.push(Line::from(Span::styled(t!("This cannot be undone"), style_file())));
+        lines.push(key_hints(t!("Y / Enter - Yes    N / Esc - No")));
+    } else {
+        lines.push(key_hints(t!("S - Stage    U - Unstage    D - Discard changes")));
+        lines.push(key_hints(t!("C - Compare with HEAD    Esc - Close")));
+    }
+    popup_body(f, popup_area, lines);
+}
+
 /// A file in the way of one being copied or moved: both of them, size and
 /// date, so which to keep can be weighed, and the answers.
 fn render_job_clash(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, clash: &crate::app::JobClash) {

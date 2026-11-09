@@ -1695,3 +1695,27 @@ msgstr F Követés
 
 msgid  F [Follow]
 msgstr F [Követés]
+
+msgid  Staged
+msgstr Előkészítve
+
+msgid  Unstaged
+msgstr Előkészítés visszavonva
+
+msgid  Changes discarded
+msgstr Módosítások elvetve
+
+msgid  Only a file can be compared with HEAD
+msgstr Csak fájl hasonlítható össze a HEAD-del
+
+msgid  Not a file in a repository: {path}
+msgstr Nem tárolóbeli fájl: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Elveti az elő nem készített módosításokat?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Előkészítés    U - Előkészítés visszavonása    D - Módosítások elvetése
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Összehasonlítás a HEAD-del    Esc - Bezárás

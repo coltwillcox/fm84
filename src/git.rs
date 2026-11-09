@@ -175,6 +175,50 @@ pub fn switch(dir: &Path, branch: &str) -> Result<(), String> {
     git(dir, &["switch", "--no-guess", branch]).map(drop)
 }
 
+/// The directory `path` is in, and its name there: git is run from the one,
+/// on the other, so a file anywhere - fed to a panel from all over - is
+/// asked of the repository it is in.
+fn where_and_name(path: &Path) -> Result<(&Path, &OsStr), String> {
+    match (path.parent(), path.file_name()) {
+        (Some(dir), Some(name)) => Ok((dir, name)),
+        _ => Err(t!("Not a file in a repository: {path}", path = path.display())),
+    }
+}
+
+/// `git add` the file or directory at `path`: every change in it, new files
+/// too, to go into the next commit.
+pub fn stage(path: &Path) -> Result<(), String> {
+    let (dir, name) = where_and_name(path)?;
+    git_bytes(dir, &[OsStr::new("add"), OsStr::new("--"), name]).map(drop)
+}
+
+/// Take what is staged of `path` back out of the index, leaving the file as
+/// it is. Before the first commit there is no HEAD to take it back to, and
+/// it is taken out of the index altogether.
+pub fn unstage(path: &Path) -> Result<(), String> {
+    let (dir, name) = where_and_name(path)?;
+    if git_bytes(dir, &["rev-parse", "--verify", "--quiet", "HEAD"]).is_ok() {
+        git_bytes(dir, &[OsStr::new("restore"), OsStr::new("--staged"), OsStr::new("--"), name]).map(drop)
+    } else {
+        git_bytes(dir, &[OsStr::new("rm"), OsStr::new("--cached"), OsStr::new("-r"), OsStr::new("--quiet"), OsStr::new("--"), name]).map(drop)
+    }
+}
+
+/// Throw away the changes to `path` that are not staged: it goes back to
+/// what the index holds, which is HEAD's unless something was staged.
+pub fn discard(path: &Path) -> Result<(), String> {
+    let (dir, name) = where_and_name(path)?;
+    git_bytes(dir, &[OsStr::new("restore"), OsStr::new("--worktree"), OsStr::new("--"), name]).map(drop)
+}
+
+/// The file at `path` as the last commit has it.
+pub fn at_head(path: &Path) -> Result<Vec<u8>, String> {
+    let (dir, name) = where_and_name(path)?;
+    let mut spec = OsString::from("HEAD:./");
+    spec.push(name);
+    git_bytes(dir, &[OsStr::new("show"), spec.as_os_str()])
+}
+
 /// Run git in `dir`, giving back what it wrote, or what it said went wrong.
 /// Nothing it could ask for is answered: a prompt would wait for good on a
 /// terminal fm84 is drawing on.
@@ -183,7 +227,7 @@ fn git(dir: &Path, arguments: &[&str]) -> Result<String, String> {
 }
 
 /// As `git`, what it wrote as bytes: a file name need not be UTF-8.
-fn git_bytes(dir: &Path, arguments: &[&str]) -> Result<Vec<u8>, String> {
+fn git_bytes<S: AsRef<OsStr>>(dir: &Path, arguments: &[S]) -> Result<Vec<u8>, String> {
     let output = Command::new("git")
         .arg("-C")
         .arg(dir)
@@ -205,7 +249,7 @@ fn git_bytes(dir: &Path, arguments: &[&str]) -> Result<Vec<u8>, String> {
     let said = String::from_utf8_lossy(&output.stderr).split_whitespace().collect::<Vec<_>>().join(" ");
     let said = said.strip_prefix("error: ").or_else(|| said.strip_prefix("fatal: ")).unwrap_or(&said);
     let message: String = said.chars().map(|c| if c.is_control() { '.' } else { c }).collect();
-    Err(if message.is_empty() { format!("git {} failed", arguments[0]) } else { message })
+    Err(if message.is_empty() { format!("git {} failed", arguments[0].as_ref().to_string_lossy()) } else { message })
 }
 
 #[cfg(test)]
@@ -345,6 +389,58 @@ mod tests {
         if crate::fs_ops::git_branch(&dir).is_none() {
             assert!(branches(&dir).is_err());
         }
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A file changed, staged, unstaged and its changes thrown away; and
+    /// what the last commit holds of it, from a directory below the top.
+    #[test]
+    fn a_file_is_staged_unstaged_and_its_changes_discarded() {
+        let Some(dir) = repository("stage") else {
+            return;
+        };
+        let mark = |dir: &Path, name: &str| status(dir).unwrap().mark(OsStr::new(name), false);
+        let file = dir.join("file.txt");
+        std::fs::write(&file, "changed\n").unwrap();
+        assert_eq!(mark(&dir, "file.txt"), Some(Mark::Modified));
+        stage(&file).unwrap();
+        assert_eq!(mark(&dir, "file.txt"), Some(Mark::Staged));
+        unstage(&file).unwrap();
+        assert_eq!(mark(&dir, "file.txt"), Some(Mark::Modified));
+        assert_eq!(at_head(&file).unwrap(), b"main\n");
+        discard(&file).unwrap();
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "main\n");
+        assert_eq!(mark(&dir, "file.txt"), None);
+
+        // A new file in a directory: staged, and taken out again.
+        std::fs::create_dir_all(dir.join("sub")).unwrap();
+        let new = dir.join("sub").join("new.txt");
+        std::fs::write(&new, "new\n").unwrap();
+        stage(&new).unwrap();
+        assert_eq!(mark(&dir.join("sub"), "new.txt"), Some(Mark::Staged));
+        // Not in HEAD, which git says.
+        assert!(at_head(&new).is_err());
+        unstage(&new).unwrap();
+        assert_eq!(mark(&dir.join("sub"), "new.txt"), Some(Mark::Untracked));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Before the first commit there is no HEAD to unstage back to: what is
+    /// staged comes out of the index all the same.
+    #[test]
+    fn a_file_is_unstaged_before_the_first_commit() {
+        let dir = std::env::temp_dir().join(format!("fm84-git-unborn-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        if !Command::new("git").arg("-C").arg(&dir).args(["init", "--quiet"]).output().is_ok_and(|output| output.status.success()) {
+            return;
+        }
+        let file = dir.join("first.txt");
+        std::fs::write(&file, "first\n").unwrap();
+        stage(&file).unwrap();
+        assert_eq!(status(&dir).unwrap().mark(OsStr::new("first.txt"), false), Some(Mark::Staged));
+        unstage(&file).unwrap();
+        assert_eq!(status(&dir).unwrap().mark(OsStr::new("first.txt"), false), Some(Mark::Untracked));
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }

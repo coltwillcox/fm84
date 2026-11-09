@@ -1693,3 +1693,27 @@ msgstr F Følg
 
 msgid  F [Follow]
 msgstr F [Følg]
+
+msgid  Staged
+msgstr Klargjort
+
+msgid  Unstaged
+msgstr Fjernet fra klargjøring
+
+msgid  Changes discarded
+msgstr Endringer forkastet
+
+msgid  Only a file can be compared with HEAD
+msgstr Bare en fil kan sammenlignes med HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Ikke en fil i et depot: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Forkaste endringene som ikke er klargjort?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Klargjør    U - Fjern klargjøring    D - Forkast endringer
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Sammenlign med HEAD    Esc - Lukk

@@ -35,6 +35,7 @@ mod find;
 mod find_files;
 mod flat;
 mod git_marks;
+mod git_stage;
 mod history;
 mod jobs;
 mod listing;
@@ -54,8 +55,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, branches::*, dir_edit::*, duplicates::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*,
-    text_input::*, undo::*, user_menu::*, viewing::*,
+    archives::*, attribute_form::*, branches::*, dir_edit::*, duplicates::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, git_stage::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*,
+    tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -139,6 +140,9 @@ pub enum Dialog {
     Checksums(Box<ChecksumView>),
     /// Ctrl+E's plan, saved from the editor and waiting on Enter.
     DirEdit(Box<EditPlan>),
+    /// Alt+G on what is chosen: what git is to do with it, and whether the
+    /// discarding of its changes is being asked about.
+    Git { items: Vec<(PathBuf, bool)>, discarding: bool },
     /// A file big enough to be worth asking about before it is opened.
     LargeFile(LargeFile),
     /// Unsaved edits, on the way out of the editor. `then_quit` when it was

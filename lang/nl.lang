@@ -1693,3 +1693,27 @@ msgstr F Volgen
 
 msgid  F [Follow]
 msgstr F [Volgen]
+
+msgid  Staged
+msgstr Klaargezet
+
+msgid  Unstaged
+msgstr Niet meer klaargezet
+
+msgid  Changes discarded
+msgstr Wijzigingen verworpen
+
+msgid  Only a file can be compared with HEAD
+msgstr Alleen een bestand kan met HEAD worden vergeleken
+
+msgid  Not a file in a repository: {path}
+msgstr Geen bestand in een repository: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr De niet-klaargezette wijzigingen verwerpen?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Klaarzetten    U - Niet meer klaarzetten    D - Wijzigingen verwerpen
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Vergelijken met HEAD    Esc - Sluiten

@@ -1732,3 +1732,27 @@ msgstr F Śledź
 
 msgid  F [Follow]
 msgstr F [Śledź]
+
+msgid  Staged
+msgstr Dodano do poczekalni
+
+msgid  Unstaged
+msgstr Usunięto z poczekalni
+
+msgid  Changes discarded
+msgstr Zmiany odrzucone
+
+msgid  Only a file can be compared with HEAD
+msgstr Tylko plik można porównać z HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr To nie jest plik w repozytorium: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Odrzucić zmiany, których nie ma w poczekalni?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Do poczekalni    U - Z poczekalni    D - Odrzuć zmiany
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Porównaj z HEAD    Esc - Zamknij

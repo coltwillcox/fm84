@@ -1731,3 +1731,27 @@ msgstr F Prati
 
 msgid  F [Follow]
 msgstr F [Prati]
+
+msgid  Staged
+msgstr Pripremljeno
+
+msgid  Unstaged
+msgstr Uklonjeno iz pripreme
+
+msgid  Changes discarded
+msgstr Izmene odbačene
+
+msgid  Only a file can be compared with HEAD
+msgstr Samo datoteka može da se uporedi sa HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Nije datoteka u repozitorijumu: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Odbaciti izmene koje nisu pripremljene?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Pripremi    U - Ukloni iz pripreme    D - Odbaci izmene
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Uporedi sa HEAD    Esc - Zatvori

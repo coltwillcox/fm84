@@ -1695,3 +1695,27 @@ msgstr F Seguir
 
 msgid  F [Follow]
 msgstr F [Seguir]
+
+msgid  Staged
+msgstr Preparado
+
+msgid  Unstaged
+msgstr Quitado del área de preparación
+
+msgid  Changes discarded
+msgstr Cambios descartados
+
+msgid  Only a file can be compared with HEAD
+msgstr Solo un archivo se puede comparar con HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr No es un archivo de un repositorio: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr ¿Descartar los cambios no preparados?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Preparar    U - Quitar de preparación    D - Descartar cambios
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Comparar con HEAD    Esc - Cerrar

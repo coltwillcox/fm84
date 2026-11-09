@@ -1694,3 +1694,27 @@ msgstr F Παρακολούθηση
 
 msgid  F [Follow]
 msgstr F [Παρακολούθηση]
+
+msgid  Staged
+msgstr Προστέθηκε στο ευρετήριο
+
+msgid  Unstaged
+msgstr Αφαιρέθηκε από το ευρετήριο
+
+msgid  Changes discarded
+msgstr Οι αλλαγές απορρίφθηκαν
+
+msgid  Only a file can be compared with HEAD
+msgstr Μόνο ένα αρχείο συγκρίνεται με το HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Δεν είναι αρχείο σε αποθετήριο: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Απόρριψη των αλλαγών που δεν είναι στο ευρετήριο;
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Προσθήκη    U - Αφαίρεση    D - Απόρριψη αλλαγών
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Σύγκριση με το HEAD    Esc - Κλείσιμο

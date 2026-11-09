@@ -4,6 +4,7 @@ use std::collections::HashSet;
 
 mod basket;
 mod duplicates;
+mod git;
 mod jobs;
 mod panels;
 mod selection;

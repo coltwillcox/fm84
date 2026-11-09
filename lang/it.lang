@@ -1694,3 +1694,27 @@ msgstr F Segui
 
 msgid  F [Follow]
 msgstr F [Segui]
+
+msgid  Staged
+msgstr Aggiunto all'area di stage
+
+msgid  Unstaged
+msgstr Tolto dall'area di stage
+
+msgid  Changes discarded
+msgstr Modifiche scartate
+
+msgid  Only a file can be compared with HEAD
+msgstr Solo un file si può confrontare con HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Non è un file di un repository: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Scartare le modifiche non aggiunte all'area di stage?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Aggiungi allo stage    U - Togli dallo stage    D - Scarta modifiche
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Confronta con HEAD    Esc - Chiudi

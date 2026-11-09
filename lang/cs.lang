@@ -1732,3 +1732,27 @@ msgstr F Sledovat
 
 msgid  F [Follow]
 msgstr F [Sledovat]
+
+msgid  Staged
+msgstr Připraveno k zapsání
+
+msgid  Unstaged
+msgstr Odebráno z přípravy
+
+msgid  Changes discarded
+msgstr Změny zahozeny
+
+msgid  Only a file can be compared with HEAD
+msgstr S HEAD lze porovnat jen soubor
+
+msgid  Not a file in a repository: {path}
+msgstr Není soubor v repozitáři: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Zahodit změny, které nejsou připravené?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Připravit    U - Odebrat z přípravy    D - Zahodit změny
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Porovnat s HEAD    Esc - Zavřít

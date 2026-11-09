@@ -1694,3 +1694,27 @@ msgstr F Следи
 
 msgid  F [Follow]
 msgstr F [Следи]
+
+msgid  Staged
+msgstr Подготвено
+
+msgid  Unstaged
+msgstr Отстрането од подготовка
+
+msgid  Changes discarded
+msgstr Измените се отфрлени
+
+msgid  Only a file can be compared with HEAD
+msgstr Само датотека може да се спореди со HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Не е датотека во складиште: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Да се отфрлат измените што не се подготвени?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Подготви    U - Отстрани од подготовка    D - Отфрли измени
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Спореди со HEAD    Esc - Затвори

@@ -1693,3 +1693,27 @@ msgstr F Следене
 
 msgid  F [Follow]
 msgstr F [Следене]
+
+msgid  Staged
+msgstr Добавено в индекса
+
+msgid  Unstaged
+msgstr Извадено от индекса
+
+msgid  Changes discarded
+msgstr Промените са отхвърлени
+
+msgid  Only a file can be compared with HEAD
+msgstr Само файл може да се сравни с HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Не е файл в хранилище: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Да се отхвърлят ли промените, които не са в индекса?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Добави в индекса    U - Извади от индекса    D - Отхвърли промените
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Сравни с HEAD    Esc - Затваряне

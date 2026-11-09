@@ -1694,3 +1694,27 @@ msgstr F Följ
 
 msgid  F [Follow]
 msgstr F [Följ]
+
+msgid  Staged
+msgstr Köad
+
+msgid  Unstaged
+msgstr Inte längre köad
+
+msgid  Changes discarded
+msgstr Ändringar kastade
+
+msgid  Only a file can be compared with HEAD
+msgstr Bara en fil kan jämföras med HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Inte en fil i ett förråd: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Kasta ändringarna som inte är köade?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Köa    U - Ta ur kö    D - Kasta ändringar
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Jämför med HEAD    Esc - Stäng

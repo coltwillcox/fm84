@@ -1771,3 +1771,27 @@ msgstr F Sledi
 
 msgid  F [Follow]
 msgstr F [Sledi]
+
+msgid  Staged
+msgstr Pripravljeno
+
+msgid  Unstaged
+msgstr Odstranjeno iz priprave
+
+msgid  Changes discarded
+msgstr Spremembe zavržene
+
+msgid  Only a file can be compared with HEAD
+msgstr S HEAD je mogoče primerjati le datoteko
+
+msgid  Not a file in a repository: {path}
+msgstr Ni datoteka v skladišču: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Zavržem spremembe, ki niso pripravljene?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Pripravi    U - Odstrani iz priprave    D - Zavrzi spremembe
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Primerjaj s HEAD    Esc - Zapri

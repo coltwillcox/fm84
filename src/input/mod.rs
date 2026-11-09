@@ -148,6 +148,11 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'B' {
             app_state.open_basket();
         }
+        // Alt+G, git: stage, unstage, discard, or compare with HEAD.
+        if in_panel && c == 'g' {
+            let items = chosen_items(app_state);
+            app_state.open_git(items);
+        }
         // Alt+D, the files the same as another.
         if in_panel && c == 'd' {
             app_state.find_duplicates();
@@ -341,6 +346,16 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         },
         Some(Dialog::Checksums(_)) => checksums_key(app_state, code),
         Some(Dialog::DirEdit(_)) => dir_edit_key(app_state, code),
+        Some(Dialog::Git { discarding: true, .. }) if yes => app_state.git_act(crate::app::GitAction::Discard),
+        Some(Dialog::Git { discarding: true, .. }) if no => app_state.dialog = None,
+        Some(Dialog::Git { discarding: false, .. }) => match code {
+            KeyCode::Char('s' | 'S') => app_state.git_act(crate::app::GitAction::Stage),
+            KeyCode::Char('u' | 'U') => app_state.git_act(crate::app::GitAction::Unstage),
+            KeyCode::Char('d' | 'D') => app_state.git_act(crate::app::GitAction::Discard),
+            KeyCode::Char('c' | 'C') => app_state.git_compare_head(),
+            KeyCode::Esc => app_state.dialog = None,
+            _ => {}
+        },
         Some(Dialog::Pack { .. }) => match code {
             KeyCode::Enter => handle_pack_confirm(app_state),
             KeyCode::Tab => cycle_pack_format(app_state),

@@ -1694,3 +1694,27 @@ msgstr F Verfolgen
 
 msgid  F [Follow]
 msgstr F [Verfolgen]
+
+msgid  Staged
+msgstr Vorgemerkt
+
+msgid  Unstaged
+msgstr Nicht mehr vorgemerkt
+
+msgid  Changes discarded
+msgstr Änderungen verworfen
+
+msgid  Only a file can be compared with HEAD
+msgstr Nur eine Datei kann mit HEAD verglichen werden
+
+msgid  Not a file in a repository: {path}
+msgstr Keine Datei in einem Repository: {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Die nicht vorgemerkten Änderungen verwerfen?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Vormerken    U - Nicht mehr vormerken    D - Änderungen verwerfen
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Mit HEAD vergleichen    Esc - Schließen

@@ -1695,3 +1695,27 @@ msgstr F Suivre
 
 msgid  F [Follow]
 msgstr F [Suivre]
+
+msgid  Staged
+msgstr Indexé
+
+msgid  Unstaged
+msgstr Retiré de l'index
+
+msgid  Changes discarded
+msgstr Modifications abandonnées
+
+msgid  Only a file can be compared with HEAD
+msgstr Seul un fichier peut être comparé à HEAD
+
+msgid  Not a file in a repository: {path}
+msgstr Pas un fichier d'un dépôt : {path}
+
+msgid  Discard the changes that are not staged?
+msgstr Abandonner les modifications non indexées ?
+
+msgid  S - Stage    U - Unstage    D - Discard changes
+msgstr S - Indexer    U - Désindexer    D - Abandonner les modifications
+
+msgid  C - Compare with HEAD    Esc - Close
+msgstr C - Comparer à HEAD    Échap - Fermer

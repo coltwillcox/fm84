@@ -380,6 +380,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),
             Some(Dialog::Delete { items, to_trash }) => render_delete_popup(f, area, items, *to_trash),
+            Some(Dialog::Git { items, discarding }) => render_git_popup(f, area, items, *discarding),
             Some(Dialog::Transfer { sources, is_copy, input, .. }) => render_destination_popup(f, area, sources, if *is_copy { Destination::Copy } else { Destination::Move }, input, None),
             Some(Dialog::Symlink { sources, input, hard, .. }) => {
                 let (kind, other) = if *hard { (Destination::HardLink, t!("Tab - Symlink")) } else { (Destination::Symlink, t!("Tab - Hard link")) };
