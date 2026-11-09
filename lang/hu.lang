@@ -1765,3 +1765,15 @@ msgstr Másik fájl másolatai: {count}, {size} helyet foglalnak
 
 msgid  None found
 msgstr Nincs ilyen
+
+msgid  Info
+msgstr Infó
+
+msgid  Info column, from commands
+msgstr Infó oszlop, parancsokból
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Mozgás    Enter/←→ - Módosítás    E - Parancsok szerkesztése    Esc - Bezárás
+
+msgid  No config directory to keep the commands in
+msgstr Nincs beállításmappa a parancsoknak

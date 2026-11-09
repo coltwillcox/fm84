@@ -1763,3 +1763,15 @@ msgstr Kopieën van een ander: {count}, samen {size}
 
 msgid  None found
 msgstr Geen gevonden
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Info-kolom, uit opdrachten
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Verplaatsen    Enter/←→ - Wijzigen    E - Opdrachten bewerken    Esc - Sluiten
+
+msgid  No config directory to keep the commands in
+msgstr Geen configuratiemap om de opdrachten in te bewaren

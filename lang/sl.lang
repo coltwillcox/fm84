@@ -1841,3 +1841,15 @@ msgstr Kopije druge datoteke: {count}, zasedajo {size}
 
 msgid  None found
 msgstr Ni jih
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Stolpec Info, iz ukazov
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Premik    Enter/←→ - Spremeni    E - Uredi ukaze    Esc - Zapri
+
+msgid  No config directory to keep the commands in
+msgstr Ni mape z nastavitvami za ukaze

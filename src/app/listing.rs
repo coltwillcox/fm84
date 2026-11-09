@@ -53,7 +53,7 @@ pub struct PendingListing {
 /// has a walk under Ctrl+B stop rather than go on through a whole disk for
 /// nobody. Once taken in, the walk is over anyway.
 #[derive(Default)]
-pub(super) struct StopOnDrop(Arc<AtomicBool>);
+pub(super) struct StopOnDrop(pub(super) Arc<AtomicBool>);
 
 impl Drop for StopOnDrop {
     fn drop(&mut self) {
@@ -454,6 +454,7 @@ impl AppState {
         // inside one, which has no time of its own.
         let probe = listed.archive.clone().unwrap_or_else(|| found.clone());
         self.request_git_marks(side, &found, listed.branch.is_some() && listed.archive.is_none());
+        self.request_info(side, listed.archive.is_some());
         if side.is_left() {
             self.left.disk = listed.disk;
             self.left.branch = listed.branch;

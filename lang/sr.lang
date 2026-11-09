@@ -1801,3 +1801,15 @@ msgstr Kopije druge datoteke: {count}, zauzimaju {size}
 
 msgid  None found
 msgstr Nema ih
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Kolona Info, iz komandi
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Pomeri    Enter/←→ - Promeni    E - Uredi komande    Esc - Zatvori
+
+msgid  No config directory to keep the commands in
+msgstr Nema fascikle podešavanja za komande

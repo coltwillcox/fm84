@@ -167,6 +167,39 @@ pub fn associations_file() -> Option<PathBuf> {
     Some(path)
 }
 
+/// What a new `columns` file says.
+const COLUMNS_TEMPLATE: &str = "\
+# What fm84's Info column shows, by extension, as
+#   extensions = command
+# F11 turns the column on. The first line for a file is the one used; the
+# first line the command prints is what the column shows. Extensions are
+# separated by spaces, any case, without the dot, and * is every file. The
+# command runs in the shell, in the file's directory, with {file} where the
+# file goes, or on the end if it is not there; it has two seconds. What it
+# gives is kept until the file changes.
+#
+# jpg jpeg png gif webp = identify -format '%wx%h' {file}
+# mp3 flac ogg opus m4a = ffprobe -v error -show_entries format=duration -sexagesimal -of csv=p=0 {file} | cut -d. -f1
+# pdf = pdfinfo {file} | awk '/^Pages:/ {print $2 \" pages\"}'
+# rs py c h go js ts md txt = wc -l < {file}
+# * = git log -1 --format=%ar -- {file}
+";
+
+/// The `columns` file's lines, in order, read afresh: it is small, and an
+/// edit to it shows at the next listing.
+pub fn load_columns() -> Vec<Association> {
+    config_path("columns").and_then(|path| fs::read_to_string(path).ok()).map(|text| parse_associations(&text)).unwrap_or_default()
+}
+
+/// The `columns` file, written with examples if there is none yet.
+pub fn columns_file() -> Option<PathBuf> {
+    let path = config_path("columns")?;
+    if !path.exists() {
+        let _ = write_config_file("columns", COLUMNS_TEMPLATE);
+    }
+    Some(path)
+}
+
 /// A path as a session line holds it. `display()` would lose any name that is
 /// not valid UTF-8, and the reader trims each value, so spaces at either end
 /// would go too. Those bytes, control characters and `%` itself are written

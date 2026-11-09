@@ -1802,3 +1802,15 @@ msgstr Kopie innego pliku: {count}, zajmują {size}
 
 msgid  None found
 msgstr Nie znaleziono
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Kolumna Info, z poleceń
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Ruch    Enter/←→ - Zmień    E - Edytuj polecenia    Esc - Zamknij
+
+msgid  No config directory to keep the commands in
+msgstr Brak katalogu konfiguracji na polecenia

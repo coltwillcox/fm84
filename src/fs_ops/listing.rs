@@ -333,6 +333,9 @@ fn compare_rows(a: &Item, b: &Item, options: &Options) -> std::cmp::Ordering {
         SortKey::Extension => text(&a.extension, &b.extension).then_with(name),
         SortKey::Size => a.size_bytes.cmp(&b.size_bytes).then_with(name),
         SortKey::Modified => a.modified_at.cmp(&b.modified_at).then_with(name),
+        // Not known yet: the commands run once the panel has the listing,
+        // which is sorted again as their answers come.
+        SortKey::Info => name(),
     };
     if options.sort_descending { order.reverse() } else { order }
 }

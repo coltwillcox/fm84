@@ -1802,3 +1802,15 @@ msgstr Copii ale altuia: {count}, ocupă {size}
 
 msgid  None found
 msgstr Niciunul găsit
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Coloana Info, din comenzi
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Mută    Enter/←→ - Schimbă    E - Editează comenzile    Esc - Închide
+
+msgid  No config directory to keep the commands in
+msgstr Nu există director de configurare pentru comenzi

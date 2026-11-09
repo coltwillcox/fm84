@@ -1802,3 +1802,15 @@ msgstr Kopije druge datoteke: {count}, zauzimaju {size}
 
 msgid  None found
 msgstr Nema ih
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Stupac Info, iz naredbi
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Pomak    Enter/←→ - Promijeni    E - Uredi naredbe    Esc - Zatvori
+
+msgid  No config directory to keep the commands in
+msgstr Nema mape postavki za naredbe

@@ -1878,3 +1878,15 @@ msgstr Cóipeanna de cheann eile: {count}, {size} acu
 
 msgid  None found
 msgstr Níor aimsíodh aon cheann
+
+msgid  Info
+msgstr Eolas
+
+msgid  Info column, from commands
+msgstr Colún Eolais, ó orduithe
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Bog    Enter/←→ - Athraigh    E - Cuir na horduithe in eagar    Esc - Dún
+
+msgid  No config directory to keep the commands in
+msgstr Níl comhadlann socruithe ann do na horduithe

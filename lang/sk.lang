@@ -1802,3 +1802,15 @@ msgstr Kópie iného súboru: {count}, zaberajú {size}
 
 msgid  None found
 msgstr Nič sa nenašlo
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Stĺpec Info z príkazov
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Pohyb    Enter/←→ - Zmeniť    E - Upraviť príkazy    Esc - Zavrieť
+
+msgid  No config directory to keep the commands in
+msgstr Chýba priečinok nastavení na uloženie príkazov

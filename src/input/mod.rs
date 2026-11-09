@@ -317,6 +317,8 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Down => app_state.options_move(true),
             KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Right => app_state.options_change(true),
             KeyCode::Left => app_state.options_change(false),
+            // E on the Info row: the commands that fill it.
+            KeyCode::Char('e' | 'E') if crate::options::OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::ColumnInfo => app_state.edit_columns(),
             _ => {}
         },
         Some(Dialog::Rename(_)) => match code {

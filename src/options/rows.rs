@@ -14,6 +14,7 @@ pub enum OptionRow {
     ColumnSize,
     ColumnModified,
     ColumnAttributes,
+    ColumnInfo,
     GitMarks,
     DateFormat,
     SizeUnits,
@@ -43,7 +44,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 36] = [
+pub const OPTION_ROWS: [OptionRow; 37] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -53,6 +54,7 @@ pub const OPTION_ROWS: [OptionRow; 36] = [
     OptionRow::ColumnSize,
     OptionRow::ColumnModified,
     OptionRow::ColumnAttributes,
+    OptionRow::ColumnInfo,
     OptionRow::GitMarks,
     OptionRow::DateFormat,
     OptionRow::SizeUnits,
@@ -94,6 +96,7 @@ impl OptionRow {
             OptionRow::ColumnSize => t!("Size column"),
             OptionRow::ColumnModified => t!("Modified column"),
             OptionRow::ColumnAttributes => t!("Attributes column"),
+            OptionRow::ColumnInfo => t!("Info column, from commands"),
             OptionRow::GitMarks => t!("Git marks"),
             OptionRow::DateFormat => t!("Date format"),
             OptionRow::SizeUnits => t!("Size units"),
@@ -145,7 +148,7 @@ impl OptionRow {
     pub fn affects_listing(self) -> bool {
         matches!(
             self,
-            OptionRow::ShowHidden | OptionRow::SortKey | OptionRow::SortDirection | OptionRow::DirsFirst | OptionRow::CaseSensitive | OptionRow::SizeUnits | OptionRow::GitMarks
+            OptionRow::ShowHidden | OptionRow::SortKey | OptionRow::SortDirection | OptionRow::DirsFirst | OptionRow::CaseSensitive | OptionRow::SizeUnits | OptionRow::GitMarks | OptionRow::ColumnInfo
         )
     }
 }
@@ -160,6 +163,7 @@ impl Options {
                 SortKey::Extension => t!("Extension"),
                 SortKey::Size => t!("Size"),
                 SortKey::Modified => t!("Modified"),
+                SortKey::Info => t!("Info"),
             }
             .to_string(),
             OptionRow::SortDirection => if self.sort_descending { t!("Descending") } else { t!("Ascending") }.to_string(),
@@ -169,6 +173,7 @@ impl Options {
             OptionRow::ColumnSize => on_off(self.column_size),
             OptionRow::ColumnModified => on_off(self.column_modified),
             OptionRow::ColumnAttributes => on_off(self.column_attributes),
+            OptionRow::ColumnInfo => on_off(self.column_info),
             OptionRow::GitMarks => on_off(self.git_marks),
             OptionRow::DateFormat => match self.date_format {
                 DateFormat::Short => "dd/mm/yy",
@@ -274,7 +279,7 @@ impl Options {
         match row {
             OptionRow::ShowHidden => self.show_hidden = !self.show_hidden,
             OptionRow::SortKey => {
-                let keys = [SortKey::Name, SortKey::Extension, SortKey::Size, SortKey::Modified];
+                let keys = [SortKey::Name, SortKey::Extension, SortKey::Size, SortKey::Modified, SortKey::Info];
                 self.sort_key = step(&keys, self.sort_key, forward);
             }
             OptionRow::SortDirection => self.sort_descending = !self.sort_descending,
@@ -284,6 +289,7 @@ impl Options {
             OptionRow::ColumnSize => self.column_size = !self.column_size,
             OptionRow::ColumnModified => self.column_modified = !self.column_modified,
             OptionRow::ColumnAttributes => self.column_attributes = !self.column_attributes,
+            OptionRow::ColumnInfo => self.column_info = !self.column_info,
             OptionRow::GitMarks => self.git_marks = !self.git_marks,
             OptionRow::DateFormat => {
                 let formats = [DateFormat::Short, DateFormat::Iso, DateFormat::Relative];

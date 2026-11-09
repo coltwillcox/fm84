@@ -38,6 +38,7 @@ mod flat;
 mod git_marks;
 mod git_stage;
 mod history;
+mod info_column;
 mod jobs;
 mod listing;
 mod multi_rename;
@@ -56,8 +57,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, git_stage::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*,
-    sync::*, tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
+    archives::*, attribute_form::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*,
+    selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -268,6 +269,9 @@ pub struct AppState {
     /// Alt+B's basket: what has been gathered, as paths, and whether each
     /// is a directory.
     pub basket: Vec<(PathBuf, bool)>,
+    /// What the Info column's commands gave, by the file as it was and the
+    /// command, so a reread runs nothing that has run already.
+    pub info_cache: HashMap<(PathBuf, u64, Option<SystemTime>, String), String>,
 }
 
 #[derive(Debug, Clone)]
@@ -374,6 +378,8 @@ pub struct Panel {
     pub flat: Option<Flat>,
     /// What git says of the panel's entries.
     pub git: PanelGit,
+    /// What the `columns` file's commands say of them.
+    pub info: PanelInfo,
     // Keyed by file name, not row index: a reload can re-sort the rows, and an
     // index would then point at a different file than the one the user picked.
     // The name the filesystem holds, not the one shown: two names that are not
@@ -559,6 +565,7 @@ impl AppState {
                 filter: None,
                 flat: None,
                 git: PanelGit::default(),
+                info: PanelInfo::default(),
                 selected: HashSet::new(),
                 tabs: Tabs::new(vec![dir_root.clone()], 0),
                 listing: None,
@@ -576,6 +583,7 @@ impl AppState {
                 filter: None,
                 flat: None,
                 git: PanelGit::default(),
+                info: PanelInfo::default(),
                 selected: HashSet::new(),
                 tabs: Tabs::new(vec![dir_root], 0),
                 listing: None,
@@ -624,6 +632,7 @@ impl AppState {
             stay_put: false,
             undo: Vec::new(),
             basket: Vec::new(),
+            info_cache: HashMap::new(),
             drive_strips: [Strip::default(), Strip::default()],
         }
     }

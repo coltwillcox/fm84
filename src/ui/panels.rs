@@ -10,10 +10,12 @@ enum Column {
     Size,
     Modified,
     Attributes,
+    /// What the `columns` file's commands say.
+    Info,
 }
 
 /// Widest-priority first: as a panel narrows they are given up from the end.
-const OPTIONAL_COLUMNS: [Column; 4] = [Column::Ext, Column::Size, Column::Modified, Column::Attributes];
+const OPTIONAL_COLUMNS: [Column; 5] = [Column::Ext, Column::Size, Column::Modified, Column::Attributes, Column::Info];
 
 /// Below this, a filename is no longer worth reading, so the next column goes.
 const MIN_NAME_WIDTH: u16 = 12;
@@ -25,6 +27,7 @@ impl Column {
             Column::Size => t!("Size"),
             Column::Modified => t!("Modified"),
             Column::Attributes => t!("Attributes"),
+            Column::Info => t!("Info"),
         }
     }
 
@@ -35,6 +38,7 @@ impl Column {
             Column::Size => Some(SortKey::Size),
             Column::Modified => Some(SortKey::Modified),
             Column::Attributes => None,
+            Column::Info => Some(SortKey::Info),
         }
     }
 
@@ -52,6 +56,8 @@ impl Column {
                 DateFormat::Relative => 11,
             },
             Column::Attributes => 10,
+            // "1920x1080", "3 weeks ago", "128 pages" - the longer is cut.
+            Column::Info => 12,
         };
         held.max(titled)
     }
@@ -62,6 +68,7 @@ impl Column {
             Column::Size => options.column_size,
             Column::Modified => options.column_modified,
             Column::Attributes => options.column_attributes,
+            Column::Info => options.column_info,
         }
     }
 }
@@ -667,6 +674,7 @@ fn build_viewport_rows(app_state: &AppState, side: Side, viewport_height: usize,
                 Column::Size => size.clone(),
                 Column::Modified => child.modified_at.map(|time| format_modified(time, date_format, now)).unwrap_or_default(),
                 Column::Attributes => child.attributes.clone(),
+                Column::Info => app_state.panel(side).info.values.get(&child.name_os).map(|value| printable_name(value)).unwrap_or_default(),
             };
             cells.push(border_cell.clone());
             cells.push(Cell::from(Span::styled(value, text_style)));

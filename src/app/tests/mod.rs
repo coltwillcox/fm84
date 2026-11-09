@@ -6,6 +6,7 @@ mod basket;
 mod dossier;
 mod duplicates;
 mod git;
+mod info_column;
 mod jobs;
 mod panels;
 mod selection;

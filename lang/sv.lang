@@ -1764,3 +1764,15 @@ msgstr Kopior av en annan: {count}, tar {size}
 
 msgid  None found
 msgstr Inga hittades
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Info-kolumn, från kommandon
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Flytta    Enter/←→ - Ändra    E - Redigera kommandona    Esc - Stäng
+
+msgid  No config directory to keep the commands in
+msgstr Ingen konfigurationsmapp att spara kommandona i

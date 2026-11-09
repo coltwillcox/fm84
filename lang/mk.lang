@@ -1764,3 +1764,15 @@ msgstr Копии на друга: {count}, зафаќаат {size}
 
 msgid  None found
 msgstr Не се најдени
+
+msgid  Info
+msgstr Инфо
+
+msgid  Info column, from commands
+msgstr Колона Инфо, од команди
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Помести    Enter/←→ - Промени    E - Уреди ги командите    Esc - Затвори
+
+msgid  No config directory to keep the commands in
+msgstr Нема папка за поставки за командите

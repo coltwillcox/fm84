@@ -75,6 +75,7 @@ impl Options {
                         "extension" => SortKey::Extension,
                         "size" => SortKey::Size,
                         "modified" => SortKey::Modified,
+                        "info" => SortKey::Info,
                         _ => options.sort_key,
                     }
                 }
@@ -85,6 +86,7 @@ impl Options {
                 "column_size" => options.column_size = flag(options.column_size),
                 "column_modified" => options.column_modified = flag(options.column_modified),
                 "column_attributes" => options.column_attributes = flag(options.column_attributes),
+                "column_info" => options.column_info = flag(options.column_info),
                 "git_marks" => options.git_marks = flag(options.git_marks),
                 "date_format" => {
                     options.date_format = match value {
@@ -185,6 +187,7 @@ impl Options {
             SortKey::Extension => "extension",
             SortKey::Size => "size",
             SortKey::Modified => "modified",
+            SortKey::Info => "info",
         };
         let date_format = match self.date_format {
             DateFormat::Short => "short",
@@ -224,6 +227,8 @@ impl Options {
              column_size = {}\n\
              column_modified = {}\n\
              column_attributes = {}\n\
+             # Filled by the commands in the columns file beside this one.\n\
+             column_info = {}\n\
              # M modified, S staged, ? untracked, ! ignored, U in conflict.\n\
              git_marks = {}\n\
              # short, iso or relative.\n\
@@ -280,6 +285,7 @@ impl Options {
             self.column_size,
             self.column_modified,
             self.column_attributes,
+            self.column_info,
             self.git_marks,
             date_format,
             size_units,

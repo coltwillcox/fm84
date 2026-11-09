@@ -49,7 +49,9 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
     lines.push(Line::from(""));
     lines.extend(list.into_iter().skip(first).take(room));
 
-    let hint = if editing.is_none() {
+    let hint = if editing.is_none() && OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::ColumnInfo {
+        t!("↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close")
+    } else if editing.is_none() {
         t!("↑↓ - Move    Enter/←→ - Change    Esc - Close")
     } else if OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::Editor {
         t!("Enter - Save    Esc - Cancel    {} - file")

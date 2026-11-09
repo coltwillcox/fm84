@@ -1764,3 +1764,15 @@ msgstr Copie di un altro: {count}, occupano {size}
 
 msgid  None found
 msgstr Nessuno trovato
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Colonna Info, da comandi
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Muovi    Invio/←→ - Cambia    E - Modifica i comandi    Esc - Chiudi
+
+msgid  No config directory to keep the commands in
+msgstr Nessuna cartella di configurazione per i comandi

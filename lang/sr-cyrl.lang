@@ -1801,3 +1801,15 @@ msgstr Копије друге датотеке: {count}, заузимају {si
 
 msgid  None found
 msgstr Нема их
+
+msgid  Info
+msgstr Инфо
+
+msgid  Info column, from commands
+msgstr Колона Инфо, из команди
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Помери    Enter/←→ - Промени    E - Уреди команде    Esc - Затвори
+
+msgid  No config directory to keep the commands in
+msgstr Нема фасцикле подешавања за команде

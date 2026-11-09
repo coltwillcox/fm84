@@ -19,6 +19,9 @@ pub enum SortKey {
     Extension,
     Size,
     Modified,
+    /// What the commands in the `columns` file give, as numbers where they
+    /// are numbers.
+    Info,
 }
 
 /// Which glyphs to draw. Nerd Font icons count as one cell but most Nerd Fonts
@@ -255,6 +258,8 @@ pub struct Options {
     pub column_size: bool,
     pub column_modified: bool,
     pub column_attributes: bool,
+    /// A column filled by the commands in the `columns` file.
+    pub column_info: bool,
     /// Mark what git says of each entry - modified, staged, untracked,
     /// ignored, in conflict - at the end of its name.
     pub git_marks: bool,
@@ -326,6 +331,7 @@ impl Default for Options {
             column_size: true,
             column_modified: true,
             column_attributes: true,
+            column_info: false,
             git_marks: true,
             date_format: DateFormat::Short,
             size_units: SizeUnits::Binary,

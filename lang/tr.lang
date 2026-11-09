@@ -1764,3 +1764,15 @@ msgstr Başka bir dosyanın kopyası: {count}, {size} yer kaplıyor
 
 msgid  None found
 msgstr Bulunamadı
+
+msgid  Info
+msgstr Bilgi
+
+msgid  Info column, from commands
+msgstr Bilgi sütunu, komutlardan
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Gez    Enter/←→ - Değiştir    E - Komutları düzenle    Esc - Kapat
+
+msgid  No config directory to keep the commands in
+msgstr Komutları saklayacak yapılandırma dizini yok

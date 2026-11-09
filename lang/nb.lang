@@ -1763,3 +1763,15 @@ msgstr Kopier av en annen: {count}, tar {size}
 
 msgid  None found
 msgstr Ingen funnet
+
+msgid  Info
+msgstr Info
+
+msgid  Info column, from commands
+msgstr Info-kolonne, fra kommandoer
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Flytt    Enter/←→ - Endre    E - Rediger kommandoene    Esc - Lukk
+
+msgid  No config directory to keep the commands in
+msgstr Ingen konfigurasjonsmappe å lagre kommandoene i

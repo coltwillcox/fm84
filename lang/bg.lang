@@ -1763,3 +1763,15 @@ msgstr Копия на друг файл: {count}, заемат {size}
 
 msgid  None found
 msgstr Няма намерени
+
+msgid  Info
+msgstr Инфо
+
+msgid  Info column, from commands
+msgstr Колона Инфо, от команди
+
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
+msgstr ↑↓ - Местене    Enter/←→ - Промяна    E - Редактирай командите    Esc - Затваряне
+
+msgid  No config directory to keep the commands in
+msgstr Няма папка с настройки, в която да се пазят командите
