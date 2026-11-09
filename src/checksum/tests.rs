@@ -128,3 +128,22 @@ fn a_single_file_gets_a_file_of_its_own() {
     assert_eq!(report.to_copy(), "900150983cd24fb0d6963f7d28e17f72");
     assert!(is_sums_file(&file) && is_sums_file(Path::new("SHA256SUMS")) && !is_sums_file(Path::new("big.iso")));
 }
+
+/// A carriage return in a name is escaped as coreutils escapes it, `\r`, and
+/// read back so: a sha256sum file naming one is understood, and one written
+/// here keeps a name that ends in one rather than losing it to the line end.
+#[cfg(unix)]
+#[test]
+fn a_carriage_return_in_a_name_is_escaped() {
+    use std::os::unix::ffi::OsStrExt;
+    let hex = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    let (found, not_understood) = parse_sums(format!("\\{hex}  a\\rb\n").as_bytes());
+    assert_eq!(not_understood, 0);
+    assert_eq!(found[0].name.as_os_str().as_bytes(), b"a\rb");
+
+    let name = Path::new(std::ffi::OsStr::from_bytes(b"ends\r"));
+    let line = sums_line(hex, name);
+    assert_eq!(line, format!("\\{hex}  ends\\r\n").into_bytes());
+    let (found, _) = parse_sums(&line);
+    assert_eq!(found[0].name, name);
+}

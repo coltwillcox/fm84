@@ -197,11 +197,12 @@ pub fn targets(sources: &[(PathBuf, bool)], base: &Path) -> (Vec<Target>, Vec<(P
 }
 
 /// One line of a checksum file as sha256sum writes it: the checksum, two
-/// spaces, the name. A name with a newline or a backslash in it is escaped,
-/// and the line marked with a backslash first to say so.
+/// spaces, the name. A name with a newline, a carriage return or a
+/// backslash in it is escaped, as coreutils escapes it, and the line marked
+/// with a backslash first to say so.
 pub fn sums_line(hex: &str, name: &Path) -> Vec<u8> {
     let bytes = name.as_os_str().as_encoded_bytes();
-    let escape = bytes.iter().any(|&byte| byte == b'\n' || byte == b'\\');
+    let escape = bytes.iter().any(|&byte| matches!(byte, b'\n' | b'\r' | b'\\'));
     let mut line = Vec::with_capacity(hex.len() + bytes.len() + 4);
     if escape {
         line.push(b'\\');
@@ -211,6 +212,7 @@ pub fn sums_line(hex: &str, name: &Path) -> Vec<u8> {
     for &byte in bytes {
         match byte {
             b'\n' if escape => line.extend_from_slice(b"\\n"),
+            b'\r' if escape => line.extend_from_slice(b"\\r"),
             b'\\' if escape => line.extend_from_slice(b"\\\\"),
             _ => line.push(byte),
         }
@@ -280,7 +282,7 @@ fn parse_bsd(line: &[u8]) -> Option<Expected> {
     })
 }
 
-/// `\n` and `\\` back to what they stand for; anything else after a
+/// `\n`, `\r` and `\\` back to what they stand for; anything else after a
 /// backslash is not something sha256sum writes.
 fn unescape(name: &[u8]) -> Option<Vec<u8>> {
     let mut out = Vec::with_capacity(name.len());
@@ -292,6 +294,7 @@ fn unescape(name: &[u8]) -> Option<Vec<u8>> {
         }
         match bytes.next()? {
             b'n' => out.push(b'\n'),
+            b'r' => out.push(b'\r'),
             b'\\' => out.push(b'\\'),
             _ => return None,
         }
