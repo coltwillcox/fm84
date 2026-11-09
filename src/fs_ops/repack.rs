@@ -9,7 +9,7 @@ use super::pack::{Compressor, Counted, Lazy, MemberKind, PackPlan, Shared, appen
 use super::transfer::place;
 use super::*;
 use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::mpsc;
 
 /// What is to change in an archive. Every path is from its root.
@@ -37,6 +37,9 @@ pub struct RepackPlan {
     remove: Vec<PathBuf>,
     /// Files in the archive that a file coming in is put in place of.
     replaced: HashSet<PathBuf>,
+    /// A tar's entries going that hard links staying name: each, by the
+    /// first of those links, which takes its contents in its place.
+    heirs: HashMap<PathBuf, PathBuf>,
     added: PackPlan,
     make: Vec<(PathBuf, bool)>,
     /// What an encrypted archive is opened with, and what goes into it
@@ -125,15 +128,29 @@ pub fn plan_repack(archive: &Path, edits: &Repack, report: Report<'_>) -> Result
         format,
         remove: edits.remove.clone(),
         replaced,
+        heirs: HashMap::new(),
         added,
         make: edits.make.clone(),
         bytes: 0,
     };
+    // Hard links in the order the tar has them, the first staying for each
+    // target going.
+    let mut links: Vec<&crate::archive::Entry> = index.subtree(Path::new("")).into_iter().map(|at| index.entry(at)).filter(|entry| entry.kind == crate::archive::EntryKind::HardLink).collect();
+    links.sort_by_key(|entry| entry.position);
+    for link in links {
+        if let Some(target) = &link.link
+            && plan.drops(Some(target))
+            && !plan.drops(Some(&link.path))
+            && !plan.heirs.contains_key(target)
+        {
+            plan.heirs.insert(target.clone(), link.path.clone());
+        }
+    }
     let kept: u64 = index
         .subtree(Path::new(""))
         .into_iter()
         .map(|at| index.entry(at))
-        .filter(|entry| entry.kind == crate::archive::EntryKind::File && !plan.drops(Some(&entry.path)))
+        .filter(|entry| entry.kind == crate::archive::EntryKind::File && (!plan.drops(Some(&entry.path)) || plan.heirs.contains_key(&entry.path)))
         .map(|entry| entry.size)
         .sum();
     let coming: u64 = plan.added.members.iter().filter(|member| matches!(member.kind, MemberKind::File) && !member.left_out.get()).map(|member| member.metadata.len()).sum();
@@ -201,10 +218,32 @@ fn retar(plan: &RepackPlan, compressor: Compressor, report: &Shared<'_, '_>, can
     for entry in old.entries()? {
         let mut entry = entry?;
         let raw = entry.path_bytes().into_owned();
-        if plan.drops(crate::archive::inner_path(&raw).as_deref()) {
+        let inner = crate::archive::inner_path(&raw);
+        let mut header = entry.header().clone();
+        // Going, but named by a hard link staying: its contents go in here,
+        // under that link's name.
+        if plan.drops(inner.as_deref()) {
+            let Some(heir) = inner.as_ref().and_then(|inner| plan.heirs.get(inner)) else {
+                continue;
+            };
+            if header.entry_type() == tar::EntryType::GNUSparse {
+                header.set_entry_type(tar::EntryType::Regular);
+            }
+            let size = entry.size();
+            header.set_size(size);
+            tar.append_data(&mut header, heir, Counted::new(&mut entry, size, report, cancelled))?;
             continue;
         }
-        let mut header = entry.header().clone();
+        // A link to what went: the heir has the contents already, and the
+        // rest name it.
+        if header.entry_type() == tar::EntryType::Link
+            && let Some(heir) = entry.link_name_bytes().and_then(|bytes| crate::archive::inner_path(&bytes)).and_then(|target| plan.heirs.get(&target))
+        {
+            if inner.as_ref() != Some(heir) {
+                tar.append_link(&mut header, crate::archive::link_target(&raw), heir)?;
+            }
+            continue;
+        }
         // Named and sized whole in its own header - nearly always - it goes
         // back in byte for byte, a name fm84 would not take as a path with
         // it. A size kept in a pax record, as past 8 GiB, is not in the

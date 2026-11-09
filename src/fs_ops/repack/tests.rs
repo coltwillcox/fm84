@@ -488,3 +488,50 @@ fn a_wrong_password_writes_nothing_into_a_zip() {
     forget_password(&archive);
     fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A tar's hard link names the entry before it that holds its contents.
+/// That entry deleted, or replaced, the contents stay with the link - the
+/// first of them takes them, and the rest name it instead - rather than
+/// going with the name.
+#[test]
+fn a_hard_link_keeps_its_contents_when_its_target_goes() {
+    let dir = scratch("repack-hard-link");
+    fs::write(dir.join("a.txt"), "replaced").unwrap();
+    for replacing in [false, true] {
+        let archive = dir.join(format!("links-{replacing}.tar"));
+        let mut builder = tar::Builder::new(Vec::new());
+        let mut header = tar::Header::new_gnu();
+        header.set_entry_type(tar::EntryType::Regular);
+        header.set_mode(0o644);
+        header.set_size(5);
+        builder.append_data(&mut header, "d/a.txt", b"first".as_slice()).unwrap();
+        for name in ["b.txt", "c.txt"] {
+            let mut link = tar::Header::new_gnu();
+            link.set_entry_type(tar::EntryType::Link);
+            link.set_size(0);
+            builder.append_link(&mut link, name, "d/a.txt").unwrap();
+        }
+        fs::write(&archive, builder.into_inner().unwrap()).unwrap();
+
+        let edits = if replacing {
+            Repack {
+                add: vec![(dir.join("a.txt"), PathBuf::from("d/a.txt"))],
+                ..Repack::default()
+            }
+        } else {
+            Repack {
+                remove: vec![PathBuf::from("d")],
+                ..Repack::default()
+            }
+        };
+        assert_eq!(write_into(&archive, &edits, false, &mut Asking::new(Clash::Replace)).unwrap(), Transfer::Done);
+        // Read as tar reads it, each link through to what it names.
+        let out = dir.join(format!("out-{replacing}"));
+        fs::create_dir_all(&out).unwrap();
+        tar::Archive::new(File::open(&archive).unwrap()).unpack(&out).unwrap();
+        assert_eq!(fs::read_to_string(out.join("b.txt")).unwrap(), "first", "replacing {replacing}");
+        assert_eq!(fs::read_to_string(out.join("c.txt")).unwrap(), "first", "replacing {replacing}");
+        assert_eq!(fs::read_to_string(out.join("d/a.txt")).ok().as_deref(), replacing.then_some("replaced"), "replacing {replacing}");
+    }
+    fs::remove_dir_all(&dir).unwrap();
+}
