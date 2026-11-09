@@ -104,9 +104,11 @@ impl ModeChange {
                 match op {
                     '+' => mode |= bits,
                     '-' => mode &= !bits,
-                    // `=` clears what the classes named had, setuid and
-                    // setgid with them, before it sets.
-                    _ => mode = (mode & !(clause.who & 0o6777)) | bits,
+                    // `=` clears what the classes named had before it sets,
+                    // as GNU chmod does: setuid and setgid with them, and the
+                    // sticky bit with the others'. A directory keeps its
+                    // setuid and setgid unless they are named.
+                    _ => mode = (mode & !(clause.who & if is_dir { 0o1777 } else { 0o7777 })) | bits,
                 }
             }
         }
@@ -199,6 +201,27 @@ mod tests {
         assert_eq!(apply("u+s", 0o755, false), 0o4755);
         assert_eq!(apply("+t", 0o777, true), 0o1777);
         assert_eq!(apply("u-x+w", 0o544, false), 0o644);
+    }
+
+    /// `=` as GNU chmod has it, each checked against it from mode 7755: the
+    /// sticky bit goes with the others' class, so `a=` and `o=` clear it;
+    /// and a directory keeps its setuid and setgid bits unless they are
+    /// named, as they decide who owns what is made in it.
+    #[test]
+    fn equals_clears_as_chmod_does() {
+        for (text, file, dir) in [
+            ("a=rx", 0o555, 0o6555),
+            ("o=r", 0o6754, 0o6754),
+            ("o=rx", 0o6755, 0o6755),
+            ("u=rw", 0o3655, 0o7655),
+            ("g=", 0o5705, 0o7705),
+            ("=r", 0o444, 0o6444),
+            ("a=rwxt", 0o1777, 0o7777),
+            ("u=rwxs", 0o7755, 0o7755),
+        ] {
+            assert_eq!(apply(text, 0o7755, false), file, "{text} on a file: {:o}", apply(text, 0o7755, false));
+            assert_eq!(apply(text, 0o7755, true), dir, "{text} on a directory: {:o}", apply(text, 0o7755, true));
+        }
     }
 
     #[test]
