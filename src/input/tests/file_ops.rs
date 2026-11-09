@@ -517,6 +517,12 @@ fn the_pack_format_goes_round_by_its_ending() {
     assert_eq!(next_pack_format("a.TAR.GZ"), "a.tar.xz");
     assert_eq!(next_pack_format("a.tar"), "a.zip");
     assert_eq!(next_pack_format("plain"), "plain.zip");
+    // The short endings, which name the same formats: on to the next one.
+    assert_eq!(next_pack_format("a.tgz"), "a.tar.xz");
+    assert_eq!(next_pack_format("a.TXZ"), "a.tar.bz2");
+    assert_eq!(next_pack_format("a.tbz2"), "a.tar.zst");
+    assert_eq!(next_pack_format("a.tbz"), "a.tar.zst");
+    assert_eq!(next_pack_format("a.tzst"), "a.tar");
     // The Kelvin sign is three bytes, and its lower case one.
     assert_eq!(next_pack_format("\u{212A}.zip"), "\u{212A}.7z");
     assert_eq!(next_pack_format("x\u{212A}"), "x\u{212A}.zip");

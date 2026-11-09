@@ -544,9 +544,13 @@ pub(super) fn next_pack_format(name: &str) -> String {
         let at = name.len().checked_sub(ending.len())?;
         (name.is_char_boundary(at) && name[at..].eq_ignore_ascii_case(ending)).then(|| &name[..at])
     };
-    let mut known: Vec<(usize, PackFormat)> = PackFormat::ALL.iter().copied().enumerate().collect();
-    known.sort_by_key(|(_, format)| std::cmp::Reverse(format.extension().len()));
-    match known.into_iter().find_map(|(at, format)| without(format.extension()).map(|front| (at, front))) {
+    // Each format's ending, and the short ones that name it as well -
+    // `.tgz` is a `.tar.gz` - with where it is in the round.
+    let short = [(".tgz", PackFormat::TarGz), (".txz", PackFormat::TarXz), (".tbz2", PackFormat::TarBz2), (".tbz", PackFormat::TarBz2), (".tzst", PackFormat::TarZst)];
+    let place = |format: PackFormat| PackFormat::ALL.iter().position(|known| *known == format).expect("every format is in the round");
+    let mut known: Vec<(usize, &str)> = PackFormat::ALL.iter().map(|&format| (place(format), format.extension())).chain(short.iter().map(|&(ending, format)| (place(format), ending))).collect();
+    known.sort_by_key(|(_, ending)| std::cmp::Reverse(ending.len()));
+    match known.into_iter().find_map(|(at, ending)| without(ending).map(|front| (at, front))) {
         Some((at, front)) => format!("{front}{}", PackFormat::ALL[(at + 1) % PackFormat::ALL.len()].extension()),
         None => format!("{name}{}", PackFormat::Zip.extension()),
     }
