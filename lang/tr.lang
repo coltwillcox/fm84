@@ -1816,3 +1816,54 @@ msgstr Enter "{typed}" sürümünü yazıldığı gibi açar
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Daraltmak için yaz    Yukarı/Aşağı - Seç    Enter - Aç    Esc - Kapat
+
+msgid  High scores
+msgstr En yüksek skorlar
+
+msgid  Bytes copied
+msgstr Kopyalanan baytlar
+
+msgid  Bytes moved
+msgstr Taşınan baytlar
+
+msgid  Files renamed
+msgstr Yeniden adlandırılan dosyalar
+
+msgid  Deleted or trashed
+msgstr Silinen ya da çöpe atılan
+
+msgid  Copies found
+msgstr Bulunan kopyalar
+
+msgid  Longest job
+msgstr En uzun iş
+
+msgid  Jobs done
+msgstr Biten işler
+
+msgid  Undos
+msgstr Geri almalar
+
+msgid  Player one - finish a job
+msgstr Birinci oyuncu - bir işi bitir
+
+msgid  Second thoughts - undo something
+msgstr Vazgeçtim - bir şeyi geri al
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Bir terabayt - 1 TB kopyala ya da taşı
+
+msgid  Marathon - sit through a job of an hour
+msgstr Maraton - bir saatlik işe katlan
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Bahar temizliği - 1000 şey sil
+
+msgid  Name dropper - rename 1000 files
+msgstr Vaftiz babası - 1000 dosyayı yeniden adlandır
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - bir gigabaytlık kopya bul
+
+msgid  Time traveller - open a git revision
+msgstr Zaman yolcusu - bir git sürümü aç

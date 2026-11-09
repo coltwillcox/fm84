@@ -111,13 +111,61 @@ pub enum HelpLine {
     Item,
     /// A row of the logo, centred, in the theme's colours.
     Logo,
+    /// A high score: what it is, then from this byte on, the figure.
+    Score(usize),
+    /// An achievement, and whether it has been had.
+    Achievement(bool),
+    /// INSERT COIN, for a table with nothing on it yet.
+    Coin,
+}
+
+/// How wide a high score's name is drawn, dots and all.
+const SCORE_WIDTH: usize = 28;
+
+/// The high scores, as an arcade cabinet lists them: each name in capitals,
+/// dots up to the figure; then the achievements, starred when had.
+fn score_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
+    let mut lines = vec![(format!(" {}", t!("High scores")), HelpLine::Heading)];
+    if scores.is_empty() {
+        lines.push(("INSERT COIN".to_string(), HelpLine::Coin));
+        return lines;
+    }
+    let seconds = scores.longest_job;
+    let copies = if scores.copies_found == 0 {
+        "0".to_string()
+    } else {
+        format!("{} ({})", grouped(scores.copies_found), format_size(scores.copy_bytes_found))
+    };
+    let rows = [
+        (t!("Bytes copied"), format_size(scores.bytes_copied)),
+        (t!("Bytes moved"), format_size(scores.bytes_moved)),
+        (t!("Files renamed"), grouped(scores.files_renamed)),
+        (t!("Deleted or trashed"), grouped(scores.deleted)),
+        (t!("Copies found"), copies),
+        (t!("Longest job"), format!("{}:{:02}:{:02}", seconds / 3600, seconds / 60 % 60, seconds % 60)),
+        (t!("Jobs done"), grouped(scores.jobs)),
+        (t!("Undos"), grouped(scores.undos)),
+    ];
+    for (name, figure) in rows {
+        let name = name.to_uppercase();
+        let dots = ".".repeat(SCORE_WIDTH.saturating_sub(name.chars().count() + 2).max(2));
+        let text = format!("   {name} {dots} ");
+        let at = text.len();
+        lines.push((format!("{text}{figure}"), HelpLine::Score(at)));
+    }
+    lines.push((String::new(), HelpLine::Item));
+    for achievement in scores.achievements() {
+        let star = if achievement.unlocked { '★' } else { '☆' };
+        lines.push((format!("   {star} {}", achievement.name), HelpLine::Achievement(achievement.unlocked)));
+    }
+    lines
 }
 
 /// F1's lines as they are drawn, and what each is: a heading over each part,
 /// with a blank row before every one but the first, and the lines under it
 /// set in from it - laid out as F11 lays out its options. The logo stands
 /// before About, a blank row either side of it.
-pub fn help_lines() -> Vec<(String, HelpLine)> {
+pub fn help_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
     let mut lines = Vec::new();
     for (index, (heading, items)) in help().into_iter().enumerate() {
         if !lines.is_empty() {
@@ -131,6 +179,8 @@ pub fn help_lines() -> Vec<(String, HelpLine)> {
         let kind = if index == 0 { HelpLine::Key } else { HelpLine::Item };
         lines.extend(items.iter().map(|item| (format!("   {item}"), kind)));
     }
+    lines.push((String::new(), HelpLine::Item));
+    lines.extend(score_lines(scores));
     lines
 }
 
@@ -209,10 +259,10 @@ fn logo_row(row: &str, width: usize) -> Line<'static> {
 /// F1: the keys, over the panels and no taller than them. What does not fit
 /// scrolls, from `scroll` lines down, and the corner says which lines show.
 /// Gives back how many lines there is room for, for the keys to scroll by.
-pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: usize) -> usize {
+pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: usize, scores: &crate::options::Scores) -> usize {
     // A border and a blank row above and below the lines.
     let popup_width = area.width as usize * POPUP_WIDTH as usize / 100;
-    let help = help_lines();
+    let help = help_lines(scores);
     let popup_area = centered(screen_layout(area)[2], popup_width.max(1), help.len() + 4);
     let inner = popup_area.inner(Margin { vertical: 2, horizontal: 2 });
     let room = (inner.height as usize).max(1);
@@ -238,6 +288,24 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
             HelpLine::Logo => logo_row(text, max_len),
             HelpLine::Heading => Line::from(Span::styled(format!("{text:<max_len$}"), style_title().add_modifier(Modifier::BOLD))),
             HelpLine::Item => Line::from(Span::styled(format!("{text:<max_len$}"), style_title())),
+            HelpLine::Score(at) => {
+                let pad = " ".repeat(max_len.saturating_sub(text.chars().count()));
+                Line::from(vec![Span::styled(text[..*at].to_string(), style_title()), Span::styled(format!("{}{pad}", &text[*at..]), style_key())])
+            }
+            HelpLine::Achievement(unlocked) => {
+                let style = if *unlocked { style_dir().add_modifier(Modifier::BOLD) } else { style_border() };
+                Line::from(Span::styled(format!("{text:<max_len$}"), style))
+            }
+            HelpLine::Coin => {
+                // Centred in the block, and blinking, as on the cabinet.
+                let used = text.chars().count();
+                let before = max_len.saturating_sub(used) / 2;
+                Line::from(vec![
+                    Span::raw(" ".repeat(before)),
+                    Span::styled(text.clone(), style_key().add_modifier(Modifier::SLOW_BLINK)),
+                    Span::raw(" ".repeat(max_len.saturating_sub(used + before))),
+                ])
+            }
             HelpLine::Key => {
                 let pad = " ".repeat(max_len.saturating_sub(text.chars().count()));
                 let key = style_key();

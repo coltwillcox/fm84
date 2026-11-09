@@ -1815,3 +1815,54 @@ msgstr Enter отваря „{typed}“, както е написано
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Пишете за стесняване    Нагоре/Надолу - Избор    Enter - Отвори    Esc - Затваряне
+
+msgid  High scores
+msgstr Рекорди
+
+msgid  Bytes copied
+msgstr Копирани байтове
+
+msgid  Bytes moved
+msgstr Преместени байтове
+
+msgid  Files renamed
+msgstr Преименувани файлове
+
+msgid  Deleted or trashed
+msgstr Изтрити или в кошчето
+
+msgid  Copies found
+msgstr Намерени копия
+
+msgid  Longest job
+msgstr Най-дълга задача
+
+msgid  Jobs done
+msgstr Свършени задачи
+
+msgid  Undos
+msgstr Отмени
+
+msgid  Player one - finish a job
+msgstr Играч едно - завърши задача
+
+msgid  Second thoughts - undo something
+msgstr Размисъл - отмени нещо
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Терабайт на път - копирай или премести 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Маратон - изтърпи задача от час
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Пролетно почистване - изтрий 1000 неща
+
+msgid  Name dropper - rename 1000 files
+msgstr Кръстник - преименувай 1000 файла
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Дежа вю - намери гигабайт копия
+
+msgid  Time traveller - open a git revision
+msgstr Пътешественик във времето - отвори git ревизия

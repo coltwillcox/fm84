@@ -1816,3 +1816,54 @@ msgstr Enter öffnet "{typed}" wie geschrieben
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Tippen zum Eingrenzen    Hoch/Runter - Wählen    Enter - Öffnen    Esc - Schließen
+
+msgid  High scores
+msgstr Bestenliste
+
+msgid  Bytes copied
+msgstr Kopierte Bytes
+
+msgid  Bytes moved
+msgstr Verschobene Bytes
+
+msgid  Files renamed
+msgstr Umbenannte Dateien
+
+msgid  Deleted or trashed
+msgstr Gelöscht oder im Papierkorb
+
+msgid  Copies found
+msgstr Gefundene Kopien
+
+msgid  Longest job
+msgstr Längster Auftrag
+
+msgid  Jobs done
+msgstr Erledigte Aufträge
+
+msgid  Undos
+msgstr Rückgängig gemacht
+
+msgid  Player one - finish a job
+msgstr Spieler eins - einen Auftrag beenden
+
+msgid  Second thoughts - undo something
+msgstr Doch nicht - etwas rückgängig machen
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Ein Terabyte bewegt - 1 TB kopieren oder verschieben
+
+msgid  Marathon - sit through a job of an hour
+msgstr Marathon - einen Auftrag von einer Stunde aussitzen
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Frühjahrsputz - 1000 Dinge löschen
+
+msgid  Name dropper - rename 1000 files
+msgstr Namensgeber - 1000 Dateien umbenennen
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà-vu - ein Gigabyte Kopien finden
+
+msgid  Time traveller - open a git revision
+msgstr Zeitreisender - eine Git-Revision öffnen

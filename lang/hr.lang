@@ -1854,3 +1854,54 @@ msgstr Enter otvara »{typed}« kako je napisano
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Tipkaj za sužavanje    Gore/Dolje - Odaberi    Enter - Otvori    Esc - Zatvori
+
+msgid  High scores
+msgstr Najbolji rezultati
+
+msgid  Bytes copied
+msgstr Kopirani bajtovi
+
+msgid  Bytes moved
+msgstr Premješteni bajtovi
+
+msgid  Files renamed
+msgstr Preimenovane datoteke
+
+msgid  Deleted or trashed
+msgstr Izbrisano ili u košu
+
+msgid  Copies found
+msgstr Pronađene kopije
+
+msgid  Longest job
+msgstr Najduži posao
+
+msgid  Jobs done
+msgstr Obavljeni poslovi
+
+msgid  Undos
+msgstr Poništavanja
+
+msgid  Player one - finish a job
+msgstr Igrač jedan - dovrši posao
+
+msgid  Second thoughts - undo something
+msgstr Predomislio sam se - poništi nešto
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Terabajt na putu - kopiraj ili premjesti 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Maraton - izdrži posao od sat vremena
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Proljetno čišćenje - izbriši 1000 stvari
+
+msgid  Name dropper - rename 1000 files
+msgstr Kum - preimenuj 1000 datoteka
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - pronađi gigabajt kopija
+
+msgid  Time traveller - open a git revision
+msgstr Putnik kroz vrijeme - otvori git reviziju

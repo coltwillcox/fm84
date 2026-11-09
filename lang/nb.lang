@@ -1815,3 +1815,54 @@ msgstr Enter åpner "{typed}" slik det er skrevet
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Skriv for å avgrense    Opp/Ned - Velg    Enter - Åpne    Esc - Lukk
+
+msgid  High scores
+msgstr Rekorder
+
+msgid  Bytes copied
+msgstr Kopierte byte
+
+msgid  Bytes moved
+msgstr Flyttede byte
+
+msgid  Files renamed
+msgstr Omdøpte filer
+
+msgid  Deleted or trashed
+msgstr Slettet eller i papirkurven
+
+msgid  Copies found
+msgstr Kopier funnet
+
+msgid  Longest job
+msgstr Lengste jobb
+
+msgid  Jobs done
+msgstr Fullførte jobber
+
+msgid  Undos
+msgstr Angringer
+
+msgid  Player one - finish a job
+msgstr Spiller én - fullfør en jobb
+
+msgid  Second thoughts - undo something
+msgstr Kom på andre tanker - angre noe
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr En terabyte flyttet - kopier eller flytt 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Maraton - sitt gjennom en jobb på en time
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Vårrengjøring - slett 1000 ting
+
+msgid  Name dropper - rename 1000 files
+msgstr Navnegiver - omdøp 1000 filer
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - finn en gigabyte med kopier
+
+msgid  Time traveller - open a git revision
+msgstr Tidsreisende - åpne en git-revisjon

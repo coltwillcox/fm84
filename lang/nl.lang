@@ -1815,3 +1815,54 @@ msgstr Enter opent "{typed}" zoals getypt
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Typ om te verfijnen    Omhoog/Omlaag - Kiezen    Enter - Openen    Esc - Sluiten
+
+msgid  High scores
+msgstr Topscores
+
+msgid  Bytes copied
+msgstr Gekopieerde bytes
+
+msgid  Bytes moved
+msgstr Verplaatste bytes
+
+msgid  Files renamed
+msgstr Hernoemde bestanden
+
+msgid  Deleted or trashed
+msgstr Verwijderd of in de prullenbak
+
+msgid  Copies found
+msgstr Gevonden kopieën
+
+msgid  Longest job
+msgstr Langste taak
+
+msgid  Jobs done
+msgstr Voltooide taken
+
+msgid  Undos
+msgstr Ongedaan gemaakt
+
+msgid  Player one - finish a job
+msgstr Speler één - maak een taak af
+
+msgid  Second thoughts - undo something
+msgstr Toch maar niet - maak iets ongedaan
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Een terabyte verplaatst - kopieer of verplaats 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Marathon - zit een taak van een uur uit
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Voorjaarsschoonmaak - verwijder 1000 dingen
+
+msgid  Name dropper - rename 1000 files
+msgstr Naamgever - hernoem 1000 bestanden
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - vind een gigabyte aan kopieën
+
+msgid  Time traveller - open a git revision
+msgstr Tijdreiziger - open een git-revisie

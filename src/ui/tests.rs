@@ -355,7 +355,7 @@ fn popups_share_a_width_and_keep_to_the_panels() {
     app_state.help_scroll = usize::MAX;
     render_ui(&mut terminal, &mut app_state);
     let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
-    let help = help_lines();
+    let help = help_lines(&Default::default());
     assert!(screen.contains(help[help.len() - 1].0.trim()), "F1's last line");
     assert!(screen.contains(" About "), "the About heading");
     assert!(screen.contains(&format!("v{}", env!("CARGO_PKG_VERSION"))), "F1's About");
@@ -630,7 +630,7 @@ fn scrolling_keeps_to_the_room_there_is() {
     render_ui(&mut terminal, &mut app_state);
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 50)).unwrap();
     render_ui(&mut terminal, &mut app_state);
-    assert_eq!(app_state.help_scroll, help_lines().len() - app_state.drawn.help_room, "F1 past its end");
+    assert_eq!(app_state.help_scroll, help_lines(&Default::default()).len() - app_state.drawn.help_room, "F1 past its end");
 
     // A diff whose last difference is near the end: jumping to it stops
     // with the last row at the bottom, not past it.
@@ -938,7 +938,7 @@ fn the_space_map_draws_a_bar_behind_each_row() {
 /// border's - whichever theme is on.
 #[test]
 fn f1_draws_the_logo_in_the_theme_colours() {
-    let lines = help_lines();
+    let lines = help_lines(&Default::default());
     let about = lines.iter().position(|(text, _)| text.trim() == "About").unwrap();
     let logo: Vec<usize> = lines.iter().enumerate().filter(|(_, (_, kind))| *kind == HelpLine::Logo).map(|(at, _)| at).collect();
     assert_eq!(logo.len(), 6);
@@ -988,7 +988,7 @@ fn f1_tells_keys_from_what_they_do() {
     // under one may only go on with what it does.
     for language in crate::i18n::Language::ALL {
         crate::i18n::set_language(language);
-        for (text, kind) in help_lines() {
+        for (text, kind) in help_lines(&Default::default()) {
             if kind == HelpLine::Key && text.len() - text.trim_start().len() == 3 {
                 assert!(!keys(&text).is_empty(), "{language:?}: no key in {text:?}");
             }

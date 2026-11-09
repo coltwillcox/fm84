@@ -275,6 +275,8 @@ pub struct AppState {
     /// What the Info column's commands gave, by the file as it was and the
     /// command, so a reread runs nothing that has run already.
     pub info_cache: HashMap<(PathBuf, u64, Option<SystemTime>, String), String>,
+    /// F1's high scores, all told.
+    pub scores: crate::options::Scores,
 }
 
 #[derive(Debug, Clone)]
@@ -636,6 +638,7 @@ impl AppState {
             undo: Vec::new(),
             basket: Vec::new(),
             info_cache: HashMap::new(),
+            scores: if cfg!(test) { crate::options::Scores::default() } else { crate::options::Scores::load() },
             drive_strips: [Strip::default(), Strip::default()],
         }
     }

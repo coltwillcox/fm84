@@ -1854,3 +1854,54 @@ msgstr Enter otvorí „{typed}“ tak, ako je napísané
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Píšte na zúženie    Hore/Dole - Vybrať    Enter - Otvoriť    Esc - Zavrieť
+
+msgid  High scores
+msgstr Najlepšie skóre
+
+msgid  Bytes copied
+msgstr Skopírované bajty
+
+msgid  Bytes moved
+msgstr Presunuté bajty
+
+msgid  Files renamed
+msgstr Premenované súbory
+
+msgid  Deleted or trashed
+msgstr Zmazané alebo v koši
+
+msgid  Copies found
+msgstr Nájdené kópie
+
+msgid  Longest job
+msgstr Najdlhšia úloha
+
+msgid  Jobs done
+msgstr Dokončené úlohy
+
+msgid  Undos
+msgstr Vrátenia
+
+msgid  Player one - finish a job
+msgstr Hráč jeden - dokonči úlohu
+
+msgid  Second thoughts - undo something
+msgstr Rozmyslel som si to - niečo vráť
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Presunutý terabajt - skopíruj alebo presuň 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Maratón - vydrž hodinovú úlohu
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Jarné upratovanie - zmaž 1000 vecí
+
+msgid  Name dropper - rename 1000 files
+msgstr Krstný otec - premenuj 1000 súborov
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - nájdi gigabajt kópií
+
+msgid  Time traveller - open a git revision
+msgstr Cestovateľ v čase - otvor revíziu gitu

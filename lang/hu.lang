@@ -1817,3 +1817,54 @@ msgstr Az Enter a „{typed}” revíziót nyitja meg, ahogy írva van
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Gépelj a szűkítéshez    Fel/Le - Választás    Enter - Megnyitás    Esc - Bezárás
+
+msgid  High scores
+msgstr Rekordok
+
+msgid  Bytes copied
+msgstr Másolt bájtok
+
+msgid  Bytes moved
+msgstr Áthelyezett bájtok
+
+msgid  Files renamed
+msgstr Átnevezett fájlok
+
+msgid  Deleted or trashed
+msgstr Törölve vagy lomtárban
+
+msgid  Copies found
+msgstr Talált másolatok
+
+msgid  Longest job
+msgstr Leghosszabb feladat
+
+msgid  Jobs done
+msgstr Elvégzett feladatok
+
+msgid  Undos
+msgstr Visszavonások
+
+msgid  Player one - finish a job
+msgstr Első játékos - fejezz be egy feladatot
+
+msgid  Second thoughts - undo something
+msgstr Meggondoltam - vonj vissza valamit
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Egy terabájt - másolj vagy helyezz át 1 TB-ot
+
+msgid  Marathon - sit through a job of an hour
+msgstr Maraton - várj ki egy egyórás feladatot
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Tavaszi nagytakarítás - törölj 1000 dolgot
+
+msgid  Name dropper - rename 1000 files
+msgstr Keresztapa - nevezz át 1000 fájlt
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - találj egy gigabájtnyi másolatot
+
+msgid  Time traveller - open a git revision
+msgstr Időutazó - nyiss meg egy git revíziót

@@ -376,8 +376,8 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
         let mut branch_rows = Vec::new();
         match &app_state.dialog {
             Some(Dialog::Help) => {
-                drawn.help_room = render_help_popup(f, area, app_state.help_scroll);
-                settled.help_scroll = Some(app_state.help_scroll.min(help_lines().len().saturating_sub(drawn.help_room)));
+                drawn.help_room = render_help_popup(f, area, app_state.help_scroll, &app_state.scores);
+                settled.help_scroll = Some(app_state.help_scroll.min(help_lines(&app_state.scores).len().saturating_sub(drawn.help_room)));
             }
             Some(Dialog::Options { editing }) => render_options_popup(f, area, app_state, editing.as_ref()),
             Some(Dialog::Create { is_dir, input }) => render_create_popup(f, area, *is_dir, input),

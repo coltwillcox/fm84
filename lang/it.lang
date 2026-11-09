@@ -1816,3 +1816,54 @@ msgstr Invio apre "{typed}" così come è scritto
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Scrivi per restringere    Su/Giù - Scegli    Invio - Apri    Esc - Chiudi
+
+msgid  High scores
+msgstr Punteggi migliori
+
+msgid  Bytes copied
+msgstr Byte copiati
+
+msgid  Bytes moved
+msgstr Byte spostati
+
+msgid  Files renamed
+msgstr File rinominati
+
+msgid  Deleted or trashed
+msgstr Eliminati o nel cestino
+
+msgid  Copies found
+msgstr Copie trovate
+
+msgid  Longest job
+msgstr Lavoro più lungo
+
+msgid  Jobs done
+msgstr Lavori fatti
+
+msgid  Undos
+msgstr Annullamenti
+
+msgid  Player one - finish a job
+msgstr Giocatore uno - finisci un lavoro
+
+msgid  Second thoughts - undo something
+msgstr Ripensamento - annulla qualcosa
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Un terabyte - copia o sposta 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Maratona - aspetta un lavoro di un'ora
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Pulizie di primavera - elimina 1000 cose
+
+msgid  Name dropper - rename 1000 files
+msgstr Padrino - rinomina 1000 file
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - trova un gigabyte di copie
+
+msgid  Time traveller - open a git revision
+msgstr Viaggiatore nel tempo - apri una revisione git

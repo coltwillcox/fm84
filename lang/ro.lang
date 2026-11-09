@@ -1854,3 +1854,54 @@ msgstr Enter deschide „{typed}” așa cum e scris
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Tastați pentru a restrânge    Sus/Jos - Alege    Enter - Deschide    Esc - Închide
+
+msgid  High scores
+msgstr Recorduri
+
+msgid  Bytes copied
+msgstr Octeți copiați
+
+msgid  Bytes moved
+msgstr Octeți mutați
+
+msgid  Files renamed
+msgstr Fișiere redenumite
+
+msgid  Deleted or trashed
+msgstr Șterse sau la coș
+
+msgid  Copies found
+msgstr Copii găsite
+
+msgid  Longest job
+msgstr Cea mai lungă lucrare
+
+msgid  Jobs done
+msgstr Lucrări făcute
+
+msgid  Undos
+msgstr Anulări
+
+msgid  Player one - finish a job
+msgstr Jucătorul unu - termină o lucrare
+
+msgid  Second thoughts - undo something
+msgstr M-am răzgândit - anulează ceva
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Un terabyte - copiază sau mută 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Maraton - îndură o lucrare de o oră
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Curățenie de primăvară - șterge 1000 de lucruri
+
+msgid  Name dropper - rename 1000 files
+msgstr Nașul - redenumește 1000 de fișiere
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - găsește un gigabyte de copii
+
+msgid  Time traveller - open a git revision
+msgstr Călător în timp - deschide o revizie git

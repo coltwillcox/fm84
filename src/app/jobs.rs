@@ -631,6 +631,40 @@ fn run_sync_steps(steps: Vec<crate::app::SyncStep>, to_trash: bool, mut progress
 }
 
 impl AppState {
+    /// A job that has ended, counted onto F1's high scores: what it got
+    /// done, cancelled or not, and how long it took, when it finished.
+    fn count_scores(&mut self, job: &TransferJob, result: &Result<Transfer, String>) {
+        let verified = self.options.verify_copies;
+        let scores = &mut self.scores;
+        if matches!(result, Ok(Transfer::Done)) {
+            scores.jobs += 1;
+            scores.longest_job = scores.longest_job.max(job.started.elapsed().as_secs());
+            if job.kind == TransferKind::Undo {
+                scores.undos += 1;
+            }
+        }
+        match job.kind {
+            // Each byte counted twice on the bar, read back, when verified.
+            TransferKind::Copy => scores.bytes_copied += if verified { job.done / 2 } else { job.done },
+            TransferKind::Move => scores.bytes_moved += job.done,
+            TransferKind::Delete | TransferKind::Trash => scores.deleted += job.done,
+            TransferKind::DirEdit => {
+                scores.files_renamed += job.did.iter().filter(|done| matches!(done, Done::Moved { .. })).count() as u64;
+                scores.deleted += job.did.iter().filter(|done| matches!(done, Done::Trashed { .. })).count() as u64;
+            }
+            _ => {}
+        }
+        if let Some(found) = &job.duplicates {
+            for group in &found.groups {
+                let extra = group.len().saturating_sub(1) as u64;
+                let size = group.first().and_then(|path| path.metadata().ok()).map_or(0, |metadata| metadata.len());
+                scores.copies_found += extra;
+                scores.copy_bytes_found += size * extra;
+            }
+        }
+        scores.save();
+    }
+
     /// Alt+S's plan, run.
     pub fn start_sync(&mut self, steps: Vec<crate::app::SyncStep>, to_trash: bool) {
         self.start_job(TransferKind::Sync, Clashes::ReplaceAll, move |progress| run_sync_steps(steps, to_trash, progress));
@@ -768,6 +802,7 @@ impl AppState {
             return;
         };
         let mut job = self.workers.job.take().expect("checked at the top");
+        self.count_scores(&job, &result);
         // Whatever was done, the job finished or not.
         let undo_kind = match job.kind {
             TransferKind::Copy => Some(UndoKind::Copy),

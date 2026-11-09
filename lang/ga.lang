@@ -1930,3 +1930,54 @@ msgstr Osclaíonn Enter "{typed}" mar atá sé scríofa
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Clóscríobh chun cúngú    Suas/Síos - Roghnaigh    Enter - Oscail    Esc - Dún
+
+msgid  High scores
+msgstr Ardscóir
+
+msgid  Bytes copied
+msgstr Bearta cóipeáilte
+
+msgid  Bytes moved
+msgstr Bearta bogtha
+
+msgid  Files renamed
+msgstr Comhaid athainmnithe
+
+msgid  Deleted or trashed
+msgstr Scriosta nó sa bhruscar
+
+msgid  Copies found
+msgstr Cóipeanna aimsithe
+
+msgid  Longest job
+msgstr An jab is faide
+
+msgid  Jobs done
+msgstr Jabanna déanta
+
+msgid  Undos
+msgstr Cealuithe
+
+msgid  Player one - finish a job
+msgstr Imreoir a haon - críochnaigh jab
+
+msgid  Second thoughts - undo something
+msgstr Athsmaoineamh - cealaigh rud éigin
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Teirireart bogtha - cóipeáil nó bog 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Maratón - fan le jab uair an chloig
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Glanadh an earraigh - scrios 1000 rud
+
+msgid  Name dropper - rename 1000 files
+msgstr Ainmneoir - athainmnigh 1000 comhad
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - aimsigh gigibheart cóipeanna
+
+msgid  Time traveller - open a git revision
+msgstr Taistealaí ama - oscail leagan git

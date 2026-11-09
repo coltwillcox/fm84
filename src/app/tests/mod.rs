@@ -9,6 +9,7 @@ mod git;
 mod info_column;
 mod jobs;
 mod panels;
+mod scores;
 mod selection;
 mod settings;
 mod undo;

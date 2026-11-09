@@ -443,13 +443,15 @@ impl AppState {
 impl AppState {
     /// Renames done, kept for Ctrl+Z to put back.
     pub(crate) fn journal_renames(&mut self, moves: &[(PathBuf, PathBuf)]) {
-        let steps = moves
+        let steps: Vec<Done> = moves
             .iter()
             .filter_map(|(from, to)| {
                 let mark = Mark::of(to, false)?;
                 Some(Done::Moved { from: from.clone(), to: to.clone(), mark })
             })
             .collect();
+        self.scores.files_renamed += steps.len() as u64;
+        self.scores.save();
         self.journal(UndoKind::Rename, steps);
     }
 }

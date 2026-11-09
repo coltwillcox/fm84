@@ -6,11 +6,12 @@ use std::path::PathBuf;
 
 mod config;
 mod rows;
+mod scores;
 mod session;
 #[cfg(test)]
 mod tests;
 
-pub use self::{config::*, rows::*, session::*};
+pub use self::{config::*, rows::*, scores::*, session::*};
 
 /// What the file rows are ordered by.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

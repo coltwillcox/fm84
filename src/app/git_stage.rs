@@ -147,6 +147,8 @@ impl AppState {
         if let Err(message) = crate::git::resolve(&list.top, &revision) {
             return self.display_error(message);
         }
+        self.scores.revisions += 1;
+        self.scores.save();
         let folder = crate::archive::git_folder(&list.top, &revision);
         let target = if list.prefix.as_os_str().is_empty() { folder } else { folder.join(&list.prefix) };
         self.open_dir(self.active_side, target, None);

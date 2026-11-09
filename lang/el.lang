@@ -1816,3 +1816,54 @@ msgstr Το Enter ανοίγει το "{typed}" όπως γράφτηκε
 
 msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
 msgstr Πληκτρολογήστε για περιορισμό    Πάνω/Κάτω - Επιλογή    Enter - Άνοιγμα    Esc - Κλείσιμο
+
+msgid  High scores
+msgstr Ρεκόρ
+
+msgid  Bytes copied
+msgstr Αντιγραμμένα byte
+
+msgid  Bytes moved
+msgstr Μετακινημένα byte
+
+msgid  Files renamed
+msgstr Μετονομασμένα αρχεία
+
+msgid  Deleted or trashed
+msgstr Διαγραμμένα ή στον κάδο
+
+msgid  Copies found
+msgstr Αντίγραφα που βρέθηκαν
+
+msgid  Longest job
+msgstr Μεγαλύτερη εργασία
+
+msgid  Jobs done
+msgstr Εργασίες
+
+msgid  Undos
+msgstr Αναιρέσεις
+
+msgid  Player one - finish a job
+msgstr Παίκτης ένα - ολοκλήρωσε μια εργασία
+
+msgid  Second thoughts - undo something
+msgstr Δεύτερες σκέψεις - αναίρεσε κάτι
+
+msgid  Moved a terabyte - copy or move 1 TB
+msgstr Ένα terabyte - αντίγραψε ή μετακίνησε 1 TB
+
+msgid  Marathon - sit through a job of an hour
+msgstr Μαραθώνιος - άντεξε εργασία μιας ώρας
+
+msgid  Spring cleaning - delete 1000 things
+msgstr Ανοιξιάτικο καθάρισμα - διάγραψε 1000 πράγματα
+
+msgid  Name dropper - rename 1000 files
+msgstr Νονός - μετονόμασε 1000 αρχεία
+
+msgid  Déjà vu - find a gigabyte of copies
+msgstr Déjà vu - βρες ένα gigabyte αντιγράφων
+
+msgid  Time traveller - open a git revision
+msgstr Ταξιδιώτης στον χρόνο - άνοιξε αναθεώρηση git
