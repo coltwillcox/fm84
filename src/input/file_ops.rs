@@ -2,6 +2,7 @@
 //! and Shift+F3, which picks two files to compare.
 
 use super::*;
+use crate::app::{PACK_LEVEL_ROW, PACK_MOVE_ROW, PACK_NAME_ROW, PACK_ROWS, PACK_SEPARATE_ROW, PackArchive, PackForm, PackHow};
 use crate::fs_ops::PackFormat;
 
 /// F2 on the entry under the cursor, typed into in place of its name - or,
@@ -358,7 +359,7 @@ fn go_extract_all(app_state: &mut AppState, archive: PathBuf, destination: &Path
 /// Alt+P: pack what is chosen into an archive, asking where - opening on the
 /// other panel's directory with a name from what is packed: a file's without
 /// its ending, a directory's, or for several the name of the directory they
-/// are in. A zip unless Tab says otherwise.
+/// are in. A zip unless Tab says otherwise, as hard as last time.
 pub(super) fn open_pack(app_state: &mut AppState) {
     let side = app_state.active_side;
     if app_state.panel_archive(side).is_some() {
@@ -368,24 +369,68 @@ pub(super) fn open_pack(app_state: &mut AppState) {
     if sources.is_empty() {
         return;
     }
-    let base = match &sources[..] {
-        [(path, true)] => path.file_name().map(std::ffi::OsStr::to_os_string),
-        [(path, false)] => path.file_stem().map(std::ffi::OsStr::to_os_string),
-        _ => app_state.panel_dir(side).file_name().map(std::ffi::OsStr::to_os_string),
-    };
-    let base = base.map_or_else(|| "archive".to_string(), |name| name.to_string_lossy().into_owned());
-    let name = format!("{base}{}", PackFormat::Zip.extension());
+    let base = pack_base(&sources, &app_state.panel_dir(side));
     let mut input = TextInput::new();
-    input.set(app_state.panel_dir(!side).join(name).to_string_lossy().into_owned());
-    app_state.dialog = Some(Dialog::Pack { sources, input });
+    input.set(app_state.panel_dir(!side).join(format!("{base}{}", PackFormat::Zip.extension())).to_string_lossy().into_owned());
+    app_state.dialog = Some(Dialog::Pack(Box::new(PackForm {
+        sources,
+        input,
+        base,
+        focus: PACK_NAME_ROW,
+        level: app_state.recall.pack_level,
+        separate: false,
+        move_after: false,
+    })));
+}
+
+/// The name an archive of `sources` is given, before its ending: a file's
+/// without its ending, a directory's, or for several the name of `dir`, the
+/// one they are in.
+fn pack_base(sources: &[(PathBuf, bool)], dir: &Path) -> String {
+    let base = match sources {
+        [(path, true)] => path.file_name(),
+        [(path, false)] => path.file_stem(),
+        _ => dir.file_name(),
+    };
+    base.map_or_else(|| "archive".to_string(), |name| name.to_string_lossy().into_owned())
 }
 
 /// Tab on the pack dialog: the next format, by the ending of the name.
 pub(super) fn cycle_pack_format(app_state: &mut AppState) {
-    let Some(Dialog::Pack { input, .. }) = &mut app_state.dialog else {
+    let Some(Dialog::Pack(form)) = &mut app_state.dialog else {
         return;
     };
-    input.set(next_pack_format(&input.text));
+    form.input.set(next_pack_format(&form.input.text));
+}
+
+/// Up or Down on the pack dialog: the row before or after, going round.
+pub(super) fn move_pack_focus(app_state: &mut AppState, forward: bool) {
+    let Some(Dialog::Pack(form)) = &mut app_state.dialog else {
+        return;
+    };
+    form.focus = if forward { (form.focus + 1) % PACK_ROWS } else { (form.focus + PACK_ROWS - 1) % PACK_ROWS };
+}
+
+/// Space, Left or Right on one of the pack dialog's options: the level the
+/// way the arrow points, or the switch turned over. One for each puts
+/// `*` in place of the name, which each is then named in place of, and
+/// takes it back to the name when it is turned off.
+pub(super) fn change_pack_option(app_state: &mut AppState, forward: bool) {
+    let Some(Dialog::Pack(form)) = &mut app_state.dialog else {
+        return;
+    };
+    match form.focus {
+        PACK_LEVEL_ROW => form.level = form.level.step(forward),
+        PACK_SEPARATE_ROW => {
+            form.separate = !form.separate;
+            let typed = PathBuf::from(&form.input.text);
+            let ending = PackFormat::of(&typed).unwrap_or(PackFormat::Zip).extension();
+            let name = if form.separate { format!("*{ending}") } else { format!("{}{ending}", form.base) };
+            form.input.set(typed.parent().unwrap_or(Path::new("")).join(name).to_string_lossy().into_owned());
+        }
+        PACK_MOVE_ROW => form.move_after = !form.move_after,
+        _ => {}
+    }
 }
 
 /// `name` with the ending of the format after the one it has - longest
@@ -406,36 +451,58 @@ pub(super) fn next_pack_format(name: &str) -> String {
 }
 
 /// Enter on the pack dialog. A name that is not absolute is from the
-/// active panel's directory. What is already there is written over only
+/// active panel's directory. One for each, the name is only where they go
+/// and in what: each archive is named after what is in it, numbered when
+/// two would have the same name. What is already there is written over only
 /// when F11 says to overwrite: one archive in place of another is not asked
 /// about a file at a time, as a copy is.
 pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
-    let Some(Dialog::Pack { sources, input }) = app_state.dialog.take() else {
+    let Some(Dialog::Pack(form)) = app_state.dialog.take() else {
         return;
     };
+    let PackForm { sources, input, level, separate, move_after, .. } = *form;
     if input.text.trim().is_empty() {
         return;
     }
-    let dest = typed_path(&input.text, &app_state.panel_dir(app_state.active_side));
-    let Some(format) = PackFormat::of(&dest) else {
+    let typed = typed_path(&input.text, &app_state.panel_dir(app_state.active_side));
+    let Some(format) = PackFormat::of(&typed) else {
         let endings: Vec<&str> = PackFormat::ALL.iter().map(|format| format.extension()).collect();
         return app_state.display_error(t!("Name it as an archive, ending in {endings}", endings = endings.join(", ")));
     };
-    match dest.parent() {
+    let dir = match typed.parent() {
         Some(dir) if crate::archive::locate(dir).is_some() => return app_state.display_error(read_only().to_string()),
-        Some(dir) if dir.is_dir() => {}
+        Some(dir) if dir.is_dir() => dir.to_path_buf(),
         Some(dir) => return app_state.display_error(t!("No such directory: {path}", path = dir.display())),
-        None => return app_state.display_error(t!("Cannot pack into {path}", path = dest.display())),
-    }
-    let (dest, replacing) = match dest.symlink_metadata() {
-        Ok(metadata) if metadata.is_dir() => return app_state.display_error(t!("{path} is a directory", path = dest.display())),
-        Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => (dest, true),
-        // Beside it, as a copy keeps both.
-        Ok(_) if app_state.options.on_existing == OnExisting::KeepBoth => (crate::fs_ops::free_name(&dest), false),
-        Ok(_) => return app_state.display_error(t!("Already exists: {path} - another name, or Overwrite or Keep both under F11", path = dest.display())),
-        Err(_) => (dest, false),
+        None => return app_state.display_error(t!("Cannot pack into {path}", path = typed.display())),
     };
-    app_state.start_pack(sources, dest, format, replacing);
+    app_state.recall.pack_level = level;
+    let wanted: Vec<(Vec<(PathBuf, bool)>, PathBuf)> = if separate {
+        sources
+            .into_iter()
+            .map(|source| {
+                let dest = dir.join(format!("{}{}", pack_base(std::slice::from_ref(&source), &dir), format.extension()));
+                (vec![source], dest)
+            })
+            .collect()
+    } else {
+        vec![(sources, typed)]
+    };
+    let mut archives: Vec<PackArchive> = Vec::with_capacity(wanted.len());
+    for (sources, dest) in wanted {
+        let taken = |candidate: &Path| path_exists(candidate) || archives.iter().any(|archive| archive.dest == candidate);
+        let (dest, replacing) = match dest.symlink_metadata() {
+            // Two of what is packed with one name: the second numbered.
+            _ if archives.iter().any(|archive| archive.dest == dest) => (crate::fs_ops::free_name_among(&dest, taken), false),
+            Ok(metadata) if metadata.is_dir() => return app_state.display_error(t!("{path} is a directory", path = dest.display())),
+            Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => (dest, true),
+            // Beside it, as a copy keeps both.
+            Ok(_) if app_state.options.on_existing == OnExisting::KeepBoth => (crate::fs_ops::free_name_among(&dest, taken), false),
+            Ok(_) => return app_state.display_error(t!("Already exists: {path} - another name, or Overwrite or Keep both under F11", path = dest.display())),
+            Err(_) => (dest, false),
+        };
+        archives.push(PackArchive { sources, dest, replacing });
+    }
+    app_state.start_pack(archives, PackHow { format, level, move_after });
 }
 
 /// Alt+H: the checksums of what is chosen - SHA-256 to start with - or, on

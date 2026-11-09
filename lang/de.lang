@@ -1903,3 +1903,27 @@ msgstr Alt+B - In den Korb; Alt+Umschalt+B zeigt ihn
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Strg+E - Die Namen als Text bearbeiten
+
+msgid  Compression
+msgstr Kompression
+
+msgctxt compression
+msgid   Fast
+msgstr  Schnell
+
+msgctxt compression
+msgid   Normal
+msgstr  Normal
+
+msgctxt compression
+msgid   Best
+msgstr  Beste
+
+msgid  One archive for each, named after it
+msgstr Ein Archiv für jedes, nach ihm benannt
+
+msgid  Then delete what went in, for good
+msgstr Danach Eingepacktes endgültig löschen
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Option  Leertaste - Ändern

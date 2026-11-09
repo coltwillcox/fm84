@@ -1902,3 +1902,27 @@ msgstr Alt+B - В кошницата; Alt+Shift+B я показва
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Редактирай имената като текст
+
+msgid  Compression
+msgstr Компресия
+
+msgctxt compression
+msgid   Fast
+msgstr  Бърза
+
+msgctxt compression
+msgid   Normal
+msgstr  Нормална
+
+msgctxt compression
+msgid   Best
+msgstr  Най-добра
+
+msgid  One archive for each, named after it
+msgstr По един архив за всеки, кръстен на него
+
+msgid  Then delete what went in, for good
+msgstr После изтрий завинаги каквото влезе
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Опция  Space - Промяна

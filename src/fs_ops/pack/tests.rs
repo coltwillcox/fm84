@@ -38,7 +38,7 @@ fn pack_into(sources: &[(PathBuf, bool)], dest: &Path, asking: &mut Asking) -> R
     let Some(plan) = plan_pack(sources, dest, format, asking)? else {
         return Ok(Transfer::Cancelled);
     };
-    pack(&plan, dest, format, false, asking)
+    pack(&plan, dest, format, PackLevel::Normal, false, asking)
 }
 
 /// Everything in an archive, by fm84's own reading of it: each path with
@@ -142,7 +142,7 @@ fn an_archive_inside_what_is_packed_leaves_itself_out() {
     let format = PackFormat::Zip;
     let mut asking = Asking::new(Reply::Abort);
     let plan = plan_pack(&[(dir.clone(), true)], &dest, format, &mut asking).unwrap().unwrap();
-    assert_eq!(pack(&plan, &dest, format, true, &mut asking).unwrap(), Transfer::Done);
+    assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, true, &mut asking).unwrap(), Transfer::Done);
     let name = dir.file_name().unwrap().to_string_lossy().into_owned();
     assert_eq!(contents(&dest), [(name.clone(), "/".to_string()), (format!("{name}/a.txt"), "a".to_string())]);
     fs::remove_dir_all(&dir).unwrap();
@@ -223,5 +223,122 @@ fn an_archive_already_there_is_kept_unless_replacing() {
     let err = pack_into(&[(dir.join("a.txt"), false)], &dest, &mut Asking::new(Reply::Abort)).unwrap_err();
     assert_eq!(err.kind(), ErrorKind::AlreadyExists);
     assert_eq!(fs::read_to_string(&dest).unwrap(), "somebody's");
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Every level of every format reads back the same, and makes a different
+/// archive from the others; a plain tar has no level, and is the same
+/// whichever is asked for.
+#[test]
+fn every_level_packs_what_it_is_given() {
+    let dir = scratch("pack-levels");
+    let text: String = (0..20_000).map(|n| format!("line {} of {}\n", n * 7919 % 1000, n % 13)).collect();
+    fs::write(dir.join("words.txt"), &text).unwrap();
+    let sources = [(dir.join("words.txt"), false)];
+    for format in PackFormat::ALL {
+        let mut sizes = Vec::new();
+        for level in PackLevel::ALL {
+            let dest = dir.join(format!("{level:?}{}", format.extension()));
+            let mut asking = Asking::new(Reply::Abort);
+            let plan = plan_pack(&sources, &dest, format, &mut asking).unwrap().unwrap();
+            assert_eq!(pack(&plan, &dest, format, level, false, &mut asking).unwrap(), Transfer::Done, "{format:?} {level:?}");
+            assert_eq!(contents(&dest), [("words.txt".to_string(), text.clone())], "{format:?} {level:?}");
+            sizes.push(fs::metadata(&dest).unwrap().len());
+        }
+        // Which is smaller depends on what is packed - LZMA's fast mode can
+        // win on text this regular - but the level has to have reached it.
+        if format.compresses() {
+            assert_ne!(sizes[0], sizes[2], "{format:?}: {sizes:?}");
+        } else {
+            assert!(sizes.iter().all(|size| *size == sizes[0]), "{format:?}: {sizes:?}");
+        }
+    }
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// The levels go round either way.
+#[test]
+fn a_level_steps_round() {
+    assert_eq!(PackLevel::Normal.step(true), PackLevel::Best);
+    assert_eq!(PackLevel::Best.step(true), PackLevel::Fast);
+    assert_eq!(PackLevel::Fast.step(false), PackLevel::Best);
+    assert_eq!(PackLevel::default(), PackLevel::Normal);
+}
+
+/// Moved into the archive: what went in is gone from the disk, directories
+/// and links with it; what turned up meanwhile, and what changed since the
+/// walk, stay, and so does the directory that still holds them.
+#[test]
+fn what_went_in_is_removed_and_nothing_else() {
+    let dir = scratch("pack-move");
+    let sources = tree(&dir.join("in"));
+    let dest = dir.join("out.tar.gz");
+    let format = PackFormat::TarGz;
+    let mut asking = Asking::new(Reply::Abort);
+    let plan = plan_pack(&sources, &dest, format, &mut asking).unwrap().unwrap();
+    assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, false, &mut asking).unwrap(), Transfer::Done);
+    let docs = dir.join("in/docs");
+    // After the walk: one file new, one grown.
+    fs::write(docs.join("deep/new.txt"), "new").unwrap();
+    fs::write(docs.join("notes.txt"), "notes, and more").unwrap();
+    assert_eq!(remove_packed(&plan, &mut asking).unwrap(), Transfer::Done);
+
+    assert!(!dir.join("in/top.txt").exists());
+    assert!(!docs.join("empty.txt").exists());
+    assert!(!docs.join("deep/more.txt").exists());
+    assert!(docs.join("link").symlink_metadata().is_err());
+    assert_eq!(fs::read_to_string(docs.join("deep/new.txt")).unwrap(), "new");
+    assert_eq!(fs::read_to_string(docs.join("notes.txt")).unwrap(), "notes, and more");
+    // And everything still in the archive.
+    assert!(contents(&dest).iter().any(|(path, held)| path == "docs/deep/more.txt" && held == "more!"));
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A whole tree packed and moved leaves nothing of it.
+#[test]
+fn a_tree_moved_in_whole_is_gone() {
+    let dir = scratch("pack-move-whole");
+    let sources = tree(&dir.join("in"));
+    for format in PackFormat::ALL {
+        let sources: Vec<(PathBuf, bool)> = sources.clone();
+        let dest = dir.join(format!("out{}", format.extension()));
+        let mut asking = Asking::new(Reply::Abort);
+        let plan = plan_pack(&sources, &dest, format, &mut asking).unwrap().unwrap();
+        assert_eq!(pack(&plan, &dest, format, PackLevel::Fast, false, &mut asking).unwrap(), Transfer::Done);
+        assert_eq!(remove_packed(&plan, &mut asking).unwrap(), Transfer::Done);
+        assert!(!dir.join("in/docs").exists() && !dir.join("in/top.txt").exists(), "{format:?}");
+        // Put back from what was packed, for the next format.
+        tree(&dir.join("in"));
+    }
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A file left out when it could not be read stays where it is, and so
+/// does the directory it is in.
+#[cfg(unix)]
+#[test]
+fn what_was_left_out_is_not_removed() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = scratch("pack-move-skipped");
+    let box_dir = dir.join("box");
+    fs::create_dir_all(&box_dir).unwrap();
+    fs::write(box_dir.join("fine.txt"), "fine").unwrap();
+    fs::write(box_dir.join("locked.txt"), "locked").unwrap();
+    fs::set_permissions(box_dir.join("locked.txt"), fs::Permissions::from_mode(0o000)).unwrap();
+    if File::open(box_dir.join("locked.txt")).is_ok() {
+        return fs::remove_dir_all(&dir).unwrap();
+    }
+    for name in ["out.zip", "out.tar.xz", "out.7z"] {
+        fs::write(box_dir.join("fine.txt"), "fine").unwrap();
+        let dest = dir.join(name);
+        let format = PackFormat::of(&dest).unwrap();
+        let mut asking = Asking::new(Reply::Skip);
+        let plan = plan_pack(&[(box_dir.clone(), true)], &dest, format, &mut asking).unwrap().unwrap();
+        assert_eq!(pack(&plan, &dest, format, PackLevel::Normal, false, &mut asking).unwrap(), Transfer::Done, "{name}");
+        assert_eq!(remove_packed(&plan, &mut asking).unwrap(), Transfer::Done, "{name}");
+        assert!(!box_dir.join("fine.txt").exists(), "{name}");
+        assert!(box_dir.join("locked.txt").symlink_metadata().is_ok(), "{name}");
+    }
+    fs::set_permissions(box_dir.join("locked.txt"), fs::Permissions::from_mode(0o600)).unwrap();
     fs::remove_dir_all(&dir).unwrap();
 }

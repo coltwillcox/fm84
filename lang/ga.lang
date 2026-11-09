@@ -2017,3 +2017,27 @@ msgstr Alt+B - Sa chiseán; taispeánann Alt+Shift+B é
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Cuir na hainmneacha in eagar mar théacs
+
+msgid  Compression
+msgstr Comhbhrú
+
+msgctxt compression
+msgid   Fast
+msgstr  Tapa
+
+msgctxt compression
+msgid   Normal
+msgstr  Gnáth
+
+msgctxt compression
+msgid   Best
+msgstr  Is fearr
+
+msgid  One archive for each, named after it
+msgstr Cartlann do gach ceann, ainmnithe as
+
+msgid  Then delete what went in, for good
+msgstr Ansin scrios go buan a ndeachaigh isteach
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Rogha  Space - Athraigh

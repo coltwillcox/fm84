@@ -1903,3 +1903,27 @@ msgstr Alt+B - Sepete; Alt+Shift+B gösterir
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Adları metin olarak düzenle
+
+msgid  Compression
+msgstr Sıkıştırma
+
+msgctxt compression
+msgid   Fast
+msgstr  Hızlı
+
+msgctxt compression
+msgid   Normal
+msgstr  Normal
+
+msgctxt compression
+msgid   Best
+msgstr  En iyi
+
+msgid  One archive for each, named after it
+msgstr Her biri için adını taşıyan bir arşiv
+
+msgid  Then delete what went in, for good
+msgstr Sonra içine gireni kalıcı olarak sil
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Seçenek  Space - Değiştir

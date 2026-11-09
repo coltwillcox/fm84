@@ -194,6 +194,18 @@ fn every_input_field_wears_the_rename_colours() {
                 hard: false,
             },
         ),
+        (
+            "Alt+P",
+            Dialog::Pack(Box::new(crate::app::PackForm {
+                sources: vec![(std::path::PathBuf::from("/a"), false)],
+                input: typed(),
+                base: "a".to_string(),
+                focus: 0,
+                level: crate::fs_ops::PackLevel::Normal,
+                separate: false,
+                move_after: false,
+            })),
+        ),
         ("+", Dialog::Prompt(PromptKind::Select, typed())),
         ("Ctrl+L", Dialog::Prompt(PromptKind::GoTo, typed())),
         ("Options", Dialog::Options { editing: Some(typed()) }),
@@ -280,6 +292,18 @@ fn popups_share_a_width_and_keep_to_the_panels() {
                 opened_with: String::new(),
                 default: PathBuf::from("/b"),
             },
+        ),
+        (
+            " Pack file ",
+            Dialog::Pack(Box::new(crate::app::PackForm {
+                sources: vec![(PathBuf::from("/a"), false)],
+                input: TextInput::new(),
+                base: "a".to_string(),
+                focus: 1,
+                level: crate::fs_ops::PackLevel::Best,
+                separate: true,
+                move_after: false,
+            })),
         ),
         (" Options ", Dialog::Options { editing: None }),
         (

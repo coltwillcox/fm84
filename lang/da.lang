@@ -1902,3 +1902,27 @@ msgstr Alt+B - I kurven; Alt+Shift+B viser den
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Redigér navnene som tekst
+
+msgid  Compression
+msgstr Komprimering
+
+msgctxt compression
+msgid   Fast
+msgstr  Hurtig
+
+msgctxt compression
+msgid   Normal
+msgstr  Normal
+
+msgctxt compression
+msgid   Best
+msgstr  Bedst
+
+msgid  One archive for each, named after it
+msgstr Ét arkiv til hver, opkaldt efter den
+
+msgid  Then delete what went in, for good
+msgstr Slet derefter det, der kom med, for altid
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Valg  Space - Skift

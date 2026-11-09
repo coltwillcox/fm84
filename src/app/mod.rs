@@ -93,6 +93,29 @@ pub enum Screen {
     Diff(crate::diff::DiffState),
 }
 
+/// The rows of the pack dialog, in the order Up and Down go through them.
+pub const PACK_NAME_ROW: usize = 0;
+pub const PACK_LEVEL_ROW: usize = 1;
+pub const PACK_SEPARATE_ROW: usize = 2;
+pub const PACK_MOVE_ROW: usize = 3;
+pub const PACK_ROWS: usize = 4;
+
+/// Alt+P: what is packed, the archive's name - or, one for each, the
+/// directory they go in as `dir/*.zip` - and how.
+pub struct PackForm {
+    pub sources: Vec<(PathBuf, bool)>,
+    pub input: TextInput,
+    /// The name the archive is given when there is one, before its ending.
+    pub base: String,
+    /// Which row the keys go to.
+    pub focus: usize,
+    pub level: crate::fs_ops::PackLevel,
+    /// An archive for each of what is chosen, named after it.
+    pub separate: bool,
+    /// What went in deleted once it is packed.
+    pub move_after: bool,
+}
+
 /// The one dialog open over the screen, if any, carrying what it is asking
 /// about. Only one can be open at a time, and each answers its own keys, so
 /// nothing behind it can act on a key meant for it.
@@ -137,8 +160,8 @@ pub enum Dialog {
     /// Alt+F9: where to extract the whole of an archive to.
     Extract { archive: PathBuf, input: TextInput },
     /// Alt+P: the archive to pack what is chosen into, its format by the
-    /// ending of its name.
-    Pack { sources: Vec<(PathBuf, bool)>, input: TextInput },
+    /// ending of its name, and how.
+    Pack(Box<PackForm>),
     /// Alt+H: checksums worked out, or a checksum file checked.
     Checksums(Box<ChecksumView>),
     /// Ctrl+E's plan, saved from the editor and waiting on Enter.
@@ -520,6 +543,8 @@ pub struct Recall {
     /// Whether W last left the viewer wrapping lines, which the next file
     /// opened takes up.
     pub viewer_wrap: bool,
+    /// How hard Alt+P last packed.
+    pub pack_level: crate::fs_ops::PackLevel,
 }
 
 impl AppState {
@@ -610,6 +635,7 @@ impl AppState {
                 find_term: String::new(),
                 find_regex: false,
                 viewer_wrap: false,
+                pack_level: crate::fs_ops::PackLevel::Normal,
             },
             workers: Workers {
                 detail_worker: Latest::new(|(path, is_dir): &(PathBuf, bool)| crate::fs_ops::describe(path, *is_dir)),
@@ -659,7 +685,8 @@ impl AppState {
     /// typed into: a name, a pattern, something to find, a text option.
     pub fn dialog_input(&mut self) -> Option<&mut TextInput> {
         match self.dialog.as_mut()? {
-            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Extract { input, .. } | Dialog::Pack { input, .. } | Dialog::Prompt(_, input) => Some(input),
+            Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Extract { input, .. } | Dialog::Prompt(_, input) => Some(input),
+            Dialog::Pack(form) => Some(&mut form.input),
             Dialog::Revision(list) => Some(&mut list.input),
             Dialog::Options { editing } => editing.as_mut(),
             Dialog::History(list) => Some(&mut list.input),

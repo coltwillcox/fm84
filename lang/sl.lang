@@ -1980,3 +1980,27 @@ msgstr Alt+B - V košarico; Alt+Shift+B jo pokaže
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Uredi imena kot besedilo
+
+msgid  Compression
+msgstr Stiskanje
+
+msgctxt compression
+msgid   Fast
+msgstr  Hitro
+
+msgctxt compression
+msgid   Normal
+msgstr  Običajno
+
+msgctxt compression
+msgid   Best
+msgstr  Najboljše
+
+msgid  One archive for each, named after it
+msgstr Arhiv za vsakega, poimenovan po njem
+
+msgid  Then delete what went in, for good
+msgstr Nato trajno izbriši, kar je šlo vanj
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Možnost  Space - Spremeni

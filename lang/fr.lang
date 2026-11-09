@@ -1904,3 +1904,27 @@ msgstr Alt+B - Dans le panier ; Alt+Maj+B le montre
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Modifier les noms comme texte
+
+msgid  Compression
+msgstr Compression
+
+msgctxt compression
+msgid   Fast
+msgstr  Rapide
+
+msgctxt compression
+msgid   Normal
+msgstr  Normale
+
+msgctxt compression
+msgid   Best
+msgstr  Maximale
+
+msgid  One archive for each, named after it
+msgstr Une archive pour chacun, à son nom
+
+msgid  Then delete what went in, for good
+msgstr Puis supprimer définitivement ce qui y est entré
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Option  Espace - Changer

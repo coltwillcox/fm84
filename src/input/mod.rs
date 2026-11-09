@@ -1,7 +1,7 @@
 //! Keys, pastes and the mouse, each to whatever is on top: a running job, an
 //! error, the dialog that is open, then the screen.
 
-use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PromptKind, Saved, Screen, Side, TextInput, TransferKind, read_only};
+use crate::app::{AfterSave, Answer, AppState, Clashes, Dialog, FindFiles, PACK_NAME_ROW, PromptKind, Saved, Screen, Side, TextInput, TransferKind, read_only};
 use crate::fs_ops::{check_destinations, create_directory, create_file, create_hard_link, create_symlink, is_plain_name, is_same_entry, path_exists, rename_path, transfer_targets, typed_path};
 use crate::options::{OnExisting, SortKey};
 use crate::strip::StripHit;
@@ -383,11 +383,18 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             }
             _ => edit_text(app_state, code),
         },
-        Some(Dialog::Pack { .. }) => match code {
+        // Up and Down go between the name and the options; on an option,
+        // Space and the arrows change it, and on the name they type.
+        Some(Dialog::Pack(form)) => match code {
             KeyCode::Enter => handle_pack_confirm(app_state),
             KeyCode::Tab => cycle_pack_format(app_state),
             KeyCode::Esc => app_state.dialog = None,
-            _ => edit_text(app_state, code),
+            KeyCode::Up => move_pack_focus(app_state, false),
+            KeyCode::Down => move_pack_focus(app_state, true),
+            _ if form.focus == PACK_NAME_ROW => edit_text(app_state, code),
+            KeyCode::Char(' ') | KeyCode::Right => change_pack_option(app_state, true),
+            KeyCode::Left => change_pack_option(app_state, false),
+            _ => {}
         },
         Some(Dialog::Extract { .. }) => match code {
             KeyCode::Enter => handle_extract_confirm(app_state),

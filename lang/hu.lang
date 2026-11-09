@@ -1904,3 +1904,27 @@ msgstr Alt+B - A kosárba; Alt+Shift+B megmutatja
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - A nevek szerkesztése szövegként
+
+msgid  Compression
+msgstr Tömörítés
+
+msgctxt compression
+msgid   Fast
+msgstr  Gyors
+
+msgctxt compression
+msgid   Normal
+msgstr  Normál
+
+msgctxt compression
+msgid   Best
+msgstr  Legjobb
+
+msgid  One archive for each, named after it
+msgstr Mindegyiknek külön archívum, a nevén
+
+msgid  Then delete what went in, for good
+msgstr Utána a becsomagoltak végleges törlése
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Beállítás  Szóköz - Módosítás

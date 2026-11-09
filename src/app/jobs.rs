@@ -526,18 +526,48 @@ fn run_check(file: PathBuf, mut progress: JobProgress<'_>) {
     progress.finish(Ok(Transfer::Done));
 }
 
-/// The worker thread behind packing: what goes in is found first, which
-/// gives the bar its total, and then written.
-fn run_pack(sources: Vec<(PathBuf, bool)>, dest: PathBuf, format: crate::fs_ops::PackFormat, replacing: bool, mut progress: JobProgress<'_>) {
-    let outcome = match crate::fs_ops::plan_pack(&sources, &dest, format, &mut progress) {
-        Ok(Some(plan)) => {
-            let _ = progress.updates.send(JobUpdate::Total(plan.bytes));
-            crate::fs_ops::pack(&plan, &dest, format, replacing, &mut progress)
+/// One archive Alt+P is to make: what goes in, where it goes, and whether
+/// it may write over what is there.
+pub struct PackArchive {
+    pub sources: Vec<(PathBuf, bool)>,
+    pub dest: PathBuf,
+    pub replacing: bool,
+}
+
+/// How Alt+P packs: into what, how hard, and whether what went in is then
+/// taken off the disk.
+#[derive(Clone, Copy, Debug)]
+pub struct PackHow {
+    pub format: crate::fs_ops::PackFormat,
+    pub level: crate::fs_ops::PackLevel,
+    pub move_after: bool,
+}
+
+/// The worker thread behind packing: what goes into every archive is found
+/// first, which gives the bar its total - and keeps one archive made from
+/// being found and packed into the next - and then each is written, and
+/// what went into it removed when it is a move.
+fn run_pack(archives: Vec<PackArchive>, how: PackHow, mut progress: JobProgress<'_>) {
+    let mut plans = Vec::with_capacity(archives.len());
+    for archive in &archives {
+        match crate::fs_ops::plan_pack(&archive.sources, &archive.dest, how.format, &mut progress) {
+            Ok(Some(plan)) => plans.push(plan),
+            Ok(None) => return progress.finish(Ok(Transfer::Cancelled)),
+            Err(error) => return progress.finish(Err(error)),
         }
-        Ok(None) => Ok(Transfer::Cancelled),
-        Err(error) => Err(error),
-    };
-    progress.finish(outcome);
+    }
+    let _ = progress.updates.send(JobUpdate::Total(plans.iter().map(|plan| plan.bytes).sum()));
+    for (archive, plan) in archives.iter().zip(&plans) {
+        let mut outcome = crate::fs_ops::pack(plan, &archive.dest, how.format, how.level, archive.replacing, &mut progress);
+        if how.move_after && matches!(outcome, Ok(Transfer::Done)) {
+            outcome = crate::fs_ops::remove_packed(plan, &mut progress);
+        }
+        match outcome {
+            Ok(Transfer::Done) => {}
+            outcome => return progress.finish(outcome),
+        }
+    }
+    progress.finish(Ok(Transfer::Done));
 }
 
 /// The worker thread behind a copy or move.
@@ -714,13 +744,13 @@ impl AppState {
         self.start_job(TransferKind::Checksum, Clashes::Ask, move |progress| run_check(file, progress));
     }
 
-    /// Pack `sources` into a new archive at `dest`, written over only when
-    /// `replacing`, and land on it once it is there.
-    pub fn start_pack(&mut self, sources: Vec<(PathBuf, bool)>, dest: PathBuf, format: crate::fs_ops::PackFormat, replacing: bool) {
-        let land = dest.clone();
-        self.start_job(TransferKind::Pack, Clashes::Ask, move |progress| run_pack(sources, dest, format, replacing, progress));
+    /// Make each of `archives` as `how` says, and land on the first once
+    /// it is there.
+    pub fn start_pack(&mut self, archives: Vec<PackArchive>, how: PackHow) {
+        let land = archives.first().map(|archive| archive.dest.clone());
+        self.start_job(TransferKind::Pack, Clashes::Ask, move |progress| run_pack(archives, how, progress));
         if let Some(job) = &mut self.workers.job {
-            job.after = Some(AfterJob::Land(land));
+            job.after = land.map(AfterJob::Land);
         }
     }
 

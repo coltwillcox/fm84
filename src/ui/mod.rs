@@ -411,7 +411,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             Some(Dialog::Dossier(view)) => settled.popup_list = Some(render_dossier_popup(f, area, view, app_state.options.date_format)),
             Some(Dialog::Sync(plan)) => settled.popup_list = Some(render_sync_popup(f, area, plan, app_state.options.date_format)),
             Some(Dialog::MultiRename(rename)) => settled.popup_list = Some(render_multi_rename_popup(f, area, rename)),
-            Some(Dialog::Pack { sources, input }) => render_destination_popup(f, area, sources, Destination::Pack, input, Some(t!("Tab - Format"))),
+            Some(Dialog::Pack(form)) => render_pack_popup(f, area, form),
             Some(Dialog::LargeFile(large)) => render_large_file_popup(f, area, large),
             Some(Dialog::SaveChanges { .. }) => render_editor_save_popup(f, area),
             Some(Dialog::DiskChanged { opened, now, .. }) => render_disk_changed_popup(f, area, app_state, *opened, *now),

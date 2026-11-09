@@ -51,6 +51,40 @@ impl PackFormat {
     fn needs_utf8(self) -> bool {
         matches!(self, PackFormat::Zip | PackFormat::SevenZ)
     }
+
+    /// A plain tar only lays files end to end: there is no level to it.
+    pub fn compresses(self) -> bool {
+        self != PackFormat::Tar
+    }
+}
+
+/// How hard the archive is compressed: each format's own levels 1, 6 and 9,
+/// 6 being what each of them does when not told.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum PackLevel {
+    Fast,
+    #[default]
+    Normal,
+    Best,
+}
+
+impl PackLevel {
+    pub const ALL: [PackLevel; 3] = [PackLevel::Fast, PackLevel::Normal, PackLevel::Best];
+
+    fn preset(self) -> u32 {
+        match self {
+            PackLevel::Fast => 1,
+            PackLevel::Normal => 6,
+            PackLevel::Best => 9,
+        }
+    }
+
+    /// The one after, or before, going round.
+    pub fn step(self, forward: bool) -> Self {
+        let at = Self::ALL.iter().position(|level| *level == self).unwrap_or(1);
+        let len = Self::ALL.len();
+        Self::ALL[if forward { (at + 1) % len } else { (at + len - 1) % len }]
+    }
 }
 
 /// One thing going into the archive: where it is, the name it goes in under,
@@ -60,6 +94,8 @@ pub struct Member {
     name: PathBuf,
     kind: MemberKind,
     metadata: fs::Metadata,
+    /// Asked about as it was being written, and skipped.
+    left_out: Cell<bool>,
 }
 
 enum MemberKind {
@@ -119,6 +155,7 @@ fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Rep
                 name,
                 kind: MemberKind::Link(target),
                 metadata,
+                left_out: Cell::new(false),
             });
         }
     } else if file_type.is_dir() {
@@ -127,6 +164,7 @@ fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Rep
             name: name.clone(),
             kind: MemberKind::Dir,
             metadata,
+            left_out: Cell::new(false),
         });
         let Some(entries) = attempt(path, report, |_| read_dir(path))? else {
             return Ok(true);
@@ -150,6 +188,7 @@ fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Rep
             name,
             kind: MemberKind::File,
             metadata,
+            left_out: Cell::new(false),
         });
     } else {
         // A pipe or a device: nothing a reader of the archive could use.
@@ -160,14 +199,14 @@ fn walk(path: &Path, name: PathBuf, dest: &Path, format: PackFormat, report: Rep
 
 /// Write the archive `plan` describes to `dest`, written over only when
 /// `replacing` - the caller has been told it may.
-pub fn pack(plan: &PackPlan, dest: &Path, format: PackFormat, replacing: bool, report: Report<'_>) -> Result<Transfer, Error> {
+pub fn pack(plan: &PackPlan, dest: &Path, format: PackFormat, level: PackLevel, replacing: bool, report: Report<'_>) -> Result<Transfer, Error> {
     let (temp, file) = temp_beside(dest)?;
     let cancelled = Cell::new(false);
     let report = RefCell::new(report);
     let written = match format {
-        PackFormat::Zip => write_zip(file, &plan.members, &report, &cancelled),
-        PackFormat::SevenZ => write_7z(file, &plan.members, &report, &cancelled),
-        _ => Compressor::new(file, format).and_then(|compressor| write_tar(compressor, &plan.members, &report, &cancelled)).and_then(Compressor::finish),
+        PackFormat::Zip => write_zip(file, &plan.members, level, &report, &cancelled),
+        PackFormat::SevenZ => write_7z(file, &plan.members, level, &report, &cancelled),
+        _ => Compressor::new(file, format, level).and_then(|compressor| write_tar(compressor, &plan.members, &report, &cancelled)).and_then(Compressor::finish),
     };
     match written.and_then(|file| file.sync_all()) {
         Ok(()) => {
@@ -181,6 +220,36 @@ pub fn pack(plan: &PackPlan, dest: &Path, format: PackFormat, replacing: bool, r
     }
 }
 
+/// Move into the archive: what went into it taken off the disk, now that the
+/// archive holding it is there. Only what is as it was walked - a file
+/// changed since stays, as does anything that turned up in a directory
+/// meanwhile and so each directory still holding something. Deleted, not
+/// put in the trash: the archive is where it went.
+pub fn remove_packed(plan: &PackPlan, report: Report<'_>) -> Result<Transfer, Error> {
+    // Backwards: what is in a directory before the directory.
+    for member in plan.members.iter().rev() {
+        if member.left_out.get() {
+            continue;
+        }
+        if !report.step(Step::Starting(&member.path)) {
+            return Ok(Transfer::Cancelled);
+        }
+        match member.kind {
+            // Still holding something - left out, or new - it stays.
+            MemberKind::Dir => {
+                let _ = fs::remove_dir(&member.path);
+            }
+            MemberKind::File | MemberKind::Link(_) => {
+                let unchanged = fs::symlink_metadata(&member.path).is_ok_and(|now| now.file_type() == member.metadata.file_type() && now.len() == member.metadata.len() && now.modified().ok() == member.metadata.modified().ok());
+                if unchanged {
+                    attempt(&member.path, report, |_| remove_file(&member.path))?;
+                }
+            }
+        }
+    }
+    Ok(Transfer::Done)
+}
+
 type Shared<'r, 'p> = RefCell<&'r mut (dyn Progress + 'p)>;
 
 /// A file opened to go in, announced; None when it was asked about and left
@@ -188,6 +257,7 @@ type Shared<'r, 'p> = RefCell<&'r mut (dyn Progress + 'p)>;
 fn open_member(member: &Member, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<Option<File>, Error> {
     let mut report = report.borrow_mut();
     let Some(file) = attempt(&member.path, &mut **report, |_| File::open(&member.path))? else {
+        member.left_out.set(true);
         return Ok(None);
     };
     if !report.step(Step::Starting(&member.path)) {
@@ -241,12 +311,13 @@ enum Compressor {
 }
 
 impl Compressor {
-    fn new(file: File, format: PackFormat) -> Result<Self, Error> {
+    fn new(file: File, format: PackFormat, level: PackLevel) -> Result<Self, Error> {
         let file = io::BufWriter::new(file);
+        let preset = level.preset();
         Ok(match format {
-            PackFormat::TarGz => Compressor::Gz(flate2::write::GzEncoder::new(file, flate2::Compression::default())),
-            PackFormat::TarXz => Compressor::Xz(Box::new(lzma_rust2::XzWriter::new(file, lzma_rust2::XzOptions::with_preset(6))?)),
-            PackFormat::TarBz2 => Compressor::Bz2(bzip2::write::BzEncoder::new(file, bzip2::Compression::default())),
+            PackFormat::TarGz => Compressor::Gz(flate2::write::GzEncoder::new(file, flate2::Compression::new(preset))),
+            PackFormat::TarXz => Compressor::Xz(Box::new(lzma_rust2::XzWriter::new(file, lzma_rust2::XzOptions::with_preset(preset))?)),
+            PackFormat::TarBz2 => Compressor::Bz2(bzip2::write::BzEncoder::new(file, bzip2::Compression::new(preset))),
             _ => Compressor::Plain(file),
         })
     }
@@ -333,12 +404,12 @@ fn unix_mode(_metadata: &fs::Metadata) -> Option<u32> {
 
 /// A zip, deflated, with each file's mode and time - to the even second
 /// from 1980 on, which is all a zip can hold.
-fn write_zip(file: File, members: &[Member], report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
+fn write_zip(file: File, members: &[Member], level: PackLevel, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
     use zip::write::SimpleFileOptions;
     let zip_error = crate::archive::zip_error;
     let mut zip = zip::ZipWriter::new(io::BufWriter::new(file));
     for member in members {
-        let mut options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let mut options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated).compression_level(Some(i64::from(level.preset())));
         if let Some(time) = member.metadata.modified().ok().and_then(zip_time) {
             options = options.last_modified_time(time);
         }
@@ -373,10 +444,11 @@ fn zip_time(time: std::time::SystemTime) -> Option<zip::DateTime> {
 /// A 7z, packed solid as 7-Zip packs one: every file in one LZMA2 stream,
 /// opened only as the stream reaches it. A mode goes in the top half of the
 /// attributes, flagged as 7-Zip flags it on Unix.
-fn write_7z(file: File, members: &[Member], report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
-    use sevenz_rust2::{ArchiveEntry, ArchiveWriter, SourceReader};
+fn write_7z(file: File, members: &[Member], level: PackLevel, report: &Shared<'_, '_>, cancelled: &Cell<bool>) -> Result<File, Error> {
+    use sevenz_rust2::{ArchiveEntry, ArchiveWriter, SourceReader, encoder_options::Lzma2Options};
     let sevenz_error = crate::archive::sevenz_error;
     let mut writer = ArchiveWriter::new(file).map_err(sevenz_error)?;
+    writer.set_content_methods(vec![Lzma2Options::from_level(level.preset()).into()]);
     let mut entries = Vec::new();
     let mut sources = Vec::new();
     for member in members {

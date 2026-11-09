@@ -1941,3 +1941,27 @@ msgstr Alt+B - Do koszyka; Alt+Shift+B go pokazuje
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Edytuj nazwy jako tekst
+
+msgid  Compression
+msgstr Kompresja
+
+msgctxt compression
+msgid   Fast
+msgstr  Szybka
+
+msgctxt compression
+msgid   Normal
+msgstr  Normalna
+
+msgctxt compression
+msgid   Best
+msgstr  Najlepsza
+
+msgid  One archive for each, named after it
+msgstr Osobne archiwum dla każdego, nazwane po nim
+
+msgid  Then delete what went in, for good
+msgstr Potem trwale usuń to, co weszło
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Opcja  Spacja - Zmień

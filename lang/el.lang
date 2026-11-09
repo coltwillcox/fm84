@@ -1903,3 +1903,27 @@ msgstr Alt+B - Στο καλάθι· Alt+Shift+B το δείχνει
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Επεξεργασία ονομάτων ως κείμενο
+
+msgid  Compression
+msgstr Συμπίεση
+
+msgctxt compression
+msgid   Fast
+msgstr  Γρήγορη
+
+msgctxt compression
+msgid   Normal
+msgstr  Κανονική
+
+msgctxt compression
+msgid   Best
+msgstr  Καλύτερη
+
+msgid  One archive for each, named after it
+msgstr Ένα αρχείο για το καθένα, με το όνομά του
+
+msgid  Then delete what went in, for good
+msgstr Μετά οριστική διαγραφή όσων μπήκαν
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Επιλογή  Space - Αλλαγή

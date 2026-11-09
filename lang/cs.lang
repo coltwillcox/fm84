@@ -1941,3 +1941,27 @@ msgstr Alt+B - Do košíku; Alt+Shift+B ho ukáže
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Upravit názvy jako text
+
+msgid  Compression
+msgstr Komprese
+
+msgctxt compression
+msgid   Fast
+msgstr  Rychlá
+
+msgctxt compression
+msgid   Normal
+msgstr  Normální
+
+msgctxt compression
+msgid   Best
+msgstr  Nejlepší
+
+msgid  One archive for each, named after it
+msgstr Archiv pro každou položku, pojmenovaný po ní
+
+msgid  Then delete what went in, for good
+msgstr Potom trvale smazat, co se zabalilo
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Volba  Space - Změnit

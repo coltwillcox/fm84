@@ -384,6 +384,82 @@ fn alt_p_packs_into_the_other_panel() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// The pack dialog's options: Down goes to them and Space or the arrows
+/// change them, the level kept for next time. One for each turns the name
+/// to `*` and back; packed so, each gets an archive named after it, two of
+/// one name numbered, and moved, what went in is gone.
+#[test]
+fn alt_p_packs_one_for_each_and_moves() {
+    use crate::app::{Dialog, PACK_LEVEL_ROW, PACK_MOVE_ROW, PACK_SEPARATE_ROW};
+    use crate::fs_ops::PackLevel;
+    let dir = scratch("pack-options");
+    let (here, out) = (dir.join("here"), dir.join("out"));
+    std::fs::create_dir_all(here.join("photos")).unwrap();
+    std::fs::write(here.join("photos/beach.txt"), "sand").unwrap();
+    std::fs::write(here.join("notes.txt"), "notes").unwrap();
+    std::fs::write(here.join("notes.md"), "# notes").unwrap();
+    std::fs::create_dir_all(&out).unwrap();
+    let mut app_state = AppState::new();
+    app_state.open_dir(Side::Right, out.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, here.clone(), None);
+    for name in ["photos", "notes.txt", "notes.md"] {
+        on(&mut app_state, name);
+        press(&mut app_state, KeyCode::Insert);
+    }
+    let alt_p = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('p'), KeyModifiers::ALT));
+    let typed = |app_state: &mut AppState| PathBuf::from(&app_state.dialog_input().unwrap().text);
+    let form = |app_state: &AppState| match &app_state.dialog {
+        Some(Dialog::Pack(form)) => (form.focus, form.level, form.separate, form.move_after),
+        _ => panic!("no pack dialog"),
+    };
+
+    alt_p(&mut app_state);
+    assert_eq!(typed(&mut app_state), out.join("here.zip"));
+    // On the name, Space types and the arrows move the cursor.
+    press(&mut app_state, KeyCode::Left);
+    assert_eq!(form(&app_state), (0, PackLevel::Normal, false, false));
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Right);
+    assert_eq!(form(&app_state), (PACK_LEVEL_ROW, PackLevel::Best, false, false));
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Char(' '));
+    assert_eq!(form(&app_state), (PACK_SEPARATE_ROW, PackLevel::Best, true, false));
+    assert_eq!(typed(&mut app_state), out.join("*.zip"));
+    press(&mut app_state, KeyCode::Tab);
+    assert_eq!(typed(&mut app_state), out.join("*.7z"));
+    press(&mut app_state, KeyCode::Char(' '));
+    assert_eq!(typed(&mut app_state), out.join("here.7z"));
+    press(&mut app_state, KeyCode::Char(' '));
+    press(&mut app_state, KeyCode::Tab);
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Char(' '));
+    assert_eq!(form(&app_state), (PACK_MOVE_ROW, PackLevel::Best, true, true));
+    // Round past the last row to the name.
+    press(&mut app_state, KeyCode::Down);
+    assert_eq!(form(&app_state).0, 0);
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+
+    let made = |name: &str| crate::archive::index(&out.join(name)).unwrap_or_else(|e| panic!("{name}: {e}"));
+    assert!(made("photos.tar.gz").find(std::path::Path::new("photos/beach.txt")).is_some());
+    let notes = [made("notes.tar.gz"), made("notes (2).tar.gz")];
+    let mut names: Vec<String> = notes.iter().map(|index| index.children(std::path::Path::new("")).next().unwrap().name().to_string_lossy().into_owned()).collect();
+    names.sort();
+    assert_eq!(names, ["notes.md", "notes.txt"]);
+    let left: Vec<_> = std::fs::read_dir(&here).unwrap().collect();
+    assert!(left.is_empty(), "{left:?}");
+
+    // Best is offered again; one for each and moving are not.
+    alt_p(&mut app_state);
+    assert!(app_state.dialog.is_none(), "nothing left to pack");
+    app_state.open_dir(Side::Left, out.clone(), Some("photos.tar.gz".as_ref()));
+    alt_p(&mut app_state);
+    assert_eq!(form(&app_state), (0, PackLevel::Best, false, false));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// Checksums are worked out of files on the disk: inside an archive, Alt+H
 /// says so.
 #[test]

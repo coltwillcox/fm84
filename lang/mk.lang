@@ -1903,3 +1903,27 @@ msgstr Alt+B - Во кошничката; Alt+Shift+B ја прикажува
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Уреди ги имињата како текст
+
+msgid  Compression
+msgstr Компресија
+
+msgctxt compression
+msgid   Fast
+msgstr  Брза
+
+msgctxt compression
+msgid   Normal
+msgstr  Нормална
+
+msgctxt compression
+msgid   Best
+msgstr  Најдобра
+
+msgid  One archive for each, named after it
+msgstr По една архива за секоја ставка, именувана по неа
+
+msgid  Then delete what went in, for good
+msgstr Потоа трајно избриши го она што влезе
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Опција  Space - Промени

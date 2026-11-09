@@ -1941,3 +1941,27 @@ msgstr Alt+B - În coș; Alt+Shift+B îl arată
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Editează numele ca text
+
+msgid  Compression
+msgstr Compresie
+
+msgctxt compression
+msgid   Fast
+msgstr  Rapidă
+
+msgctxt compression
+msgid   Normal
+msgstr  Normală
+
+msgctxt compression
+msgid   Best
+msgstr  Maximă
+
+msgid  One archive for each, named after it
+msgstr Câte o arhivă pentru fiecare, cu numele lui
+
+msgid  Then delete what went in, for good
+msgstr Apoi șterge definitiv ce a intrat
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Opțiune  Space - Schimbă

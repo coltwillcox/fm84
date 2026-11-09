@@ -1307,6 +1307,74 @@ pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, s
     );
 }
 
+/// Alt+P: what is packed and the archive's name, as a copy's destination
+/// is asked for, and under it how hard it is packed, one archive for each,
+/// and whether what went in is then deleted.
+pub(super) fn render_pack_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &crate::app::PackForm) {
+    use crate::app::{PACK_LEVEL_ROW, PACK_MOVE_ROW, PACK_NAME_ROW, PACK_SEPARATE_ROW};
+    use crate::fs_ops::{PackFormat, PackLevel};
+    let popup_area = popup_rect(35, area);
+    let sources = &form.sources;
+    let count = sources.len();
+    let kind = Destination::Pack;
+    let title = format!(" {} ", kind.title(count, sources.first().is_some_and(|(_, is_dir)| *is_dir)));
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let name = sources.first().map(|(source, _)| shown_name(source)).unwrap_or_default();
+    let names: Vec<String> = sources.iter().map(|(source, _)| shown_name(source)).collect();
+    let source_msg = kind.source(count, &name, &names.join(", "));
+
+    let width = popup_inner(popup_area).width as usize;
+    let input_line = if form.focus == PACK_NAME_ROW {
+        let typed = form.input.cursor_spans_within(width, style_input(), style_input_cursor());
+        let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+        let mut spans = typed;
+        spans.push(Span::raw(" ".repeat(width.saturating_sub(typed_width))));
+        Line::from(spans).style(style_input())
+    } else {
+        Line::from(Span::styled(format!("{:<width$}", tail_of(&form.input.text, width)), style_file()))
+    };
+
+    // An option, the row the keys go to drawn as the field is.
+    let row = |text: String, focus: usize, dim: bool| {
+        let text = format!("{:<width$}", tail_of(&text, width));
+        let style = if form.focus == focus {
+            style_input()
+        } else if dim {
+            style_columns()
+        } else {
+            style_file()
+        };
+        Line::from(Span::styled(text, style))
+    };
+    let check = |on: bool| if on { "[x]" } else { "[ ]" };
+    let level = match form.level {
+        PackLevel::Fast => tc!("compression", "Fast"),
+        PackLevel::Normal => tc!("compression", "Normal"),
+        PackLevel::Best => tc!("compression", "Best"),
+    };
+    // A plain tar has no level: shown faded, as what it would be.
+    let compresses = PackFormat::of(std::path::Path::new(&form.input.text)).is_none_or(PackFormat::compresses);
+
+    popup_body(
+        f,
+        popup_area,
+        vec![
+            Line::from(Span::styled(source_msg, style_title())),
+            input_line,
+            row(format!("{}: \u{25C2} {level} \u{25B8}", t!("Compression")), PACK_LEVEL_ROW, !compresses),
+            row(format!("{} {}", check(form.separate), t!("One archive for each, named after it")), PACK_SEPARATE_ROW, false),
+            row(format!("{} {}", check(form.move_after), t!("Then delete what went in, for good")), PACK_MOVE_ROW, false),
+            // Two lines: the options' keys, then the dialog's.
+            key_hints(t!("↑↓ - Option  Space - Change")),
+            key_hints(&[kind.enter(), t!("Tab - Format"), t!("Esc - Cancel")].join("    ")),
+        ],
+    );
+}
+
 pub(super) fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, large: &crate::app::LargeFile) {
     let name = shown_name(&large.path);
     let popup_area = popup_rect(30, area);

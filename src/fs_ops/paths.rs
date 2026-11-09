@@ -160,6 +160,11 @@ pub fn is_same_entry(a: &Path, b: &Path) -> bool {
 /// `src.tar (2).gz` - and a name that is all ending, as `.bashrc` is, takes
 /// the number after it.
 pub fn free_name(path: &Path) -> PathBuf {
+    free_name_among(path, path_exists)
+}
+
+/// As `free_name`, past every name `taken` says is not free.
+pub fn free_name_among(path: &Path, taken: impl Fn(&Path) -> bool) -> PathBuf {
     let name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
     let lower = name.to_lowercase();
     let double = [".tar.gz", ".tar.zst", ".tar.xz", ".tar.bz2"].into_iter().find(|ending| lower.ends_with(ending) && lower.len() > ending.len());
@@ -174,7 +179,7 @@ pub fn free_name(path: &Path) -> PathBuf {
     // shorter than the name it came from.
     let split = if name.is_char_boundary(split) { split } else { name.len() };
     let (stem, ending) = name.split_at(split);
-    (2u64..).map(|number| path.with_file_name(format!("{stem} ({number}){ending}"))).find(|candidate| !path_exists(candidate)).expect("some number is free")
+    (2u64..).map(|number| path.with_file_name(format!("{stem} ({number}){ending}"))).find(|candidate| !taken(candidate)).expect("some number is free")
 }
 
 /// True if anything occupies this path, including a dangling symlink - which

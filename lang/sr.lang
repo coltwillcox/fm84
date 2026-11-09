@@ -1940,3 +1940,27 @@ msgstr Alt+B - U korpicu; Alt+Shift+B je prikazuje
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Uredi imena kao tekst
+
+msgid  Compression
+msgstr Kompresija
+
+msgctxt compression
+msgid   Fast
+msgstr  Brza
+
+msgctxt compression
+msgid   Normal
+msgstr  Normalna
+
+msgctxt compression
+msgid   Best
+msgstr  Najbolja
+
+msgid  One archive for each, named after it
+msgstr Arhiva za svaku stavku, nazvana po njoj
+
+msgid  Then delete what went in, for good
+msgstr Zatim trajno obriši ono što je ušlo
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Opcija  Space - Promeni

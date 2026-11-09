@@ -1903,3 +1903,27 @@ msgstr Alt+B - I korgen; Alt+Shift+B visar den
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Redigera namnen som text
+
+msgid  Compression
+msgstr Komprimering
+
+msgctxt compression
+msgid   Fast
+msgstr  Snabb
+
+msgctxt compression
+msgid   Normal
+msgstr  Normal
+
+msgctxt compression
+msgid   Best
+msgstr  Bäst
+
+msgid  One archive for each, named after it
+msgstr Ett arkiv för varje, döpt efter det
+
+msgid  Then delete what went in, for good
+msgstr Radera sedan det som packades för gott
+
+msgid  ↑↓ - Option  Space - Change
+msgstr ↑↓ - Val  Space - Ändra
