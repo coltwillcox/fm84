@@ -1679,3 +1679,12 @@ msgstr Letar efter dubbletter
 
 msgid  No duplicates found
 msgstr Inga dubbletter hittades
+
+msgid  Basket: {count}
+msgstr Korg: {count}
+
+msgid  The basket is empty
+msgstr Korgen är tom
+
+msgid  The basket holds files on more than one drive
+msgstr Korgen har filer på mer än en enhet

@@ -239,7 +239,11 @@ impl AppState {
         let first = feed[0].0.clone().into_os_string();
         self.dialog = None;
         let side = self.active_side;
-        self.panel_mut(side).flat = Some(Flat { dir: start.clone(), feed: Some(Arc::new(feed)) });
+        self.panel_mut(side).flat = Some(Flat {
+            dir: start.clone(),
+            feed: Some(Arc::new(feed)),
+            basket: false,
+        });
         if self.panel_dir(side) == start {
             self.reload_panel(side, Some(&first));
         } else {

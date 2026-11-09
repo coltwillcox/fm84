@@ -359,6 +359,7 @@ fn a_slow_directory_leaves_the_panel_as_it_was_until_it_lands() {
         answer,
         _stop: Default::default(),
         restore_flat: None,
+        then_select: None,
     });
     assert!(app_state.panel_busy(Side::Left));
     // The panel is as it was, and its tabs cannot be touched.
@@ -407,6 +408,7 @@ fn a_late_refusal_or_esc_puts_the_tab_back() {
             answer,
             _stop: Default::default(),
             restore_flat: None,
+            then_select: None,
         });
         if refused {
             let denied = std::io::Error::from(std::io::ErrorKind::PermissionDenied);
@@ -536,6 +538,7 @@ fn a_slower_older_listing_does_not_land_over_a_newer_one() {
         answer,
         _stop: Default::default(),
         restore_flat: None,
+        then_select: None,
     });
 
     std::fs::write(dir.join("new"), "").unwrap();
@@ -561,7 +564,7 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
     app_state.active_side = Side::Left;
 
     let (_sender, answer) = std::sync::mpsc::channel();
-    app_state.left.flat = Some(crate::app::Flat { dir: dir.clone(), feed: None });
+    app_state.left.flat = Some(crate::app::Flat { dir: dir.clone(), feed: None, basket: false });
     app_state.left.listing = Some(crate::app::PendingListing {
         dir: dir.clone(),
         navigate: false,
@@ -571,6 +574,7 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
         answer,
         _stop: Default::default(),
         restore_flat: Some(None),
+        then_select: None,
     });
     app_state.cancel_listing(Side::Left);
     assert!(app_state.left.flat.is_none());

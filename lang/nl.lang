@@ -1678,3 +1678,12 @@ msgstr Bezig met zoeken naar dubbele bestanden
 
 msgid  No duplicates found
 msgstr Geen dubbele bestanden gevonden
+
+msgid  Basket: {count}
+msgstr Mandje: {count}
+
+msgid  The basket is empty
+msgstr Het mandje is leeg
+
+msgid  The basket holds files on more than one drive
+msgstr Het mandje bevat bestanden op meer dan één schijf

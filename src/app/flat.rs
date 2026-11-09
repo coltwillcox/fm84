@@ -12,6 +12,8 @@ pub struct Flat {
     /// What Find files fed it, by their paths from `dir`, and whether each
     /// is a directory. None for Ctrl+B's walk.
     pub feed: Option<Arc<Vec<(PathBuf, bool)>>>,
+    /// The feed is Alt+Shift+B's basket, which Alt+B takes entries out of.
+    pub basket: bool,
 }
 
 impl AppState {
@@ -20,6 +22,12 @@ impl AppState {
     /// list holds paths, and at the next reread one no longer there is
     /// taken to be gone.
     pub fn feed_follow(&mut self, moves: &[(PathBuf, PathBuf)]) {
+        // The basket follows its files, and what is inside a directory in it.
+        for (path, _) in &mut self.basket {
+            if let Some(moved) = moves.iter().find_map(|(from, to)| path.strip_prefix(from).ok().map(|below| if below.as_os_str().is_empty() { to.clone() } else { to.join(below) })) {
+                *path = moved;
+            }
+        }
         for flat in [&mut self.left.flat, &mut self.right.flat].into_iter().flatten() {
             let Some(feed) = &flat.feed else { continue };
             let dir = &flat.dir;
@@ -53,7 +61,11 @@ impl AppState {
         let landing = match self.panel_mut(side).flat.take() {
             Some(_) => cursor.and_then(|name| Path::new(&name).components().next().map(|first| first.as_os_str().to_os_string())),
             None => {
-                self.panel_mut(side).flat = Some(Flat { dir: self.panel_dir(side), feed: None });
+                self.panel_mut(side).flat = Some(Flat {
+                    dir: self.panel_dir(side),
+                    feed: None,
+                    basket: false,
+                });
                 cursor
             }
         };

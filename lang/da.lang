@@ -1678,3 +1678,12 @@ msgstr Leder efter dubletter
 
 msgid  No duplicates found
 msgstr Ingen dubletter fundet
+
+msgid  Basket: {count}
+msgstr Kurv: {count}
+
+msgid  The basket is empty
+msgstr Kurven er tom
+
+msgid  The basket holds files on more than one drive
+msgstr Kurven har filer på mere end ét drev

@@ -1717,3 +1717,12 @@ msgstr Szukanie duplikatów
 
 msgid  No duplicates found
 msgstr Nie znaleziono duplikatów
+
+msgid  Basket: {count}
+msgstr Koszyk: {count}
+
+msgid  The basket is empty
+msgstr Koszyk jest pusty
+
+msgid  The basket holds files on more than one drive
+msgstr Koszyk zawiera pliki z więcej niż jednego dysku

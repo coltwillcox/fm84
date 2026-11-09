@@ -1717,3 +1717,12 @@ msgstr Se caută duplicatele
 
 msgid  No duplicates found
 msgstr Nu s-au găsit duplicate
+
+msgid  Basket: {count}
+msgstr Coș: {count}
+
+msgid  The basket is empty
+msgstr Coșul este gol
+
+msgid  The basket holds files on more than one drive
+msgstr Coșul are fișiere pe mai multe unități

@@ -23,6 +23,7 @@ use std::time::{Duration, Instant, SystemTime};
 
 mod archives;
 mod attribute_form;
+mod basket;
 mod bookmarks;
 mod branches;
 mod compare;
@@ -257,6 +258,9 @@ pub struct AppState {
     pub stay_put: bool,
     /// What the last jobs did, the latest last, for Ctrl+Z.
     pub undo: Vec<Undo>,
+    /// Alt+B's basket: what has been gathered, as paths, and whether each
+    /// is a directory.
+    pub basket: Vec<(PathBuf, bool)>,
 }
 
 #[derive(Debug, Clone)]
@@ -612,6 +616,7 @@ impl AppState {
             quit_armed: false,
             stay_put: false,
             undo: Vec::new(),
+            basket: Vec::new(),
             drive_strips: [Strip::default(), Strip::default()],
         }
     }

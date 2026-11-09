@@ -1680,3 +1680,12 @@ msgstr Ismétlődések keresése folyamatban
 
 msgid  No duplicates found
 msgstr Nincsenek ismétlődések
+
+msgid  Basket: {count}
+msgstr Kosár: {count}
+
+msgid  The basket is empty
+msgstr A kosár üres
+
+msgid  The basket holds files on more than one drive
+msgstr A kosárban több meghajtón lévő fájlok vannak

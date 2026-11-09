@@ -1679,3 +1679,12 @@ msgstr Duplikate werden gesucht
 
 msgid  No duplicates found
 msgstr Keine Duplikate gefunden
+
+msgid  Basket: {count}
+msgstr Korb: {count}
+
+msgid  The basket is empty
+msgstr Der Korb ist leer
+
+msgid  The basket holds files on more than one drive
+msgstr Der Korb enthält Dateien auf mehr als einem Laufwerk

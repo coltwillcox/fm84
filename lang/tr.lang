@@ -1679,3 +1679,12 @@ msgstr Kopyalar aranıyor
 
 msgid  No duplicates found
 msgstr Kopya bulunamadı
+
+msgid  Basket: {count}
+msgstr Sepet: {count}
+
+msgid  The basket is empty
+msgstr Sepet boş
+
+msgid  The basket holds files on more than one drive
+msgstr Sepette birden fazla sürücüdeki dosyalar var

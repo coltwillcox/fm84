@@ -1679,3 +1679,12 @@ msgstr Ricerca dei duplicati
 
 msgid  No duplicates found
 msgstr Nessun duplicato trovato
+
+msgid  Basket: {count}
+msgstr Cesto: {count}
+
+msgid  The basket is empty
+msgstr Il cesto è vuoto
+
+msgid  The basket holds files on more than one drive
+msgstr Il cesto contiene file su più di un'unità

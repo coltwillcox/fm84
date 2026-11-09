@@ -139,6 +139,15 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'p' {
             open_pack(app_state);
         }
+        // Alt+B puts what is chosen in the basket, or takes it out of the
+        // basket on show; Alt+Shift+B shows it, or puts it away.
+        if in_panel && c == 'b' {
+            let items = chosen_items(app_state);
+            app_state.basket_toggle(items);
+        }
+        if in_panel && c == 'B' {
+            app_state.open_basket();
+        }
         // Alt+D, the files the same as another.
         if in_panel && c == 'd' {
             app_state.find_duplicates();

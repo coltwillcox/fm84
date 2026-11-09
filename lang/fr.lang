@@ -1680,3 +1680,12 @@ msgstr Recherche des doublons
 
 msgid  No duplicates found
 msgstr Aucun doublon trouvé
+
+msgid  Basket: {count}
+msgstr Panier : {count}
+
+msgid  The basket is empty
+msgstr Le panier est vide
+
+msgid  The basket holds files on more than one drive
+msgstr Le panier contient des fichiers sur plus d'un lecteur

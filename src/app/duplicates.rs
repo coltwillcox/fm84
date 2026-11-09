@@ -44,7 +44,11 @@ impl AppState {
         let first = first.clone().into_os_string();
         let side = self.active_side;
         let panel = self.panel_mut(side);
-        panel.flat = Some(Flat { dir: base.clone(), feed: Some(Arc::new(feed)) });
+        panel.flat = Some(Flat {
+            dir: base.clone(),
+            feed: Some(Arc::new(feed)),
+            basket: false,
+        });
         // Before the listing, which keeps what it finds of them.
         panel.selected = groups.iter().flat_map(|group| group.iter().skip(1)).filter_map(relative).map(PathBuf::into_os_string).collect();
         if self.panel_dir(side) == base {

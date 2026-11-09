@@ -1679,3 +1679,12 @@ msgstr Барање дупликати
 
 msgid  No duplicates found
 msgstr Не се најдени дупликати
+
+msgid  Basket: {count}
+msgstr Кошничка: {count}
+
+msgid  The basket is empty
+msgstr Кошничката е празна
+
+msgid  The basket holds files on more than one drive
+msgstr Кошничката има датотеки на повеќе од еден диск

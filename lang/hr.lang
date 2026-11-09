@@ -1717,3 +1717,12 @@ msgstr Traženje duplikata
 
 msgid  No duplicates found
 msgstr Nema duplikata
+
+msgid  Basket: {count}
+msgstr Košarica: {count}
+
+msgid  The basket is empty
+msgstr Košarica je prazna
+
+msgid  The basket holds files on more than one drive
+msgstr Košarica sadrži datoteke na više od jednog pogona

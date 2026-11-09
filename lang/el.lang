@@ -1679,3 +1679,12 @@ msgstr Αναζήτηση διπλότυπων
 
 msgid  No duplicates found
 msgstr Δεν βρέθηκαν διπλότυπα
+
+msgid  Basket: {count}
+msgstr Καλάθι: {count}
+
+msgid  The basket is empty
+msgstr Το καλάθι είναι άδειο
+
+msgid  The basket holds files on more than one drive
+msgstr Το καλάθι έχει αρχεία σε περισσότερους από έναν δίσκους

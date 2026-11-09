@@ -1717,3 +1717,12 @@ msgstr Hledání duplikátů
 
 msgid  No duplicates found
 msgstr Nenalezeny žádné duplikáty
+
+msgid  Basket: {count}
+msgstr Košík: {count}
+
+msgid  The basket is empty
+msgstr Košík je prázdný
+
+msgid  The basket holds files on more than one drive
+msgstr Košík obsahuje soubory na více než jedné jednotce

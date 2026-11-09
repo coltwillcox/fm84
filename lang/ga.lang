@@ -1793,3 +1793,12 @@ msgstr Dúblaigh á lorg
 
 msgid  No duplicates found
 msgstr Níor aimsíodh aon dúblach
+
+msgid  Basket: {count}
+msgstr Ciseán: {count}
+
+msgid  The basket is empty
+msgstr Tá an ciseán folamh
+
+msgid  The basket holds files on more than one drive
+msgstr Tá comhaid ar níos mó ná tiomántán amháin sa chiseán

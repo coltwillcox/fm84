@@ -44,6 +44,9 @@ pub struct PendingListing {
     /// Ctrl+B as it was before this listing was asked for by it, to put
     /// back if the listing never comes.
     pub(super) restore_flat: Option<Option<Flat>>,
+    /// What to select once it is listed, in place of what was: a feed
+    /// gone to, all of it chosen.
+    pub(super) then_select: Option<HashSet<OsString>>,
 }
 
 /// Set as it goes. A listing dropped unused - Esc, or another in its place -
@@ -72,6 +75,7 @@ impl PendingListing {
             answer,
             _stop: StopOnDrop::default(),
             restore_flat: None,
+            then_select: None,
         }
     }
 }
@@ -294,6 +298,7 @@ impl AppState {
             answer,
             _stop: StopOnDrop(cancel),
             restore_flat: None,
+            then_select: None,
         };
         match pending.answer.recv_timeout(self.workers.listing_wait) {
             Ok(listed) => {
@@ -424,6 +429,9 @@ impl AppState {
             Ok(items) => {
                 let items = self.filter_listing(side, &found, items);
                 let selected = &mut self.panel_mut(side).selected;
+                if let Some(chosen) = pending.then_select {
+                    *selected = chosen;
+                }
                 prune_selection(selected, &items);
                 let index = wanted.and_then(|name| items.iter().position(|item| item.name_os == name)).unwrap_or(previous_index).min(items.len().saturating_sub(1));
                 if side.is_left() {
