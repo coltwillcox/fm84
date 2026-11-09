@@ -25,6 +25,7 @@ mod checksums;
 mod dossier;
 mod help;
 mod options_popup;
+mod outrun;
 mod panels;
 mod popups;
 mod screens;
@@ -34,7 +35,7 @@ mod spans;
 mod tests;
 
 pub use self::help::*;
-use self::{bars::*, checksums::*, dossier::*, options_popup::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*};
+use self::{bars::*, checksums::*, dossier::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*};
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style {

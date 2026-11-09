@@ -297,6 +297,8 @@ pub struct Options {
     pub cursor: CursorShape,
     /// Whether the terminal's cursor blinks; nothing to Classic.
     pub cursor_blink: bool,
+    /// A job's progress drawn as a car driving towards the sun.
+    pub outrun_bar: bool,
     pub tab_width: usize,
     /// The gutter in the viewer and the editor.
     pub line_numbers: bool,
@@ -352,6 +354,7 @@ impl Default for Options {
             clock: Clock::Hours24,
             cursor: CursorShape::Bar,
             cursor_blink: true,
+            outrun_bar: false,
             tab_width: 4,
             line_numbers: true,
             scroll_bar: ScrollBarStyle::Heavy,

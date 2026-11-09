@@ -402,13 +402,18 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
         }
     };
     let title = format!(" {title} ");
-    let popup_area = popup_rect(30, area);
+    let outrun = app_state.options.outrun_bar;
+    let popup_area = popup_rect(if outrun { 60 } else { 30 }, area);
     let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
     let name = shown_name(&job.current);
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    // The rows the scene has: all but the name, the share done, the detail
+    // and a blank row about each.
+    let scene_rows = (inner.height as usize).saturating_sub(7);
 
     // The counting pass runs before any bytes move, so there is a moment at the
     // start with nothing to measure against, and a rename has nothing to count.
@@ -442,15 +447,22 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
     // One paragraph rather than a widget per line: stacking margins to place
     // them costs two rows each, which silently leaves nothing to draw in once
     // the popup is short.
-    let lines = vec![
-        Line::from(""),
-        Line::from(Span::styled(name.to_string(), style_title())),
-        Line::from(""),
-        Line::from(Span::styled(bar, style_columns())),
-        Line::from(""),
-        key_hints(&detail),
-    ];
-    f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
+    let mut lines = vec![Line::from(""), Line::from(Span::styled(name.to_string(), style_title())), Line::from("")];
+    if outrun && scene_rows >= SCENE_ROWS {
+        let frame = (elapsed.as_millis() / 100) as u64;
+        lines.extend(outrun_scene(inner.width as usize, scene_rows, job.fraction().unwrap_or(0.0), frame, job.is_cancelling()));
+        lines.push(Line::from(""));
+        let share = match job.fraction() {
+            Some(fraction) => format!("{:>3.0}%", fraction * 100.0),
+            None => t!("Counting...").to_string(),
+        };
+        lines.push(Line::from(Span::styled(share, style_columns())));
+    } else {
+        lines.push(Line::from(Span::styled(bar, style_columns())));
+    }
+    lines.push(Line::from(""));
+    lines.push(key_hints(&detail));
+    f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), inner);
 }
 
 /// An entry a copy, move or delete could not deal with. Shown at once,

@@ -40,6 +40,7 @@ fn a_saved_file_reads_back_the_same() {
         image_fill: true,
         image_backgrounds: false,
         image_prefetch: false,
+        outrun_bar: true,
     };
     assert_eq!(Options::parse(&options.serialize()), options);
     assert_eq!(Options::parse(&Options::default().serialize()), Options::default());

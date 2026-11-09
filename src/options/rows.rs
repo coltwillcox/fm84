@@ -34,6 +34,7 @@ pub enum OptionRow {
     Clock,
     Cursor,
     CursorBlink,
+    OutrunBar,
     TabWidth,
     LineNumbers,
     ScrollBars,
@@ -44,7 +45,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 37] = [
+pub const OPTION_ROWS: [OptionRow; 38] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -74,6 +75,7 @@ pub const OPTION_ROWS: [OptionRow; 37] = [
     OptionRow::Clock,
     OptionRow::Cursor,
     OptionRow::CursorBlink,
+    OptionRow::OutrunBar,
     OptionRow::TabWidth,
     OptionRow::LineNumbers,
     OptionRow::ScrollBars,
@@ -116,6 +118,7 @@ impl OptionRow {
             OptionRow::Clock => t!("Clock"),
             OptionRow::Cursor => t!("Cursor"),
             OptionRow::CursorBlink => t!("Cursor blinks"),
+            OptionRow::OutrunBar => t!("Outrun progress bar"),
             OptionRow::TabWidth => t!("Tab width"),
             OptionRow::LineNumbers => t!("Line numbers"),
             OptionRow::ScrollBars => t!("Scroll bars"),
@@ -230,6 +233,7 @@ impl Options {
             }
             .to_string(),
             OptionRow::CursorBlink => on_off(self.cursor_blink),
+            OptionRow::OutrunBar => on_off(self.outrun_bar),
             OptionRow::TabWidth => self.tab_width.to_string(),
             OptionRow::LineNumbers => on_off(self.line_numbers),
             // Shown as it is drawn, both ways.
@@ -329,6 +333,7 @@ impl Options {
                 self.cursor = step(&shapes, self.cursor, forward);
             }
             OptionRow::CursorBlink => self.cursor_blink = !self.cursor_blink,
+            OptionRow::OutrunBar => self.outrun_bar = !self.outrun_bar,
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,
             OptionRow::ScrollBars => self.scroll_bar = step(&ScrollBarStyle::ALL, self.scroll_bar, forward),
