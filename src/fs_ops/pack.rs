@@ -158,8 +158,69 @@ pub(super) fn plan_named(sources: &[(PathBuf, PathBuf)], dest: &Path, format: Pa
             return Ok(None);
         }
     }
-    let bytes = members.iter().filter(|member| matches!(member.kind, MemberKind::File)).map(|member| member.metadata.len()).sum();
+    if !one_each(&mut members, dest, report)? {
+        return Ok(None);
+    }
+    let bytes = members.iter().filter(|member| matches!(member.kind, MemberKind::File) && !member.left_out.get()).map(|member| member.metadata.len()).sum();
     Ok(Some(PackPlan { members, bytes }))
+}
+
+/// Each name in the archive once. What is packed can come from several
+/// directories - the basket, Find files - and two of it have one name: a
+/// zip will not take that, and a tar or a 7z unpacked keeps only the last.
+/// So the second is asked about as a copy asks of a file in the way, and
+/// goes as it says - in place of the first, left out, or beside it,
+/// numbered. Two directories are merged, as a copy merges them; a file and
+/// a directory are a failure, the second left out with what is in it.
+/// False when cancelled.
+fn one_each(members: &mut [Member], dest: &Path, report: Report<'_>) -> Result<bool, Error> {
+    use std::collections::{HashMap, HashSet};
+    let named: HashSet<PathBuf> = members.iter().map(|member| member.name.clone()).collect();
+    let mut first: HashMap<PathBuf, usize> = HashMap::new();
+    let mut blocked: Vec<PathBuf> = Vec::new();
+    for at in 0..members.len() {
+        if blocked.iter().any(|dir| members[at].name.starts_with(dir)) {
+            members[at].left_out.set(true);
+            continue;
+        }
+        let name = members[at].name.clone();
+        let Some(&earlier) = first.get(&name) else {
+            first.insert(name, at);
+            continue;
+        };
+        let is_dir = |member: &Member| matches!(member.kind, MemberKind::Dir);
+        match (is_dir(&members[earlier]), is_dir(&members[at])) {
+            (true, true) => members[at].in_place.set(true),
+            (false, false) => match report.exists(&members[at].path, &dest.join(&name)) {
+                Clash::Replace => {
+                    members[earlier].left_out.set(true);
+                    first.insert(name, at);
+                }
+                Clash::Keep => members[at].left_out.set(true),
+                Clash::KeepBoth => {
+                    let free = free_name_among(&name, |candidate| named.contains(candidate) || first.contains_key(candidate));
+                    members[at].name = free.clone();
+                    first.insert(free, at);
+                }
+                Clash::Abort => return Ok(false),
+            },
+            (_, coming_dir) => {
+                let shown = dest.join(&name);
+                let message = if coming_dir {
+                    t!("Cannot replace file {path} with a directory", path = shown.display())
+                } else {
+                    t!("Cannot replace directory {path} with a file", path = shown.display())
+                };
+                let path = members[at].path.clone();
+                attempt(&path, report, |_| -> Result<(), Error> { Err(Error::new(ErrorKind::AlreadyExists, message.clone())) })?;
+                members[at].left_out.set(true);
+                if coming_dir {
+                    blocked.push(name);
+                }
+            }
+        }
+    }
+    Ok(true)
 }
 
 /// What every step of a walk goes by, and what it finds.

@@ -83,6 +83,10 @@ pub fn plan_repack(archive: &Path, edits: &Repack, report: Report<'_>) -> Result
     let mut replaced = HashSet::new();
     let mut blocked: Vec<PathBuf> = Vec::new();
     for member in &mut added.members {
+        // Left out already, two of one name coming in: nothing to ask.
+        if member.left_out.get() {
+            continue;
+        }
         if blocked.iter().any(|dir| member.name.starts_with(dir)) {
             member.left_out.set(true);
             continue;

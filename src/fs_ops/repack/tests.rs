@@ -535,3 +535,28 @@ fn a_hard_link_keeps_its_contents_when_its_target_goes() {
     }
     fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Two of one name copied in at once - from the basket, say - go in once
+/// each: the second asked about, and here put beside the first.
+#[test]
+fn two_of_one_name_copied_in_go_in_once_each() {
+    let dir = scratch("repack-same-name");
+    let boxes = archives(&dir);
+    for side in ["one", "two"] {
+        fs::create_dir_all(dir.join(side)).unwrap();
+        fs::write(dir.join(side).join("a.txt"), side).unwrap();
+    }
+    let edits = Repack {
+        add: vec![(dir.join("one/a.txt"), PathBuf::from("a.txt")), (dir.join("two/a.txt"), PathBuf::from("a.txt"))],
+        ..Repack::default()
+    };
+    for archive in &boxes {
+        let mut asking = Asking::new(Clash::KeepBoth);
+        assert_eq!(write_into(archive, &edits, false, &mut asking).unwrap(), Transfer::Done, "{}", archive.display());
+        let held = contents(archive);
+        assert!(held.contains(&("a.txt".to_string(), "one".to_string())), "{}: {held:?}", archive.display());
+        assert!(held.contains(&("a (2).txt".to_string(), "two".to_string())), "{}: {held:?}", archive.display());
+        assert_eq!(asking.asked.len(), 1, "{}", archive.display());
+    }
+    fs::remove_dir_all(&dir).unwrap();
+}

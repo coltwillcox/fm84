@@ -7,11 +7,18 @@ struct Asking {
     reply: Reply,
     failures: Vec<PathBuf>,
     files_left: Option<usize>,
+    /// How a name taken twice is answered.
+    clash: Clash,
 }
 
 impl Asking {
     fn new(reply: Reply) -> Self {
-        Asking { reply, failures: Vec::new(), files_left: None }
+        Asking {
+            reply,
+            failures: Vec::new(),
+            files_left: None,
+            clash: Clash::Replace,
+        }
     }
 }
 
@@ -29,6 +36,10 @@ impl Progress for Asking {
     fn failed(&mut self, path: &Path, _error: &Error) -> Reply {
         self.failures.push(path.to_path_buf());
         self.reply
+    }
+
+    fn exists(&mut self, _source: &Path, _dest: &Path) -> Clash {
+        self.clash
     }
 }
 
@@ -436,5 +447,49 @@ fn what_is_left_out_is_not_packed() {
     let mut expected: Vec<(String, String)> = expected.into_iter().map(|(path, held)| (path.to_string(), held.to_string())).collect();
     expected.sort();
     assert_eq!(contents(&dest), expected);
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Two of what is packed with one name - files from the basket, or from
+/// Find files, each from a directory of its own - do not go in twice under
+/// it: a zip will not hold that, and a tar or a 7z would keep only the
+/// last of them when unpacked. The second is asked about as a copy asks,
+/// and goes as it says: in place of the first, left out, or beside it,
+/// numbered. Two directories of one name are merged; a file and a
+/// directory are asked about as a failure, the second left out.
+#[test]
+fn two_of_one_name_are_asked_about() {
+    let dir = scratch("pack-same-name");
+    for side in ["one", "two"] {
+        fs::create_dir_all(dir.join(side).join("docs")).unwrap();
+        fs::write(dir.join(side).join("a.txt"), side).unwrap();
+        fs::write(dir.join(side).join("docs").join(format!("{side}.txt")), side).unwrap();
+    }
+    fs::create_dir_all(dir.join("three/a.txt")).unwrap();
+    let sources = [(dir.join("one/a.txt"), false), (dir.join("two/a.txt"), false), (dir.join("one/docs"), true), (dir.join("two/docs"), true)];
+    let held = |pairs: &[(&str, &str)]| pairs.iter().map(|(path, held)| (path.to_string(), held.to_string())).collect::<Vec<_>>();
+    let docs = [("docs", "/"), ("docs/one.txt", "one"), ("docs/two.txt", "two")];
+    for format in PackFormat::ALL {
+        for (clash, mut expected) in [(Clash::Replace, held(&[("a.txt", "two")])), (Clash::Keep, held(&[("a.txt", "one")])), (Clash::KeepBoth, held(&[("a (2).txt", "two"), ("a.txt", "one")]))] {
+            let dest = dir.join(format!("out-{clash:?}{}", format.extension()));
+            let mut asking = Asking::new(Reply::Abort);
+            asking.clash = clash;
+            let done = pack_into(&sources, &dest, &mut asking).unwrap_or_else(|e| panic!("{format:?} {clash:?}: {e}"));
+            assert_eq!(done, Transfer::Done, "{format:?} {clash:?}");
+            expected.extend(held(&docs));
+            expected.sort();
+            assert_eq!(contents(&dest), expected, "{format:?} {clash:?}");
+        }
+        // A directory where a file is: a failure, and the directory left out.
+        let dest = dir.join(format!("out-mixed{}", format.extension()));
+        let mut asking = Asking::new(Reply::Skip);
+        assert_eq!(pack_into(&[(dir.join("one/a.txt"), false), (dir.join("three/a.txt"), true)], &dest, &mut asking).unwrap(), Transfer::Done);
+        assert_eq!(asking.failures, [dir.join("three/a.txt")], "{format:?}");
+        assert_eq!(contents(&dest), held(&[("a.txt", "one")]), "{format:?}");
+        // Cancelled when the answer is to stop.
+        let mut asking = Asking::new(Reply::Abort);
+        asking.clash = Clash::Abort;
+        assert_eq!(pack_into(&sources, &dir.join(format!("out-abort{}", format.extension())), &mut asking).unwrap(), Transfer::Cancelled, "{format:?}");
+    }
     fs::remove_dir_all(&dir).unwrap();
 }
