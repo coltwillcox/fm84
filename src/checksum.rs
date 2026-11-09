@@ -270,16 +270,22 @@ fn parse_gnu(line: &[u8]) -> Option<Expected> {
     Some(Expected { name: path_from_bytes(name), hex, algorithm })
 }
 
+/// `TAG (name) = hex`, marked with a backslash in front, as the other form
+/// is, when the name is escaped.
 fn parse_bsd(line: &[u8]) -> Option<Expected> {
+    let (escaped, line) = match line.strip_prefix(b"\\") {
+        Some(rest) => (true, rest),
+        None => (false, line),
+    };
     let algorithm = Algorithm::ALL.into_iter().find(|algorithm| line.starts_with(format!("{} (", algorithm.tag()).as_bytes()))?;
     let rest = &line[algorithm.tag().len() + 2..];
     let split = rest.windows(4).rposition(|window| window == b") = ")?;
     let (hex, found) = checksum(&rest[split + 4..])?;
-    (found == algorithm).then(|| Expected {
-        name: path_from_bytes(rest[..split].to_vec()),
-        hex,
-        algorithm,
-    })
+    if found != algorithm {
+        return None;
+    }
+    let name = if escaped { unescape(&rest[..split])? } else { rest[..split].to_vec() };
+    Some(Expected { name: path_from_bytes(name), hex, algorithm })
 }
 
 /// `\n`, `\r` and `\\` back to what they stand for; anything else after a

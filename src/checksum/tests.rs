@@ -147,3 +147,17 @@ fn a_carriage_return_in_a_name_is_escaped() {
     let (found, _) = parse_sums(&line);
     assert_eq!(found[0].name, name);
 }
+
+/// The BSD form, as `sha256sum --tag` writes it, marks an escaped name with
+/// a backslash in front as the other form does: `\SHA256 (c\nd) = hex`.
+#[cfg(unix)]
+#[test]
+fn an_escaped_name_in_the_bsd_form_is_read() {
+    use std::os::unix::ffi::OsStrExt;
+    let hex = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    let (found, not_understood) = parse_sums(format!("\\SHA256 (c\\nd) = {hex}\n\\SHA256 (e\\\\f) = {hex}\nSHA256 (plain\\name) = {hex}\n").as_bytes());
+    assert_eq!(not_understood, 0);
+    let names: Vec<&[u8]> = found.iter().map(|expected| expected.name.as_os_str().as_bytes()).collect();
+    // Unmarked, a backslash is only a backslash.
+    assert_eq!(names, [b"c\nd".as_slice(), b"e\\f", b"plain\\name"]);
+}
