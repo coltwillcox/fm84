@@ -424,3 +424,39 @@ fn an_encrypted_archive_is_written_into_with_its_password() {
     }
     fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A tar that keeps a file's size in a pax record, as bsdtar does past
+/// 8 GiB, keeps the whole file when written into: the size in its header
+/// is not the one that counts.
+#[test]
+fn a_pax_size_is_kept() {
+    let dir = scratch("repack-pax");
+    let archive = dir.join("pax.tar");
+    let mut builder = tar::Builder::new(Vec::new());
+    builder.append_pax_extensions([("size", b"11".as_slice())]).unwrap();
+    let mut header = tar::Header::new_ustar();
+    header.set_path("big.txt").unwrap();
+    header.set_mode(0o644);
+    header.set_entry_type(tar::EntryType::Regular);
+    // What a writer leaves in the header when the size will not fit there.
+    header.set_size(0);
+    header.set_cksum();
+    builder.append(&header, b"eleven byte".as_slice()).unwrap();
+    fs::write(&archive, builder.into_inner().unwrap()).unwrap();
+    // Read as tar reads it - not through the index, which would be kept.
+    let mut read = tar::Archive::new(File::open(&archive).unwrap());
+    let mut entry = read.entries().unwrap().next().unwrap().unwrap();
+    assert_eq!((entry.size(), entry.header().entry_size().unwrap()), (11, 0));
+    let mut held = String::new();
+    entry.read_to_string(&mut held).unwrap();
+    assert_eq!(held, "eleven byte");
+
+    fs::write(dir.join("new.txt"), "new").unwrap();
+    let edits = Repack {
+        add: vec![(dir.join("new.txt"), PathBuf::from("new.txt"))],
+        ..Repack::default()
+    };
+    assert_eq!(write_into(&archive, &edits, false, &mut Asking::new(Clash::Abort)).unwrap(), Transfer::Done);
+    assert_eq!(contents(&archive), listed(&[("big.txt", "eleven byte"), ("new.txt", "new")]));
+    fs::remove_dir_all(&dir).unwrap();
+}

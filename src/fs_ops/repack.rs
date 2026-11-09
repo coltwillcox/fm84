@@ -198,10 +198,12 @@ fn retar(plan: &RepackPlan, compressor: Compressor, report: &Shared<'_, '_>, can
             continue;
         }
         let mut header = entry.header().clone();
-        // Named whole in its own header - nearly always - it goes back in
-        // byte for byte, a name fm84 would not take as a path with it.
+        // Named and sized whole in its own header - nearly always - it goes
+        // back in byte for byte, a name fm84 would not take as a path with
+        // it. A size kept in a pax record, as past 8 GiB, is not in the
+        // header: copied as it is, the file would go in empty.
         let link = entry.link_name_bytes().map(|bytes| bytes.into_owned());
-        let fits = *header.path_bytes() == *raw && link.as_deref() == header.link_name_bytes().as_deref();
+        let fits = *header.path_bytes() == *raw && link.as_deref() == header.link_name_bytes().as_deref() && header.entry_size().ok() == Some(entry.size());
         if fits && header.entry_type() != tar::EntryType::GNUSparse {
             let size = header.entry_size()?;
             tar.append(&header, Counted::new(&mut entry, size, report, cancelled))?;
