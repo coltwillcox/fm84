@@ -963,3 +963,52 @@ fn f1_draws_the_logo_in_the_theme_colours() {
     assert_eq!(buffer[(x + 7, y)].fg, crate::display::palette().border, "its shade");
     assert!(at("╚═╝     ╚═╝     ╚═╝ ╚════╝      ╚═╝").is_some_and(|(_, last)| last == y + 5), "six rows");
 }
+
+/// F1's keys stand apart from what they do: before the dash on a main
+/// line, and chords, F-keys, letters and key names among the words of the
+/// rest.
+#[test]
+fn f1_tells_keys_from_what_they_do() {
+    let keys = |text: &str| key_runs(text).into_iter().filter(|(_, key)| *key).map(|(run, _)| run).collect::<Vec<_>>();
+    assert_eq!(keys("   F4 - Edit file (Ctrl+S/F2 save)"), ["F4", "Ctrl+S/F2"]);
+    assert_eq!(keys("   Ctrl+Left/Right - Dir to that panel"), ["Ctrl+Left/Right"]);
+    assert_eq!(keys("     F fit/fill, +/- zoom, W wrap"), ["F", "+/-", "W"]);
+    assert_eq!(keys("     with a selection: all by [N] [E] [C]"), ["N", "E", "C"]);
+    assert_eq!(keys("   Type to search, Esc to clear"), ["Esc"]);
+    assert_eq!(keys("     Shift+F3 (or =) compare two files"), ["Shift+F3", "="]);
+    // Hungarian starts what a key does with an article.
+    assert_eq!(keys("   Alt+S - A két mappa szinkronizálása"), ["Alt+S"]);
+    assert_eq!(keys("   F3 - View file (X text/hex/image)"), ["F3", "X"]);
+    // Nothing is lost or doubled on the way.
+    let text = "     Alt+F5 (or Ctrl+Shift+F5) link, Tab hard";
+    assert_eq!(key_runs(text).into_iter().map(|(run, _)| run).collect::<String>(), text);
+
+    // Every main line under Keys has a key in it, in every language; a line
+    // under one may only go on with what it does.
+    for language in crate::i18n::Language::ALL {
+        crate::i18n::set_language(language);
+        for (text, kind) in help_lines() {
+            if kind == HelpLine::Key && text.len() - text.trim_start().len() == 3 {
+                assert!(!keys(&text).is_empty(), "{language:?}: no key in {text:?}");
+            }
+        }
+    }
+    crate::i18n::set_language(crate::i18n::Language::English);
+}
+
+/// A popup's row of keys draws each key apart from what it does: before
+/// the dash, or - with no dash - as far as its words look like keys.
+#[test]
+fn popup_hints_tell_keys_from_what_they_do() {
+    let keys = |text: &str| key_hints(text).spans.into_iter().filter(|span| span.style == style_key()).map(|span| span.content.into_owned()).collect::<Vec<_>>();
+    assert_eq!(keys("Y / Enter - Yes    N / Esc - No"), ["Y / Enter", "N / Esc"]);
+    assert_eq!(keys("Type to narrow    Up/Down - Choose    Esc - Close"), ["Up/Down", "Esc"]);
+    assert_eq!(keys("→ ← Copy  Del Delete  Space Leave  > < Mirror"), ["→ ←", "Del", "Space", "> <"]);
+    // A description of more than one word, and figures that are no key.
+    assert_eq!(keys("→ ← Kopiér  Del Slet  Space Lad være"), ["→ ←", "Del", "Space"]);
+    assert_eq!(keys("3 of 10 entries    Esc - Cancel"), ["Esc"]);
+    assert_eq!(keys("Comparing...    Esc - Stop and close"), ["Esc"]);
+    // Nothing lost or doubled on the way.
+    let text = "Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel";
+    assert_eq!(key_hints(text).spans.into_iter().map(|span| span.content.into_owned()).collect::<String>(), text);
+}

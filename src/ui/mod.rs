@@ -54,6 +54,97 @@ fn style_dir() -> Style {
 fn style_dir_dark() -> Style {
     Style::new().fg(palette().directory_dark)
 }
+/// What a key is drawn in, beside what it does.
+fn style_key() -> Style {
+    style_columns().add_modifier(Modifier::BOLD)
+}
+
+/// Names of keys that stand alone, as the languages write them. Chords,
+/// F-keys and letters are told by their shape instead.
+const KEY_NAMES: [&str; 27] = [
+    "Tab",
+    "Esc",
+    "Échap",
+    "Enter",
+    "Entrée",
+    "Intro",
+    "Invio",
+    "Space",
+    "Espace",
+    "Espacio",
+    "Espaço",
+    "Spacja",
+    "Spazio",
+    "Szóköz",
+    "Leertaste",
+    "Insert",
+    "Delete",
+    "Del",
+    "Entf",
+    "Supr",
+    "Suppr",
+    "Canc",
+    "Ins",
+    "Home",
+    "End",
+    "PgUp",
+    "PgDn",
+];
+
+/// Whether a word is a key: a chord, which has a `+` in it in any language
+/// (Ctrl+F, Strg+F, +/-); an F-key, or several (F3/Shift+F3); a letter or a
+/// sign alone (X, [N], =, *); or a key's name.
+fn is_key(word: &str) -> bool {
+    let mut characters = word.chars();
+    let (first, second) = (characters.next(), characters.next());
+    word.contains('+') || (first == Some('F') && second.is_some_and(|c| c.is_ascii_digit())) || (second.is_none() && first.is_some_and(|c| c.is_ascii_uppercase() || "=*".contains(c))) || KEY_NAMES.contains(&word)
+}
+
+/// A row of keys and what each does, as the popups give them: `Enter - Save
+/// Esc - Cancel`, two spaces or more between one and the next. Before the
+/// dash is the key. A part with no dash is a key only as far as its words
+/// look like one - `Del Delete`, `→ ← Copy` - and otherwise is all words,
+/// as `Type to narrow` is.
+fn key_hints(text: &str) -> Line<'static> {
+    let mut spans = Vec::new();
+    let mut rest = text;
+    while !rest.is_empty() {
+        // The part, and the spaces after it.
+        let end = rest.find("  ").unwrap_or(rest.len());
+        let gap = rest[end..].len() - rest[end..].trim_start_matches(' ').len();
+        let part = &rest[..end];
+        let key_len = match part.find(" - ") {
+            Some(at) => at,
+            None => {
+                // Leading words that look like keys, with something after them.
+                let mut taken = 0;
+                for word in part.split_inclusive(' ') {
+                    let bare = word.trim_end();
+                    if !(is_key(bare) || (!bare.is_empty() && !bare.chars().any(char::is_alphanumeric))) {
+                        break;
+                    }
+                    taken += word.len();
+                }
+                // Every word one - `Del Delete` - and the last is what it does.
+                let taken = if taken >= part.len() { part.trim_end().rfind(' ').unwrap_or(0) } else { taken };
+                part[..taken].trim_end().len()
+            }
+        };
+        let (key, what) = part.split_at(key_len);
+        if !key.is_empty() {
+            spans.push(Span::styled(key.to_string(), style_key()));
+        }
+        if !what.is_empty() {
+            spans.push(Span::styled(what.to_string(), style_title()));
+        }
+        if gap > 0 {
+            spans.push(Span::raw(rest[end..end + gap].to_string()));
+        }
+        rest = &rest[end + gap..];
+    }
+    Line::from(spans)
+}
+
 // A field being typed into, wherever it is: the colours of a name being
 // renamed in a panel, so every one reads the same and stands out from what is
 // around it. The cell the cursor is on carries a mark, for show_cursor to

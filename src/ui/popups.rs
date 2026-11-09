@@ -156,7 +156,7 @@ pub(super) fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir
     spans.extend(typed);
     spans.push(Span::raw(" ".repeat(width.saturating_sub(left + typed_width))));
     let input_line = Line::from(spans).style(style_input());
-    popup_body(f, popup_area, vec![input_line, Line::from(Span::styled(t!("Enter - Create    Esc - Cancel"), style_columns()))]);
+    popup_body(f, popup_area, vec![input_line, key_hints(t!("Enter - Create    Esc - Cancel"))]);
 }
 
 pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, bool)], to_trash: bool) {
@@ -198,7 +198,7 @@ pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items:
     if !to_trash {
         lines.push(Line::from(Span::styled(t!("This cannot be undone"), style_file())));
     }
-    lines.push(Line::from(Span::styled(t!("Y / Enter - Yes    N / Esc - No"), style_columns())));
+    lines.push(key_hints(t!("Y / Enter - Yes    N / Esc - No")));
     popup_body(f, popup_area, lines);
 }
 
@@ -239,12 +239,12 @@ fn render_job_clash(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState
     lines.extend([
         Line::from(Span::styled(describe(new_label, clash.source_size, clash.source_modified, clash.dest_modified), style_file())),
         Line::from(Span::styled(describe(existing_label, clash.dest_size, clash.dest_modified, clash.source_modified), style_file())),
-        Line::from(Span::styled(t!("Y - Overwrite    N - Skip    K - Keep both"), style_columns())),
-        Line::from(Span::styled(t!("A - Overwrite all    S - Skip all    B - Keep both all"), style_columns())),
-        Line::from(Span::styled(t!("O - Overwrite all older    Esc - Abort"), style_columns())),
+        key_hints(t!("Y - Overwrite    N - Skip    K - Keep both")),
+        key_hints(t!("A - Overwrite all    S - Skip all    B - Keep both all")),
+        key_hints(t!("O - Overwrite all older    Esc - Abort")),
     ]);
     if app_state.quit_armed {
-        lines.push(Line::from(Span::styled(t!("F10 again - Quit"), style_file())));
+        lines.push(key_hints(t!("F10 again - Quit")));
     }
     popup_body(f, popup_area, lines);
 }
@@ -345,7 +345,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
         Line::from(""),
         Line::from(Span::styled(bar, style_columns())),
         Line::from(""),
-        Line::from(Span::styled(detail, style_file())),
+        key_hints(&detail),
     ];
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
 }
@@ -380,14 +380,14 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         Line::from(""),
         Line::from(Span::styled(printable_name(&problem.message), style_columns())),
         Line::from(""),
-        Line::from(Span::styled(hint, style_file())),
+        key_hints(hint),
     ];
     // What the trash will not take can still be deleted for good, on purpose.
     if kind == TransferKind::Trash {
-        lines.push(Line::from(Span::styled(t!("D - Delete permanently"), style_file())));
+        lines.push(key_hints(t!("D - Delete permanently")));
     }
     if quit_armed {
-        lines.push(Line::from(Span::styled(t!("F10 again - Quit"), style_file())));
+        lines.push(key_hints(t!("F10 again - Quit")));
     }
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
 }
@@ -406,10 +406,10 @@ fn render_job_room(f: &mut ratatui::Frame<'_>, area: Rect, short: &crate::fs_ops
         Line::from(""),
         Line::from(Span::styled(printable_name(&crate::app::room_needed(short)), style_columns())),
         Line::from(""),
-        Line::from(Span::styled(t!("R - Check again    C - Go on anyway    Esc - Cancel"), style_file())),
+        key_hints(t!("R - Check again    C - Go on anyway    Esc - Cancel")),
     ];
     if quit_armed {
-        lines.push(Line::from(Span::styled(t!("F10 again - Quit"), style_file())));
+        lines.push(key_hints(t!("F10 again - Quit")));
     }
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
 }
@@ -450,8 +450,8 @@ pub(super) fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
         Some(_) => t!("O - Overwrite it    R - Reload, losing your edits"),
         None => t!("O - Save it again"),
     };
-    lines.push(Line::from(Span::styled(keys, style_columns())));
-    lines.push(Line::from(Span::styled(t!("Esc - Back to editing"), style_columns())));
+    lines.push(key_hints(keys));
+    lines.push(key_hints(t!("Esc - Back to editing")));
     popup_body(f, popup_area, lines);
 }
 
@@ -508,7 +508,7 @@ pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, sta
             },
             Line::from(Span::styled(t!("Name as + takes it: *.jpg;*.png, or */ for directories. Lower case matches either case"), style_columns())),
             Line::from(Span::styled(t!("Size as >10M, <1K or 1M..10M; Modified as <7d, >1y, 1d..7d, 2026-10-01 or >2026-10-01"), style_columns())),
-            Line::from(Span::styled(t!("Tab - Field  Space - Regex  Enter - Find  Esc - Cancel"), style_columns())),
+            key_hints(t!("Tab - Field  Space - Regex  Enter - Find  Esc - Cancel")),
         ],
     );
 }
@@ -571,7 +571,7 @@ pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, 
     } else {
         t!("Enter - Go to    F - Feed to panel    Esc - Stop and close")
     };
-    lines.push(Line::from(Span::styled(hint, style_columns())).centered());
+    lines.push(key_hints(hint).centered());
     f.render_widget(Paragraph::new(lines), inner);
     rows
 }
@@ -626,7 +626,7 @@ pub(super) fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, fo
     if form.fields.len() > 1 {
         lines.push(Line::from(Span::styled(t!("Mode as 755 or u+x,go-w; owner and group by name or number"), style_columns())));
     }
-    lines.push(Line::from(Span::styled(t!("Tab - Next field    Enter - Apply    Esc - Cancel"), style_columns())));
+    lines.push(key_hints(t!("Tab - Next field    Enter - Apply    Esc - Cancel")));
     // Each field's row, for a click: the lines are as wide as the body, so
     // the text starts just after the label.
     let inner = popup_inner(popup_area);
@@ -676,8 +676,8 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled(t!("Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove"), style_columns())).centered());
-    lines.push(Line::from(Span::styled(t!("Shift+Up/Down - Move    Esc - Close"), style_columns())).centered());
+    lines.push(key_hints(t!("Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove")).centered());
+    lines.push(key_hints(t!("Shift+Up/Down - Move    Esc - Close")).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -722,7 +722,7 @@ pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled(t!("Enter/1-9 - Run    E - Edit the menu    Esc - Close"), style_columns())).centered());
+    lines.push(key_hints(t!("Enter/1-9 - Run    E - Edit the menu    Esc - Close")).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -762,7 +762,7 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled(t!("Enter/1-9 - Open    E - Edit associations    Esc - Close"), style_columns())).centered());
+    lines.push(key_hints(t!("Enter/1-9 - Open    E - Edit associations    Esc - Close")).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -841,7 +841,7 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
         let said = tn!(problems, "{problems} cannot be renamed as it stands    Esc - Cancel", "{problems} cannot be renamed as they stand    Esc - Cancel", problems);
         Line::from(Span::styled(cut_to(&said, width), Style::new().fg(palette().selected_marker))).centered()
     } else {
-        Line::from(Span::styled(cut_to(t!("Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel"), width), style_columns())).centered()
+        key_hints(&cut_to(t!("Tab - Field   ←/→ - Case   Enter - Rename   Esc - Cancel"), width)).centered()
     };
     lines.push(keys);
     f.render_widget(Paragraph::new(lines), inner);
@@ -961,9 +961,9 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &c
         ))
         .centered()
     } else if !plan.done {
-        Line::from(Span::styled(cut_to(t!("Comparing...    Esc - Stop and close"), width), style_columns())).centered()
+        key_hints(&cut_to(t!("Comparing...    Esc - Stop and close"), width)).centered()
     } else {
-        Line::from(Span::styled(cut_to(t!("→ ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close"), width), style_columns())).centered()
+        key_hints(&cut_to(t!("→ ← Copy  Del Delete  Space Leave  > < Mirror  R Reset  Enter Run  Esc Close"), width)).centered()
     };
     lines.push(keys);
     f.render_widget(Paragraph::new(lines), inner);
@@ -1040,7 +1040,7 @@ pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list:
     while lines.len() < rows + 3 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled(t!("Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close"), style_columns())).centered());
+    lines.push(key_hints(t!("Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close")).centered());
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -1076,7 +1076,7 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(Line::from(Span::styled(t!("Enter/Click - Switch    Esc - Close"), style_columns())).centered());
+    lines.push(key_hints(t!("Enter/Click - Switch    Esc - Close")).centered());
     f.render_widget(Paragraph::new(lines), inner);
     hits
 }
@@ -1183,7 +1183,7 @@ pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, s
         vec![
             Line::from(Span::styled(source_msg, style_title())),
             input_line,
-            Line::from(Span::styled([Some(kind.enter()), also, Some(t!("Esc - Cancel"))].into_iter().flatten().collect::<Vec<_>>().join("    "), style_columns())),
+            key_hints(&[Some(kind.enter()), also, Some(t!("Esc - Cancel"))].into_iter().flatten().collect::<Vec<_>>().join("    ")),
         ],
     );
 }
@@ -1214,11 +1214,7 @@ pub(super) fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, la
     popup_body(
         f,
         popup_area,
-        vec![
-            Line::from(Span::styled(message, style_title())),
-            Line::from(Span::styled(note, style_file())),
-            Line::from(Span::styled(t!("Y / Enter - Yes    N / Esc - No"), style_columns())),
-        ],
+        vec![Line::from(Span::styled(message, style_title())), Line::from(Span::styled(note, style_file())), key_hints(t!("Y / Enter - Yes    N / Esc - No"))],
     );
 }
 
@@ -1232,14 +1228,7 @@ pub(super) fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
-    popup_body(
-        f,
-        popup_area,
-        vec![
-            Line::from(Span::styled(t!("Save changes before closing?"), style_title())),
-            Line::from(Span::styled(t!("Y - Save    N - Discard    Esc - Cancel"), style_columns())),
-        ],
-    );
+    popup_body(f, popup_area, vec![Line::from(Span::styled(t!("Save changes before closing?"), style_title())), key_hints(t!("Y - Save    N - Discard    Esc - Cancel"))]);
 }
 
 /// How much of the screen's width every popup takes, as a percentage: one

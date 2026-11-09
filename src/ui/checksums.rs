@@ -72,7 +72,7 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
     // The keys on the bottom rows, wherever the list ends.
     let height = (keys.len() as u16).min(inner.height);
     let bottom = Rect { y: inner.bottom() - height, height, ..inner };
-    f.render_widget(Paragraph::new(keys.into_iter().map(|row| Line::from(Span::styled(row, style_columns()))).collect::<Vec<_>>()), bottom);
+    f.render_widget(Paragraph::new(keys.into_iter().map(|row| key_hints(&row)).collect::<Vec<_>>()), bottom);
     (room, scroll)
 }
 
@@ -120,7 +120,7 @@ pub(super) fn render_dir_edit_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan
     f.render_widget(Paragraph::new(rows), inner);
     let height = (keys.len() as u16).min(inner.height);
     let bottom = Rect { y: inner.bottom() - height, height, ..inner };
-    f.render_widget(Paragraph::new(keys.into_iter().map(|row| Line::from(Span::styled(row, style_columns()))).collect::<Vec<_>>()), bottom);
+    f.render_widget(Paragraph::new(keys.into_iter().map(|row| key_hints(&row)).collect::<Vec<_>>()), bottom);
     (room, scroll)
 }
 

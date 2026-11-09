@@ -106,6 +106,8 @@ const LOGO: [&str; 6] = [
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum HelpLine {
     Heading,
+    /// Under Keys: the keys in one colour, what they do in another.
+    Key,
     Item,
     /// A row of the logo, centred, in the theme's colours.
     Logo,
@@ -126,9 +128,51 @@ pub fn help_lines() -> Vec<(String, HelpLine)> {
             lines.push((String::new(), HelpLine::Item));
         }
         lines.push((format!(" {heading}"), HelpLine::Heading));
-        lines.extend(items.iter().map(|item| (format!("   {item}"), HelpLine::Item)));
+        let kind = if index == 0 { HelpLine::Key } else { HelpLine::Item };
+        lines.extend(items.iter().map(|item| (format!("   {item}"), kind)));
     }
     lines
+}
+
+/// A line under Keys cut into runs, each true where it is a key. One of the
+/// main lines - set in by three - is a key, a dash and what it does, and
+/// all before the dash is the key; elsewhere the keys are told word by word,
+/// the brackets and the commas around them left out of them.
+pub fn key_runs(text: &str) -> Vec<(String, bool)> {
+    let mut runs: Vec<(String, bool)> = Vec::new();
+    let mut push = |piece: &str, key: bool| match runs.last_mut() {
+        Some((run, was)) if *was == key => run.push_str(piece),
+        _ if !piece.is_empty() => runs.push((piece.to_string(), key)),
+        _ => {}
+    };
+    let indent = text.len() - text.trim_start().len();
+    push(&text[..indent], false);
+    let mut rest = &text[indent..];
+    // What a key does starts as a sentence does, and in Hungarian that can
+    // be with "A", which is no key.
+    let mut sentence = false;
+    if indent == 3
+        && let Some(at) = rest.find(" - ")
+    {
+        push(&rest[..at], true);
+        push(" - ", false);
+        rest = &rest[at + 3..];
+        sentence = true;
+    }
+    for piece in rest.split_inclusive(' ') {
+        let word = piece.trim_end_matches(' ');
+        let core = word.trim_matches(|c: char| "()[],;:.".contains(c));
+        let starts = std::mem::take(&mut sentence);
+        if core.is_empty() || !is_key(core) || (starts && core.chars().count() == 1) {
+            push(piece, false);
+            continue;
+        }
+        let start = word.find(core).unwrap_or(0);
+        push(&word[..start], false);
+        push(core, true);
+        push(&piece[start + core.len()..], false);
+    }
+    runs
 }
 
 /// A row of the logo, centred in `width`: its solid blocks in the colour
@@ -194,6 +238,13 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
             HelpLine::Logo => logo_row(text, max_len),
             HelpLine::Heading => Line::from(Span::styled(format!("{text:<max_len$}"), style_title().add_modifier(Modifier::BOLD))),
             HelpLine::Item => Line::from(Span::styled(format!("{text:<max_len$}"), style_title())),
+            HelpLine::Key => {
+                let pad = " ".repeat(max_len.saturating_sub(text.chars().count()));
+                let key = style_key();
+                let mut spans: Vec<Span> = key_runs(text).into_iter().map(|(run, is_key)| Span::styled(run, if is_key { key } else { style_title() })).collect();
+                spans.push(Span::raw(pad));
+                Line::from(spans)
+            }
         })
         .collect();
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), inner);

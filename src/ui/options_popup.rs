@@ -57,7 +57,7 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
         t!("Enter - Save    Esc - Cancel    {} - directory")
     };
     lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(hint, style_columns())).centered());
+    lines.push(key_hints(hint).centered());
 
     f.render_widget(Paragraph::new(lines), inner);
 }
