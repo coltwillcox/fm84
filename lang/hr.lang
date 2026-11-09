@@ -26,8 +26,8 @@ msgstr +/- Povećanje {zoom} %
 msgid  +/- select/deselect by pattern, * invert
 msgstr +/- odabir/poništavanje po uzorku, * obrni
 
-msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
-msgstr .zip .7z .tar(.gz .zst .xz .bz2): samo za čitanje
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 unutra
 
 msgid  12-hour
 msgstr 12-satni
@@ -89,8 +89,8 @@ msgstr Alt+M - Korisnički izbornik (E ga uređuje)
 msgid  Alt+O open with... (E per extension)
 msgstr Alt+O otvori pomoću... (E po nastavku)
 
-msgid  Alt+P - Pack into an archive (Tab format)
-msgstr Alt+P - Zapakiraj u arhivu (Tab format)
+msgid  Alt+P - Pack: Tab format, level, password
+msgstr Alt+P - Zapakiraj: Tab format, razina, lozinka
 
 msgid  Alt+R in Find or Replace: regex
 msgstr Alt+R u Traži ili Zamijeni: regex

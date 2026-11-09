@@ -6,6 +6,28 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.47.0] - 2026-11-10
+
+### ✨ Added
+- ✍️ **Archives written into** - **F5** and **F6** copy and move into a `.zip`, `.7z` or tar the other panel is in, or a path typed through one; **F7** and **Shift+F4** make a directory or an empty file inside one, landed on; **F8** and **Delete** delete from one, always asked first, as there is no trash to go to. A name already there is asked about as a copy asks, and two directories are merged. The archive is written again beside itself and put in its place whole, so a cancel or a failure leaves it as it was; what stays is carried across as it is - a zip's entries still compressed, or encrypted, a tar's headers byte for byte, owners, hard links and all. A move takes off the disk only what went in. Renaming, editing, links and attributes inside one are still refused, and a git commit stays read-only
+- 🎚️ **Pack with options** - Alt+P's dialog has more under the name, gone through with **↑** **↓** and changed with **Space** or **←** **→**: how hard to pack, Fast, Normal or Best, kept for next time; **One archive for each**, named after it, the name becoming `*.zip`; **Then delete what went in**, for good, once the archive is there and only what is as it was packed; **Leave out**, patterns as `tar --exclude` takes them - `.git;*.o;target/`, a path as `src/*.rs` found anywhere - kept for next time; and a **Password**, typed twice
+- 🔐 **Passwords** - a `.zip` or a `.7z` packed with one is encrypted with AES-256, a 7z's names with it. An encrypted archive asks for its password as it is gone into, copied out of, extracted or written into, and again when the one given is wrong; given, it is kept while fm84 runs, never on disk. Written into, an encrypted archive takes what comes in under the same password, and a wrong one writes nothing
+- 🗜️ **`.tar.zst` made** - packed and written into as the other tars are
+- 👯 **Two of one name** - packing or copying into an archive from the basket or Find files, two entries of one name are asked about as a copy asks: one in place of the other, left out, or beside it, numbered
+
+### 🛠️ Changed
+- 🕹️ **F1's high scores** - before About, not after it
+
+### 🐛 Fixed
+- 🧾 **A quoted placeholder** - in the user menu, Open with and the Info column, a placeholder quoted as a shell user quotes a name - `"{file}"`, `'{name}'` - came out of the quotes: a name with spaces came apart and a `*` in one was spread over the directory. It is one word however it is quoted
+- 🔐 **`=` in Alt+A's mode** - `a=rx` kept the sticky bit, and `u=rwx` took away a directory's setgid bit, which gives what is made in it its group. Both now go as `chmod` has them
+- ↩️ **Undoing a move** - a directory moved and then written into, or a file moved and then edited, could not be moved back. Being the same entry is enough: nothing is lost by putting it back
+- 🧰 **Open with** - a field code no longer used, as `%m`, reached the program as an empty word it took for a file, and a name not UTF-8 inside a word, as `--file=%f`, was not the file's
+- #️⃣ **Checksum files** - a name with a carriage return in it, which coreutils writes as `\r`, was not understood, and one written here lost it; an escaped name in the BSD form, `\SHA256 (…) = …`, was not understood; and a file starting with a byte order mark had its first line misread
+- 📦 **An archive by a path ending in a separator** - `box.zip/`, as a directory is typed, said there was no such directory
+- ♻️ **An archive written over** - the same size and in the same tick of the clock, its old listing could still be shown
+- ⇥ **Tab on a short ending** - in Alt+P, `.tgz`, `.txz`, `.tbz2` and `.tzst` went on to a `.zip` added to them, not to the next format
+
 ## [0.46.0] - 2026-11-09
 
 ### ✨ Added

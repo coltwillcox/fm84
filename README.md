@@ -104,7 +104,9 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 📦 Archives
 - 📂 **Gone into like directories** - zip, 7z and tar in gzip, zstd, xz or bzip2; view, preview, copy out and compare inside them
-- 🗃️ **Alt+P packs, Alt+F9 extracts** - read-only otherwise, and safe against paths that would escape
+- ✍️ **Written into** - F5 and F6 copy and move in, F7 makes, F8 deletes, all of it written whole or not at all
+- 🗃️ **Alt+P packs, Alt+F9 extracts** - with a level, one archive for each, patterns to leave out, and a move; safe against paths that would escape
+- 🔐 **Passwords** - zip and 7z packed with AES-256, and asked for when an encrypted one is opened
 
 ### 🖥️ Panels
 - 👀 **Live** - reread when the directory changes on disk; slow or dead mounts never freeze fm84

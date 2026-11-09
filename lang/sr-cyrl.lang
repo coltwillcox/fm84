@@ -25,8 +25,8 @@ msgstr +/- Увећање {zoom}%
 msgid  +/- select/deselect by pattern, * invert
 msgstr +/- избор/поништавање по обрасцу, * обрни
 
-msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
-msgstr .zip .7z .tar(.gz .zst .xz .bz2): само за читање
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 унутра
 
 msgid  12-hour
 msgstr 12-часовни
@@ -88,8 +88,8 @@ msgstr Alt+M - Кориснички мени (E га уређује)
 msgid  Alt+O open with... (E per extension)
 msgstr Alt+O отвори помоћу... (E по екстензији)
 
-msgid  Alt+P - Pack into an archive (Tab format)
-msgstr Alt+P - Спакуј у архиву (Tab формат)
+msgid  Alt+P - Pack: Tab format, level, password
+msgstr Alt+P - Спакуј: Tab формат, ниво, лозинка
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter величина и мапа свих директоријума

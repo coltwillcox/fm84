@@ -72,7 +72,7 @@ const MENU_TEMPLATE: &str = "\
 #   {file}   the entry under the cursor     {name}   its name alone
 #   {files}  what is chosen, the selection or else the entry under the cursor
 #   {dir}    the panel's directory          {other}  the other panel's
-# Leave them unquoted: each is one word to the shell, spaces and all - and
+# Each is one word to the shell, spaces and all, quoted or not - and
 # {files} one word for each.
 #
 # Disk use = du -sh {files}

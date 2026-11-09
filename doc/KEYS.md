@@ -57,11 +57,11 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `F3` | View file |
 | `F4` | Edit file (built-in, or the editor set under F11) |
 | `Shift+F4` | Create empty file |
-| `F5` | Copy (to the other panel, or wherever the dialog is told) |
-| `F6` | Move (to the other panel, or wherever the dialog is told) |
+| `F5` | Copy (to the other panel, or wherever the dialog is told - into an archive too) |
+| `F6` | Move (to the other panel, or wherever the dialog is told - into an archive too) |
 | `Alt+F5` / `Ctrl+Shift+F5` | Make a symbolic link (in the other panel, or wherever the dialog is told; `Tab` for a hard link) |
-| `F7` | Create directory |
-| `F8` / `Delete` | Move to trash (selected items or cursor item) |
+| `F7` | Create directory (inside an archive too) |
+| `F8` / `Delete` | Move to trash (selected items or cursor item); inside an archive, delete, asked first |
 | `Shift+F8` / `Shift+Delete` | Delete permanently |
 | `F9` | Open terminal (the one set under F11, if any) |
 | `F10` | Quit (twice during an operation; asks first about unsaved edits) |
@@ -73,7 +73,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Alt+F7` / `Ctrl+F7` | Find files by name, content or regex, size and date (`F` on the results feeds them to the panel) |
 | `Alt+S` | Synchronize the panels' directories (`→` `←` copy, `Del` delete, `Space` leave, `>` `<` mirror, `R` reset, `Enter` run) |
 | `Alt+F9` / `Ctrl+F9` | Extract the whole of an archive |
-| `Alt+P` | Pack what is chosen into an archive (`Tab` changes the format) |
+| `Alt+P` | Pack what is chosen into an archive (`Tab` changes the format; `↑` `↓` the level, one archive for each, delete what went in, leave out, password, and `Space` / `←` `→` change them) |
 | `Alt+H` | Checksums of what is chosen (`Tab` / `Shift+Tab` the algorithm, `C` copies, `Enter` writes), or check a checksum file |
 | `Alt+M` | User menu: run commands of your own (`E` edits them) |
 | `Alt+D` | Find duplicate files, fed to the panel with all but one of each selected |

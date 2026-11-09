@@ -26,8 +26,8 @@ msgstr +/- Zoom {zoom}%
 msgid  +/- select/deselect by pattern, * invert
 msgstr +/- seleziona/deseleziona per schema, * inverti
 
-msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
-msgstr .zip .7z .tar(.gz .zst .xz .bz2): sola lettura
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 dentro
 
 msgid  12-hour
 msgstr 12 ore
@@ -89,8 +89,8 @@ msgstr Alt+M - Menu utente (E lo modifica)
 msgid  Alt+O open with... (E per extension)
 msgstr Alt+O apri con... (E per estensione)
 
-msgid  Alt+P - Pack into an archive (Tab format)
-msgstr Alt+P - Comprimi in un archivio (Tab formato)
+msgid  Alt+P - Pack: Tab format, level, password
+msgstr Alt+P - Comprimi: Tab formato, livello, password
 
 msgid  Alt+R in Find or Replace: regex
 msgstr Alt+R in Trova o Sostituisci: regex

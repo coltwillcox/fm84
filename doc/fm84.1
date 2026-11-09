@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-09" "fm84 0.46.0" "User Commands"
+.TH FM84 1 "2026-11-10" "fm84 0.47.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -108,8 +108,7 @@ The panel's path runs through it, as
 so tabs, history, bookmarks, Ctrl+L and remembered directories work inside
 one; Backspace at its top comes back out onto the archive.
 .PP
-An archive is read-only.
-F5 copies out of it, a directory whole, asking about files in the way as any
+F5 copies out of an archive, a directory whole, asking about files in the way as any
 copy does; times and permissions come out as the archive kept them, and links
 as links.
 Alt+F9, or Ctrl+F9, extracts the whole of the archive under the cursor, or of
@@ -120,8 +119,19 @@ F3 copies a file out to a scratch directory and shows it there; Enter and
 Ctrl+O open it from there with the system's program.
 F12 and the lines under the panels read entries in place, and Space and
 Alt+Shift+Enter size directories from what the archive says.
-Everything that would write into an archive says so and changes nothing:
-renaming, making, deleting, moving, copying or linking into it, Alt+A and F4.
+.PP
+F5 and F6 copy and move into an archive the other panel is in, or one a typed
+path runs through; F7 and Shift+F4 make a directory or an empty file inside
+one; F8 and Delete delete from one, always asking first, as there is no trash.
+A name already there is asked about as a copy asks, and two directories are
+merged.
+The archive is written again beside itself and put in its place whole, so a
+cancel or a failure leaves it as it was.
+What stays is carried across as it is: a zip's entries still compressed, a
+tar's headers byte for byte, hard links with what they name.
+A move takes off the disk only what went in.
+Renaming inside an archive, F4, links and Alt+A say it is read-only and
+change nothing, as everything does in a git commit opened as a folder.
 Find files does not reach inside one.
 .PP
 Alt+P packs what is chosen into a new
@@ -129,21 +139,25 @@ Alt+P packs what is chosen into a new
 .IR .7z ,
 .IR .tar.gz ,
 .IR .tar.xz ,
-.I .tar.bz2
+.IR .tar.bz2 ,
+.I .tar.zst
 or
 .IR .tar ,
 as a job like a copy, keeping modes, times and links.
+Its dialog sets, under the name, how hard to pack (Fast, Normal or Best), one
+archive for each of what is chosen, deleting what went in once it is packed,
+patterns to leave out as
+.B tar \-\-exclude
+takes them, and a password for a zip or a 7z.
 A zip or a 7z cannot hold a name that is not UTF-8, which is asked about; a
 tar keeps it.
 A 7z is packed solid.
+Two of what is packed with one name are asked about as a copy asks.
 The archive is written beside where it goes and put there whole, so a cancel
 leaves nothing, and one made inside the directory being packed leaves itself
 out.
 One already at the name is written over only when the options say to
-overwrite.
-A
-.I .tar.zst
-is read but not made.
+overwrite, and never one of what is packed.
 .PP
 A compressed tar is read on past the end of its first stream, so files joined
 end to end are one archive.
@@ -154,10 +168,14 @@ A name that would land outside where it is copied to, with
 .BR .. ,
 an absolute path or a drive, is left out of the listing, as is anything
 that would be written through a link in the archive.
-An encrypted zip entry is marked in the detail lines, and cannot be copied
-out without the password, which fm84 does not ask for.
-Nothing in an encrypted 7z can be copied out either, and one whose names
-are encrypted too cannot be gone into.
+An encrypted zip entry is marked in the detail lines.
+.PP
+A zip packed with a password has its files encrypted with AES-256; a 7z has
+its names encrypted too.
+An encrypted archive asks for its password as it is gone into, copied out of,
+extracted or written into, and again when the one given is wrong; it is kept
+while fm84 runs, never on disk.
+What goes into an encrypted archive is encrypted with the same password.
 .PP
 An archive written while a panel is in it is read again; one deleted is
 left.
@@ -369,7 +387,8 @@ Ctrl+B again goes back; going anywhere else drops it.
 Undo the last rename, copy, move or move to the trash, and again the one
 before, up to 32 jobs back: a copy is deleted, a move or a rename put back,
 what went to the trash restored from it (not on macOS, which says so).
-A step whose target has changed since is refused and asked about.
+A step whose target has changed since is refused and asked about; a file
+or directory moved, and worked on since, still goes back.
 What wrote over a file, or merged into a directory, is not kept to undo.
 .TP
 .B Ctrl+E
@@ -619,8 +638,8 @@ what is chosen,
 the panel's directory and
 .B {other}
 the other panel's.
-They reach the shell as variables, so any name arrives whole; leave them
-unquoted.
+They reach the shell as variables, so any name arrives whole, quoted or
+not.
 Enter or 1 to 9 runs one, and E edits the menu.
 .TP
 .B Alt+F9 Ctrl+F9
@@ -630,7 +649,11 @@ in, to the other panel or wherever the dialog is told.
 .B Alt+P
 Pack what is chosen into a new archive, asking where: on the other panel's
 directory, named after what is packed.
-Tab goes through the formats by the ending of the name.
+Tab goes through the formats by the ending of the name; Up and Down go to the
+options under it - the level, one archive for each, deleting what went in,
+what to leave out and a password - and Space, Left and Right change them.
+See
+.BR ARCHIVES .
 .TP
 .B F10
 Quit.

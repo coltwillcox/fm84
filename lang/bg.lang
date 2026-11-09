@@ -25,8 +25,8 @@ msgstr +/- Мащаб {zoom}%
 msgid  +/- select/deselect by pattern, * invert
 msgstr +/- избор/отказ по шаблон, * обръщане
 
-msgid  .zip .7z .tar(.gz .zst .xz .bz2): read-only
-msgstr .zip .7z .tar(.gz .zst .xz .bz2): само за четене
+msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
+msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 вътре
 
 msgid  12-hour
 msgstr 12-часов
@@ -88,8 +88,8 @@ msgstr Alt+M - Потребителско меню (E го редактира)
 msgid  Alt+O open with... (E per extension)
 msgstr Alt+O отваряне с... (E по разширение)
 
-msgid  Alt+P - Pack into an archive (Tab format)
-msgstr Alt+P - Пакетиране в архив (Tab формат)
+msgid  Alt+P - Pack: Tab format, level, password
+msgstr Alt+P - Пакетиране: Tab формат, ниво, парола
 
 msgid  Alt+R in Find or Replace: regex
 msgstr Alt+R в Търсене или Замяна: regex
