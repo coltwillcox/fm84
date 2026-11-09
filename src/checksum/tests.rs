@@ -161,3 +161,13 @@ fn an_escaped_name_in_the_bsd_form_is_read() {
     // Unmarked, a backslash is only a backslash.
     assert_eq!(names, [b"c\nd".as_slice(), b"e\\f", b"plain\\name"]);
 }
+
+/// A checksum file saved with a byte order mark in front - as Windows
+/// editors save one - has its first line read as any other.
+#[test]
+fn a_byte_order_mark_is_passed_over() {
+    let hex = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    let (found, not_understood) = parse_sums(format!("\u{feff}{hex}  first.txt\r\n{hex}  second.txt\r\n").as_bytes());
+    assert_eq!(not_understood, 0);
+    assert_eq!(found.iter().map(|expected| expected.name.clone()).collect::<Vec<_>>(), [PathBuf::from("first.txt"), PathBuf::from("second.txt")]);
+}

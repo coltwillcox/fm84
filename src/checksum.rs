@@ -236,6 +236,9 @@ pub struct Expected {
 /// lines that are neither and could not be read.
 pub fn parse_sums(text: &[u8]) -> (Vec<Expected>, usize) {
     let (mut expected, mut not_understood) = (Vec::new(), 0);
+    // A byte order mark, as Windows editors save one, is not the first
+    // line's.
+    let text = text.strip_prefix("\u{feff}".as_bytes()).unwrap_or(text);
     for line in text.split(|&byte| byte == b'\n') {
         let line = line.strip_suffix(b"\r").unwrap_or(line);
         if line.iter().all(u8::is_ascii_whitespace) || line.starts_with(b"#") {
