@@ -945,6 +945,12 @@ fn f1_draws_the_logo_in_the_theme_colours() {
     assert_eq!(logo[5] + 2, about, "a blank row, then About");
     assert_eq!(lines[logo[0] - 1].0, "", "a blank row after the keys");
     assert!(lines[logo[0] - 2].0.contains("Type to search"), "after the last key");
+    // Every heading has a blank row under it, before what it heads.
+    for (at, (_, kind)) in lines.iter().enumerate() {
+        if *kind == HelpLine::Heading {
+            assert_eq!(lines[at + 1].0, "", "a blank row under {:?}", lines[at].0);
+        }
+    }
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();

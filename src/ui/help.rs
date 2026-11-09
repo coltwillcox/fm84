@@ -125,7 +125,7 @@ const SCORE_WIDTH: usize = 28;
 /// The high scores, as an arcade cabinet lists them: each name in capitals,
 /// dots up to the figure; then the achievements, starred when had.
 fn score_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
-    let mut lines = vec![(format!(" {}", t!("High scores")), HelpLine::Heading)];
+    let mut lines = vec![(t!("High scores").to_string(), HelpLine::Heading), (String::new(), HelpLine::Item)];
     if scores.is_empty() {
         lines.push(("INSERT COIN".to_string(), HelpLine::Coin));
         return lines;
@@ -161,10 +161,10 @@ fn score_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
     lines
 }
 
-/// F1's lines as they are drawn, and what each is: a heading over each part,
-/// with a blank row before every one but the first, and the lines under it
-/// set in from it - laid out as F11 lays out its options. The logo stands
-/// before About, a blank row either side of it.
+/// F1's lines as they are drawn, and what each is: a heading centred over
+/// each part, with a blank row before every one but the first and one under
+/// it, and the lines under it set in. The logo stands before About, a blank
+/// row either side of it; the high scores come last.
 pub fn help_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
     let mut lines = Vec::new();
     for (index, (heading, items)) in help().into_iter().enumerate() {
@@ -175,7 +175,8 @@ pub fn help_lines(scores: &crate::options::Scores) -> Vec<(String, HelpLine)> {
             lines.extend(LOGO.iter().map(|row| (row.to_string(), HelpLine::Logo)));
             lines.push((String::new(), HelpLine::Item));
         }
-        lines.push((format!(" {heading}"), HelpLine::Heading));
+        lines.push((heading.to_string(), HelpLine::Heading));
+        lines.push((String::new(), HelpLine::Item));
         let kind = if index == 0 { HelpLine::Key } else { HelpLine::Item };
         lines.extend(items.iter().map(|item| (format!("   {item}"), kind)));
     }
@@ -286,7 +287,8 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
         .take(room)
         .map(|(text, kind)| match kind {
             HelpLine::Logo => logo_row(text, max_len),
-            HelpLine::Heading => Line::from(Span::styled(format!("{text:<max_len$}"), style_title().add_modifier(Modifier::BOLD))),
+            // Centred over what it heads, as the logo is.
+            HelpLine::Heading => Line::from(Span::styled(format!("{text:^max_len$}"), style_title().add_modifier(Modifier::BOLD))),
             HelpLine::Item => Line::from(Span::styled(format!("{text:<max_len$}"), style_title())),
             HelpLine::Score(at) => {
                 let pad = " ".repeat(max_len.saturating_sub(text.chars().count()));
