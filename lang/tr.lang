@@ -1786,8 +1786,6 @@ msgstr dosyada yok
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Bir dal, bir etiket, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Aç    Esc - İptal
 
 msgid  No such revision: {revision}
 msgstr Böyle bir sürüm yok: {revision}
@@ -1797,3 +1795,24 @@ msgstr Bir sürümü klasör olarak aç
 
 msgid  R - Open a revision as a folder
 msgstr R - Bir sürümü klasör olarak aç
+
+msgid  Branches
+msgstr Dallar
+
+msgid  Remote
+msgstr Uzak
+
+msgid  Tags
+msgstr Etiketler
+
+msgid  Stashes
+msgstr Saklananlar
+
+msgid  Commits
+msgstr Commit'ler
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter "{typed}" sürümünü yazıldığı gibi açar
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Daraltmak için yaz    Yukarı/Aşağı - Seç    Enter - Aç    Esc - Kapat

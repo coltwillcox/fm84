@@ -4,6 +4,36 @@
 
 use super::*;
 
+/// R's list: every revision there is to open, narrowed to those whose name
+/// or subject has each word typed.
+pub struct RevisionList {
+    pub input: TextInput,
+    pub all: Vec<crate::git::Revision>,
+    /// Those `input` lets through, by their place in `all`.
+    pub shown: Vec<usize>,
+    pub index: usize,
+    /// The top of the repository, and where the panel is below it.
+    top: PathBuf,
+    prefix: PathBuf,
+}
+
+impl RevisionList {
+    /// Smart case, as Find is: all in lower case matches either case.
+    fn narrow(&mut self) {
+        let fold = !self.input.text.chars().any(char::is_uppercase);
+        let folded = |text: &str| -> String { if fold { text.chars().map(crate::find::fold_char).collect() } else { text.to_string() } };
+        let words: Vec<String> = self.input.text.split_whitespace().map(folded).collect();
+        self.shown = (0..self.all.len())
+            .filter(|&at| {
+                let revision = &self.all[at];
+                let text = folded(&format!("{} {}", revision.name, revision.subject));
+                words.iter().all(|word| text.contains(word.as_str()))
+            })
+            .collect();
+        self.index = 0;
+    }
+}
+
 /// Which of Alt+G's answers.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum GitAction {
@@ -59,37 +89,67 @@ impl AppState {
         }
     }
 
-    /// R on the popup: the revision to open, HEAD to start from.
+    /// R on the popup: what there is to open - the branches, the tags, the
+    /// stashes, the last commits - to pick from or narrow down by typing.
+    /// Where the panel is in the repository is worked out now: from inside
+    /// one commit's folder, another is gone to at the same place.
     pub fn ask_revision(&mut self) {
-        let mut input = TextInput::new();
-        input.set("HEAD".to_string());
-        self.dialog = Some(Dialog::Revision(input));
-    }
-
-    /// Enter on the revision: the commit it names, as a read-only folder in
-    /// the active panel, at the directory the panel was in - or as near it
-    /// as the commit has. From inside one commit, another is gone to there.
-    pub fn open_revision(&mut self) {
-        let Some(Dialog::Revision(input)) = self.dialog.take() else {
-            return;
-        };
-        let revision = input.text.trim().to_string();
-        if revision.is_empty() {
-            return;
-        }
-        let side = self.active_side;
-        let dir = self.panel_dir(side);
+        let dir = self.panel_dir(self.active_side);
         let place = match crate::archive::locate(&dir).filter(|located| crate::archive::git_revision(&located.archive).is_some()) {
             Some(located) => Ok((located.archive.parent().map(Path::to_path_buf).unwrap_or_default(), located.inner)),
             None => crate::git::top_and_prefix(&dir),
         };
-        let (top, prefix) = match place.and_then(|(top, prefix)| crate::git::resolve(&top, &revision).map(|_| (top, prefix))) {
-            Ok(place) => place,
-            Err(message) => return self.display_error(message),
+        let listed = place.and_then(|(top, prefix)| crate::git::revisions(&top).map(|all| (top, prefix, all)));
+        match listed {
+            Ok((top, prefix, all)) => {
+                self.dialog = Some(Dialog::Revision(Box::new(RevisionList {
+                    input: TextInput::new(),
+                    shown: (0..all.len()).collect(),
+                    all,
+                    index: 0,
+                    top,
+                    prefix,
+                })))
+            }
+            Err(message) => self.display_error(message),
+        }
+    }
+
+    /// The words typed, which the list is narrowed to.
+    pub fn revisions_typed(&mut self) {
+        if let Some(Dialog::Revision(list)) = &mut self.dialog {
+            list.narrow();
+        }
+    }
+
+    /// Move the highlight by `step`, stopping at either end.
+    pub fn move_revision_cursor(&mut self, step: isize) {
+        if let Some(Dialog::Revision(list)) = &mut self.dialog {
+            list.index = list.index.saturating_add_signed(step).min(list.shown.len().saturating_sub(1));
+        }
+    }
+
+    /// Enter: the revision highlighted - or, with nothing on the list to
+    /// highlight, the one typed, as written - as a read-only folder in the
+    /// active panel, at the directory the panel was in, or as near it as
+    /// the commit has.
+    pub fn open_revision(&mut self) {
+        let Some(Dialog::Revision(list)) = self.dialog.take() else {
+            return;
         };
-        let folder = crate::archive::git_folder(&top, &revision);
-        let target = if prefix.as_os_str().is_empty() { folder } else { folder.join(prefix) };
-        self.open_dir(side, target, None);
+        let revision = match list.shown.get(list.index) {
+            Some(&at) => list.all[at].name.clone(),
+            None => list.input.text.trim().to_string(),
+        };
+        if revision.is_empty() {
+            return;
+        }
+        if let Err(message) = crate::git::resolve(&list.top, &revision) {
+            return self.display_error(message);
+        }
+        let folder = crate::archive::git_folder(&list.top, &revision);
+        let target = if list.prefix.as_os_str().is_empty() { folder } else { folder.join(&list.prefix) };
+        self.open_dir(self.active_side, target, None);
     }
 
     /// C on the popup: the file side by side with itself as HEAD has it,

@@ -364,9 +364,18 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc => app_state.dialog = None,
             _ => {}
         },
+        // Typing narrows the list; the arrows go up and down it.
         Some(Dialog::Revision(_)) => match code {
             KeyCode::Enter => app_state.open_revision(),
             KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Up => app_state.move_revision_cursor(-1),
+            KeyCode::Down => app_state.move_revision_cursor(1),
+            KeyCode::PageUp => app_state.move_revision_cursor(-10),
+            KeyCode::PageDown => app_state.move_revision_cursor(10),
+            KeyCode::Char(_) | KeyCode::Backspace | KeyCode::Delete => {
+                edit_text(app_state, code);
+                app_state.revisions_typed();
+            }
             _ => edit_text(app_state, code),
         },
         Some(Dialog::Pack { .. }) => match code {
@@ -661,6 +670,7 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
         }
         app_state.filter_typed();
         app_state.history_typed();
+        app_state.revisions_typed();
     } else if app_state.dialog.is_none() && app_state.is_editing() {
         app_state.editor_insert_text(text);
     }

@@ -1786,8 +1786,6 @@ msgstr δεν υπάρχει στο αρχείο
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Κλάδος, ετικέτα, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Άνοιγμα    Esc - Άκυρο
 
 msgid  No such revision: {revision}
 msgstr Δεν υπάρχει η αναθεώρηση: {revision}
@@ -1797,3 +1795,24 @@ msgstr Άνοιγμα αναθεώρησης ως φακέλου
 
 msgid  R - Open a revision as a folder
 msgstr R - Άνοιγμα αναθεώρησης ως φακέλου
+
+msgid  Branches
+msgstr Κλάδοι
+
+msgid  Remote
+msgstr Απομακρυσμένοι
+
+msgid  Tags
+msgstr Ετικέτες
+
+msgid  Stashes
+msgstr Αποθέματα
+
+msgid  Commits
+msgstr Υποβολές
+
+msgid  Enter opens "{typed}" as written
+msgstr Το Enter ανοίγει το "{typed}" όπως γράφτηκε
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Πληκτρολογήστε για περιορισμό    Πάνω/Κάτω - Επιλογή    Enter - Άνοιγμα    Esc - Κλείσιμο

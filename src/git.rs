@@ -244,6 +244,101 @@ pub fn tree(dir: &Path, commit: &str) -> Result<Vec<u8>, String> {
     git_bytes(dir, &["ls-tree", "-r", "-t", "-l", "-z", "--full-tree", commit])
 }
 
+/// What a revision on R's list is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RevisionKind {
+    Branch,
+    Remote,
+    Tag,
+    Stash,
+    Commit,
+}
+
+/// A revision R can open: its name, when its commit was made, what that
+/// commit - or the tag, or the stash - says it is.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Revision {
+    pub kind: RevisionKind,
+    pub name: String,
+    pub when: Option<i64>,
+    pub subject: String,
+    /// The branch checked out.
+    pub current: bool,
+}
+
+/// Tags listed at most, the newest first: a repository with thousands of
+/// them would bury everything else.
+const TAGS: usize = 100;
+/// The last commits listed.
+const COMMITS: usize = 50;
+
+/// Everything R lists for the repository `dir` is in: the local branches,
+/// those of the remotes, the tags, the stashes and the last commits - in
+/// that order, each kind as git sorts it but the tags, newest first.
+pub fn revisions(dir: &Path) -> Result<Vec<Revision>, String> {
+    let line = |text: &str| -> Vec<String> { text.split('\0').map(str::to_string).collect() };
+    let refs = git(
+        dir,
+        &["for-each-ref", "--format=%(HEAD)%00%(refname)%00%(refname:short)%00%(creatordate:unix)%00%(contents:subject)", "refs/heads", "refs/remotes", "refs/tags"],
+    )?;
+    let mut found: Vec<Revision> = Vec::new();
+    for fields in refs.lines().map(line) {
+        let [head, full, short, when, subject] = fields.as_slice() else { continue };
+        let kind = if full.starts_with("refs/heads/") {
+            RevisionKind::Branch
+        } else if full.starts_with("refs/remotes/") {
+            // origin/HEAD is only another name for one of the others.
+            if full.ends_with("/HEAD") {
+                continue;
+            }
+            RevisionKind::Remote
+        } else {
+            RevisionKind::Tag
+        };
+        found.push(Revision {
+            kind,
+            name: short.clone(),
+            when: when.parse().ok(),
+            subject: subject.clone(),
+            current: head == "*",
+        });
+    }
+    // Newest tag first, and only so many.
+    let (mut tags, mut rest): (Vec<Revision>, Vec<Revision>) = found.into_iter().partition(|revision| revision.kind == RevisionKind::Tag);
+    tags.sort_by_key(|tag| std::cmp::Reverse(tag.when));
+    tags.truncate(TAGS);
+    rest.extend(tags);
+    let stashes = git(dir, &["stash", "list", "--format=%gd%x00%ct%x00%gs"]).unwrap_or_default();
+    for fields in stashes.lines().map(line) {
+        if let [name, when, subject] = fields.as_slice() {
+            rest.push(Revision {
+                kind: RevisionKind::Stash,
+                name: name.clone(),
+                when: when.parse().ok(),
+                subject: subject.clone(),
+                current: false,
+            });
+        }
+    }
+    // A repository with no commit yet has none to list.
+    let count = format!("-n{COMMITS}");
+    let commits = git(dir, &["log", count.as_str(), "--format=%h%x00%ct%x00%s"]).unwrap_or_default();
+    for fields in commits.lines().map(line) {
+        if let [name, when, subject] = fields.as_slice() {
+            rest.push(Revision {
+                kind: RevisionKind::Commit,
+                name: name.clone(),
+                when: when.parse().ok(),
+                subject: subject.clone(),
+                current: false,
+            });
+        }
+    }
+    // Stable, so each kind keeps the order it was put in.
+    rest.sort_by_key(|revision| revision.kind);
+    Ok(rest)
+}
+
 /// When `commit` was made.
 pub fn commit_time(dir: &Path, commit: &str) -> Option<std::time::SystemTime> {
     let seconds: u64 = git(dir, &["show", "-s", "--format=%ct", commit]).ok()?.trim().parse().ok()?;

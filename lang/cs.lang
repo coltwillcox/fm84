@@ -1824,8 +1824,6 @@ msgstr v souboru není
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Větev, značka, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Otevřít    Esc - Zrušit
 
 msgid  No such revision: {revision}
 msgstr Taková revize neexistuje: {revision}
@@ -1835,3 +1833,24 @@ msgstr Otevřít revizi jako složku
 
 msgid  R - Open a revision as a folder
 msgstr R - Otevřít revizi jako složku
+
+msgid  Branches
+msgstr Větve
+
+msgid  Remote
+msgstr Vzdálené
+
+msgid  Tags
+msgstr Značky
+
+msgid  Stashes
+msgstr Odložené
+
+msgid  Commits
+msgstr Commity
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter otevře „{typed}“ tak, jak je napsáno
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Pište pro zúžení    Nahoru/Dolů - Vybrat    Enter - Otevřít    Esc - Zavřít

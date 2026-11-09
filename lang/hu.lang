@@ -1787,8 +1787,6 @@ msgstr nincs a fájlban
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Ág, címke, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Megnyitás    Esc - Mégse
 
 msgid  No such revision: {revision}
 msgstr Nincs ilyen revízió: {revision}
@@ -1798,3 +1796,24 @@ msgstr Revízió megnyitása mappaként
 
 msgid  R - Open a revision as a folder
 msgstr R - Revízió megnyitása mappaként
+
+msgid  Branches
+msgstr Ágak
+
+msgid  Remote
+msgstr Távoliak
+
+msgid  Tags
+msgstr Címkék
+
+msgid  Stashes
+msgstr Félretettek
+
+msgid  Commits
+msgstr Commitok
+
+msgid  Enter opens "{typed}" as written
+msgstr Az Enter a „{typed}” revíziót nyitja meg, ahogy írva van
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Gépelj a szűkítéshez    Fel/Le - Választás    Enter - Megnyitás    Esc - Bezárás

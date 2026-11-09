@@ -77,15 +77,46 @@ fn a_revision_opens_as_a_read_only_folder() {
     std::fs::remove_file(dir.join("sub").join("b.txt")).unwrap();
     std::fs::write(dir.join("sub").join("c.txt"), "new\n").unwrap();
     assert!(git(&["add", "-A"]) && git(&["commit", "--quiet", "-m", "second"]) && git(&["branch", "feature/old", "HEAD~1"]));
+    assert!(git(&["tag", "v1", "HEAD~1"]));
+    std::fs::write(dir.join("a.txt"), "half done\n").unwrap();
+    assert!(git(&["stash", "--quiet"]));
 
     let mut app_state = AppState::new();
     app_state.options = Options::default();
     app_state.active_side = Side::Left;
     app_state.open_dir(Side::Left, dir.join("sub"), None);
     app_state.ask_revision();
-    if let Some(Dialog::Revision(input)) = &mut app_state.dialog {
-        input.set("feature/old".to_string());
+    // Everything there is to open, each kind together.
+    let Some(Dialog::Revision(list)) = &app_state.dialog else { panic!("no list: {:?}", app_state.error) };
+    use crate::git::RevisionKind;
+    let listed: Vec<(RevisionKind, &str, bool)> = list.all.iter().map(|revision| (revision.kind, revision.name.as_str(), revision.current)).collect();
+    assert_eq!(
+        listed[..4],
+        [
+            (RevisionKind::Branch, "feature/old", false),
+            (RevisionKind::Branch, "main", true),
+            (RevisionKind::Tag, "v1", false),
+            (RevisionKind::Stash, "stash@{0}", false)
+        ]
+    );
+    assert_eq!(listed[4..].iter().filter(|(kind, _, _)| *kind == RevisionKind::Commit).count(), 2);
+    assert_eq!(list.all.iter().find(|revision| revision.kind == RevisionKind::Commit).map(|revision| revision.subject.as_str()), Some("second"));
+    // Drawn with each kind's name on its first row, the branch checked out
+    // marked, and every row's subject.
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+    crate::ui::render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer().clone();
+    let screen: String = (0..40).map(|y| (0..120).map(|x| buffer[(x, y)].symbol()).collect::<String>() + "\n").collect();
+    for text in ["Branches", "• main", "Tags", "v1", "Stashes", "stash@{0}", "Commits", "second", "Enter - Open"] {
+        assert!(screen.contains(text), "{text} not drawn:\n{screen}");
     }
+    // Typed, it narrows; the highlight is what Enter opens.
+    if let Some(Dialog::Revision(list)) = &mut app_state.dialog {
+        list.input.set("old".to_string());
+    }
+    app_state.revisions_typed();
+    let Some(Dialog::Revision(list)) = &app_state.dialog else { unreachable!() };
+    assert_eq!(list.shown.iter().map(|&at| list.all[at].name.as_str()).collect::<Vec<_>>(), ["feature/old"]);
     app_state.open_revision();
     let started = std::time::Instant::now();
     while app_state.left.listing.is_some() {
@@ -115,9 +146,10 @@ fn a_revision_opens_as_a_read_only_folder() {
 
     // A revision that is not one says so, and the panel stays.
     app_state.ask_revision();
-    if let Some(Dialog::Revision(input)) = &mut app_state.dialog {
-        input.set("nowhere".to_string());
+    if let Some(Dialog::Revision(list)) = &mut app_state.dialog {
+        list.input.set("nowhere".to_string());
     }
+    app_state.revisions_typed();
     app_state.open_revision();
     assert_eq!(app_state.error.as_deref(), Some("No such revision: nowhere"));
     std::fs::remove_dir_all(&dir).unwrap();

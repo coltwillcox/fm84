@@ -1824,8 +1824,6 @@ msgstr nu e în fișier
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr O ramură, o etichetă, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Deschide    Esc - Anulează
 
 msgid  No such revision: {revision}
 msgstr Nu există revizia: {revision}
@@ -1835,3 +1833,24 @@ msgstr Deschide o revizie ca dosar
 
 msgid  R - Open a revision as a folder
 msgstr R - Deschide o revizie ca dosar
+
+msgid  Branches
+msgstr Ramuri
+
+msgid  Remote
+msgstr La distanță
+
+msgid  Tags
+msgstr Etichete
+
+msgid  Stashes
+msgstr Stash-uri
+
+msgid  Commits
+msgstr Commituri
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter deschide „{typed}” așa cum e scris
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Tastați pentru a restrânge    Sus/Jos - Alege    Enter - Deschide    Esc - Închide

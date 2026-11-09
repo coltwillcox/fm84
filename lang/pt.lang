@@ -1786,8 +1786,6 @@ msgstr não está no arquivo
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Um ramo, uma etiqueta, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Abrir    Esc - Cancelar
 
 msgid  No such revision: {revision}
 msgstr Revisão inexistente: {revision}
@@ -1797,3 +1795,24 @@ msgstr Abrir uma revisão como pasta
 
 msgid  R - Open a revision as a folder
 msgstr R - Abrir uma revisão como pasta
+
+msgid  Branches
+msgstr Ramos
+
+msgid  Remote
+msgstr Remotos
+
+msgid  Tags
+msgstr Etiquetas
+
+msgid  Stashes
+msgstr Stashes
+
+msgid  Commits
+msgstr Commits
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter abre “{typed}” como está escrito
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Digite para filtrar    Cima/Baixo - Escolher    Enter - Abrir    Esc - Fechar

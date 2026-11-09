@@ -1786,8 +1786,6 @@ msgstr non è nel file
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Un ramo, un tag, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Invio - Apri    Esc - Annulla
 
 msgid  No such revision: {revision}
 msgstr Revisione inesistente: {revision}
@@ -1797,3 +1795,24 @@ msgstr Apri una revisione come cartella
 
 msgid  R - Open a revision as a folder
 msgstr R - Apri una revisione come cartella
+
+msgid  Branches
+msgstr Rami
+
+msgid  Remote
+msgstr Remoti
+
+msgid  Tags
+msgstr Tag
+
+msgid  Stashes
+msgstr Stash
+
+msgid  Commits
+msgstr Commit
+
+msgid  Enter opens "{typed}" as written
+msgstr Invio apre "{typed}" così come è scritto
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Scrivi per restringere    Su/Giù - Scegli    Invio - Apri    Esc - Chiudi

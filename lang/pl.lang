@@ -1824,8 +1824,6 @@ msgstr brak w pliku
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Gałąź, znacznik, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Otwórz    Esc - Anuluj
 
 msgid  No such revision: {revision}
 msgstr Nie ma takiej rewizji: {revision}
@@ -1835,3 +1833,24 @@ msgstr Otwórz rewizję jako folder
 
 msgid  R - Open a revision as a folder
 msgstr R - Otwórz rewizję jako folder
+
+msgid  Branches
+msgstr Gałęzie
+
+msgid  Remote
+msgstr Zdalne
+
+msgid  Tags
+msgstr Znaczniki
+
+msgid  Stashes
+msgstr Schowki
+
+msgid  Commits
+msgstr Commity
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter otwiera „{typed}” tak, jak wpisano
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Pisz, aby zawęzić    Góra/Dół - Wybierz    Enter - Otwórz    Esc - Zamknij

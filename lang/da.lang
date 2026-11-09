@@ -1785,8 +1785,6 @@ msgstr ikke i filen
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr En gren, et mærke, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Åbn    Esc - Annullér
 
 msgid  No such revision: {revision}
 msgstr Ingen sådan revision: {revision}
@@ -1796,3 +1794,24 @@ msgstr Åbn en revision som mappe
 
 msgid  R - Open a revision as a folder
 msgstr R - Åbn en revision som mappe
+
+msgid  Branches
+msgstr Grene
+
+msgid  Remote
+msgstr Fjerne
+
+msgid  Tags
+msgstr Mærker
+
+msgid  Stashes
+msgstr Gemte
+
+msgid  Commits
+msgstr Commits
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter åbner "{typed}", som det er skrevet
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Skriv for at indsnævre    Op/Ned - Vælg    Enter - Åbn    Esc - Luk

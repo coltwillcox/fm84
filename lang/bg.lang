@@ -1785,8 +1785,6 @@ msgstr не е във файла
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Клон, етикет, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Отвори    Esc - Отказ
 
 msgid  No such revision: {revision}
 msgstr Няма такава ревизия: {revision}
@@ -1796,3 +1794,24 @@ msgstr Отвори ревизия като папка
 
 msgid  R - Open a revision as a folder
 msgstr R - Отвори ревизия като папка
+
+msgid  Branches
+msgstr Клонове
+
+msgid  Remote
+msgstr Отдалечени
+
+msgid  Tags
+msgstr Етикети
+
+msgid  Stashes
+msgstr Скатани
+
+msgid  Commits
+msgstr Къмити
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter отваря „{typed}“, както е написано
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Пишете за стесняване    Нагоре/Надолу - Избор    Enter - Отвори    Esc - Затваряне

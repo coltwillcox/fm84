@@ -1787,8 +1787,6 @@ msgstr absent du fichier
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Une branche, une étiquette, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Entrée - Ouvrir    Échap - Annuler
 
 msgid  No such revision: {revision}
 msgstr Révision introuvable : {revision}
@@ -1798,3 +1796,24 @@ msgstr Ouvrir une révision comme dossier
 
 msgid  R - Open a revision as a folder
 msgstr R - Ouvrir une révision comme dossier
+
+msgid  Branches
+msgstr Branches
+
+msgid  Remote
+msgstr Distantes
+
+msgid  Tags
+msgstr Étiquettes
+
+msgid  Stashes
+msgstr Remisages
+
+msgid  Commits
+msgstr Commits
+
+msgid  Enter opens "{typed}" as written
+msgstr Entrée ouvre « {typed} » tel qu'écrit
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Tapez pour filtrer    Haut/Bas - Choisir    Entrée - Ouvrir    Échap - Fermer

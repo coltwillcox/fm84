@@ -1900,8 +1900,6 @@ msgstr níl sé sa chomhad
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Craobh, clib, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Oscail    Esc - Cealaigh
 
 msgid  No such revision: {revision}
 msgstr Níl a leithéid de leagan ann: {revision}
@@ -1911,3 +1909,24 @@ msgstr Oscail leagan mar fhillteán
 
 msgid  R - Open a revision as a folder
 msgstr R - Oscail leagan mar fhillteán
+
+msgid  Branches
+msgstr Craobhacha
+
+msgid  Remote
+msgstr Cianda
+
+msgid  Tags
+msgstr Clibeanna
+
+msgid  Stashes
+msgstr Stóir
+
+msgid  Commits
+msgstr Tiomantais
+
+msgid  Enter opens "{typed}" as written
+msgstr Osclaíonn Enter "{typed}" mar atá sé scríofa
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Clóscríobh chun cúngú    Suas/Síos - Roghnaigh    Enter - Oscail    Esc - Dún

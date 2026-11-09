@@ -1785,8 +1785,6 @@ msgstr niet in het bestand
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Een branch, een tag, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Openen    Esc - Annuleren
 
 msgid  No such revision: {revision}
 msgstr Revisie bestaat niet: {revision}
@@ -1796,3 +1794,24 @@ msgstr Revisie als map openen
 
 msgid  R - Open a revision as a folder
 msgstr R - Revisie als map openen
+
+msgid  Branches
+msgstr Branches
+
+msgid  Remote
+msgstr Extern
+
+msgid  Tags
+msgstr Tags
+
+msgid  Stashes
+msgstr Stashes
+
+msgid  Commits
+msgstr Commits
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter opent "{typed}" zoals getypt
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Typ om te verfijnen    Omhoog/Omlaag - Kiezen    Enter - Openen    Esc - Sluiten

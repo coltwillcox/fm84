@@ -1823,8 +1823,6 @@ msgstr nije u datoteci
 msgid  A branch, a tag, HEAD~3, stash@{0}
 msgstr Grana, oznaka, HEAD~3, stash@{0}
 
-msgid  Enter - Open    Esc - Cancel
-msgstr Enter - Otvori    Esc - Otkaži
 
 msgid  No such revision: {revision}
 msgstr Nema takve revizije: {revision}
@@ -1834,3 +1832,24 @@ msgstr Otvori reviziju kao fasciklu
 
 msgid  R - Open a revision as a folder
 msgstr R - Otvori reviziju kao fasciklu
+
+msgid  Branches
+msgstr Grane
+
+msgid  Remote
+msgstr Udaljene
+
+msgid  Tags
+msgstr Oznake
+
+msgid  Stashes
+msgstr Sklonjeno
+
+msgid  Commits
+msgstr Komitovi
+
+msgid  Enter opens "{typed}" as written
+msgstr Enter otvara "{typed}" kako je napisano
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close
+msgstr Kucaj za suženje    Gore/Dole - Izaberi    Enter - Otvori    Esc - Zatvori

@@ -135,26 +135,84 @@ pub(super) fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message
     popup_body(f, popup_area, vec![Line::from(Span::styled(printable_name(message), style_title()))]);
 }
 
-/// R on Alt+G: the revision to open, typed.
-pub(super) fn render_revision_popup(f: &mut ratatui::Frame<'_>, area: Rect, input: &TextInput) {
-    let popup_area = popup_rect(20, area);
+/// R on Alt+G: the revisions there are to open, each kind under its name,
+/// narrowed by what is typed. Each its name, how long ago, and what it says.
+pub(super) fn render_revision_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &crate::app::RevisionList) {
+    use crate::git::RevisionKind;
+    let popup_area = popup_rect(60, area);
     let popup_block = Block::default()
         .title(Line::from(Span::styled(format!(" {} ", t!("Open a revision as a folder")), style_title())).centered())
         .borders(Borders::ALL)
         .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
-    let typed = input.cursor_spans(style_input(), style_input_cursor());
-    let width = popup_inner(popup_area).width as usize;
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    // The field, the hint and a blank row above the list; a blank row and
+    // the keys under it.
+    let rows = (inner.height as usize).saturating_sub(5);
+
+    let label = format!("{} ", t!("Filter:"));
+    let label_width = display_width(&label);
+    let typed = list.input.cursor_spans_within(width.saturating_sub(label_width), style_input(), style_input_cursor());
     let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
-    let mut spans = typed;
-    spans.push(Span::raw(" ".repeat(width.saturating_sub(typed_width))));
-    let input_line = Line::from(spans).style(style_input());
-    popup_body(
-        f,
-        popup_area,
-        vec![Line::from(Span::styled(t!("A branch, a tag, HEAD~3, stash@{0}"), style_file())), input_line, key_hints(t!("Enter - Open    Esc - Cancel"))],
-    );
+    let mut field = vec![Span::styled(label, style_columns())];
+    field.extend(typed);
+    field.push(Span::styled(" ".repeat(width.saturating_sub(label_width + typed_width)), style_input()));
+    let mut lines = vec![Line::from(field), Line::from(Span::styled(t!("A branch, a tag, HEAD~3, stash@{0}"), style_file())), Line::from("")];
+
+    let kind_name = |kind: RevisionKind| match kind {
+        RevisionKind::Branch => t!("Branches"),
+        RevisionKind::Remote => t!("Remote"),
+        RevisionKind::Tag => t!("Tags"),
+        RevisionKind::Stash => t!("Stashes"),
+        RevisionKind::Commit => t!("Commits"),
+    };
+    let kinds = [RevisionKind::Branch, RevisionKind::Remote, RevisionKind::Tag, RevisionKind::Stash, RevisionKind::Commit];
+    let kind_width = kinds.iter().map(|&kind| display_width(kind_name(kind))).max().unwrap_or(0) + 2;
+    let name_width = list.shown.iter().map(|&at| display_width(&list.all[at].name) + 2).max().unwrap_or(0).min(28);
+    let now = std::time::SystemTime::now();
+    let ages: Vec<String> = list
+        .shown
+        .iter()
+        .map(|&at| {
+            list.all[at]
+                .when
+                .and_then(|when| u64::try_from(when).ok())
+                .map(|when| format_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(when), crate::options::DateFormat::Relative, now))
+                .unwrap_or_default()
+        })
+        .collect();
+    let age_width = ages.iter().map(|age| display_width(age)).max().unwrap_or(0) + 2;
+
+    if list.shown.is_empty() {
+        lines.push(Line::from(Span::styled(t!("Enter opens \"{typed}\" as written", typed = printable_name(list.input.text.trim())), style_file())));
+    }
+    let first = if rows > 0 && list.index >= rows { list.index + 1 - rows } else { 0 };
+    for (number, &at) in list.shown.iter().enumerate().skip(first).take(rows) {
+        let revision = &list.all[at];
+        // A kind's name on the first of its rows on screen.
+        let opens_kind = number == first || list.all[list.shown[number - 1]].kind != revision.kind;
+        let kind = if opens_kind { kind_name(revision.kind) } else { "" };
+        let mark = if revision.current { "• " } else { "  " };
+        let name = cut_to(&printable_name(&revision.name), name_width.saturating_sub(4));
+        let mut text = format!(
+            "{kind:<kind_width$}{mark}{name:<width$}{age:>age_width$}  {subject}",
+            width = name_width.saturating_sub(2),
+            age = ages[number],
+            subject = printable_name(&revision.subject)
+        );
+        text = cut_to(&text, width);
+        let pad = " ".repeat(width.saturating_sub(display_width(&text)));
+        let style = if number == list.index { style_title().bg(palette().selected_background) } else { style_dir() };
+        lines.push(Line::from(Span::styled(format!("{text}{pad}"), style)));
+    }
+    while lines.len() < rows + 4 {
+        lines.push(Line::from(""));
+    }
+    lines.push(key_hints(t!("Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close")).centered());
+    f.render_widget(Paragraph::new(lines), inner);
 }
 
 pub(super) fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir: bool, input: &TextInput) {
