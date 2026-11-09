@@ -233,3 +233,36 @@ fn a_directory_edit_with_nothing_or_nonsense_in_it() {
     assert!(dir.is_dir());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A move undone only puts the entry back, so working on it since - a file
+/// saved in a directory moved, a file moved and then edited - does not stop
+/// it: nothing is lost by moving it home. Another entry in its place does.
+#[cfg(unix)]
+#[test]
+fn a_move_worked_on_since_still_goes_back() {
+    let dir = scratch("move-worked-on");
+    std::fs::create_dir_all(dir.join("tree")).unwrap();
+    std::fs::write(dir.join("tree/a.txt"), "a").unwrap();
+    std::fs::write(dir.join("note.txt"), "short").unwrap();
+    std::fs::create_dir(dir.join("to")).unwrap();
+
+    let mut app_state = app();
+    let items = vec![(dir.join("tree"), dir.join("to/tree"), true), (dir.join("note.txt"), dir.join("to/note.txt"), false)];
+    app_state.start_transfer(items, false, crate::app::Clashes::Ask);
+    finish(&mut app_state);
+    // Worked on since: a file added in the directory, the file made longer,
+    // with times a minute on, past any clock's tick.
+    std::fs::write(dir.join("to/tree/b.txt"), "b").unwrap();
+    std::fs::write(dir.join("to/note.txt"), "a good deal longer").unwrap();
+    let later = std::time::SystemTime::now() + Duration::from_secs(60);
+    for path in [dir.join("to/tree"), dir.join("to/note.txt")] {
+        std::fs::File::open(&path).unwrap().set_modified(later).unwrap();
+    }
+
+    undo(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert!(app_state.workers.job.is_none());
+    assert_eq!(std::fs::read_to_string(dir.join("tree/b.txt")).unwrap(), "b");
+    assert_eq!(std::fs::read_to_string(dir.join("note.txt")).unwrap(), "a good deal longer");
+    std::fs::remove_dir_all(&dir).unwrap();
+}

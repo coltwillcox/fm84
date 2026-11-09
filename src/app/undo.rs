@@ -73,6 +73,17 @@ impl Mark {
     fn is_dir(&self) -> bool {
         self.kind == Kind::Dir
     }
+
+    /// Whether `now` is the entry this was taken of, whatever has been done
+    /// to it since: the same kind and the same inode. Where there is no
+    /// inode to go by, its size and time are all there is, and have to have
+    /// stayed.
+    fn same_entry(&self, now: &Mark) -> bool {
+        match (self.id, now.id) {
+            (Some(was), Some(is)) => self.kind == now.kind && was == is,
+            _ => self == now,
+        }
+    }
 }
 
 /// Every entry under `dir`, counted, its bytes added and its time weighed,
@@ -197,7 +208,14 @@ fn may(path: &Path, report: &mut dyn Progress, check: impl Fn() -> Result<(), Er
 /// Why `to` cannot be put back at `from`, if it cannot: it is gone, it has
 /// changed, or something has taken its old place.
 fn check_moved(from: &Path, to: &Path, mark: &Mark, leaving: &HashSet<&Path>) -> Result<(), Error> {
-    check_left(to, mark, false)?;
+    // Only put back, it may have been worked on since - a file saved in a
+    // directory moved - and lose nothing by going home. It has to be the
+    // same entry, not another under its name.
+    match Mark::of(to, false) {
+        None => return Err(Error::new(std::io::ErrorKind::NotFound, t!("\"{name}\" is no longer there", name = to.display()))),
+        Some(now) if !mark.same_entry(&now) => return Err(Error::other(t!("\"{name}\" has changed since", name = to.display()))),
+        Some(_) => {}
+    }
     // A name another of the same renames is leaving is free once it has.
     if path_exists(from) && !crate::fs_ops::is_same_entry(from, to) && !leaving.contains(from) {
         return Err(Error::new(std::io::ErrorKind::AlreadyExists, t!("{path} already exists", path = from.display())));
