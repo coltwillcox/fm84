@@ -3,6 +3,7 @@ use crate::options::Options;
 use std::collections::HashSet;
 
 mod basket;
+mod dossier;
 mod duplicates;
 mod git;
 mod jobs;

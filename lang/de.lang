@@ -1718,3 +1718,49 @@ msgstr S - Vormerken    U - Nicht mehr vormerken    D - Änderungen verwerfen
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Mit HEAD vergleichen    Esc - Schließen
+
+msgctxt job
+msgid   Dossier
+msgstr  Steckbrief
+
+msgid  Summing up
+msgstr Wird zusammengefasst
+
+msgid  Dossier: {name}
+msgstr Steckbrief: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Dateien: {files}   Verzeichnisse: {dirs}   Größe: {size}
+
+msgid  Kinds of file
+msgstr Dateiarten
+
+msgid  (no extension)
+msgstr (ohne Endung)
+
+msgid  others
+msgstr andere
+
+msgid  Largest
+msgstr Größte
+
+msgid  Newest
+msgstr Neueste
+
+msgid  Languages, by lines
+msgstr Sprachen, nach Zeilen
+
+msgid  Git, the last 8 weeks
+msgstr Git, die letzten 8 Wochen
+
+msgid  Commits: {count}
+msgstr Commits: {count}
+
+msgid  Duplicates
+msgstr Duplikate
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Kopien einer anderen: {count}, belegen {size}
+
+msgid  None found
+msgstr Keine gefunden

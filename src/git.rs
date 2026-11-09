@@ -219,6 +219,14 @@ pub fn at_head(path: &Path) -> Result<Vec<u8>, String> {
     git_bytes(dir, &[OsStr::new("show"), spec.as_os_str()])
 }
 
+/// When each commit that changed anything under `dir` in the last `weeks`
+/// weeks was made, in seconds since the epoch, newest first.
+pub fn commit_times(dir: &Path, weeks: usize) -> Result<Vec<i64>, String> {
+    let since = format!("--since={weeks}.weeks.ago");
+    let output = git(dir, &["log", since.as_str(), "--format=%ct", "--", "."])?;
+    Ok(output.lines().filter_map(|line| line.trim().parse().ok()).collect())
+}
+
 /// Run git in `dir`, giving back what it wrote, or what it said went wrong.
 /// Nothing it could ask for is answered: a prompt would wait for good on a
 /// terminal fm84 is drawing on.

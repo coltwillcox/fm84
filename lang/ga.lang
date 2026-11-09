@@ -1832,3 +1832,49 @@ msgstr S - Stáitsigh    U - Bain den stáitse    D - Caith amach na hathruithe
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Cuir i gcomparáid le HEAD    Esc - Dún
+
+msgctxt job
+msgid   Dossier
+msgstr  Comhad eolais
+
+msgid  Summing up
+msgstr Á achoimriú
+
+msgid  Dossier: {name}
+msgstr Comhad eolais: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Comhaid: {files}   Comhadlanna: {dirs}   Méid: {size}
+
+msgid  Kinds of file
+msgstr Cineálacha comhaid
+
+msgid  (no extension)
+msgstr (gan iarmhír)
+
+msgid  others
+msgstr eile
+
+msgid  Largest
+msgstr Is mó
+
+msgid  Newest
+msgstr Is nuaí
+
+msgid  Languages, by lines
+msgstr Teangacha, de réir línte
+
+msgid  Git, the last 8 weeks
+msgstr Git, na 8 seachtaine seo caite
+
+msgid  Commits: {count}
+msgstr Tiomantais: {count}
+
+msgid  Duplicates
+msgstr Dúblaigh
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Cóipeanna de cheann eile: {count}, {size} acu
+
+msgid  None found
+msgstr Níor aimsíodh aon cheann

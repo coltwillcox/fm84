@@ -1718,3 +1718,49 @@ msgstr S - Aggiungi allo stage    U - Togli dallo stage    D - Scarta modifiche
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Confronta con HEAD    Esc - Chiudi
+
+msgctxt job
+msgid   Dossier
+msgstr  Scheda
+
+msgid  Summing up
+msgstr Riepilogo in corso
+
+msgid  Dossier: {name}
+msgstr Scheda: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr File: {files}   Cartelle: {dirs}   Dimensione: {size}
+
+msgid  Kinds of file
+msgstr Tipi di file
+
+msgid  (no extension)
+msgstr (senza estensione)
+
+msgid  others
+msgstr altri
+
+msgid  Largest
+msgstr I più grandi
+
+msgid  Newest
+msgstr I più recenti
+
+msgid  Languages, by lines
+msgstr Linguaggi, per righe
+
+msgid  Git, the last 8 weeks
+msgstr Git, le ultime 8 settimane
+
+msgid  Commits: {count}
+msgstr Commit: {count}
+
+msgid  Duplicates
+msgstr Duplicati
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Copie di un altro: {count}, occupano {size}
+
+msgid  None found
+msgstr Nessuno trovato

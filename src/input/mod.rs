@@ -148,6 +148,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'B' {
             app_state.open_basket();
         }
+        // Alt+R, the directory summed up.
+        if in_panel && c == 'r' {
+            app_state.open_dossier();
+        }
         // Alt+G, git: stage, unstage, discard, or compare with HEAD.
         if in_panel && c == 'g' {
             let items = chosen_items(app_state);
@@ -346,6 +350,7 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         },
         Some(Dialog::Checksums(_)) => checksums_key(app_state, code),
         Some(Dialog::DirEdit(_)) => dir_edit_key(app_state, code),
+        Some(Dialog::Dossier(_)) => dossier_key(app_state, code),
         Some(Dialog::Git { discarding: true, .. }) if yes => app_state.git_act(crate::app::GitAction::Discard),
         Some(Dialog::Git { discarding: true, .. }) if no => app_state.dialog = None,
         Some(Dialog::Git { discarding: false, .. }) => match code {

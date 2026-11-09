@@ -42,6 +42,8 @@ pub struct TransferJob {
     did: Vec<Done>,
     /// What a search for duplicates found, fed to the panel once it is done.
     duplicates: Option<Duplicates>,
+    /// What Alt+R found, shown once it is done.
+    dossier: Option<Box<Dossier>>,
 }
 
 /// A checksum report on screen, and how far down it is scrolled.
@@ -103,6 +105,8 @@ pub enum TransferKind {
     DirEdit,
     /// Alt+D, looking for files the same as another.
     Duplicates,
+    /// Alt+R, summing a directory up.
+    Dossier,
 }
 
 impl TransferKind {
@@ -120,6 +124,7 @@ impl TransferKind {
             TransferKind::Undo => tc!("job", "Undo"),
             TransferKind::DirEdit => tc!("job", "Edit as text"),
             TransferKind::Duplicates => tc!("job", "Find duplicates"),
+            TransferKind::Dossier => tc!("job", "Dossier"),
         }
     }
 }
@@ -227,6 +232,8 @@ pub(super) enum JobUpdate {
     Did(Done),
     /// What a search for duplicates found.
     Duplicates(Duplicates),
+    /// What Alt+R found.
+    Dossier(Box<Dossier>),
     Finished(Result<Transfer, String>),
 }
 
@@ -658,6 +665,7 @@ impl AppState {
             checksums: None,
             did: Vec::new(),
             duplicates: None,
+            dossier: None,
         });
     }
 
@@ -742,6 +750,7 @@ impl AppState {
                 Ok(JobUpdate::Checksums(report)) => job.checksums = Some(report),
                 Ok(JobUpdate::Did(done)) => job.did.push(done),
                 Ok(JobUpdate::Duplicates(found)) => job.duplicates = Some(found),
+                Ok(JobUpdate::Dossier(found)) => job.dossier = Some(found),
                 Ok(JobUpdate::Finished(result)) => {
                     finished = Some(result);
                     break;
@@ -773,7 +782,7 @@ impl AppState {
 
         // An entry copied out to be looked at changed nothing anyone can
         // see: the panels, their selections and sizes stay as they are.
-        if !matches!(job.kind, TransferKind::Checksum | TransferKind::Duplicates) && job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
+        if !matches!(job.kind, TransferKind::Checksum | TransferKind::Duplicates | TransferKind::Dossier) && job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
             // Both panels: a move empties one and fills the other, and a copy
             // into the same directory shows up on the side it came from.
             self.reload_panel(Side::Left, None);
@@ -792,6 +801,10 @@ impl AppState {
 
         if let (Ok(Transfer::Done), Some(report)) = (&result, job.checksums) {
             self.dialog = Some(Dialog::Checksums(Box::new(ChecksumView { report: *report, scroll: 0, room: 1 })));
+            return;
+        }
+        if let (Ok(Transfer::Done), Some(dossier)) = (&result, job.dossier.take()) {
+            self.dialog = Some(Dialog::Dossier(Box::new(DossierView { dossier, scroll: 0, room: 1 })));
             return;
         }
         // Fed to the panel; anything that could not be read is said over it.

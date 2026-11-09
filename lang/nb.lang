@@ -1717,3 +1717,49 @@ msgstr S - Klargjør    U - Fjern klargjøring    D - Forkast endringer
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Sammenlign med HEAD    Esc - Lukk
+
+msgctxt job
+msgid   Dossier
+msgstr  Oversikt
+
+msgid  Summing up
+msgstr Oppsummerer
+
+msgid  Dossier: {name}
+msgstr Oversikt: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Filer: {files}   Mapper: {dirs}   Størrelse: {size}
+
+msgid  Kinds of file
+msgstr Filtyper
+
+msgid  (no extension)
+msgstr (ingen filtype)
+
+msgid  others
+msgstr andre
+
+msgid  Largest
+msgstr Største
+
+msgid  Newest
+msgstr Nyeste
+
+msgid  Languages, by lines
+msgstr Språk, etter linjer
+
+msgid  Git, the last 8 weeks
+msgstr Git, de siste 8 ukene
+
+msgid  Commits: {count}
+msgstr Commits: {count}
+
+msgid  Duplicates
+msgstr Duplikater
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Kopier av en annen: {count}, tar {size}
+
+msgid  None found
+msgstr Ingen funnet

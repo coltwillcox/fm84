@@ -1718,3 +1718,49 @@ msgstr S - Подготви    U - Отстрани од подготовка   
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Спореди со HEAD    Esc - Затвори
+
+msgctxt job
+msgid   Dossier
+msgstr  Досие
+
+msgid  Summing up
+msgstr Сумирање
+
+msgid  Dossier: {name}
+msgstr Досие: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Датотеки: {files}   Папки: {dirs}   Големина: {size}
+
+msgid  Kinds of file
+msgstr Видови датотеки
+
+msgid  (no extension)
+msgstr (без наставка)
+
+msgid  others
+msgstr други
+
+msgid  Largest
+msgstr Најголеми
+
+msgid  Newest
+msgstr Најнови
+
+msgid  Languages, by lines
+msgstr Јазици, по редови
+
+msgid  Git, the last 8 weeks
+msgstr Git, последните 8 недели
+
+msgid  Commits: {count}
+msgstr Комити: {count}
+
+msgid  Duplicates
+msgstr Дупликати
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Копии на друга: {count}, зафаќаат {size}
+
+msgid  None found
+msgstr Не се најдени

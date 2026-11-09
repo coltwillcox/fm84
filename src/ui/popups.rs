@@ -317,6 +317,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
             TransferKind::Undo => t!("Undoing"),
             TransferKind::DirEdit => t!("Applying the edits"),
             TransferKind::Duplicates => t!("Looking for duplicates"),
+            TransferKind::Dossier => t!("Summing up"),
         }
     };
     let title = format!(" {title} ");
@@ -382,7 +383,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Trash => t!("Cannot move to trash"),
         TransferKind::Extract => t!("Cannot extract"),
         TransferKind::Pack => t!("Cannot pack"),
-        TransferKind::Checksum | TransferKind::Duplicates => t!("Cannot read"),
+        TransferKind::Checksum | TransferKind::Duplicates | TransferKind::Dossier => t!("Cannot read"),
         TransferKind::Sync => t!("Cannot synchronize"),
         TransferKind::Undo => t!("Cannot undo"),
         TransferKind::DirEdit => t!("Cannot apply the edits"),

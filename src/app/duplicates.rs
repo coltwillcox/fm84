@@ -62,14 +62,49 @@ impl AppState {
 /// True for the first name met of a file - a file with more than one, by
 /// hard links, is there once, and deleting one name would free nothing.
 #[cfg(unix)]
-fn first_name(metadata: &std::fs::Metadata, seen: &mut HashSet<(u64, u64)>) -> bool {
+pub(super) fn first_name(metadata: &std::fs::Metadata, seen: &mut HashSet<(u64, u64)>) -> bool {
     use std::os::unix::fs::MetadataExt;
     metadata.nlink() < 2 || seen.insert((metadata.dev(), metadata.ino()))
 }
 
 #[cfg(not(unix))]
-fn first_name(_metadata: &std::fs::Metadata, _seen: &mut HashSet<(u64, u64)>) -> bool {
+pub(super) fn first_name(_metadata: &std::fs::Metadata, _seen: &mut HashSet<(u64, u64)>) -> bool {
     true
+}
+
+/// Of files by their size, those of a size another has too: only they can
+/// be the same as another.
+pub(super) fn shared_sizes(by_size: HashMap<u64, Vec<PathBuf>>) -> Vec<(u64, Vec<PathBuf>)> {
+    by_size.into_iter().filter(|(_, paths)| paths.len() > 1).collect()
+}
+
+/// What reading all of `sizes` comes to, for the bar.
+pub(super) fn bytes_to_read(sizes: &[(u64, Vec<PathBuf>)]) -> u64 {
+    sizes.iter().map(|(size, paths)| size.saturating_mul(paths.len() as u64)).fold(0, u64::saturating_add)
+}
+
+/// The files among `sizes` with the same content as another, in groups, by
+/// checksum. None when the job was stopped. One that cannot be read is
+/// left out, and counted as skipped.
+pub(super) fn same_content(sizes: Vec<(u64, Vec<PathBuf>)>, progress: &mut JobProgress<'_>) -> Option<Vec<Vec<PathBuf>>> {
+    let mut groups = Vec::new();
+    for (_, paths) in sizes {
+        let mut by_sum: HashMap<String, Vec<PathBuf>> = HashMap::new();
+        for path in paths {
+            if !progress.step(Step::Starting(&path)) {
+                return None;
+            }
+            match hash_file(&path, Algorithm::Sha256, progress) {
+                Ok(Some(sum)) => by_sum.entry(sum).or_default().push(path),
+                Ok(None) => return None,
+                Err(_) => {
+                    let _ = progress.updates.send(JobUpdate::Skipped);
+                }
+            }
+        }
+        groups.extend(by_sum.into_values().filter(|group| group.len() > 1));
+    }
+    Some(groups)
 }
 
 /// The worker thread behind Alt+D. The walk is counted in nothing, and then
@@ -99,25 +134,11 @@ fn run_duplicates(sources: Vec<PathBuf>, base: PathBuf, mut progress: JobProgres
         }
     }
 
-    let sizes: Vec<(u64, Vec<PathBuf>)> = by_size.into_iter().filter(|(_, paths)| paths.len() > 1).collect();
-    let _ = progress.updates.send(JobUpdate::Total(sizes.iter().map(|(size, paths)| size.saturating_mul(paths.len() as u64)).fold(0, u64::saturating_add)));
-    let mut groups = Vec::new();
-    for (_, paths) in sizes {
-        let mut by_sum: HashMap<String, Vec<PathBuf>> = HashMap::new();
-        for path in paths {
-            if !progress.step(Step::Starting(&path)) {
-                return progress.finish(Ok(Transfer::Cancelled));
-            }
-            match hash_file(&path, Algorithm::Sha256, &mut progress) {
-                Ok(Some(sum)) => by_sum.entry(sum).or_default().push(path),
-                Ok(None) => return progress.finish(Ok(Transfer::Cancelled)),
-                Err(_) => {
-                    let _ = progress.updates.send(JobUpdate::Skipped);
-                }
-            }
-        }
-        groups.extend(by_sum.into_values().filter(|group| group.len() > 1));
-    }
+    let sizes = shared_sizes(by_size);
+    let _ = progress.updates.send(JobUpdate::Total(bytes_to_read(&sizes)));
+    let Some(mut groups) = same_content(sizes, &mut progress) else {
+        return progress.finish(Ok(Transfer::Cancelled));
+    };
     // The one kept is the one nearest the top, and of those the first by
     // name; the groups in the order of their first.
     for group in &mut groups {

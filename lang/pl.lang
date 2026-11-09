@@ -1756,3 +1756,49 @@ msgstr S - Do poczekalni    U - Z poczekalni    D - Odrzuć zmiany
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Porównaj z HEAD    Esc - Zamknij
+
+msgctxt job
+msgid   Dossier
+msgstr  Raport
+
+msgid  Summing up
+msgstr Podsumowywanie
+
+msgid  Dossier: {name}
+msgstr Raport: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Pliki: {files}   Katalogi: {dirs}   Rozmiar: {size}
+
+msgid  Kinds of file
+msgstr Rodzaje plików
+
+msgid  (no extension)
+msgstr (bez rozszerzenia)
+
+msgid  others
+msgstr inne
+
+msgid  Largest
+msgstr Największe
+
+msgid  Newest
+msgstr Najnowsze
+
+msgid  Languages, by lines
+msgstr Języki, według wierszy
+
+msgid  Git, the last 8 weeks
+msgstr Git, ostatnie 8 tygodni
+
+msgid  Commits: {count}
+msgstr Commity: {count}
+
+msgid  Duplicates
+msgstr Duplikaty
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Kopie innego pliku: {count}, zajmują {size}
+
+msgid  None found
+msgstr Nie znaleziono

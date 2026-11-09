@@ -1718,3 +1718,49 @@ msgstr S - Köa    U - Ta ur kö    D - Kasta ändringar
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Jämför med HEAD    Esc - Stäng
+
+msgctxt job
+msgid   Dossier
+msgstr  Översikt
+
+msgid  Summing up
+msgstr Sammanfattar
+
+msgid  Dossier: {name}
+msgstr Översikt: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Filer: {files}   Mappar: {dirs}   Storlek: {size}
+
+msgid  Kinds of file
+msgstr Filtyper
+
+msgid  (no extension)
+msgstr (ingen filändelse)
+
+msgid  others
+msgstr övriga
+
+msgid  Largest
+msgstr Största
+
+msgid  Newest
+msgstr Nyaste
+
+msgid  Languages, by lines
+msgstr Språk, efter rader
+
+msgid  Git, the last 8 weeks
+msgstr Git, de senaste 8 veckorna
+
+msgid  Commits: {count}
+msgstr Incheckningar: {count}
+
+msgid  Duplicates
+msgstr Dubbletter
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Kopior av en annan: {count}, tar {size}
+
+msgid  None found
+msgstr Inga hittades

@@ -1755,3 +1755,49 @@ msgstr S - Pripremi    U - Ukloni iz pripreme    D - Odbaci izmene
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Uporedi sa HEAD    Esc - Zatvori
+
+msgctxt job
+msgid   Dossier
+msgstr  Dosije
+
+msgid  Summing up
+msgstr Sabiranje
+
+msgid  Dossier: {name}
+msgstr Dosije: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Datoteke: {files}   Fascikle: {dirs}   Veličina: {size}
+
+msgid  Kinds of file
+msgstr Vrste datoteka
+
+msgid  (no extension)
+msgstr (bez ekstenzije)
+
+msgid  others
+msgstr ostalo
+
+msgid  Largest
+msgstr Najveće
+
+msgid  Newest
+msgstr Najnovije
+
+msgid  Languages, by lines
+msgstr Jezici, po redovima
+
+msgid  Git, the last 8 weeks
+msgstr Git, poslednjih 8 nedelja
+
+msgid  Commits: {count}
+msgstr Komitovi: {count}
+
+msgid  Duplicates
+msgstr Duplikati
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Kopije druge datoteke: {count}, zauzimaju {size}
+
+msgid  None found
+msgstr Nema ih

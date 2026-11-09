@@ -1719,3 +1719,49 @@ msgstr S - Előkészítés    U - Előkészítés visszavonása    D - Módosít
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Összehasonlítás a HEAD-del    Esc - Bezárás
+
+msgctxt job
+msgid   Dossier
+msgstr  Adatlap
+
+msgid  Summing up
+msgstr Összegzés
+
+msgid  Dossier: {name}
+msgstr Adatlap: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Fájlok: {files}   Mappák: {dirs}   Méret: {size}
+
+msgid  Kinds of file
+msgstr Fájltípusok
+
+msgid  (no extension)
+msgstr (kiterjesztés nélkül)
+
+msgid  others
+msgstr egyéb
+
+msgid  Largest
+msgstr Legnagyobbak
+
+msgid  Newest
+msgstr Legújabbak
+
+msgid  Languages, by lines
+msgstr Nyelvek, sorok szerint
+
+msgid  Git, the last 8 weeks
+msgstr Git, az utolsó 8 hét
+
+msgid  Commits: {count}
+msgstr Commitok: {count}
+
+msgid  Duplicates
+msgstr Ismétlődések
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Másik fájl másolatai: {count}, {size} helyet foglalnak
+
+msgid  None found
+msgstr Nincs ilyen

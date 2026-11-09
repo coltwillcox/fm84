@@ -1718,3 +1718,49 @@ msgstr S - Hazırla    U - Hazırlıktan çıkar    D - Değişiklikleri at
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - HEAD ile karşılaştır    Esc - Kapat
+
+msgctxt job
+msgid   Dossier
+msgstr  Dosya raporu
+
+msgid  Summing up
+msgstr Özetleniyor
+
+msgid  Dossier: {name}
+msgstr Dosya raporu: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Dosyalar: {files}   Dizinler: {dirs}   Boyut: {size}
+
+msgid  Kinds of file
+msgstr Dosya türleri
+
+msgid  (no extension)
+msgstr (uzantısız)
+
+msgid  others
+msgstr diğerleri
+
+msgid  Largest
+msgstr En büyükler
+
+msgid  Newest
+msgstr En yeniler
+
+msgid  Languages, by lines
+msgstr Diller, satıra göre
+
+msgid  Git, the last 8 weeks
+msgstr Git, son 8 hafta
+
+msgid  Commits: {count}
+msgstr Commit'ler: {count}
+
+msgid  Duplicates
+msgstr Kopyalar
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Başka bir dosyanın kopyası: {count}, {size} yer kaplıyor
+
+msgid  None found
+msgstr Bulunamadı

@@ -459,6 +459,24 @@ pub(super) fn open_checksums(app_state: &mut AppState) {
 /// checksum file, Tab or Right for the next algorithm and Shift+Tab or Left
 /// for the one before - all worked out already, so the list changes in
 /// place - and Esc to close.
+/// Alt+R's dossier: scrolled through, and put away.
+pub(super) fn dossier_key(app_state: &mut AppState, code: KeyCode) {
+    let Some(Dialog::Dossier(view)) = &mut app_state.dialog else {
+        return;
+    };
+    match code {
+        KeyCode::Up => view.scroll = view.scroll.saturating_sub(1),
+        KeyCode::Down => view.scroll += 1,
+        KeyCode::PageUp => view.scroll = view.scroll.saturating_sub(view.room),
+        KeyCode::PageDown => view.scroll += view.room,
+        KeyCode::Home => view.scroll = 0,
+        // Held to what there is when it is drawn.
+        KeyCode::End => view.scroll = usize::MAX,
+        KeyCode::Esc | KeyCode::Enter => app_state.dialog = None,
+        _ => {}
+    }
+}
+
 /// Ctrl+E's plan: scrolled through, run, or put away to edit some more.
 pub(super) fn dir_edit_key(app_state: &mut AppState, code: KeyCode) {
     let Some(Dialog::DirEdit(plan)) = &mut app_state.dialog else {

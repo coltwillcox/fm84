@@ -1756,3 +1756,49 @@ msgstr S - Připravit    U - Odebrat z přípravy    D - Zahodit změny
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Porovnat s HEAD    Esc - Zavřít
+
+msgctxt job
+msgid   Dossier
+msgstr  Přehled
+
+msgid  Summing up
+msgstr Sčítání
+
+msgid  Dossier: {name}
+msgstr Přehled: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Soubory: {files}   Složky: {dirs}   Velikost: {size}
+
+msgid  Kinds of file
+msgstr Druhy souborů
+
+msgid  (no extension)
+msgstr (bez přípony)
+
+msgid  others
+msgstr ostatní
+
+msgid  Largest
+msgstr Největší
+
+msgid  Newest
+msgstr Nejnovější
+
+msgid  Languages, by lines
+msgstr Jazyky podle řádků
+
+msgid  Git, the last 8 weeks
+msgstr Git, posledních 8 týdnů
+
+msgid  Commits: {count}
+msgstr Commity: {count}
+
+msgid  Duplicates
+msgstr Duplikáty
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Kopie jiného souboru: {count}, zabírají {size}
+
+msgid  None found
+msgstr Nic nenalezeno

@@ -1717,3 +1717,49 @@ msgstr S - Добави в индекса    U - Извади от индекс�
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Сравни с HEAD    Esc - Затваряне
+
+msgctxt job
+msgid   Dossier
+msgstr  Досие
+
+msgid  Summing up
+msgstr Обобщаване
+
+msgid  Dossier: {name}
+msgstr Досие: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Файлове: {files}   Папки: {dirs}   Размер: {size}
+
+msgid  Kinds of file
+msgstr Видове файлове
+
+msgid  (no extension)
+msgstr (без разширение)
+
+msgid  others
+msgstr други
+
+msgid  Largest
+msgstr Най-големи
+
+msgid  Newest
+msgstr Най-нови
+
+msgid  Languages, by lines
+msgstr Езици, по редове
+
+msgid  Git, the last 8 weeks
+msgstr Git, последните 8 седмици
+
+msgid  Commits: {count}
+msgstr Къмити: {count}
+
+msgid  Duplicates
+msgstr Дубликати
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Копия на друг файл: {count}, заемат {size}
+
+msgid  None found
+msgstr Няма намерени

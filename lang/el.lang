@@ -1718,3 +1718,49 @@ msgstr S - Προσθήκη    U - Αφαίρεση    D - Απόρριψη αλ
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Σύγκριση με το HEAD    Esc - Κλείσιμο
+
+msgctxt job
+msgid   Dossier
+msgstr  Φάκελος στοιχείων
+
+msgid  Summing up
+msgstr Σύνοψη
+
+msgid  Dossier: {name}
+msgstr Φάκελος στοιχείων: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Αρχεία: {files}   Κατάλογοι: {dirs}   Μέγεθος: {size}
+
+msgid  Kinds of file
+msgstr Είδη αρχείων
+
+msgid  (no extension)
+msgstr (χωρίς επέκταση)
+
+msgid  others
+msgstr άλλα
+
+msgid  Largest
+msgstr Μεγαλύτερα
+
+msgid  Newest
+msgstr Νεότερα
+
+msgid  Languages, by lines
+msgstr Γλώσσες, κατά γραμμές
+
+msgid  Git, the last 8 weeks
+msgstr Git, οι τελευταίες 8 εβδομάδες
+
+msgid  Commits: {count}
+msgstr Υποβολές: {count}
+
+msgid  Duplicates
+msgstr Διπλότυπα
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Αντίγραφα άλλου: {count}, πιάνουν {size}
+
+msgid  None found
+msgstr Δεν βρέθηκαν

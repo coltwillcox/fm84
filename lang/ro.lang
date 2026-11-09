@@ -1756,3 +1756,49 @@ msgstr S - Pregătește    U - Scoate din pregătire    D - Renunță la modific
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Compară cu HEAD    Esc - Închide
+
+msgctxt job
+msgid   Dossier
+msgstr  Fișă
+
+msgid  Summing up
+msgstr Se rezumă
+
+msgid  Dossier: {name}
+msgstr Fișă: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Fișiere: {files}   Directoare: {dirs}   Dimensiune: {size}
+
+msgid  Kinds of file
+msgstr Tipuri de fișiere
+
+msgid  (no extension)
+msgstr (fără extensie)
+
+msgid  others
+msgstr altele
+
+msgid  Largest
+msgstr Cele mai mari
+
+msgid  Newest
+msgstr Cele mai noi
+
+msgid  Languages, by lines
+msgstr Limbaje, după linii
+
+msgid  Git, the last 8 weeks
+msgstr Git, ultimele 8 săptămâni
+
+msgid  Commits: {count}
+msgstr Commituri: {count}
+
+msgid  Duplicates
+msgstr Duplicate
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Copii ale altuia: {count}, ocupă {size}
+
+msgid  None found
+msgstr Niciunul găsit

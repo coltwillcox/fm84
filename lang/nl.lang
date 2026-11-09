@@ -1717,3 +1717,49 @@ msgstr S - Klaarzetten    U - Niet meer klaarzetten    D - Wijzigingen verwerpen
 
 msgid  C - Compare with HEAD    Esc - Close
 msgstr C - Vergelijken met HEAD    Esc - Sluiten
+
+msgctxt job
+msgid   Dossier
+msgstr  Dossier
+
+msgid  Summing up
+msgstr Bezig met samenvatten
+
+msgid  Dossier: {name}
+msgstr Dossier: {name}
+
+msgid  Files: {files}   Directories: {dirs}   Size: {size}
+msgstr Bestanden: {files}   Mappen: {dirs}   Grootte: {size}
+
+msgid  Kinds of file
+msgstr Soorten bestanden
+
+msgid  (no extension)
+msgstr (geen extensie)
+
+msgid  others
+msgstr overige
+
+msgid  Largest
+msgstr Grootste
+
+msgid  Newest
+msgstr Nieuwste
+
+msgid  Languages, by lines
+msgstr Talen, op regels
+
+msgid  Git, the last 8 weeks
+msgstr Git, de laatste 8 weken
+
+msgid  Commits: {count}
+msgstr Commits: {count}
+
+msgid  Duplicates
+msgstr Dubbele bestanden
+
+msgid  Copies of another: {count}, taking {size}
+msgstr Kopieën van een ander: {count}, samen {size}
+
+msgid  None found
+msgstr Geen gevonden
