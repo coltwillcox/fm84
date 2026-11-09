@@ -46,11 +46,12 @@ mod tabs;
 #[cfg(test)]
 mod tests;
 mod text_input;
+mod undo;
 mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, user_menu::*,
+    archives::*, attribute_form::*, branches::*, editing::*, filter::*, find_files::*, flat::*, git_marks::*, history::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*,
     viewing::*,
 };
 
@@ -250,6 +251,8 @@ pub struct AppState {
     /// The quit was Shift+F10: leave without telling `cd84` where, so the
     /// shell stays where it was. Set by every F10, so the last one decides.
     pub stay_put: bool,
+    /// What the last jobs did, the latest last, for Ctrl+Z.
+    pub undo: Vec<Undo>,
 }
 
 #[derive(Debug, Clone)]
@@ -604,6 +607,7 @@ impl AppState {
             cursor_detail: None,
             quit_armed: false,
             stay_put: false,
+            undo: Vec::new(),
             drive_strips: [Strip::default(), Strip::default()],
         }
     }

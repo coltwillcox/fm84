@@ -1618,3 +1618,25 @@ msgstr[other] {problems} не могат да се преименуват так
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} остава както е
 msgstr[other] {skipped} остават както са
+
+msgctxt job
+msgid   Undo
+msgstr  Отмяна
+
+msgid  Undoing
+msgstr Отменяне
+
+msgid  Cannot undo
+msgstr Не може да се отмени
+
+msgid  Nothing to undo
+msgstr Няма нищо за отмяна
+
+msgid  "{name}" has changed since
+msgstr „{name}“ е променен оттогава
+
+msgid  "{name}" is not in the trash
+msgstr „{name}“ не е в кошчето
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Възстановяването от кошчето не се поддържа в macOS

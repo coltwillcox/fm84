@@ -1619,3 +1619,25 @@ msgstr[other] {problems} δεν μετονομάζονται έτσι    Esc - �
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} μένει όπως είναι
 msgstr[other] {skipped} μένουν όπως είναι
+
+msgctxt job
+msgid   Undo
+msgstr  Αναίρεση
+
+msgid  Undoing
+msgstr Αναίρεση σε εξέλιξη
+
+msgid  Cannot undo
+msgstr Αδύνατη η αναίρεση
+
+msgid  Nothing to undo
+msgstr Δεν υπάρχει κάτι για αναίρεση
+
+msgid  "{name}" has changed since
+msgstr Το "{name}" άλλαξε από τότε
+
+msgid  "{name}" is not in the trash
+msgstr Το "{name}" δεν είναι στον κάδο
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Η επαναφορά από τον κάδο δεν υποστηρίζεται στο macOS

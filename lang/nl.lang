@@ -1618,3 +1618,25 @@ msgstr[other] {problems} kunnen zo niet worden hernoemd    Esc - Annuleren
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} blijft zoals het is
 msgstr[other] {skipped} blijven zoals ze zijn
+
+msgctxt job
+msgid   Undo
+msgstr  Ongedaan maken
+
+msgid  Undoing
+msgstr Bezig met ongedaan maken
+
+msgid  Cannot undo
+msgstr Kan niet ongedaan maken
+
+msgid  Nothing to undo
+msgstr Niets om ongedaan te maken
+
+msgid  "{name}" has changed since
+msgstr "{name}" is sindsdien gewijzigd
+
+msgid  "{name}" is not in the trash
+msgstr "{name}" staat niet in de prullenbak
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Terugzetten uit de prullenbak wordt niet ondersteund op macOS

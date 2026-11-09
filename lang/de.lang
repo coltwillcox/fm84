@@ -1619,3 +1619,25 @@ msgstr[other] {problems} können so nicht umbenannt werden    Esc - Abbrechen
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} bleibt, wie es ist
 msgstr[other] {skipped} bleiben, wie sie sind
+
+msgctxt job
+msgid   Undo
+msgstr  Rückgängig
+
+msgid  Undoing
+msgstr Wird rückgängig gemacht
+
+msgid  Cannot undo
+msgstr Rückgängig nicht möglich
+
+msgid  Nothing to undo
+msgstr Nichts rückgängig zu machen
+
+msgid  "{name}" has changed since
+msgstr "{name}" wurde inzwischen geändert
+
+msgid  "{name}" is not in the trash
+msgstr "{name}" ist nicht im Papierkorb
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Wiederherstellen aus dem Papierkorb wird unter macOS nicht unterstützt

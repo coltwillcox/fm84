@@ -1618,3 +1618,25 @@ msgstr[other] {problems} kan ikke omdøbes, som det står    Esc - Annullér
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} forbliver som det er
 msgstr[other] {skipped} forbliver som de er
+
+msgctxt job
+msgid   Undo
+msgstr  Fortryd
+
+msgid  Undoing
+msgstr Fortryder
+
+msgid  Cannot undo
+msgstr Kan ikke fortryde
+
+msgid  Nothing to undo
+msgstr Intet at fortryde
+
+msgid  "{name}" has changed since
+msgstr "{name}" er ændret siden
+
+msgid  "{name}" is not in the trash
+msgstr "{name}" er ikke i papirkurven
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Gendannelse fra papirkurven understøttes ikke på macOS

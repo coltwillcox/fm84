@@ -97,6 +97,7 @@ pub(super) fn handle_rename(app_state: &mut AppState) {
             if let Some(size) = app_state.dir_sizes.remove(&original_path) {
                 app_state.dir_sizes.insert(new_path.clone(), size);
             }
+            app_state.journal_renames(&[(original_path.clone(), new_path.clone())]);
             app_state.feed_follow(&[(original_path, new_path)]);
             app_state.reload_panel(app_state.active_side, Some(landing.as_os_str()));
         }

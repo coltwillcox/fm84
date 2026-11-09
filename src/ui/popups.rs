@@ -293,6 +293,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
             TransferKind::Pack => t!("Packing"),
             TransferKind::Checksum => t!("Checksumming"),
             TransferKind::Sync => t!("Synchronizing"),
+            TransferKind::Undo => t!("Undoing"),
         }
     };
     let title = format!(" {title} ");
@@ -360,6 +361,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Pack => t!("Cannot pack"),
         TransferKind::Checksum => t!("Cannot read"),
         TransferKind::Sync => t!("Cannot synchronize"),
+        TransferKind::Undo => t!("Cannot undo"),
     };
     let title = format!(" {title} ");
     let popup_area = popup_rect(30, area);

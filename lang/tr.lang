@@ -1619,3 +1619,25 @@ msgstr[other] {problems} öğe bu hâliyle adlandırılamaz    Esc - İptal
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} olduğu gibi kalır
 msgstr[other] {skipped} olduğu gibi kalır
+
+msgctxt job
+msgid   Undo
+msgstr  Geri al
+
+msgid  Undoing
+msgstr Geri alınıyor
+
+msgid  Cannot undo
+msgstr Geri alınamıyor
+
+msgid  Nothing to undo
+msgstr Geri alınacak bir şey yok
+
+msgid  "{name}" has changed since
+msgstr "{name}" o zamandan beri değişti
+
+msgid  "{name}" is not in the trash
+msgstr "{name}" çöpte değil
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr macOS'ta çöpten geri yükleme desteklenmiyor

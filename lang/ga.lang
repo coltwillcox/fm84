@@ -1733,3 +1733,25 @@ msgstr[two]   {skipped} fágtha mar atá
 msgstr[few]   {skipped} fágtha mar atá
 msgstr[many]  {skipped} fágtha mar atá
 msgstr[other] {skipped} fágtha mar atá
+
+msgctxt job
+msgid   Undo
+msgstr  Cealaigh
+
+msgid  Undoing
+msgstr Á chealú
+
+msgid  Cannot undo
+msgstr Ní féidir cealú
+
+msgid  Nothing to undo
+msgstr Níl aon rud le cealú
+
+msgid  "{name}" has changed since
+msgstr Athraíodh "{name}" ó shin
+
+msgid  "{name}" is not in the trash
+msgstr Níl "{name}" sa bhruscar
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Ní féidir athchóiriú ón mbruscar ar macOS

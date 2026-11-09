@@ -1618,3 +1618,25 @@ msgstr[other] {problems} kan ikke få nytt navn slik det står    Esc - Avbryt
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} blir som det er
 msgstr[other] {skipped} blir som de er
+
+msgctxt job
+msgid   Undo
+msgstr  Angre
+
+msgid  Undoing
+msgstr Angrer
+
+msgid  Cannot undo
+msgstr Kan ikke angre
+
+msgid  Nothing to undo
+msgstr Ingenting å angre
+
+msgid  "{name}" has changed since
+msgstr "{name}" er endret siden
+
+msgid  "{name}" is not in the trash
+msgstr "{name}" er ikke i papirkurven
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Gjenoppretting fra papirkurven støttes ikke på macOS

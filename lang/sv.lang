@@ -1619,3 +1619,25 @@ msgstr[other]  {problems} kan inte byta namn så här    Esc - Avbryt
 msgid  {skipped} left as it is
 msgstr[one]    {skipped} lämnas som de är
 msgstr[other]  {skipped} lämnas som de är
+
+msgctxt job
+msgid   Undo
+msgstr  Ångra
+
+msgid  Undoing
+msgstr Ångrar
+
+msgid  Cannot undo
+msgstr Kan inte ångra
+
+msgid  Nothing to undo
+msgstr Inget att ångra
+
+msgid  "{name}" has changed since
+msgstr ”{name}” har ändrats sedan dess
+
+msgid  "{name}" is not in the trash
+msgstr ”{name}” finns inte i papperskorgen
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Återställning från papperskorgen stöds inte på macOS

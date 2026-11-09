@@ -1657,3 +1657,25 @@ msgid  {skipped} left as it is
 msgstr[one]    {skipped} zostáva, ako je
 msgstr[few]    {skipped} zostávajú, ako sú
 msgstr[other]  {skipped} zostáva, ako je
+
+msgctxt job
+msgid   Undo
+msgstr  Späť
+
+msgid  Undoing
+msgstr Vracanie späť
+
+msgid  Cannot undo
+msgstr Nedá sa vrátiť späť
+
+msgid  Nothing to undo
+msgstr Nie je čo vrátiť späť
+
+msgid  "{name}" has changed since
+msgstr „{name}“ sa medzitým zmenil
+
+msgid  "{name}" is not in the trash
+msgstr „{name}“ nie je v koši
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Obnovenie z koša nie je v macOS podporované

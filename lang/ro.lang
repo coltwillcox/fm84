@@ -1657,3 +1657,25 @@ msgid  {skipped} left as it is
 msgstr[one]   {skipped} rămâne așa cum este
 msgstr[few]   {skipped} rămân așa cum sunt
 msgstr[other] {skipped} rămân așa cum sunt
+
+msgctxt job
+msgid   Undo
+msgstr  Anulare
+
+msgid  Undoing
+msgstr Se anulează
+
+msgid  Cannot undo
+msgstr Nu se poate anula
+
+msgid  Nothing to undo
+msgstr Nimic de anulat
+
+msgid  "{name}" has changed since
+msgstr „{name}” s-a schimbat între timp
+
+msgid  "{name}" is not in the trash
+msgstr „{name}” nu este în coșul de gunoi
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Restaurarea din coșul de gunoi nu este acceptată pe macOS

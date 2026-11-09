@@ -172,6 +172,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             'c' if in_editor => app_state.editor_copy(),
             'c' if app_state.is_viewing() => app_state.viewer_copy(),
             'c' if in_panel => copy_names(app_state, true),
+            // Ctrl+Z in a panel takes back the last rename, copy, move or
+            // move to the trash.
+            'z' if in_panel => app_state.undo_last(),
             'x' if in_editor => app_state.editor_cut(),
             // Ctrl+/ comments the lines, or uncomments them. Most terminals
             // send it as Ctrl+_, which reads as Ctrl+7.

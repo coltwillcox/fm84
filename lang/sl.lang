@@ -1696,3 +1696,25 @@ msgstr[one]   {skipped} ostane, kot je
 msgstr[two]   {skipped} ostaneta, kot sta
 msgstr[few]   {skipped} ostanejo, kot so
 msgstr[other] {skipped} ostane, kot je
+
+msgctxt job
+msgid   Undo
+msgstr  Razveljavi
+
+msgid  Undoing
+msgstr Razveljavljanje
+
+msgid  Cannot undo
+msgstr Razveljavitev ni mogoča
+
+msgid  Nothing to undo
+msgstr Ni česa razveljaviti
+
+msgid  "{name}" has changed since
+msgstr »{name}« se je medtem spremenila
+
+msgid  "{name}" is not in the trash
+msgstr »{name}« ni v košu
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Obnovitev iz koša v macOS ni podprta

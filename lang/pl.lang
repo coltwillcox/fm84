@@ -1657,3 +1657,25 @@ msgid  {skipped} left as it is
 msgstr[one]    {skipped} pozostaje bez zmian
 msgstr[few]    {skipped} pozostają bez zmian
 msgstr[other]  {skipped} pozostaje bez zmian
+
+msgctxt job
+msgid   Undo
+msgstr  Cofnij
+
+msgid  Undoing
+msgstr Cofanie
+
+msgid  Cannot undo
+msgstr Nie można cofnąć
+
+msgid  Nothing to undo
+msgstr Nie ma czego cofnąć
+
+msgid  "{name}" has changed since
+msgstr „{name}” zmienił się od tamtej pory
+
+msgid  "{name}" is not in the trash
+msgstr „{name}” nie ma w koszu
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Przywracanie z kosza nie jest obsługiwane w macOS

@@ -1619,3 +1619,25 @@ msgstr[other] {problems} non possono essere rinominati così    Esc - Annulla
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} resta com'è
 msgstr[other] {skipped} restano come sono
+
+msgctxt job
+msgid   Undo
+msgstr  Annulla
+
+msgid  Undoing
+msgstr Annullamento
+
+msgid  Cannot undo
+msgstr Impossibile annullare
+
+msgid  Nothing to undo
+msgstr Niente da annullare
+
+msgid  "{name}" has changed since
+msgstr "{name}" è cambiato nel frattempo
+
+msgid  "{name}" is not in the trash
+msgstr "{name}" non è nel cestino
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Il ripristino dal cestino non è supportato su macOS

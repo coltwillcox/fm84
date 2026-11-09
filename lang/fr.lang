@@ -1620,3 +1620,25 @@ msgstr[other] {problems} ne peuvent pas être renommés ainsi    Échap - Annule
 msgid  {skipped} left as it is
 msgstr[one]   {skipped} laissé tel quel
 msgstr[other] {skipped} laissés tels quels
+
+msgctxt job
+msgid   Undo
+msgstr  Annuler
+
+msgid  Undoing
+msgstr Annulation
+
+msgid  Cannot undo
+msgstr Annulation impossible
+
+msgid  Nothing to undo
+msgstr Rien à annuler
+
+msgid  "{name}" has changed since
+msgstr « {name} » a changé depuis
+
+msgid  "{name}" is not in the trash
+msgstr « {name} » n'est pas dans la corbeille
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr La restauration depuis la corbeille n'est pas prise en charge sur macOS

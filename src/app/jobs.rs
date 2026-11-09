@@ -38,6 +38,8 @@ pub struct TransferJob {
     after: Option<AfterJob>,
     /// What a checksum job found, shown once it is done.
     checksums: Option<Box<crate::checksum::Report>>,
+    /// What it did, for Ctrl+Z to take back.
+    did: Vec<Done>,
 }
 
 /// A checksum report on screen, and how far down it is scrolled.
@@ -93,6 +95,8 @@ pub enum TransferKind {
     Checksum,
     /// Alt+S's plan: copies either way, and deletes.
     Sync,
+    /// Ctrl+Z, taking back the last of the others.
+    Undo,
 }
 
 impl TransferKind {
@@ -107,6 +111,7 @@ impl TransferKind {
             TransferKind::Pack => tc!("job", "Pack"),
             TransferKind::Checksum => tc!("job", "Checksum"),
             TransferKind::Sync => tc!("job", "Synchronize"),
+            TransferKind::Undo => tc!("job", "Undo"),
         }
     }
 }
@@ -196,7 +201,7 @@ pub enum Answer {
 
 /// What the worker sends back. Bytes are per chunk rather than a running total,
 /// so a message that arrives late still counts once.
-enum JobUpdate {
+pub(super) enum JobUpdate {
     Total(u64),
     Starting(PathBuf),
     Advanced(u64),
@@ -210,15 +215,17 @@ enum JobUpdate {
     Skipped,
     /// What a checksum job found.
     Checksums(Box<crate::checksum::Report>),
+    /// One more thing done, for the journal.
+    Did(Done),
     Finished(Result<Transfer, String>),
 }
 
 /// The worker's side of a job: passes progress to the UI, and when an entry
 /// fails, asks there what to do and waits for the answer.
-struct JobProgress<'a> {
+pub(super) struct JobProgress<'a> {
     pub(super) updates: &'a Sender<JobUpdate>,
     pub(super) cancel: &'a AtomicBool,
-    answers: &'a Receiver<Answer>,
+    pub(super) answers: &'a Receiver<Answer>,
     skip_all: bool,
     pub(super) clashes: Clashes,
     /// Set once the answer was Abort, so the error it ends the job with is
@@ -273,8 +280,13 @@ impl<'a> JobProgress<'a> {
         }
     }
 
+    /// Tell the journal of something done.
+    fn did(&self, done: Done) {
+        let _ = self.updates.send(JobUpdate::Did(done));
+    }
+
     /// The message that ends the job, given how its last item came out.
-    fn finish(&self, outcome: Result<Transfer, std::io::Error>) {
+    pub(super) fn finish(&self, outcome: Result<Transfer, std::io::Error>) {
         let outcome = match outcome {
             Err(_) if self.aborted => Ok(Transfer::Cancelled),
             outcome => outcome.map_err(|e| e.to_string()),
@@ -438,7 +450,13 @@ fn run_trash(items: Vec<(PathBuf, bool)>, mut progress: JobProgress<'_>) {
     let _ = progress.updates.send(JobUpdate::Total(items.len() as u64));
 
     for (path, is_dir) in items {
-        match crate::fs_ops::trash_path(path, is_dir, &mut progress) {
+        let since = super::undo::now_seconds();
+        let outcome = crate::fs_ops::trash_path(path.clone(), is_dir, &mut progress);
+        // Skipped, it is still where it was.
+        if matches!(outcome, Ok(Transfer::Done)) && !path_exists(&path) {
+            progress.did(Done::Trashed { from: path, since });
+        }
+        match outcome {
             Ok(Transfer::Done) => {}
             outcome => return progress.finish(outcome),
         }
@@ -517,6 +535,9 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, mut progres
         // only a name nothing has taken goes this way. One that is taken goes
         // through move_path, which asks about a file and merges a directory.
         if !is_copy && !path_exists(&dest) && rename_in_place(&source, &dest) {
+            if let Some(mark) = Mark::of(&dest, false) {
+                progress.did(Done::Moved { from: source, to: dest, mark });
+            }
             continue;
         }
         remaining.push((source, dest, is_dir));
@@ -531,7 +552,28 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, mut progres
     }
 
     for (source, dest, is_dir) in remaining {
-        let result = if is_copy { copy_path(source, dest, is_dir, &mut progress) } else { move_path(source, dest, &mut progress) };
+        // Only what went where nothing was can be undone: taking back what
+        // was written over, or merged into, would take what was there too.
+        let new = !path_exists(&dest);
+        let result = if is_copy {
+            copy_path(source.clone(), dest.clone(), is_dir, &mut progress)
+        } else {
+            move_path(source.clone(), dest.clone(), &mut progress)
+        };
+        // However it ended: a copy cancelled partway is undone by deleting
+        // what it got as far as. A move partway is in two places, and not.
+        if new
+            && is_copy
+            && let Some(mark) = Mark::of(&dest, true)
+        {
+            progress.did(Done::Copied { to: dest, mark });
+        } else if new
+            && !is_copy
+            && !path_exists(&source)
+            && let Some(mark) = Mark::of(&dest, false)
+        {
+            progress.did(Done::Moved { from: source, to: dest, mark });
+        }
         match result {
             Ok(Transfer::Done) => {}
             outcome => return progress.finish(outcome),
@@ -578,7 +620,7 @@ impl AppState {
     }
 
     /// Hand a long job to a worker thread and start following it.
-    fn start_job<F>(&mut self, kind: TransferKind, clashes: Clashes, work: F)
+    pub(super) fn start_job<F>(&mut self, kind: TransferKind, clashes: Clashes, work: F)
     where
         F: FnOnce(JobProgress<'_>) + Send + 'static,
     {
@@ -604,6 +646,7 @@ impl AppState {
             skipped: 0,
             after: None,
             checksums: None,
+            did: Vec::new(),
         });
     }
 
@@ -686,6 +729,7 @@ impl AppState {
                 Ok(JobUpdate::Room(short)) => job.room = Some(short),
                 Ok(JobUpdate::Skipped) => job.skipped += 1,
                 Ok(JobUpdate::Checksums(report)) => job.checksums = Some(report),
+                Ok(JobUpdate::Did(done)) => job.did.push(done),
                 Ok(JobUpdate::Finished(result)) => {
                     finished = Some(result);
                     break;
@@ -702,7 +746,17 @@ impl AppState {
         let Some(result) = finished else {
             return;
         };
-        let job = self.workers.job.take().expect("checked at the top");
+        let mut job = self.workers.job.take().expect("checked at the top");
+        // Whatever was done, the job finished or not.
+        let undo_kind = match job.kind {
+            TransferKind::Copy => Some(UndoKind::Copy),
+            TransferKind::Move => Some(UndoKind::Move),
+            TransferKind::Trash => Some(UndoKind::Trash),
+            _ => None,
+        };
+        if let Some(kind) = undo_kind {
+            self.journal(kind, std::mem::take(&mut job.did));
+        }
 
         // An entry copied out to be looked at changed nothing anyone can
         // see: the panels, their selections and sizes stay as they are.
@@ -757,7 +811,7 @@ impl AppState {
                 let (job_title, done) = (job.kind.title(), job.done);
                 self.display_error(match job.kind {
                     TransferKind::Delete => tn!(done, "{job_title} cancelled after {done} entry", "{job_title} cancelled after {done} entries", job_title, done),
-                    TransferKind::Trash => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
+                    TransferKind::Trash | TransferKind::Undo => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
                     _ => t!("{job_title} cancelled after {size}", job_title, size = crate::utils::format_size(done)),
                 })
             }

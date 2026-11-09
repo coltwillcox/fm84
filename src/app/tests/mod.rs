@@ -6,6 +6,7 @@ mod jobs;
 mod panels;
 mod selection;
 mod settings;
+mod undo;
 mod viewing;
 
 fn row(name: &str) -> Item {

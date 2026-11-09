@@ -1656,3 +1656,25 @@ msgstr F u rezultatima ih stavlja u panel
 
 msgid  Alt+S - Synchronize the two directories
 msgstr Alt+S - Sinhronizuj dva direktorijuma
+
+msgctxt job
+msgid   Undo
+msgstr  Opozovi
+
+msgid  Undoing
+msgstr Opozivanje
+
+msgid  Cannot undo
+msgstr Ne mogu da opozovem
+
+msgid  Nothing to undo
+msgstr Nema šta da se opozove
+
+msgid  "{name}" has changed since
+msgstr "{name}" se u međuvremenu promenio
+
+msgid  "{name}" is not in the trash
+msgstr "{name}" nije u korpi
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Vraćanje iz korpe nije podržano na macOS-u

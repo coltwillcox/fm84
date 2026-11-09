@@ -366,16 +366,13 @@ impl AppState {
             .filter(|(entry, (name, _))| *name != entry.old)
             .map(|(entry, (name, _))| (entry.path.clone(), entry.path.with_file_name(name)))
             .collect();
-        // On a filesystem that does not tell case apart, `b` is in the way
-        // of `a` going to `B` until it has gone itself.
-        let sources: HashSet<OsString> = moves.iter().map(|(from, _)| fold_for_fs(from)).collect();
-        let chained = moves.iter().any(|(from, to)| to != from && sources.contains(&fold_for_fs(to)));
-        let result = if chained { rename_through_scratch(&moves) } else { rename_each(&moves) };
+        let result = rename_all(&moves);
 
         let renamed = match &result {
             Ok(()) => moves.len(),
             Err((done, _)) => *done,
         };
+        self.journal_renames(&moves[..renamed]);
         for (from, to) in moves.iter().take(renamed) {
             if let Some(size) = self.dir_sizes.remove(from) {
                 self.dir_sizes.insert(to.clone(), size);
@@ -399,6 +396,30 @@ impl AppState {
             self.display_error(t!("Renamed {done} of {total}, then: {e}", done, total = moves.len(), e));
         }
     }
+}
+
+impl AppState {
+    /// Renames done, kept for Ctrl+Z to put back.
+    pub(crate) fn journal_renames(&mut self, moves: &[(PathBuf, PathBuf)]) {
+        let steps = moves
+            .iter()
+            .filter_map(|(from, to)| {
+                let mark = Mark::of(to, false)?;
+                Some(Done::Moved { from: from.clone(), to: to.clone(), mark })
+            })
+            .collect();
+        self.journal(UndoKind::Rename, steps);
+    }
+}
+
+/// Every one of `moves` renamed, through scratch names when one goes to
+/// where another is leaving. The error comes with how many were done.
+pub(super) fn rename_all(moves: &[(PathBuf, PathBuf)]) -> Result<(), (usize, std::io::Error)> {
+    // On a filesystem that does not tell case apart, `b` is in the way
+    // of `a` going to `B` until it has gone itself.
+    let sources: HashSet<OsString> = moves.iter().map(|(from, _)| fold_for_fs(from)).collect();
+    let chained = moves.iter().any(|(from, to)| to != from && sources.contains(&fold_for_fs(to)));
+    if chained { rename_through_scratch(moves) } else { rename_each(moves) }
 }
 
 /// `from` to `to`, refused when something else is there already. The preview

@@ -1620,3 +1620,25 @@ msgstr[other]  {problems} no se pueden renombrar así    Esc - Cancelar
 msgid  {skipped} left as it is
 msgstr[one]    {skipped} se deja tal cual
 msgstr[other]  {skipped} se dejan tal cual
+
+msgctxt job
+msgid   Undo
+msgstr  Deshacer
+
+msgid  Undoing
+msgstr Deshaciendo
+
+msgid  Cannot undo
+msgstr No se puede deshacer
+
+msgid  Nothing to undo
+msgstr Nada que deshacer
+
+msgid  "{name}" has changed since
+msgstr «{name}» ha cambiado desde entonces
+
+msgid  "{name}" is not in the trash
+msgstr «{name}» no está en la papelera
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr Restaurar desde la papelera no es posible en macOS

@@ -1620,3 +1620,25 @@ msgstr[other]  {problems} elem így nem nevezhető át    Esc - Mégse
 msgid  {skipped} left as it is
 msgstr[one]    {skipped} marad, ahogy van
 msgstr[other]  {skipped} marad, ahogy van
+
+msgctxt job
+msgid   Undo
+msgstr  Visszavonás
+
+msgid  Undoing
+msgstr Visszavonás folyamatban
+
+msgid  Cannot undo
+msgstr Nem vonható vissza
+
+msgid  Nothing to undo
+msgstr Nincs mit visszavonni
+
+msgid  "{name}" has changed since
+msgstr „{name}” azóta megváltozott
+
+msgid  "{name}" is not in the trash
+msgstr „{name}” nincs a lomtárban
+
+msgid  Restoring from the trash is not supported on macOS
+msgstr A lomtárból való visszaállítás macOS-en nem támogatott
