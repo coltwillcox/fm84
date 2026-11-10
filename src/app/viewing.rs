@@ -27,10 +27,19 @@ impl ImageCache {
     /// Both neighbours at most: one behind, one ahead.
     const KEEP: usize = 2;
 
+    /// The picture at `path`, decoded already - or being decoded, and then
+    /// waited for: decoding it again beside the read-ahead would only hold
+    /// two of it at once, at full size, and take as long.
     fn take(&mut self, path: &Path) -> Option<(DynamicImage, String)> {
-        let at = self.ready.iter().position(|(held, _, _)| held == path)?;
-        let (_, image, label) = self.ready.remove(at);
-        Some((image, label))
+        if let Some(at) = self.ready.iter().position(|(held, _, _)| held == path) {
+            let (_, image, label) = self.ready.remove(at);
+            return Some((image, label));
+        }
+        if self.pending.as_ref().is_some_and(|(wanted, _)| wanted == path) {
+            let (_, receiver) = self.pending.take()?;
+            return receiver.recv().ok().flatten();
+        }
+        None
     }
 
     fn keep(&mut self, path: PathBuf, image: DynamicImage, label: String) {
@@ -623,5 +632,27 @@ impl AppState {
         if let Screen::Viewer(state) = &mut self.screen {
             state.scroll_offset = state.total_lines.saturating_sub(self.drawn.viewer_viewport_height);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A picture still being read ahead when it is opened is waited for,
+    /// not decoded a second time beside it.
+    #[test]
+    fn a_picture_on_its_way_is_waited_for() {
+        let dir = std::env::temp_dir().join(format!("fm84-read-ahead-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("dot.png");
+        image::RgbImage::new(4, 4).save(&path).unwrap();
+        let mut cache = ImageCache::default();
+        cache.request(path.clone());
+        let (image, _) = cache.take(&path).expect("the one on its way");
+        assert_eq!((image.width(), image.height()), (4, 4));
+        assert!(cache.pending.is_none());
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
