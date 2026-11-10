@@ -2045,3 +2045,16 @@ msgstr {size}, og {path} tager filer på højst {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Del i stykker    S - Spring over    Esc - Annullér
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Spøgelsesjagt
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} ligger på et filsystem, der ikke gemmer adgangstider
+
+msgid  No ghosts here
+msgstr Ingen spøgelser her
+
+msgid  Hunting ghosts
+msgstr Jager spøgelser

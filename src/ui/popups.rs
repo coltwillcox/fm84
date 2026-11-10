@@ -404,6 +404,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
             TransferKind::Undo => t!("Undoing"),
             TransferKind::DirEdit => t!("Applying the edits"),
             TransferKind::Duplicates => t!("Looking for duplicates"),
+            TransferKind::Ghosts => t!("Hunting ghosts"),
             TransferKind::Dossier => t!("Summing up"),
         }
     };
@@ -484,7 +485,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Extract => t!("Cannot extract"),
         TransferKind::Pack => t!("Cannot pack"),
         TransferKind::Update => t!("Cannot update the archive"),
-        TransferKind::Checksum | TransferKind::Duplicates | TransferKind::Dossier => t!("Cannot read"),
+        TransferKind::Checksum | TransferKind::Duplicates | TransferKind::Dossier | TransferKind::Ghosts => t!("Cannot read"),
         TransferKind::Sync => t!("Cannot synchronize"),
         TransferKind::Undo => t!("Cannot undo"),
         TransferKind::DirEdit => t!("Cannot apply the edits"),

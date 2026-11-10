@@ -36,6 +36,7 @@ mod filter;
 mod find;
 mod find_files;
 mod flat;
+mod ghosts;
 mod git_marks;
 mod git_stage;
 mod history;
@@ -59,8 +60,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*, multi_rename::*,
-    open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
+    archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*,
+    multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the

@@ -2163,3 +2163,16 @@ msgstr {size}, agus glacann {path} le comhaid suas le {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Roinn ina phíosaí    S - Scipeáil    Esc - Cealaigh
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Fiach taibhsí
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr Tá {path} ar chóras comhad nach gcoinníonn amanna rochtana
+
+msgid  No ghosts here
+msgstr Níl aon taibhse anseo
+
+msgid  Hunting ghosts
+msgstr Ag fiach taibhsí

@@ -22,7 +22,7 @@ pub struct Naming {
 impl AppState {
     /// Whether the active panel is showing the tape playing.
     pub fn showing_basket(&self) -> bool {
-        self.flat(self.active_side).is_some_and(|flat| flat.basket)
+        self.flat(self.active_side).is_some_and(|flat| flat.kind == FeedKind::Basket)
     }
 
     /// Alt+B on `items`, what is chosen: onto the tape playing - a new one,
@@ -225,7 +225,7 @@ impl AppState {
         panel.flat = Some(Flat {
             dir: base.clone(),
             feed: Some(Arc::new(feed)),
-            basket: true,
+            kind: FeedKind::Basket,
         });
         panel.selected = chosen.clone();
         if self.panel_dir(side) == base {

@@ -1206,3 +1206,34 @@ fn left_alone_fm84_drives_until_a_key() {
     let back: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
     assert_eq!(back, panels);
 }
+
+/// A ghost hunt's rows are drawn faded, a ghost beside each; a panel fed
+/// anything else is not.
+#[test]
+fn ghosts_are_drawn_faded() {
+    let dir = std::env::temp_dir().join(format!("fm84-ghost-rows-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("boo.txt"), "boo").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.options.icon_style = crate::options::IconStyle::Plain;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    let row = |app_state: &mut AppState, kind| {
+        app_state.left.flat = Some(crate::app::Flat {
+            dir: dir.clone(),
+            feed: Some(std::sync::Arc::new(vec![(PathBuf::from("boo.txt"), false)])),
+            kind,
+        });
+        app_state.reload_panel(Side::Left, None);
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer().clone();
+        let (x, y) = (0..30).flat_map(|y| (0..50).map(move |x| (x, y))).find(|&(x, y)| buffer[(x, y)].symbol() == "b" && buffer[(x + 1, y)].symbol() == "o").expect("the row");
+        let before: String = (0..x).map(|at| buffer[(at, y)].symbol()).collect();
+        (before.contains('~'), buffer[(x, y)].modifier.contains(Modifier::DIM))
+    };
+    assert_eq!(row(&mut app_state, crate::app::FeedKind::Ghosts), (true, true));
+    assert_eq!(row(&mut app_state, crate::app::FeedKind::Found), (false, false));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

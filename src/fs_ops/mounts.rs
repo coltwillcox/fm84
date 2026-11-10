@@ -347,6 +347,26 @@ pub fn disk_usage(path: &Path) -> Option<(u64, u64)> {
     space(path).map(|space| (space.total.saturating_sub(space.free), space.total))
 }
 
+/// Whether the filesystem holding `path` keeps when each file was last read.
+/// Mounted noatime it does not, and every access time is as old as the file;
+/// relatime keeps it to within a day, which is close enough for years.
+#[cfg(target_os = "linux")]
+pub fn keeps_access_times(path: &Path) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    let Ok(c_path) = std::ffi::CString::new(path.as_os_str().as_bytes()) else { return true };
+    // SAFETY: a valid NUL-terminated path, and stats read only on success.
+    unsafe {
+        let mut stats = std::mem::zeroed::<libc::statvfs>();
+        libc::statvfs(c_path.as_ptr(), &mut stats) != 0 || stats.f_flag & libc::ST_NOATIME == 0
+    }
+}
+
+/// Elsewhere there is no asking, and the times are taken as they come.
+#[cfg(not(target_os = "linux"))]
+pub fn keeps_access_times(_path: &Path) -> bool {
+    true
+}
+
 /// Bytes that can still be written to the filesystem holding `path`, or None
 /// when the platform will not say.
 pub fn free_space(path: &Path) -> Option<u64> {

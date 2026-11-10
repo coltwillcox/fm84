@@ -2085,3 +2085,16 @@ msgstr {size}, iar {path} primește fișiere de cel mult {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Împarte în părți    S - Sari peste    Esc - Anulează
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Vânătoare de fantome
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} este pe un sistem de fișiere care nu păstrează orele de acces
+
+msgid  No ghosts here
+msgstr Nicio fantomă aici
+
+msgid  Hunting ghosts
+msgstr Se vânează fantome

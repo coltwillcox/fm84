@@ -47,7 +47,7 @@ impl AppState {
         panel.flat = Some(Flat {
             dir: base.clone(),
             feed: Some(Arc::new(feed)),
-            basket: false,
+            kind: FeedKind::Found,
         });
         // Before the listing, which keeps what it finds of them.
         panel.selected = groups.iter().flat_map(|group| group.iter().skip(1)).filter_map(relative).map(PathBuf::into_os_string).collect();

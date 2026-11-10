@@ -2085,3 +2085,16 @@ msgstr {size}, a {path} berie súbory najviac {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Rozdeliť na časti    S - Preskočiť    Esc - Zrušiť
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Hon na duchov
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} je na súborovom systéme, ktorý neukladá časy prístupu
+
+msgid  No ghosts here
+msgstr Žiadni duchovia tu nie sú
+
+msgid  Hunting ghosts
+msgstr Hon na duchov

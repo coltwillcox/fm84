@@ -2085,3 +2085,16 @@ msgstr {size}, a {path} prima datoteke do {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Podijeli na dijelove    S - Preskoči    Esc - Odustani
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Lov na duhove
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} je na datotečnom sustavu koji ne pamti vremena pristupa
+
+msgid  No ghosts here
+msgstr Ovdje nema duhova
+
+msgid  Hunting ghosts
+msgstr Lov na duhove

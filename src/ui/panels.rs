@@ -130,6 +130,12 @@ fn mount_icon(kind: crate::fs_ops::MountKind, style: IconStyle) -> &'static str 
 
 /// The icon cell of a file row. Plain marks directories the way MC does and
 /// leaves files blank; the brackets and colours already tell them apart.
+/// What stands beside a row in Alt+Shift+G's ghost hunt: a ghost, or with
+/// plain icons a wisp of one.
+fn ghost_icon(style: IconStyle) -> &'static str {
+    if style == IconStyle::Plain { "~" } else { ICON_GHOST }
+}
+
 fn row_icon(is_dir: bool, style: IconStyle) -> &'static str {
     match (style, is_dir) {
         (IconStyle::Plain, true) => "/",
@@ -599,13 +605,19 @@ fn build_viewport_rows(app_state: &AppState, side: Side, viewport_height: usize,
     // Cargo.toml would read the same.
     let has_ext_column = columns.contains(&Column::Ext);
     let git = app_state.git_status(side);
+    // A ghost hunt's rows are drawn faded, with a ghost beside each.
+    let ghosts = app_state.flat(side).is_some_and(|flat| flat.kind == crate::app::FeedKind::Ghosts);
 
     for (index, child) in children.iter().enumerate().take(end).skip(start) {
         let is_renaming_current_item = is_renaming_current_side && (index == selected);
         let is_selected = selected_set.contains(&child.name_os);
 
         // Keep original icon, change color if selected
-        let icon = row_icon(child.is_dir, app_state.options.icon_style);
+        let icon = if ghosts && !child.is_parent() {
+            ghost_icon(app_state.options.icon_style)
+        } else {
+            row_icon(child.is_dir, app_state.options.icon_style)
+        };
         let file_color = color_for_extension(&child.extension);
         let text_color = if is_selected {
             palette().selected_marker
@@ -614,7 +626,11 @@ fn build_viewport_rows(app_state: &AppState, side: Side, viewport_height: usize,
         } else {
             file_color
         };
-        let text_style = Style::default().fg(text_color);
+        let text_style = if ghosts && !child.is_parent() {
+            Style::default().fg(text_color).add_modifier(Modifier::DIM)
+        } else {
+            Style::default().fg(text_color)
+        };
 
         let (dir_prefix, dir_suffix) = if child.is_dir { ("[", "]") } else { ("", "") };
 
@@ -689,7 +705,7 @@ fn build_viewport_rows(app_state: &AppState, side: Side, viewport_height: usize,
             continue;
         }
 
-        let mut cells = vec![Cell::from(Span::styled(icon, Style::default().fg(text_color))), name_cell];
+        let mut cells = vec![Cell::from(Span::styled(icon, text_style)), name_cell];
         for column in columns {
             let value = match column {
                 Column::Ext => extension.clone(),

@@ -2046,3 +2046,16 @@ msgstr {size}; {path} en çok {limit} boyutunda dosya alır
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Parçalara böl    S - Atla    Esc - İptal
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Hayalet avı
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path}, erişim zamanlarını tutmayan bir dosya sisteminde
+
+msgid  No ghosts here
+msgstr Burada hayalet yok
+
+msgid  Hunting ghosts
+msgstr Hayalet avlanıyor

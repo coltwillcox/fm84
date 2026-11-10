@@ -2047,3 +2047,16 @@ msgstr {size}, és {path} legfeljebb {limit} méretű fájlt fogad
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Részekre bontás    S - Kihagyás    Esc - Mégse
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Szellemvadászat
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} olyan fájlrendszeren van, amely nem tárol hozzáférési időt
+
+msgid  No ghosts here
+msgstr Itt nincsenek szellemek
+
+msgid  Hunting ghosts
+msgstr Szellemvadászat

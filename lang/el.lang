@@ -2046,3 +2046,16 @@ msgstr {size}, και το {path} δέχεται αρχεία έως {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Διαίρεση σε τμήματα    S - Παράλειψη    Esc - Άκυρο
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Κυνήγι φαντασμάτων
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr Το {path} είναι σε σύστημα αρχείων που δεν κρατά χρόνους πρόσβασης
+
+msgid  No ghosts here
+msgstr Κανένα φάντασμα εδώ
+
+msgid  Hunting ghosts
+msgstr Κυνήγι φαντασμάτων

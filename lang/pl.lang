@@ -2085,3 +2085,16 @@ msgstr {size}, a {path} przyjmuje pliki do {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Podziel na części    S - Pomiń    Esc - Anuluj
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Polowanie na duchy
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} jest w systemie plików, który nie zapisuje czasów dostępu
+
+msgid  No ghosts here
+msgstr Nie ma tu duchów
+
+msgid  Hunting ghosts
+msgstr Polowanie na duchy

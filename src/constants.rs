@@ -29,6 +29,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const ICON_FOLDER: &str = " "; // Added space after icon is workaround for small icons bug in table columns
 pub const ICON_FILE: &str = " ";
+// Material Design's ghost, nf-md-ghost, for Alt+Shift+G's rows.
+pub const ICON_GHOST: &str = "\u{f02a0} ";
 pub const ICON_LOGO: &str = " ";
 // Powerline's branch, which Nerd Fonts carry; one cell wide in every style.
 pub const ICON_BRANCH: &str = "\u{e0a0}";

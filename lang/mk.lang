@@ -2046,3 +2046,16 @@ msgstr {size}, а {path} прима датотеки до {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Подели на делови    S - Прескокни    Esc - Откажи
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Лов на духови
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} е на датотечен систем што не чува времиња на пристап
+
+msgid  No ghosts here
+msgstr Тука нема духови
+
+msgid  Hunting ghosts
+msgstr Лов на духови

@@ -242,7 +242,7 @@ impl AppState {
         self.panel_mut(side).flat = Some(Flat {
             dir: start.clone(),
             feed: Some(Arc::new(feed)),
-            basket: false,
+            kind: FeedKind::Found,
         });
         if self.panel_dir(side) == start {
             self.reload_panel(side, Some(&first));

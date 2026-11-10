@@ -5,6 +5,7 @@ use std::collections::HashSet;
 mod basket;
 mod dossier;
 mod duplicates;
+mod ghosts;
 mod git;
 mod info_column;
 mod jobs;

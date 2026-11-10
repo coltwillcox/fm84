@@ -12,9 +12,21 @@ pub struct Flat {
     /// What Find files fed it, by their paths from `dir`, and whether each
     /// is a directory. None for Ctrl+B's walk.
     pub feed: Option<Arc<Vec<(PathBuf, bool)>>>,
-    /// The feed is the mixtape playing, shown from Alt+Shift+B, which Alt+B
-    /// takes entries out of.
-    pub basket: bool,
+    /// What fed it, for what the keys do there and how it is drawn.
+    pub kind: FeedKind,
+}
+
+/// What a fed panel is showing.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum FeedKind {
+    /// Ctrl+B's walk, or what Find files or Alt+D found.
+    #[default]
+    Found,
+    /// The mixtape playing, shown from Alt+Shift+B, which Alt+B takes
+    /// entries out of.
+    Basket,
+    /// Alt+Shift+G's files nobody has touched in years, drawn faded.
+    Ghosts,
 }
 
 impl AppState {
@@ -71,7 +83,7 @@ impl AppState {
                 self.panel_mut(side).flat = Some(Flat {
                     dir: self.panel_dir(side),
                     feed: None,
-                    basket: false,
+                    kind: FeedKind::Found,
                 });
                 cursor
             }

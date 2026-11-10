@@ -2045,3 +2045,16 @@ msgstr {size}, а {path} приема файлове до {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Разделяне на части    S - Пропускане    Esc - Отказ
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Лов на духове
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} е във файлова система, която не пази времена на достъп
+
+msgid  No ghosts here
+msgstr Тук няма духове
+
+msgid  Hunting ghosts
+msgstr Лов на духове

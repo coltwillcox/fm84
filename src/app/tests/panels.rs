@@ -564,7 +564,11 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
     app_state.active_side = Side::Left;
 
     let (_sender, answer) = std::sync::mpsc::channel();
-    app_state.left.flat = Some(crate::app::Flat { dir: dir.clone(), feed: None, basket: false });
+    app_state.left.flat = Some(crate::app::Flat {
+        dir: dir.clone(),
+        feed: None,
+        kind: crate::app::FeedKind::Found,
+    });
     app_state.left.listing = Some(crate::app::PendingListing {
         dir: dir.clone(),
         navigate: false,

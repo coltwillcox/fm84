@@ -2047,3 +2047,16 @@ msgstr {size}, y {path} admite archivos de hasta {limit}
 
 msgid  P - Split into pieces    S - Skip    Esc - Cancel
 msgstr P - Dividir en partes    S - Saltar    Esc - Cancelar
+
+msgctxt job
+msgid   Ghost hunt
+msgstr  Caza de fantasmas
+
+msgid  {path} is on a filesystem that keeps no access times
+msgstr {path} está en un sistema de archivos que no guarda fechas de acceso
+
+msgid  No ghosts here
+msgstr Aquí no hay fantasmas
+
+msgid  Hunting ghosts
+msgstr Cazando fantasmas

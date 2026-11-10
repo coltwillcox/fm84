@@ -161,6 +161,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         } else if c == 'B' && modifiers.contains(KeyModifiers::ALT) && app_state.error.is_none() && matches!(&app_state.dialog, Some(Dialog::Mixtapes(list)) if list.naming.is_none()) {
             app_state.dialog = None;
         }
+        // Alt+Shift+G, a ghost hunt: what nobody has opened in years.
+        if in_panel && c == 'G' {
+            app_state.hunt_ghosts();
+        }
         // Alt+R, the directory summed up.
         if in_panel && c == 'r' {
             app_state.open_dossier();
