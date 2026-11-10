@@ -153,6 +153,16 @@ fn an_m4as_tags_are_read_with_moov_at_the_end() {
     assert_eq!((field(&fields, "tag:artist"), field(&fields, "tag:track")), (Some("Moby"), Some("04")));
 }
 
+/// An atom's 64-bit size that would carry the walk past the end of numbers
+/// and round to the start again ends it instead.
+#[test]
+fn an_m4a_whose_atom_size_wraps_round_is_given_up_on() {
+    let ftyp = [&16u32.to_be_bytes(), b"ftyp".as_slice(), b"M4A \0\0\0\0"].concat();
+    let wrapping = [&1u32.to_be_bytes(), b"free".as_slice(), &(u64::MAX - 15).to_be_bytes()].concat();
+    let fields = read_bytes("wraps.m4a", &[ftyp, wrapping].concat());
+    assert!(fields.is_empty());
+}
+
 #[test]
 fn a_pdfs_title_and_author_are_read() {
     let pdf = b"%PDF-1.4\n1 0 obj\n<< /Title (A \\(nested\\) title\\041) /Author <FEFF00C9006D0069006C0065> >>\nendobj\n%%EOF\n";

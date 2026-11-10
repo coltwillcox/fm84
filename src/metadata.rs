@@ -344,7 +344,7 @@ fn vorbis_comments(bytes: &[u8], fields: &mut Fields) {
 fn mp4(file: &mut File, fields: &mut Fields) {
     let mut at = 0u64;
     let length = file.metadata().map_or(0, |metadata| metadata.len());
-    while at + 8 <= length {
+    while length.saturating_sub(at) >= 8 {
         let mut header = [0u8; 16];
         if file.seek(SeekFrom::Start(at)).is_err() || file.read_exact(&mut header[..8]).is_err() {
             return;
@@ -370,7 +370,10 @@ fn mp4(file: &mut File, fields: &mut Fields) {
             }
             return;
         }
-        at += size;
+        // A size the file made up can run past the end of numbers, and
+        // wrapped round it would start the walk over, for good.
+        let Some(next) = at.checked_add(size) else { return };
+        at = next;
     }
 }
 
