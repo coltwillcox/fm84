@@ -2176,3 +2176,25 @@ msgstr Níl aon taibhse anseo
 
 msgid  Hunting ghosts
 msgstr Ag fiach taibhsí
+
+msgctxt job
+msgid   Put back
+msgstr  Cuir ar ais
+
+msgid  No home directory to find the trash from
+msgstr Níl comhadlann bhaile ann chun an bruscar a aimsiú
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Ní féidir ach an rud a chuaigh slán sa bhruscar a chur ar ais nó a fholmhú
+
+msgid  No longer in the trash
+msgstr Níl sé sa bhruscar a thuilleadh
+
+msgid  The trash cannot be looked into on this system
+msgstr Ní féidir breathnú isteach sa bhruscar ar an gcóras seo
+
+msgid  Putting back
+msgstr Ag cur ar ais
+
+msgid  Cannot put back
+msgstr Ní féidir é a chur ar ais

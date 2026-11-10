@@ -2098,3 +2098,25 @@ msgstr Ovdje nema duhova
 
 msgid  Hunting ghosts
 msgstr Lov na duhove
+
+msgctxt job
+msgid   Put back
+msgstr  Vrati
+
+msgid  No home directory to find the trash from
+msgstr Nema kućnog direktorija za pronalazak smeća
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Vratiti ili isprazniti može se samo ono što je u smeće otišlo cijelo
+
+msgid  No longer in the trash
+msgstr Više nije u smeću
+
+msgid  The trash cannot be looked into on this system
+msgstr Na ovom sustavu ne može se gledati u smeće
+
+msgid  Putting back
+msgstr Vraćanje
+
+msgid  Cannot put back
+msgstr Nije moguće vratiti

@@ -2060,3 +2060,25 @@ msgstr Pas de fantômes ici
 
 msgid  Hunting ghosts
 msgstr Chasse aux fantômes
+
+msgctxt job
+msgid   Put back
+msgstr  Remettre
+
+msgid  No home directory to find the trash from
+msgstr Pas de dossier personnel où trouver la corbeille
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Seul ce qui est allé entier à la corbeille peut être remis ou vidé
+
+msgid  No longer in the trash
+msgstr N’est plus dans la corbeille
+
+msgid  The trash cannot be looked into on this system
+msgstr La corbeille ne peut pas être parcourue sur ce système
+
+msgid  Putting back
+msgstr Remise en place
+
+msgid  Cannot put back
+msgstr Impossible de remettre

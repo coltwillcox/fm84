@@ -2060,3 +2060,25 @@ msgstr Itt nincsenek szellemek
 
 msgid  Hunting ghosts
 msgstr Szellemvadászat
+
+msgctxt job
+msgid   Put back
+msgstr  Visszatevés
+
+msgid  No home directory to find the trash from
+msgstr Nincs saját könyvtár, amelyből a kuka megtalálható
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Csak az tehető vissza vagy üríthető, ami egészben került a kukába
+
+msgid  No longer in the trash
+msgstr Már nincs a kukában
+
+msgid  The trash cannot be looked into on this system
+msgstr Ezen a rendszeren a kukába nem lehet belenézni
+
+msgid  Putting back
+msgstr Visszatevés
+
+msgid  Cannot put back
+msgstr Nem tehető vissza

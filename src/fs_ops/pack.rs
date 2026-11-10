@@ -33,7 +33,7 @@ impl PackFormat {
             Kind::TarXz => PackFormat::TarXz,
             Kind::TarBz2 => PackFormat::TarBz2,
             Kind::TarZst => PackFormat::TarZst,
-            Kind::Git => return None,
+            Kind::Git | Kind::Trash => return None,
         })
     }
 

@@ -2059,3 +2059,25 @@ msgstr Nessun fantasma qui
 
 msgid  Hunting ghosts
 msgstr Caccia ai fantasmi
+
+msgctxt job
+msgid   Put back
+msgstr  Rimetti
+
+msgid  No home directory to find the trash from
+msgstr Nessuna cartella home da cui trovare il cestino
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Si può rimettere o svuotare solo ciò che è andato intero nel cestino
+
+msgid  No longer in the trash
+msgstr Non è più nel cestino
+
+msgid  The trash cannot be looked into on this system
+msgstr Su questo sistema non si può guardare nel cestino
+
+msgid  Putting back
+msgstr Rimessa a posto
+
+msgid  Cannot put back
+msgstr Impossibile rimettere

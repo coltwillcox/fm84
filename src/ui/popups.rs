@@ -393,6 +393,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
         match job.kind {
             TransferKind::Copy => t!("Copying"),
             TransferKind::Join => t!("Joining"),
+            TransferKind::Restore => t!("Putting back"),
             TransferKind::Move => t!("Moving"),
             TransferKind::Delete => t!("Deleting"),
             TransferKind::Trash => t!("Moving to trash"),
@@ -479,6 +480,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
     let title = match kind {
         TransferKind::Copy => t!("Cannot copy"),
         TransferKind::Join => t!("Cannot join"),
+        TransferKind::Restore => t!("Cannot put back"),
         TransferKind::Move => t!("Cannot move"),
         TransferKind::Delete => t!("Cannot delete"),
         TransferKind::Trash => t!("Cannot move to trash"),

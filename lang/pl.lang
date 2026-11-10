@@ -2098,3 +2098,25 @@ msgstr Nie ma tu duchów
 
 msgid  Hunting ghosts
 msgstr Polowanie na duchy
+
+msgctxt job
+msgid   Put back
+msgstr  Przywróć
+
+msgid  No home directory to find the trash from
+msgstr Brak katalogu domowego, by znaleźć kosz
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Przywrócić lub opróżnić można tylko to, co trafiło do kosza w całości
+
+msgid  No longer in the trash
+msgstr Nie ma już w koszu
+
+msgid  The trash cannot be looked into on this system
+msgstr Na tym systemie nie da się zajrzeć do kosza
+
+msgid  Putting back
+msgstr Przywracanie
+
+msgid  Cannot put back
+msgstr Nie można przywrócić

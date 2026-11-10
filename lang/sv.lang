@@ -2059,3 +2059,25 @@ msgstr Inga spöken här
 
 msgid  Hunting ghosts
 msgstr Jagar spöken
+
+msgctxt job
+msgid   Put back
+msgstr  Lägg tillbaka
+
+msgid  No home directory to find the trash from
+msgstr Ingen hemkatalog att hitta papperskorgen från
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Bara det som gick helt till papperskorgen kan läggas tillbaka eller tömmas
+
+msgid  No longer in the trash
+msgstr Inte längre i papperskorgen
+
+msgid  The trash cannot be looked into on this system
+msgstr Papperskorgen kan inte ses in i på det här systemet
+
+msgid  Putting back
+msgstr Lägger tillbaka
+
+msgid  Cannot put back
+msgstr Kan inte lägga tillbaka

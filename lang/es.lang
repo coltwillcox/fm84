@@ -2060,3 +2060,25 @@ msgstr Aquí no hay fantasmas
 
 msgid  Hunting ghosts
 msgstr Cazando fantasmas
+
+msgctxt job
+msgid   Put back
+msgstr  Devolver
+
+msgid  No home directory to find the trash from
+msgstr No hay carpeta personal desde la que encontrar la papelera
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Solo lo que fue entero a la papelera se puede devolver o vaciar
+
+msgid  No longer in the trash
+msgstr Ya no está en la papelera
+
+msgid  The trash cannot be looked into on this system
+msgstr En este sistema no se puede mirar dentro de la papelera
+
+msgid  Putting back
+msgstr Devolviendo
+
+msgid  Cannot put back
+msgstr No se puede devolver

@@ -2098,3 +2098,25 @@ msgstr Nicio fantomă aici
 
 msgid  Hunting ghosts
 msgstr Se vânează fantome
+
+msgctxt job
+msgid   Put back
+msgstr  Pune înapoi
+
+msgid  No home directory to find the trash from
+msgstr Niciun director personal din care să fie găsit coșul
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Doar ce a ajuns întreg în coș poate fi pus înapoi sau golit
+
+msgid  No longer in the trash
+msgstr Nu mai este în coș
+
+msgid  The trash cannot be looked into on this system
+msgstr Pe acest sistem nu se poate privi în coș
+
+msgid  Putting back
+msgstr Se pune înapoi
+
+msgid  Cannot put back
+msgstr Nu se poate pune înapoi

@@ -2059,3 +2059,25 @@ msgstr Burada hayalet yok
 
 msgid  Hunting ghosts
 msgstr Hayalet avlanıyor
+
+msgctxt job
+msgid   Put back
+msgstr  Geri koy
+
+msgid  No home directory to find the trash from
+msgstr Çöpü bulmak için ev dizini yok
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Yalnızca çöpe bütün olarak gideni geri koymak ya da boşaltmak mümkün
+
+msgid  No longer in the trash
+msgstr Artık çöpte değil
+
+msgid  The trash cannot be looked into on this system
+msgstr Bu sistemde çöpün içine bakılamıyor
+
+msgid  Putting back
+msgstr Geri konuyor
+
+msgid  Cannot put back
+msgstr Geri konamıyor

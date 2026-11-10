@@ -2138,3 +2138,25 @@ msgstr Tu ni duhov
 
 msgid  Hunting ghosts
 msgstr Lov na duhove
+
+msgctxt job
+msgid   Put back
+msgstr  Vrni
+
+msgid  No home directory to find the trash from
+msgstr Ni domače mape, iz katere bi našli koš
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Vrniti ali izprazniti je mogoče le to, kar je šlo v koš celo
+
+msgid  No longer in the trash
+msgstr Ni več v košu
+
+msgid  The trash cannot be looked into on this system
+msgstr V koš na tem sistemu ni mogoče pogledati
+
+msgid  Putting back
+msgstr Vračanje
+
+msgid  Cannot put back
+msgstr Ni mogoče vrniti

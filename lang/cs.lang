@@ -2098,3 +2098,25 @@ msgstr Žádní duchové tu nejsou
 
 msgid  Hunting ghosts
 msgstr Hon na duchy
+
+msgctxt job
+msgid   Put back
+msgstr  Vrátit
+
+msgid  No home directory to find the trash from
+msgstr Není domovský adresář, podle kterého najít koš
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Vrátit nebo vysypat lze jen to, co šlo do koše celé
+
+msgid  No longer in the trash
+msgstr Už není v koši
+
+msgid  The trash cannot be looked into on this system
+msgstr Koš nelze na tomto systému procházet
+
+msgid  Putting back
+msgstr Vracení
+
+msgid  Cannot put back
+msgstr Nelze vrátit

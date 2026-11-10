@@ -2058,3 +2058,25 @@ msgstr Geen spoken hier
 
 msgid  Hunting ghosts
 msgstr Spoken jagen
+
+msgctxt job
+msgid   Put back
+msgstr  Terugzetten
+
+msgid  No home directory to find the trash from
+msgstr Geen thuismap om de prullenbak vanuit te vinden
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Alleen wat in zijn geheel naar de prullenbak ging, kan worden teruggezet of geleegd
+
+msgid  No longer in the trash
+msgstr Niet meer in de prullenbak
+
+msgid  The trash cannot be looked into on this system
+msgstr In de prullenbak kijken kan op dit systeem niet
+
+msgid  Putting back
+msgstr Terugzetten
+
+msgid  Cannot put back
+msgstr Kan niet terugzetten

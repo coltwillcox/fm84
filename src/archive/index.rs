@@ -61,6 +61,17 @@ impl Entry {
     }
 }
 
+#[cfg(unix)]
+fn mode_of(metadata: &std::fs::Metadata) -> Option<u32> {
+    use std::os::unix::fs::PermissionsExt;
+    Some(metadata.permissions().mode() & 0o7777)
+}
+
+#[cfg(not(unix))]
+fn mode_of(_metadata: &std::fs::Metadata) -> Option<u32> {
+    None
+}
+
 /// An archive's entries as a tree.
 #[derive(Debug)]
 pub struct Index {
@@ -75,6 +86,11 @@ pub struct Index {
     pub refused: usize,
     /// For a git commit, the object each file is, by its position.
     objects: Vec<String>,
+    /// For the trash, where each file's bytes are, by its position.
+    real: Vec<PathBuf>,
+    /// For the trash, what the system knows each thing in it by, by the
+    /// name it is listed under.
+    trashed: HashMap<PathBuf, std::ffi::OsString>,
 }
 
 impl Index {
@@ -86,7 +102,76 @@ impl Index {
             children: HashMap::new(),
             refused: 0,
             objects: Vec::new(),
+            real: Vec::new(),
+            trashed: HashMap::new(),
         }
+    }
+
+    /// Where the trash keeps the bytes of the file at `position`.
+    pub fn real(&self, position: usize) -> Option<&Path> {
+        self.real.get(position).map(PathBuf::as_path)
+    }
+
+    /// What the system knows the thing in the trash listed as `name` by.
+    pub fn trash_id(&self, name: &Path) -> Option<&std::ffi::OsStr> {
+        self.trashed.get(name).map(std::ffi::OsString::as_os_str)
+    }
+
+    /// The trash: each thing in it by the name it had - two of one name
+    /// told apart as `name (2)` - dated when it went, and what is inside a
+    /// directory in it as it is there now. Read from where the trash keeps
+    /// it; what cannot be read is left out.
+    pub(super) fn read_trash(items: &[super::trash::Trashed]) -> Self {
+        let mut index = Index::new(Kind::Trash);
+        let mut items: Vec<&super::trash::Trashed> = items.iter().collect();
+        // The latest first, for it to keep the name as it was.
+        items.sort_by_key(|item| std::cmp::Reverse(item.deleted));
+        for item in items {
+            let name = Path::new(&item.name);
+            let name = if index.by_path.contains_key(name) {
+                crate::fs_ops::free_name_among(name, |taken| index.by_path.contains_key(taken))
+            } else {
+                name.to_path_buf()
+            };
+            let deleted = u64::try_from(item.deleted).ok().map(|seconds| SystemTime::UNIX_EPOCH + Duration::from_secs(seconds));
+            index.trashed.insert(name.clone(), item.id.clone());
+            let mut stack = vec![(name, item.real.clone(), deleted)];
+            while let Some((path, real, modified)) = stack.pop() {
+                let Ok(metadata) = std::fs::symlink_metadata(&real) else { continue };
+                let file_type = metadata.file_type();
+                let kind = if file_type.is_dir() {
+                    EntryKind::Dir
+                } else if file_type.is_symlink() {
+                    EntryKind::Link
+                } else if file_type.is_file() {
+                    EntryKind::File
+                } else {
+                    EntryKind::Other
+                };
+                let position = matches!(kind, EntryKind::File | EntryKind::Link).then(|| {
+                    index.real.push(real.clone());
+                    index.real.len() - 1
+                });
+                if kind == EntryKind::Dir
+                    && let Ok(entries) = std::fs::read_dir(&real)
+                {
+                    stack.extend(entries.flatten().map(|entry| (path.join(entry.file_name()), entry.path(), None)));
+                }
+                index.add(Entry {
+                    path,
+                    kind,
+                    size: if kind == EntryKind::File { metadata.len() } else { 0 },
+                    // What went is dated when it went; what is in it, as it is.
+                    modified: modified.or_else(|| metadata.modified().ok()),
+                    mode: mode_of(&metadata),
+                    owner: None,
+                    link: (kind == EntryKind::Link).then(|| std::fs::read_link(&real).ok()).flatten(),
+                    position,
+                    encrypted: false,
+                });
+            }
+        }
+        index
     }
 
     /// The git object the file at `position` is.

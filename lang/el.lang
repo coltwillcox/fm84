@@ -2059,3 +2059,25 @@ msgstr Κανένα φάντασμα εδώ
 
 msgid  Hunting ghosts
 msgstr Κυνήγι φαντασμάτων
+
+msgctxt job
+msgid   Put back
+msgstr  Επαναφορά
+
+msgid  No home directory to find the trash from
+msgstr Δεν υπάρχει αρχικός κατάλογος για να βρεθεί ο κάδος
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Μόνο ό,τι πήγε ολόκληρο στον κάδο επαναφέρεται ή διαγράφεται
+
+msgid  No longer in the trash
+msgstr Δεν είναι πια στον κάδο
+
+msgid  The trash cannot be looked into on this system
+msgstr Ο κάδος δεν μπορεί να εξεταστεί σε αυτό το σύστημα
+
+msgid  Putting back
+msgstr Επαναφορά
+
+msgid  Cannot put back
+msgstr Δεν είναι δυνατή η επαναφορά

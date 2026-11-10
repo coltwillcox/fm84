@@ -115,6 +115,11 @@ pub(super) fn open_delete(app_state: &mut AppState, permanently: bool) {
     if items.is_empty() {
         return;
     }
+    // In the trash, emptied for good: always asked.
+    if app_state.panel_in_trash(app_state.active_side) {
+        app_state.dialog = Some(Dialog::Delete { items, to_trash: false });
+        return;
+    }
     // Inside an archive there is no trash to go to, and no getting it back:
     // always asked, as Shift+F8 is.
     match app_state.archive_to_write(app_state.active_side) {
@@ -136,7 +141,9 @@ pub(super) fn handle_delete_confirm(app_state: &mut AppState) {
     // The removals, the panel reload and the selections are all handled by the
     // job as it finishes, the same as a copy or a move.
     if let Some(Dialog::Delete { items, to_trash }) = app_state.dialog.take() {
-        if let Some(archive) = app_state.panel_archive(app_state.active_side).cloned() {
+        if app_state.panel_in_trash(app_state.active_side) {
+            app_state.purge_from_trash(items);
+        } else if let Some(archive) = app_state.panel_archive(app_state.active_side).cloned() {
             let remove = items.iter().filter_map(|(path, _)| path.strip_prefix(&archive).ok()).filter(|inner| !inner.as_os_str().is_empty()).map(Path::to_path_buf).collect();
             app_state.start_repack(archive, crate::fs_ops::Repack { remove, ..Default::default() }, false, Clashes::Ask, None);
         } else if to_trash {
@@ -192,6 +199,10 @@ pub(super) fn open_transfer(app_state: &mut AppState, is_copy: bool) {
     let sources = chosen_items(app_state);
     if sources.is_empty() {
         return;
+    }
+    // F6 in the trash puts back where it came from.
+    if !is_copy && app_state.panel_in_trash(app_state.active_side) {
+        return app_state.restore_from_trash(sources);
     }
     // Out of an archive is a copy; a move would take entries out of it.
     if !is_copy && app_state.refuse_in_archive(app_state.active_side) {

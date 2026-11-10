@@ -2059,3 +2059,25 @@ msgstr Keine Geister hier
 
 msgid  Hunting ghosts
 msgstr Jage Geister
+
+msgctxt job
+msgid   Put back
+msgstr  Zurücklegen
+
+msgid  No home directory to find the trash from
+msgstr Kein Home-Verzeichnis, um den Papierkorb zu finden
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Nur was als Ganzes in den Papierkorb ging, lässt sich zurücklegen oder leeren
+
+msgid  No longer in the trash
+msgstr Nicht mehr im Papierkorb
+
+msgid  The trash cannot be looked into on this system
+msgstr In den Papierkorb lässt sich auf diesem System nicht hineinsehen
+
+msgid  Putting back
+msgstr Lege zurück
+
+msgid  Cannot put back
+msgstr Zurücklegen nicht möglich

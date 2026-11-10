@@ -168,6 +168,11 @@ pub(super) fn enter_directory_panel(app_state: &mut AppState) {
     }
 
     let file_path = item.path_in(dir);
+    // A file that went to the trash, put back where it came from; one in a
+    // directory that went is opened from there, as from an archive.
+    if app_state.panel_in_trash(side) && app_state.panel_archive(side).is_some_and(|archive| file_path.parent() == Some(archive.as_path())) {
+        return app_state.restore_from_trash(vec![(file_path, false)]);
+    }
     open_file(app_state, file_path);
 }
 

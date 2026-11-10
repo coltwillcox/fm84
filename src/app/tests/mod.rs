@@ -13,6 +13,7 @@ mod panels;
 mod scores;
 mod selection;
 mod settings;
+mod trash;
 mod undo;
 mod viewing;
 

@@ -55,6 +55,7 @@ mod tabs;
 #[cfg(test)]
 mod tests;
 mod text_input;
+mod trash_folder;
 mod undo;
 mod user_menu;
 mod viewing;

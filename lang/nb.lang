@@ -2058,3 +2058,25 @@ msgstr Ingen spøkelser her
 
 msgid  Hunting ghosts
 msgstr Jakter på spøkelser
+
+msgctxt job
+msgid   Put back
+msgstr  Legg tilbake
+
+msgid  No home directory to find the trash from
+msgstr Ingen hjemmemappe å finne papirkurven fra
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Bare det som gikk helt i papirkurven, kan legges tilbake eller tømmes
+
+msgid  No longer in the trash
+msgstr Ikke lenger i papirkurven
+
+msgid  The trash cannot be looked into on this system
+msgstr Papirkurven kan ikke ses i på dette systemet
+
+msgid  Putting back
+msgstr Legger tilbake
+
+msgid  Cannot put back
+msgstr Kan ikke legge tilbake

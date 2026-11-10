@@ -111,6 +111,8 @@ pub enum TransferKind {
     Undo,
     /// F5 on the first of a file's pieces: all of them joined back into it.
     Join,
+    /// Alt+T's F6: what is in the trash put back where it came from.
+    Restore,
     /// Ctrl+E's plan: deletes, renames and copies.
     DirEdit,
     /// Alt+D, looking for files the same as another.
@@ -136,6 +138,7 @@ impl TransferKind {
             TransferKind::Sync => tc!("job", "Synchronize"),
             TransferKind::Undo => tc!("job", "Undo"),
             TransferKind::Join => tc!("job", "Join"),
+            TransferKind::Restore => tc!("job", "Put back"),
             TransferKind::DirEdit => tc!("job", "Edit as text"),
             TransferKind::Duplicates => tc!("job", "Find duplicates"),
             TransferKind::Dossier => tc!("job", "Dossier"),
@@ -1084,7 +1087,7 @@ impl AppState {
                 let (job_title, done) = (job.kind.title(), job.done);
                 self.display_error(match job.kind {
                     TransferKind::Delete => tn!(done, "{job_title} cancelled after {done} entry", "{job_title} cancelled after {done} entries", job_title, done),
-                    TransferKind::Trash | TransferKind::Undo | TransferKind::DirEdit => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
+                    TransferKind::Trash | TransferKind::Undo | TransferKind::DirEdit | TransferKind::Restore => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
                     _ => t!("{job_title} cancelled after {size}", job_title, size = crate::utils::format_size(done)),
                 })
             }

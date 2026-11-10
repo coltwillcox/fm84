@@ -2059,3 +2059,25 @@ msgstr Nenhum fantasma aqui
 
 msgid  Hunting ghosts
 msgstr Caçando fantasmas
+
+msgctxt job
+msgid   Put back
+msgstr  Devolver
+
+msgid  No home directory to find the trash from
+msgstr Sem pasta pessoal para encontrar a lixeira
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Só o que foi inteiro para a lixeira pode ser devolvido ou esvaziado
+
+msgid  No longer in the trash
+msgstr Já não está na lixeira
+
+msgid  The trash cannot be looked into on this system
+msgstr Neste sistema não se pode ver dentro da lixeira
+
+msgid  Putting back
+msgstr Devolvendo
+
+msgid  Cannot put back
+msgstr Não foi possível devolver

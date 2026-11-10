@@ -2059,3 +2059,25 @@ msgstr Тука нема духови
 
 msgid  Hunting ghosts
 msgstr Лов на духови
+
+msgctxt job
+msgid   Put back
+msgstr  Врати
+
+msgid  No home directory to find the trash from
+msgstr Нема домашна папка од која да се најде ѓубрето
+
+msgid  Only what went to the trash whole can be put back or emptied
+msgstr Може да се врати или испразни само она што отишло цело во ѓубрето
+
+msgid  No longer in the trash
+msgstr Веќе не е во ѓубрето
+
+msgid  The trash cannot be looked into on this system
+msgstr На овој систем не може да се гледа во ѓубрето
+
+msgid  Putting back
+msgstr Враќање
+
+msgid  Cannot put back
+msgstr Не може да се врати

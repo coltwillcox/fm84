@@ -10,6 +10,7 @@ pub mod fixtures;
 mod index;
 #[cfg(test)]
 mod tests;
+pub mod trash;
 
 pub(crate) use index::inner_path;
 pub use index::{Entry, EntryKind, Index};
@@ -33,6 +34,8 @@ pub enum Kind {
     /// A git commit - a branch, a tag, a stash - as its tree was: a folder
     /// at `<top of the repository>/@git:<revision>`, which is not on the disk.
     Git,
+    /// The system's trash, at `~/@trash`, which is not on the disk either.
+    Trash,
 }
 
 /// What a git commit's folder is named with, the revision after it.
@@ -57,6 +60,9 @@ pub fn git_revision(folder: &Path) -> Option<(PathBuf, String)> {
 pub fn kind_of(path: &Path) -> Option<Kind> {
     if git_revision(path).is_some() {
         return Some(Kind::Git);
+    }
+    if trash::is_trash_folder(path) {
+        return Some(Kind::Trash);
     }
     let name = path.file_name()?.to_string_lossy().to_lowercase();
     let named = |endings: &[&str]| endings.iter().any(|ending| name.ends_with(ending));
@@ -99,8 +105,9 @@ pub fn locate(path: &Path) -> Option<Located> {
     let mut inner = Vec::new();
     let mut here = path.as_path();
     loop {
-        // A commit's folder is not on the disk, but the repository it is in is.
-        if git_revision(here).is_some() && here.parent().is_some_and(Path::is_dir) {
+        // A commit's folder is not on the disk, but the repository it is in
+        // is; nor is the trash's.
+        if (git_revision(here).is_some() && here.parent().is_some_and(Path::is_dir)) || trash::is_trash_folder(here) {
             return Some(Located {
                 archive: here.to_path_buf(),
                 inner: inner.iter().rev().collect(),
@@ -159,6 +166,29 @@ pub fn index(archive: &Path) -> io::Result<Arc<Index>> {
     let kind = kind_of(archive).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, t!("Not an archive: {path}", path = archive.display())))?;
     // A commit never changes; a branch moves on, and is read again once it
     // names another commit.
+    // The trash changes whenever anything goes to it: read afresh when what
+    // is in it is not what was.
+    if kind == Kind::Trash {
+        let items = trash::list()?;
+        let hash = items.iter().fold(items.len() as u64, |hash, item| {
+            item.id
+                .as_encoded_bytes()
+                .iter()
+                .fold(hash.wrapping_mul(31).wrapping_add(item.deleted as u64), |hash, &byte| hash.wrapping_mul(31).wrapping_add(u64::from(byte)))
+        });
+        let key = (archive.to_path_buf(), None, hash, items.len() as u64);
+        if let Some((_, index)) = CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner).iter().find(|(cached, _)| *cached == key) {
+            return Ok(Arc::clone(index));
+        }
+        let index = Arc::new(Index::read_trash(&items));
+        let mut cache = CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        cache.retain(|(cached, _)| cached.0 != key.0);
+        cache.push((key, Arc::clone(&index)));
+        if cache.len() > CACHED {
+            cache.remove(0);
+        }
+        return Ok(index);
+    }
     let (key, commit) = match git_revision(archive) {
         Some((top, revision)) => {
             let commit = crate::git::resolve(&top, &revision).map_err(io::Error::other)?;
@@ -391,6 +421,7 @@ pub fn read_entries(archive: &Path, kind: Kind, positions: &[usize], visit: &mut
         }
         Kind::SevenZ => read_7z_entries(archive, positions, visit),
         Kind::Git => read_git_entries(archive, positions, visit),
+        Kind::Trash => read_trash_entries(archive, positions, visit),
         _ => {
             let mut pending: std::collections::BTreeSet<usize> = positions.iter().copied().collect();
             while !pending.is_empty() {
@@ -439,6 +470,26 @@ pub fn read_entries(archive: &Path, kind: Kind, positions: &[usize], visit: &mut
 
 /// The git side of read_entries: each file read out of the repository by
 /// the object it is, in the order asked.
+/// What is in the trash, each file read from where the trash keeps it.
+fn read_trash_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(usize, io::Result<&mut dyn Read>) -> Next) -> io::Result<()> {
+    let index = index(archive)?;
+    for &position in positions {
+        loop {
+            let opened = index.real(position).ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, t!("No longer in the trash"))).and_then(File::open);
+            let next = match opened {
+                Ok(mut file) => visit(position, Ok(&mut file)),
+                Err(error) => visit(position, Err(error)),
+            };
+            match next {
+                Next::Go => break,
+                Next::Again => {}
+                Next::Stop => return Ok(()),
+            }
+        }
+    }
+    Ok(())
+}
+
 fn read_git_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(usize, io::Result<&mut dyn Read>) -> Next) -> io::Result<()> {
     let index = index(archive)?;
     let (top, _) = git_revision(archive).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, t!("Not an archive: {path}", path = archive.display())))?;
