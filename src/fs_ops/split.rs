@@ -48,9 +48,43 @@ fn fat_filesystem(dir: &Path) -> bool {
     }
 }
 
+/// The volume `dir` is on - a drive letter, or a folder a drive is mounted
+/// at - and the name its filesystem goes by: FAT and FAT32 hold 4 GiB less a
+/// byte in a file, exFAT and NTFS more than any disk.
+#[cfg(windows)]
+fn fat_filesystem(dir: &Path) -> bool {
+    use std::os::windows::ffi::OsStrExt;
+
+    // Declared here rather than pulling in windows-sys, as for the drives.
+    unsafe extern "system" {
+        fn GetVolumePathNameW(file_name: *const u16, volume_path: *mut u16, length: u32) -> i32;
+        fn GetVolumeInformationW(root: *const u16, volume_name: *mut u16, volume_name_size: u32, serial_number: *mut u32, max_component_length: *mut u32, file_system_flags: *mut u32, file_system_name: *mut u16, file_system_name_size: u32) -> i32;
+    }
+
+    let wide: Vec<u16> = dir.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    // The volume's path is never longer than the path it holds, and a
+    // separator on the end.
+    let mut root = vec![0u16; wide.len().max(260) + 2];
+    let mut name = [0u16; 32];
+    // SAFETY: wide is NUL-terminated; each buffer is passed with its own
+    // length and read only after the call reports success; the outputs
+    // not wanted are null, which both calls allow.
+    unsafe {
+        if GetVolumePathNameW(wide.as_ptr(), root.as_mut_ptr(), root.len() as u32) == 0 {
+            return false;
+        }
+        let null = std::ptr::null_mut();
+        if GetVolumeInformationW(root.as_ptr(), null, 0, null.cast(), null.cast(), null.cast(), name.as_mut_ptr(), name.len() as u32) == 0 {
+            return false;
+        }
+    }
+    let end = name.iter().position(|&unit| unit == 0).unwrap_or(name.len());
+    matches!(String::from_utf16_lossy(&name[..end]).as_str(), "FAT" | "FAT32")
+}
+
 /// Elsewhere there is no telling without more than std: a copy too big for
 /// the drive fails as it is written, and is asked about as any failure is.
-#[cfg(not(any(target_os = "linux", target_os = "android", target_vendor = "apple", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly")))]
+#[cfg(not(any(target_os = "linux", target_os = "android", target_vendor = "apple", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly", windows)))]
 fn fat_filesystem(_dir: &Path) -> bool {
     false
 }
