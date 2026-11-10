@@ -2087,3 +2087,19 @@ msgstr Leggere il cestino richiede l’accesso completo al disco per questo term
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS non dice da dove viene ciò che è nel cestino: copialo fuori con F5
+
+msgid  Directory tree
+msgstr Albero delle cartelle
+
+msgctxt job
+msgid   Open the tree
+msgstr  Apri l’albero
+
+msgid  Opened the first {count} directories
+msgstr Aperte le prime {count} cartelle
+
+msgid  Reading the tree
+msgstr Lettura dell’albero
+
+msgid  Not the root of the drive
+msgstr Non la radice dell’unità

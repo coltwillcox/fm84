@@ -16,9 +16,15 @@ pub(super) fn panel_key(app_state: &mut AppState, key: KeyEvent) {
         }
         return;
     }
+    if app_state.panel(side).tree.is_some() {
+        return tree_key(app_state, key);
+    }
     let drive_chord = key.modifiers.intersects(KeyModifiers::ALT | KeyModifiers::CONTROL);
     let control = key.modifiers.contains(KeyModifiers::CONTROL);
     match key.code {
+        // Alt+F10, Norton Commander's tree: the panel as its drive's
+        // directories.
+        KeyCode::F(10) if key.modifiers.contains(KeyModifiers::ALT) => app_state.toggle_tree(),
         KeyCode::Esc => {
             app_state.search_clear();
             app_state.cancel_dir_sizes();
@@ -147,6 +153,56 @@ fn navigate_up_panel(app_state: &mut AppState) {
     app_state.open_dir(side, parent, leaving.as_deref());
 }
 
+/// A panel showing its tree: up and down it, each directory opened and
+/// closed, Enter sending the other panel there. Nothing else acts, the
+/// files behind it out of sight; F1 and Tab work as ever.
+fn tree_key(app_state: &mut AppState, key: KeyEvent) {
+    let page = app_state.drawn.page_size.max(2) as isize - 1;
+    let typing = !app_state.search_input.is_empty();
+    // What is typed is let go of by any key but the typing and Up and Down,
+    // which go between the directories it matches.
+    let search_key = matches!(key.code, KeyCode::Char(_) | KeyCode::Backspace | KeyCode::Up | KeyCode::Down);
+    if typing && !search_key {
+        app_state.search_input.clear();
+        // Esc only puts the typing away.
+        if key.code == KeyCode::Esc {
+            return;
+        }
+    }
+    match key.code {
+        KeyCode::F(10) if key.modifiers.contains(KeyModifiers::ALT) => app_state.toggle_tree(),
+        KeyCode::Esc => app_state.toggle_tree(),
+        KeyCode::Up if typing => app_state.tree_search_next(false),
+        KeyCode::Down if typing => app_state.tree_search_next(true),
+        KeyCode::Backspace if typing => app_state.tree_search_back(),
+        // - is a name's as much as the tree's, once typing has begun.
+        KeyCode::Char(c) if c.is_alphanumeric() || "._ ".contains(c) || (typing && c == '-') => app_state.tree_search_add(c),
+        KeyCode::Char('*') => app_state.tree_open_all(),
+        // On the directory under the cursor, as in the list: copied or moved
+        // to the other panel, made in, deleted. Not on the drive's root.
+        KeyCode::F(5 | 6 | 8) | KeyCode::Delete if chosen_items(app_state).is_empty() => app_state.display_error(t!("Not the root of the drive").to_string()),
+        KeyCode::F(5) => open_transfer(app_state, true),
+        KeyCode::F(6) => open_transfer(app_state, false),
+        KeyCode::F(7) => toggle_create(app_state, true),
+        KeyCode::F(8) | KeyCode::Delete => open_delete(app_state, key.modifiers.contains(KeyModifiers::SHIFT)),
+        KeyCode::Up => app_state.tree_move(-1),
+        KeyCode::Down => app_state.tree_move(1),
+        KeyCode::PageUp => app_state.tree_move(-page),
+        KeyCode::PageDown => app_state.tree_move(page),
+        KeyCode::Home => app_state.tree_move(isize::MIN),
+        KeyCode::End => app_state.tree_move(isize::MAX),
+        KeyCode::Right | KeyCode::Char('+') => app_state.tree_expand(),
+        KeyCode::Left | KeyCode::Char('-') => app_state.tree_collapse(),
+        KeyCode::Enter => app_state.tree_enter(),
+        KeyCode::Tab => app_state.active_side = !app_state.active_side,
+        KeyCode::F(1) => {
+            app_state.help_scroll = 0;
+            app_state.dialog = Some(Dialog::Help);
+        }
+        _ => {}
+    }
+}
+
 pub(super) fn enter_directory_panel(app_state: &mut AppState) {
     let side = app_state.active_side;
     let panel = app_state.panel(side);
@@ -231,6 +287,10 @@ fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
 /// entry under the cursor when nothing is. Never the parent entry.
 pub(super) fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
     let panel = app_state.panel(app_state.active_side);
+    // In the tree, the directory under the cursor - never the drive's root.
+    if panel.tree.is_some() {
+        return app_state.tree_cursor(app_state.active_side).filter(|path| path.parent().is_some()).map(|path| vec![(path, true)]).unwrap_or_default();
+    }
     let (children, selected, state, dir) = (&panel.children, &panel.selected, &panel.state, &panel.dir);
     let chosen: Vec<&crate::app::Item> = if selected.is_empty() {
         state.selected().and_then(|index| children.get(index)).into_iter().collect()

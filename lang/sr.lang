@@ -2125,3 +2125,19 @@ msgstr Čitanje smeća traži pun pristup disku za ovaj terminal, u System Setti
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS ne kaže odakle je došlo ono u smeću: kopirajte ga napolje sa F5
+
+msgid  Directory tree
+msgstr Stablo direktorijuma
+
+msgctxt job
+msgid   Open the tree
+msgstr  Otvori stablo
+
+msgid  Opened the first {count} directories
+msgstr Otvoreno prvih {count} direktorijuma
+
+msgid  Reading the tree
+msgstr Čitanje stabla
+
+msgid  Not the root of the drive
+msgstr Ne koren diska

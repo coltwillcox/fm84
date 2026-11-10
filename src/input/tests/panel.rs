@@ -561,3 +561,105 @@ fn a_flat_walk_stops_when_told() {
     let walked = crate::fs_ops::load_flat_rows(&std::env::temp_dir(), &options, &stop);
     assert!(walked.is_err_and(|e| e.kind() == std::io::ErrorKind::Interrupted) || std::fs::read_dir(std::env::temp_dir()).unwrap().next().is_none());
 }
+
+/// Alt+F10 turns the panel into its tree - not quitting, as F10 alone
+/// does - and the keys then act on the tree, not on the files behind it.
+#[test]
+fn alt_f10_is_the_tree_and_not_quit() {
+    let dir = std::env::temp_dir().join(format!("fm84-tree-keys-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    std::fs::write(dir.join("file.txt"), "x").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    let alt_f10 = KeyEvent::new(KeyCode::F(10), KeyModifiers::ALT);
+    assert!(handle_key(&mut app_state, alt_f10), "not a quit");
+    assert!(app_state.left.tree.is_some());
+    // Space would select a file in the list; in the tree it does nothing.
+    press(&mut app_state, KeyCode::Char(' '));
+    assert!(app_state.left.selected.is_empty());
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(app_state.right.dir, dir.join("sub"));
+    assert!(handle_key(&mut app_state, alt_f10));
+    assert!(app_state.left.tree.is_none());
+    assert_eq!(app_state.left.dir, dir.join("sub"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// In the tree, F7 makes a directory in the one under the cursor and goes
+/// to it; F5 and F6 copy and move that directory to the other panel; F8
+/// deletes it. None of them on the drive's root.
+#[test]
+fn the_f_keys_act_on_the_tree_directory() {
+    let dir = std::env::temp_dir().join(format!("fm84-tree-fkeys-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("tree/photos")).unwrap();
+    std::fs::write(dir.join("tree/photos/sun.jpg"), "sun").unwrap();
+    std::fs::create_dir_all(dir.join("other")).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    // Straight through, nothing to the real trash.
+    app_state.options.confirm_copy_move = false;
+    app_state.options.delete_to_trash = false;
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Right, dir.join("other"), None);
+    app_state.open_dir(Side::Left, dir.join("tree"), None);
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(10), KeyModifiers::ALT));
+    let cursor = |app_state: &AppState| app_state.tree_cursor(Side::Left).unwrap();
+    let finish = |app_state: &mut AppState| {
+        let started = std::time::Instant::now();
+        while app_state.workers.job.is_some() {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "never finished");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
+        assert_eq!(app_state.error, None);
+    };
+
+    // F7: made in the directory under the cursor, and gone to.
+    press(&mut app_state, KeyCode::F(7));
+    for c in "made".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    press(&mut app_state, KeyCode::Enter);
+    assert!(dir.join("tree/made").is_dir());
+    assert_eq!(cursor(&app_state), dir.join("tree/made"));
+
+    // F5 on photos, after made: copied into the other panel, whole.
+    press(&mut app_state, KeyCode::Down);
+    assert_eq!(cursor(&app_state), dir.join("tree/photos"));
+    press(&mut app_state, KeyCode::F(5));
+    finish(&mut app_state);
+    assert_eq!(std::fs::read_to_string(dir.join("other/photos/sun.jpg")).unwrap(), "sun");
+
+    // F6 on made: moved there.
+    press(&mut app_state, KeyCode::Up);
+    assert_eq!(cursor(&app_state), dir.join("tree/made"));
+    press(&mut app_state, KeyCode::F(6));
+    finish(&mut app_state);
+    assert!(!dir.join("tree/made").exists() && dir.join("other/made").is_dir());
+
+    // F8 on photos, asked first: deleted. From a tree opened afresh, which
+    // has read that made is gone.
+    press(&mut app_state, KeyCode::Esc);
+    app_state.open_dir(Side::Left, dir.join("tree"), None);
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(10), KeyModifiers::ALT));
+    assert_eq!(cursor(&app_state), dir.join("tree"));
+    press(&mut app_state, KeyCode::Right);
+    assert_eq!(cursor(&app_state), dir.join("tree/photos"));
+    press(&mut app_state, KeyCode::F(8));
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert!(!dir.join("tree/photos").exists());
+
+    // Not the drive's root.
+    press(&mut app_state, KeyCode::Home);
+    assert_eq!(cursor(&app_state).parent(), None);
+    press(&mut app_state, KeyCode::F(8));
+    assert!(app_state.dialog.is_none());
+    assert_eq!(app_state.error.take().as_deref(), Some("Not the root of the drive"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

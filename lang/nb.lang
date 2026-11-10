@@ -2086,3 +2086,19 @@ msgstr Å lese papirkurven krever full disktilgang for denne terminalen, i Syste
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS sier ikke hvor tingene i papirkurven kom fra: kopier dem ut med F5
+
+msgid  Directory tree
+msgstr Mappetre
+
+msgctxt job
+msgid   Open the tree
+msgstr  Åpne treet
+
+msgid  Opened the first {count} directories
+msgstr Åpnet de første {count} mappene
+
+msgid  Reading the tree
+msgstr Leser treet
+
+msgid  Not the root of the drive
+msgstr Ikke roten av disken

@@ -2086,3 +2086,19 @@ msgstr De prullenbak lezen vraagt volledige schijftoegang voor deze terminal, in
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS zegt niet waar wat in de prullenbak ligt vandaan kwam: kopieer het eruit met F5
+
+msgid  Directory tree
+msgstr Mappenboom
+
+msgctxt job
+msgid   Open the tree
+msgstr  De boom openen
+
+msgid  Opened the first {count} directories
+msgstr De eerste {count} mappen geopend
+
+msgid  Reading the tree
+msgstr De boom lezen
+
+msgid  Not the root of the drive
+msgstr Niet de hoofdmap van de schijf

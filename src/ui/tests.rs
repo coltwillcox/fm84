@@ -1237,3 +1237,83 @@ fn ghosts_are_drawn_faded() {
     assert_eq!(row(&mut app_state, crate::app::FeedKind::Found), (false, false));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+F10's tree: the lines between the directories as ncd drew them, in
+/// box lines or ASCII, each marked for what it holds - and drawn in place of
+/// the panel's files.
+#[test]
+fn the_tree_is_drawn_with_its_lines() {
+    use crate::app::{TreeMark, TreeRow};
+    let row = |last: Vec<bool>, mark| TreeRow { path: PathBuf::from("/x"), last, mark };
+    assert_eq!(tree_prefix(&row(vec![], TreeMark::Open), false), "▾ ");
+    assert_eq!(tree_prefix(&row(vec![false], TreeMark::Closed), false), "├─▸ ");
+    assert_eq!(tree_prefix(&row(vec![false, true], TreeMark::Empty), false), "│  └── ");
+    assert_eq!(tree_prefix(&row(vec![true, false], TreeMark::Reading), false), "   ├─… ");
+    assert_eq!(tree_prefix(&row(vec![false, true], TreeMark::Unread), true), "|  `-+ ");
+
+    let dir = std::env::temp_dir().join(format!("fm84-tree-draw-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("inner")).unwrap();
+    std::fs::write(dir.join("listed-file.txt"), "x").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.toggle_tree();
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let left: String = (0..30).flat_map(|y| (0..50).map(move |x| (x, y))).map(|(x, y)| terminal.backend().buffer()[(x, y)].symbol().to_string()).collect();
+    assert!(left.contains("Directory tree"));
+    assert!(left.contains("inner"));
+    assert!(!left.contains("listed-file"), "the files are not drawn under it");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A click on a tree's row puts the cursor there, one on its mark opens or
+/// closes it, and a double click is Enter.
+#[test]
+fn the_tree_answers_the_mouse() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let dir = std::env::temp_dir().join(format!("fm84-tree-mouse-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("one/inner")).unwrap();
+    std::fs::create_dir_all(dir.join("two")).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.toggle_tree();
+    app_state.tree_expand();
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 40)).unwrap();
+    let find = |terminal: &Terminal<ratatui::backend::TestBackend>, name: &str| {
+        let buffer = terminal.backend().buffer();
+        (0..40u16).find_map(|y| {
+            let line: String = (0..50u16).map(|x| buffer[(x, y)].symbol().to_string()).collect();
+            line.find(name).map(|at| (line[..at].chars().count() as u16, y))
+        })
+    };
+    let click = |app_state: &mut AppState, (x, y): (u16, u16)| {
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: x,
+            row: y,
+            modifiers: crossterm::event::KeyModifiers::NONE,
+        };
+        crate::input::handle_mouse_for_tests(app_state, event);
+    };
+    render_ui(&mut terminal, &mut app_state);
+    let (x, y) = find(&terminal, "one").expect("drawn");
+    click(&mut app_state, (x, y));
+    let tree = app_state.left.tree.as_ref().unwrap();
+    assert_eq!(tree.rows[tree.cursor].path, dir.join("one"));
+    // On its mark, two cells before the name: opened.
+    click(&mut app_state, (x - 2, y));
+    render_ui(&mut terminal, &mut app_state);
+    assert!(find(&terminal, "inner").is_some(), "opened");
+    // Twice on the name, a moment apart: Enter, the other panel sent there.
+    let (x, y) = find(&terminal, "two").unwrap();
+    click(&mut app_state, (x, y));
+    click(&mut app_state, (x, y));
+    assert_eq!(app_state.right.dir, dir.join("two"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

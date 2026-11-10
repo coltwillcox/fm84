@@ -50,6 +50,8 @@ pub struct TransferJob {
     dossier: Option<Box<Dossier>>,
     /// What a ghost hunt found, fed to the panel once it is done.
     ghosts: Option<Ghosts>,
+    /// What `*` read of a tree, taken in however the job ends.
+    tree: Option<TreeFound>,
 }
 
 /// A checksum report on screen, and how far down it is scrolled.
@@ -121,6 +123,8 @@ pub enum TransferKind {
     Dossier,
     /// Alt+Shift+G, looking for files nobody has touched in years.
     Ghosts,
+    /// `*` in Alt+F10's tree, reading everything under a directory.
+    Tree,
 }
 
 impl TransferKind {
@@ -143,6 +147,7 @@ impl TransferKind {
             TransferKind::Duplicates => tc!("job", "Find duplicates"),
             TransferKind::Dossier => tc!("job", "Dossier"),
             TransferKind::Ghosts => tc!("job", "Ghost hunt"),
+            TransferKind::Tree => tc!("job", "Open the tree"),
         }
     }
 }
@@ -269,6 +274,8 @@ pub(super) enum JobUpdate {
     Dossier(Box<Dossier>),
     /// What a ghost hunt found.
     Ghosts(Ghosts),
+    /// What `*` read of a tree.
+    Tree(TreeFound),
     Finished(Result<Transfer, String>),
 }
 
@@ -873,6 +880,7 @@ impl AppState {
             did: Vec::new(),
             duplicates: None,
             ghosts: None,
+            tree: None,
             dossier: None,
         });
     }
@@ -986,6 +994,7 @@ impl AppState {
                 Ok(JobUpdate::Did(done)) => job.did.push(done),
                 Ok(JobUpdate::Duplicates(found)) => job.duplicates = Some(found),
                 Ok(JobUpdate::Ghosts(found)) => job.ghosts = Some(found),
+                Ok(JobUpdate::Tree(found)) => job.tree = Some(found),
                 Ok(JobUpdate::Dossier(found)) => job.dossier = Some(found),
                 Ok(JobUpdate::Finished(result)) => {
                     finished = Some(result);
@@ -1019,7 +1028,7 @@ impl AppState {
 
         // An entry copied out to be looked at changed nothing anyone can
         // see: the panels, their selections and sizes stay as they are.
-        if !matches!(job.kind, TransferKind::Checksum | TransferKind::Duplicates | TransferKind::Dossier | TransferKind::Ghosts) && job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
+        if !matches!(job.kind, TransferKind::Checksum | TransferKind::Duplicates | TransferKind::Dossier | TransferKind::Ghosts | TransferKind::Tree) && job.after.as_ref().is_none_or(|after| !after.to_scratch()) {
             // Both panels: a move empties one and fills the other, and a copy
             // into the same directory shows up on the side it came from.
             self.reload_panel(Side::Left, None);
@@ -1031,6 +1040,11 @@ impl AppState {
             // may have walked through them halfway, so it goes too.
             self.dir_sizes.clear();
             self.cancel_dir_sizes();
+        }
+
+        // What `*` read is kept, stopped or not.
+        if let Some(found) = job.tree.take() {
+            self.take_tree(found);
         }
 
         // The offer to quit covered this job, and this job is over.
@@ -1087,7 +1101,7 @@ impl AppState {
                 let (job_title, done) = (job.kind.title(), job.done);
                 self.display_error(match job.kind {
                     TransferKind::Delete => tn!(done, "{job_title} cancelled after {done} entry", "{job_title} cancelled after {done} entries", job_title, done),
-                    TransferKind::Trash | TransferKind::Undo | TransferKind::DirEdit | TransferKind::Restore => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
+                    TransferKind::Trash | TransferKind::Undo | TransferKind::DirEdit | TransferKind::Restore | TransferKind::Tree => tn!(done, "{job_title} cancelled after {done} item", "{job_title} cancelled after {done} items", job_title, done),
                     _ => t!("{job_title} cancelled after {size}", job_title, size = crate::utils::format_size(done)),
                 })
             }

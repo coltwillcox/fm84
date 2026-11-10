@@ -2087,3 +2087,19 @@ msgstr Η ανάγνωση του κάδου χρειάζεται πλήρη π�
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr Το macOS δεν λέει από πού ήρθαν όσα είναι στον κάδο: αντιγράψτε τα έξω με F5
+
+msgid  Directory tree
+msgstr Δέντρο καταλόγων
+
+msgctxt job
+msgid   Open the tree
+msgstr  Άνοιγμα δέντρου
+
+msgid  Opened the first {count} directories
+msgstr Άνοιξαν οι πρώτοι {count} κατάλογοι
+
+msgid  Reading the tree
+msgstr Ανάγνωση του δέντρου
+
+msgid  Not the root of the drive
+msgstr Όχι η ρίζα του δίσκου

@@ -23,6 +23,12 @@ mod screens;
 mod tests;
 
 pub(crate) use self::launch::{detach, open_with_default};
+
+/// The mouse, as the terminal would send it, for the drawing's tests.
+#[cfg(test)]
+pub(crate) fn handle_mouse_for_tests(app_state: &mut AppState, event: MouseEvent) -> bool {
+    mouse_to(app_state, event)
+}
 use self::{file_ops::*, launch::*, mouse::*, panel::*, screens::*};
 
 pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
@@ -74,8 +80,8 @@ fn handle_key(app_state: &mut AppState, key: KeyEvent) -> bool {
     if app_state.workers.job.is_some() {
         return job_key(app_state, key);
     }
-    // F10 means the same over everything else.
-    if key.code == KeyCode::F(10) {
+    // F10 means the same over everything else - Alt+F10, the tree, aside.
+    if key.code == KeyCode::F(10) && !key.modifiers.contains(KeyModifiers::ALT) {
         app_state.stay_put = key.modifiers.contains(KeyModifiers::SHIFT);
         return !request_quit(app_state);
     }
@@ -109,7 +115,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
     let clear = app_state.dialog.is_none() && app_state.error.is_none();
     let in_editor = clear && app_state.is_editing();
     let in_viewer = clear && app_state.is_viewing();
-    let in_panel = clear && app_state.workers.job.is_none() && matches!(app_state.screen, Screen::Panels) && !app_state.panel_busy(app_state.active_side);
+    // Not in a panel showing its tree, where the files behind it cannot be
+    // seen to be acted on.
+    let in_panel = clear && app_state.workers.job.is_none() && matches!(app_state.screen, Screen::Panels) && !app_state.panel_busy(app_state.active_side) && app_state.panel(app_state.active_side).tree.is_none();
 
     // Alt+* inverts the directories as well as the files. Ctrl is an alias
     // for the terminals that can report it; most send Ctrl+* as a bare * or

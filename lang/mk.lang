@@ -2087,3 +2087,19 @@ msgstr Читањето на ѓубрето бара целосен приста
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS не кажува од каде дошло она во ѓубрето: копирајте го надвор со F5
+
+msgid  Directory tree
+msgstr Дрво на папки
+
+msgctxt job
+msgid   Open the tree
+msgstr  Отвори го дрвото
+
+msgid  Opened the first {count} directories
+msgstr Отворени се првите {count} папки
+
+msgid  Reading the tree
+msgstr Читање на дрвото
+
+msgid  Not the root of the drive
+msgstr Не коренот на дискот

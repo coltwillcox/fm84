@@ -315,6 +315,35 @@ pub fn load_directory_rows(path: &Path, options: &Options) -> Result<Vec<Item>, 
 /// Directories before files whichever way the rest runs, unless F11 mixes
 /// them in, then the chosen key, with the name settling ties so equal sizes or
 /// dates still list steadily.
+/// The directories in `path` - a link to one among them - by name, hidden
+/// ones as F11 says, for the tree. Nothing else in it is looked at past
+/// what readdir says, but a link, which is followed to see what it is.
+pub fn list_subdirs(path: &Path, options: &Options) -> Result<Vec<OsString>, Error> {
+    let mut dirs: Vec<OsString> = Vec::new();
+    for entry in read_dir(path)?.flatten() {
+        let Ok(file_type) = entry.file_type() else { continue };
+        let metadata = if file_type.is_symlink() { fs::metadata(entry.path()).ok() } else { None };
+        let is_dir = if file_type.is_symlink() { metadata.as_ref().is_some_and(fs::Metadata::is_dir) } else { file_type.is_dir() };
+        if !is_dir {
+            continue;
+        }
+        let name = entry.file_name();
+        // The hidden attribute is in the metadata on Windows; elsewhere the
+        // name says.
+        let metadata = if cfg!(windows) { metadata.or_else(|| entry.metadata().ok()) } else { metadata };
+        if !options.show_hidden && is_hidden(&name.to_string_lossy(), metadata.as_ref()) {
+            continue;
+        }
+        dirs.push(name);
+    }
+    let key = |name: &OsString| {
+        let text = name.to_string_lossy().into_owned();
+        if options.case_sensitive { text } else { text.to_lowercase() }
+    };
+    dirs.sort_by_cached_key(key);
+    Ok(dirs)
+}
+
 fn compare_rows(a: &Item, b: &Item, options: &Options) -> std::cmp::Ordering {
     use std::cmp::Ordering;
 

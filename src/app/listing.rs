@@ -263,6 +263,9 @@ impl AppState {
     /// A panel on its way somewhere else is left to get there: what it lands
     /// on is read fresh anyway.
     pub fn reload_panel(&mut self, side: Side, prefer: Option<&std::ffi::OsStr>) {
+        // A tree on show is read again too: a job may have made or taken
+        // away a directory in it.
+        self.reread_tree(side);
         if self.panel(side).listing.as_ref().is_some_and(|pending| pending.navigate) {
             return;
         }

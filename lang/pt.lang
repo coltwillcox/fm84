@@ -2087,3 +2087,19 @@ msgstr Ler a lixeira exige acesso total ao disco para este terminal, em System S
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr O macOS não diz de onde veio o que está na lixeira: copie para fora com F5
+
+msgid  Directory tree
+msgstr Árvore de pastas
+
+msgctxt job
+msgid   Open the tree
+msgstr  Abrir a árvore
+
+msgid  Opened the first {count} directories
+msgstr Abertas as primeiras {count} pastas
+
+msgid  Reading the tree
+msgstr Lendo a árvore
+
+msgid  Not the root of the drive
+msgstr Não a raiz da unidade

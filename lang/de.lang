@@ -2087,3 +2087,19 @@ msgstr Den Papierkorb zu lesen braucht vollen Festplattenzugriff für dieses Ter
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS sagt nicht, woher etwas im Papierkorb kam: mit F5 herauskopieren
+
+msgid  Directory tree
+msgstr Verzeichnisbaum
+
+msgctxt job
+msgid   Open the tree
+msgstr  Baum öffnen
+
+msgid  Opened the first {count} directories
+msgstr Die ersten {count} Verzeichnisse geöffnet
+
+msgid  Reading the tree
+msgstr Lese den Baum
+
+msgid  Not the root of the drive
+msgstr Nicht die Wurzel des Laufwerks

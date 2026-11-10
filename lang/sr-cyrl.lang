@@ -2125,3 +2125,19 @@ msgstr Читање смећа тражи пун приступ диску за 
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS не каже одакле је дошло оно у смећу: копирајте га напоље са F5
+
+msgid  Directory tree
+msgstr Стабло директоријума
+
+msgctxt job
+msgid   Open the tree
+msgstr  Отвори стабло
+
+msgid  Opened the first {count} directories
+msgstr Отворено првих {count} директоријума
+
+msgid  Reading the tree
+msgstr Читање стабла
+
+msgid  Not the root of the drive
+msgstr Не корен диска

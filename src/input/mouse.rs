@@ -83,6 +83,24 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     if (viewing || editing) && scroll_bar_mouse(app_state, mouse_event.kind, column, row) {
         return true;
     }
+    // Over a panel showing its tree, the wheel goes up and down it and a
+    // click only makes it the active one; the rows behind it are not there
+    // to be clicked.
+    if !viewing
+        && !editing
+        && let Some(side) = Side::BOTH.into_iter().find(|&side| app_state.drawn.table_areas[side].contains(Position::new(column, row)))
+        && app_state.panel(side).tree.is_some()
+    {
+        match mouse_event.kind {
+            MouseEventKind::Down(MouseButton::Left) => tree_click(app_state, side, column, row),
+            MouseEventKind::ScrollDown | MouseEventKind::ScrollUp => {
+                app_state.active_side = side;
+                app_state.tree_move(if mouse_event.kind == MouseEventKind::ScrollDown { 1 } else { -1 });
+            }
+            _ => {}
+        }
+        return true;
+    }
     match mouse_event.kind {
         // A middle click closes the tab under it, as in a browser.
         MouseEventKind::Down(MouseButton::Middle) if !viewing && !editing => {
@@ -161,6 +179,29 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
         _ => {}
     }
     true
+}
+
+/// A click on a panel showing its tree: on a row, the cursor there - on its
+/// mark, the directory opened or closed, and a second time, Enter - and
+/// anywhere else in the panel, only that panel made the active one.
+fn tree_click(app_state: &mut AppState, side: Side, column: u16, row: u16) {
+    let now = Instant::now();
+    let double = app_state.last_click.is_some_and(|last| now.duration_since(last.at) < Duration::from_millis(500) && last.position == (column, row));
+    app_state.last_click = Some(LastClick { at: now, position: (column, row) });
+    app_state.active_side = side;
+    let Some((area, start)) = app_state.drawn.tree_rows[side].filter(|(area, _)| area.contains(Position::new(column, row))) else {
+        return;
+    };
+    let index = start + (row - area.y) as usize;
+    let plain = app_state.options.icon_style == crate::options::IconStyle::Plain;
+    let Some(tree_row) = app_state.panel(side).tree.as_ref().and_then(|tree| tree.rows.get(index)) else {
+        return;
+    };
+    // The mark is the two cells before the name: itself and a space.
+    let mark_at = area.x as usize + crate::utils::display_width(&crate::ui::tree_prefix(tree_row, plain)).saturating_sub(2);
+    let on_mark = (mark_at..mark_at + 2).contains(&(column as usize));
+    // A double click on the mark is two clicks on it, not Enter.
+    app_state.tree_click(side, index, on_mark, double && !on_mark);
 }
 
 /// The left button on the viewer's or the editor's scroll bars: pressed on a

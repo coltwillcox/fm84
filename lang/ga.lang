@@ -2204,3 +2204,19 @@ msgstr Chun an bruscar a léamh, teastaíonn Lánrochtain Diosca don teirminéal
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr Ní insíonn macOS cá as ar tháinig a bhfuil sa bhruscar: cóipeáil amach é le F5
+
+msgid  Directory tree
+msgstr Crann comhadlann
+
+msgctxt job
+msgid   Open the tree
+msgstr  Oscail an crann
+
+msgid  Opened the first {count} directories
+msgstr Osclaíodh na chéad {count} comhadlann
+
+msgid  Reading the tree
+msgstr Ag léamh an chrainn
+
+msgid  Not the root of the drive
+msgstr Ní fréamh an tiomántáin

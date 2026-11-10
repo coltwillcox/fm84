@@ -2126,3 +2126,19 @@ msgstr Citirea coșului cere acces complet la disc pentru acest terminal, în Sy
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS nu spune de unde a venit ce e în coș: copiați-l afară cu F5
+
+msgid  Directory tree
+msgstr Arborele directoarelor
+
+msgctxt job
+msgid   Open the tree
+msgstr  Deschide arborele
+
+msgid  Opened the first {count} directories
+msgstr Au fost deschise primele {count} de directoare
+
+msgid  Reading the tree
+msgstr Se citește arborele
+
+msgid  Not the root of the drive
+msgstr Nu rădăcina unității

@@ -33,9 +33,11 @@ mod scroll_bars;
 mod spans;
 #[cfg(test)]
 mod tests;
+mod tree;
 
 pub use self::help::*;
-use self::{bars::*, checksums::*, dossier::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*};
+pub use self::tree::tree_prefix;
+use self::{bars::*, checksums::*, dossier::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*, tree::*};
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style {

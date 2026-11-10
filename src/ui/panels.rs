@@ -509,6 +509,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
         .column_spacing(1);
     f.render_stateful_widget(table_left, chunks[0], &mut state_left_view);
     draw_space_map(f, inner_left, app_state, Side::Left, offset_left);
+    drawn.tree_rows[Side::Left] = draw_tree(f, inner_left, app_state, Side::Left);
 
     // Cache the separator string based on height
     let separator_height = chunks[0].height;
@@ -528,6 +529,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     let table_right = Table::new(rows_right, widths).block(block_right).header(header).row_highlight_style(table_style(!app_state.active_side.is_left())).column_spacing(1);
     f.render_stateful_widget(table_right, chunks[2], &mut state_right_view);
     draw_space_map(f, inner_right, app_state, Side::Right, offset_right);
+    drawn.tree_rows[Side::Right] = draw_tree(f, inner_right, app_state, Side::Right);
 
     // Preview takes over the panel the cursor is not in.
     if let Some(preview) = &app_state.preview {
@@ -540,6 +542,14 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     drawn.table_starts = [offset_left, offset_right];
 
     chunks[0].height
+}
+
+/// Alt+F10's tree, over the table just drawn in `inner`, when the panel is
+/// showing it.
+fn draw_tree(f: &mut ratatui::Frame<'_>, inner: Rect, app_state: &AppState, side: Side) -> Option<(Rect, usize)> {
+    let panel = app_state.panel(side);
+    let tree = panel.tree.as_ref()?;
+    Some(render_tree(f, inner, tree, app_state.active_side == side, &panel.dir, app_state.options.icon_style == IconStyle::Plain))
 }
 
 /// Alt+Shift+Enter's space map, behind the rows just drawn in `inner` - the

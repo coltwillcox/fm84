@@ -2088,3 +2088,19 @@ msgstr Leer la papelera requiere acceso total al disco para esta terminal, en Sy
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS no dice de dónde vino lo que hay en la papelera: cópielo fuera con F5
+
+msgid  Directory tree
+msgstr Árbol de carpetas
+
+msgctxt job
+msgid   Open the tree
+msgstr  Abrir el árbol
+
+msgid  Opened the first {count} directories
+msgstr Abiertas las primeras {count} carpetas
+
+msgid  Reading the tree
+msgstr Leyendo el árbol
+
+msgid  Not the root of the drive
+msgstr No la raíz de la unidad

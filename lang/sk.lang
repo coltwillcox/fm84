@@ -2126,3 +2126,19 @@ msgstr Čítanie koša vyžaduje pre tento terminál plný prístup k disku, v S
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS nehovorí, odkiaľ veci v koši prišli: skopírujte ich von pomocou F5
+
+msgid  Directory tree
+msgstr Strom priečinkov
+
+msgctxt job
+msgid   Open the tree
+msgstr  Otvoriť strom
+
+msgid  Opened the first {count} directories
+msgstr Otvorených prvých {count} priečinkov
+
+msgid  Reading the tree
+msgstr Čítanie stromu
+
+msgid  Not the root of the drive
+msgstr Nie koreň disku

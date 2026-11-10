@@ -14,6 +14,7 @@ mod scores;
 mod selection;
 mod settings;
 mod trash;
+mod tree;
 mod undo;
 mod viewing;
 

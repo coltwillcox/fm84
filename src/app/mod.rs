@@ -56,13 +56,14 @@ mod tabs;
 mod tests;
 mod text_input;
 mod trash_folder;
+mod tree;
 mod undo;
 mod user_menu;
 mod viewing;
 
 pub use self::{
     archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*,
-    multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
+    multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -489,6 +490,8 @@ pub struct Panel {
     /// Alt+Shift+Enter's space map: the directory it was asked for in. The
     /// bars show while the panel is there, and come back with it.
     pub space_map: Option<PathBuf>,
+    /// Alt+F10: the panel drawn as the tree of its drive's directories.
+    pub tree: Option<Tree>,
 }
 
 /// What the last frame drew, where, and how much room it had: written while
@@ -522,6 +525,9 @@ pub struct Drawn {
     /// The entry each side's table starts at - the offset it was drawn
     /// with, which a click is counted from.
     pub table_starts: [usize; 2],
+    /// Where each side's tree drew its rows, when it shows one, and the row
+    /// the first of them is - for a click to find the directory it is on.
+    pub tree_rows: [Option<(Rect, usize)>; 2],
     /// The row of the panels' paths, a click on either of which edits it as
     /// Ctrl+L does.
     pub path_bar_area: Rect,
@@ -661,6 +667,7 @@ impl AppState {
                 branch: None,
                 archive: None,
                 space_map: None,
+                tree: None,
             },
             right: Panel {
                 dir: dir_root.clone(),
@@ -679,6 +686,7 @@ impl AppState {
                 branch: None,
                 archive: None,
                 space_map: None,
+                tree: None,
             },
             drawn: Drawn { find_files_page: 10, ..Drawn::default() },
             recall: Recall {

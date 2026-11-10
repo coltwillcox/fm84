@@ -2088,3 +2088,19 @@ msgstr Lire la corbeille demande l’accès complet au disque pour ce terminal, 
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS ne dit pas d’où vient ce qui est dans la corbeille : copiez-le dehors avec F5
+
+msgid  Directory tree
+msgstr Arborescence des dossiers
+
+msgctxt job
+msgid   Open the tree
+msgstr  Ouvrir l’arborescence
+
+msgid  Opened the first {count} directories
+msgstr Les {count} premiers dossiers ouverts
+
+msgid  Reading the tree
+msgstr Lecture de l’arborescence
+
+msgid  Not the root of the drive
+msgstr Pas la racine du lecteur

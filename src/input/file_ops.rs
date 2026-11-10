@@ -41,6 +41,10 @@ pub(super) fn toggle_create(app_state: &mut AppState, is_dir: bool) {
         app_state.dialog = None;
         return;
     }
+    // The tree holds directories, and makes nothing else.
+    if !is_dir && app_state.panel(app_state.active_side).tree.is_some() {
+        return;
+    }
     // Inside an archive, made in it.
     if app_state.archive_to_write(app_state.active_side).is_err() {
         return;
@@ -171,7 +175,8 @@ pub(super) fn handle_create_confirm(app_state: &mut AppState) {
         return;
     }
 
-    let parent_path = &app_state.panel(app_state.active_side).dir;
+    // In the tree, made in the directory under its cursor.
+    let parent_path = app_state.tree_cursor(app_state.active_side).unwrap_or_else(|| app_state.panel(app_state.active_side).dir.clone());
     let path = parent_path.join(&name);
     if let Some(archive) = app_state.panel_archive(app_state.active_side).cloned() {
         let Ok(inner) = path.strip_prefix(&archive) else {
@@ -182,6 +187,12 @@ pub(super) fn handle_create_confirm(app_state: &mut AppState) {
         }
         let make = vec![(inner.to_path_buf(), is_dir)];
         return app_state.start_repack(archive, crate::fs_ops::Repack { make, ..Default::default() }, false, Clashes::Ask, Some(path));
+    }
+    if app_state.panel(app_state.active_side).tree.is_some() {
+        return match create_directory(path.clone()) {
+            Ok(()) => app_state.tree_reveal(path),
+            Err(e) => app_state.display_error(e.to_string()),
+        };
     }
     let result = if is_dir { create_directory(path) } else { create_file(path) };
     match result {

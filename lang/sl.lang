@@ -2166,3 +2166,19 @@ msgstr Branje koša zahteva poln dostop do diska za ta terminal, v System Settin
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS ne pove, od kod je prišlo to, kar je v košu: skopirajte ven z F5
+
+msgid  Directory tree
+msgstr Drevo map
+
+msgctxt job
+msgid   Open the tree
+msgstr  Odpri drevo
+
+msgid  Opened the first {count} directories
+msgstr Odprtih prvih {count} map
+
+msgid  Reading the tree
+msgstr Branje drevesa
+
+msgid  Not the root of the drive
+msgstr Ne koren diska

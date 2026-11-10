@@ -2086,3 +2086,19 @@ msgstr Четенето на кошчето изисква пълен достъ
 
 msgid  macOS does not say where things in the trash came from: copy it out with F5
 msgstr macOS не казва откъде е дошло онова в кошчето: копирайте го навън с F5
+
+msgid  Directory tree
+msgstr Дърво на директориите
+
+msgctxt job
+msgid   Open the tree
+msgstr  Отваряне на дървото
+
+msgid  Opened the first {count} directories
+msgstr Отворени са първите {count} директории
+
+msgid  Reading the tree
+msgstr Четене на дървото
+
+msgid  Not the root of the drive
+msgstr Не и коренът на устройството
