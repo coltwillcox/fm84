@@ -98,8 +98,9 @@ pub fn status(dir: &Path) -> Result<Status, String> {
         }
         let (x, y) = (record[0], record[1]);
         // A rename or copy gives where it came from next, which is not here
-        // any more.
-        if matches!(x, b'R' | b'C') {
+        // any more - one in the index, or one in the work tree, as git sees
+        // a file moved and then added with -N.
+        if matches!(x, b'R' | b'C') || matches!(y, b'R' | b'C') {
             records.next();
         }
         let mark = match (x, y) {
@@ -515,6 +516,28 @@ mod tests {
         // But an ignored file in an untracked one is ignored.
         let fresh = super::status(&dir.join("fresh")).unwrap();
         assert_eq!(fresh.mark(OsStr::new("x.log"), false), Some(Mark::Ignored));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A file moved and added with -N is a rename in the work tree, which
+    /// git follows with where it came from: that is not a record of its own,
+    /// to mark whatever its letters past the third happen to name.
+    #[test]
+    fn a_rename_in_the_work_tree_marks_only_where_it_went() {
+        let Some(dir) = repository("worktree-rename") else {
+            return;
+        };
+        let run = |arguments: &[&str]| assert!(Command::new("git").arg("-C").arg(&dir).args(arguments).output().unwrap().status.success());
+        std::fs::write(dir.join("abcdefg.txt"), "a line long enough\nto be found again\nwhen it has moved\n").unwrap();
+        std::fs::write(dir.join("defg.txt"), "left alone\n").unwrap();
+        run(&["add", "."]);
+        run(&["-c", "user.name=fm84", "-c", "user.email=fm84@localhost", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "two"]);
+        std::fs::rename(dir.join("abcdefg.txt"), dir.join("moved.txt")).unwrap();
+        run(&["add", "-N", "moved.txt"]);
+
+        let status = status(&dir).unwrap();
+        assert_eq!(status.mark(OsStr::new("moved.txt"), false), Some(Mark::Modified));
+        assert_eq!(status.mark(OsStr::new("defg.txt"), false), None, "untouched");
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
