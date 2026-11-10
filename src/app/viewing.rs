@@ -305,7 +305,7 @@ impl AppState {
                 Some(_) => None,
                 None => {
                     state.scroll_offset = state.total_lines.saturating_sub(height);
-                    Some(crate::viewer::Follow::of(&state.file_path))
+                    Some(crate::viewer::Follow::of(&state.file_path, state.content_lines.len()))
                 }
             };
         }

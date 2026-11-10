@@ -93,13 +93,22 @@ pub struct Follow {
     /// The file followed, where the system says which it is: another put in
     /// its place - a log turned over - is read from its start.
     pub id: Option<(u64, u64)>,
+    /// The most lines held while following: what was open when it began,
+    /// or FOLLOW_KEEP_LINES if that is more. A log written to for hours is
+    /// let go of from the top, as a terminal's scrollback is, rather than
+    /// held whole.
+    keep: usize,
 }
 
+/// The fewest lines following keeps of a file that goes on growing.
+pub const FOLLOW_KEEP_LINES: usize = 100_000;
+
 impl Follow {
-    /// Following the file at `path` from where it now ends.
-    pub fn of(path: &Path) -> Self {
+    /// Following the file at `path`, `lines` long now, from where it ends.
+    pub fn of(path: &Path, lines: usize) -> Self {
         Follow {
             id: std::fs::metadata(path).ok().and_then(|metadata| file_id(&metadata)),
+            keep: lines.max(FOLLOW_KEEP_LINES),
             ..Default::default()
         }
     }
@@ -339,6 +348,21 @@ impl ViewerState {
         self.content_lines.extend(carried.split('\n').map(|line| line.strip_suffix('\r').unwrap_or(line).to_string()));
         let widest = self.content_lines[from..].iter().map(|line| crate::utils::line_display_width(line)).max().unwrap_or(0);
         self.max_line_width = self.max_line_width.max(widest);
+        let over = self.content_lines.len().saturating_sub(follow.keep);
+        if over > 0 {
+            self.content_lines.drain(..over);
+            // What was selected moves up with its lines, and goes when they do.
+            self.selection = self.selection.and_then(|(anchor, cursor)| {
+                let up = |(line, col): (usize, usize)| line.checked_sub(over).map(|line| (line, col));
+                Some((up(anchor)?, up(cursor)?))
+            });
+            self.scroll_offset = self.scroll_offset.saturating_sub(over);
+            // Rows name lines by their place, which has moved: broken again
+            // by whoever is wrapping.
+            self.rows.clear();
+            self.rows_width = 0;
+            self.total_lines = self.line_count();
+        }
         if self.rows.is_empty() {
             self.total_lines = self.line_count();
         }

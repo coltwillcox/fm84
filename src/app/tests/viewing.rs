@@ -93,6 +93,34 @@ fn a_followed_file_grows_in_the_viewer() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// A log followed for long is let go of from the top once it passes what
+/// following keeps, the view still at its end.
+#[test]
+fn a_followed_file_keeps_only_its_last_lines() {
+    use crate::viewer::FOLLOW_KEEP_LINES;
+    use std::io::Write;
+    let dir = std::env::temp_dir().join(format!("fm84-follow-keep-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let log = dir.join("app.log");
+    std::fs::write(&log, "first\n").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.drawn.viewer_viewport_height = 10;
+    app_state.open_viewer(log.clone()).unwrap();
+    app_state.viewer_toggle_follow();
+
+    let more: String = (0..FOLLOW_KEEP_LINES + 10).map(|n| format!("line {n}\n")).collect();
+    std::fs::OpenOptions::new().append(true).open(&log).unwrap().write_all(more.as_bytes()).unwrap();
+    app_state.poll_follow();
+    let state = app_state.viewer().unwrap();
+    assert_eq!(state.content_lines.len(), FOLLOW_KEEP_LINES);
+    assert_eq!(state.content_lines.last().map(String::as_str), Some(""));
+    assert_eq!(state.content_lines[0], "line 11");
+    assert_eq!((state.total_lines, state.scroll_offset), (FOLLOW_KEEP_LINES, FOLLOW_KEEP_LINES - 10), "at the end");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// A log turned over - moved away, and a new one written in its place -
 /// is followed from its start, however long it is by then.
 #[cfg(unix)]
