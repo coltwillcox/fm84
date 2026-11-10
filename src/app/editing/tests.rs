@@ -456,3 +456,38 @@ fn line_widths_keep_up_with_every_edit() {
     check(&app_state, "Replace all");
     std::fs::remove_file(path).unwrap();
 }
+
+/// Ctrl+/ moves the cursor with the text after the mark, and leaves one in
+/// the indent before it where it was.
+#[test]
+fn commenting_keeps_the_cursor_with_its_text() {
+    let (mut app_state, path) = editor_with("comment-cursor", "    foo\n");
+    let at = |app_state: &mut AppState, col: usize| {
+        let state = app_state.editor_mut().unwrap();
+        (state.cursor_line, state.cursor_col) = (0, col);
+    };
+    let cursor = |app_state: &AppState| app_state.editor().unwrap().cursor_col;
+
+    // In the indent: stays.
+    at(&mut app_state, 1);
+    app_state.editor_toggle_comment();
+    assert_eq!(app_state.editor().unwrap().lines[0], "    # foo");
+    assert_eq!(cursor(&app_state), 1);
+    app_state.editor_toggle_comment();
+    assert_eq!(app_state.editor().unwrap().lines[0], "    foo");
+    assert_eq!(cursor(&app_state), 1);
+
+    // On the text: goes with it, there and back.
+    at(&mut app_state, 5);
+    app_state.editor_toggle_comment();
+    assert_eq!(cursor(&app_state), 7, "still on the 'o'");
+    app_state.editor_toggle_comment();
+    assert_eq!(cursor(&app_state), 5);
+
+    // On the mark itself, taken out: to where it was.
+    app_state.editor_toggle_comment();
+    at(&mut app_state, 5);
+    app_state.editor_toggle_comment();
+    assert_eq!(cursor(&app_state), 4);
+    std::fs::remove_file(path).unwrap();
+}

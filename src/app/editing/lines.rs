@@ -153,23 +153,27 @@ impl AppState {
             // would have it cut a character in two.
             let commented = !filled.is_empty() && filled.iter().all(|&index| state.lines[index][indent_of(&state.lines[index]).len()..].starts_with(mark));
             let column = filled.iter().map(|&index| indent_of(&state.lines[index]).len()).min().unwrap_or(0);
-            let mut cursor_shift: isize = 0;
+            // Where the cursor goes on its line: along with the text after
+            // what changed, and left where it is in the indent before it.
+            let mut cursor_col = state.cursor_col;
             for &index in &filled {
                 let line = &mut state.lines[index];
-                let change = if commented {
+                // Offsets in the indent and the mark, which are ASCII: bytes
+                // and characters alike.
+                let (at, length) = if commented {
                     let at = indent_of(line).len();
                     let end = at + mark.len();
                     let end = if line[end..].starts_with(' ') { end + 1 } else { end };
                     line.replace_range(at..end, "");
-                    -((end - at) as isize)
+                    (at, -((end - at) as isize))
                 } else {
                     // At the shallowest indent, which is spaces and tabs - a
                     // byte offset that is a character one too.
                     line.insert_str(column, &format!("{mark} "));
-                    (mark.len() + 1) as isize
+                    (column, (mark.len() + 1) as isize)
                 };
-                if index == state.cursor_line {
-                    cursor_shift = change;
+                if index == state.cursor_line && state.cursor_col >= at {
+                    cursor_col = state.cursor_col.saturating_add_signed(length).max(at);
                 }
             }
             if had_selection {
@@ -177,7 +181,7 @@ impl AppState {
                 state.cursor_line = last;
                 state.cursor_col = state.lines[last].chars().count();
             } else {
-                state.cursor_col = state.cursor_col.saturating_add_signed(cursor_shift).min(state.lines[state.cursor_line].chars().count());
+                state.cursor_col = cursor_col.min(state.lines[state.cursor_line].chars().count());
             }
             state.modified = true;
         }
