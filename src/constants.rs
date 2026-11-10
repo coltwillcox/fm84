@@ -13,6 +13,11 @@ pub const LISTING_WAIT: Duration = Duration::from_millis(150);
 // for one disk; the rest wait their turn.
 pub const SIZE_WORKERS: usize = 4;
 
+// Directory sizes kept before those the panels no longer show are let go
+// of. Each is a path and a number, but a long session of Alt+Shift+Enter
+// across a big disk would otherwise keep every one it ever counted.
+pub const SIZES_KEPT: usize = 10_000;
+
 // How long a click on a panel's git branch waits for git: for the list of
 // branches before saying it did not answer, and for a switch before going on
 // without it, to take the result in when it comes. Git starts up and reads a

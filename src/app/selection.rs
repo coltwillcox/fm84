@@ -262,6 +262,10 @@ impl AppState {
                 Err(e) => self.display_error(t!("Cannot calculate size: {e}", e)),
             }
         }
+        if self.dir_sizes.len() > crate::constants::SIZES_KEPT {
+            let (left, right) = (self.left.dir.clone(), self.right.dir.clone());
+            self.dir_sizes.retain(|path, _| path.parent().is_some_and(|parent| parent == left || parent == right));
+        }
         // Workers freed, for what is waiting.
         self.start_queued_sizes();
     }

@@ -237,3 +237,21 @@ fn compare_times_at_the_clocks_end() {
     let (on_left, on_right) = crate::app::compare::differences(&[file(far - std::time::Duration::from_secs(10))], &[file(far)]);
     assert!(on_left.is_empty() && on_right.contains(std::ffi::OsStr::new("f")));
 }
+
+/// Past SIZES_KEPT, the sizes kept are only those of what the panels show.
+#[test]
+fn sizes_of_directories_out_of_sight_are_let_go_of_past_the_limit() {
+    let mut app_state = AppState::new();
+    let (left, right) = (std::path::PathBuf::from("/left"), std::path::PathBuf::from("/right"));
+    app_state.left.dir = left.clone();
+    app_state.right.dir = right.clone();
+    app_state.dir_sizes.insert(left.join("shown"), 1);
+    app_state.dir_sizes.insert(right.join("shown"), 2);
+    for n in 0..crate::constants::SIZES_KEPT {
+        app_state.dir_sizes.insert(std::path::PathBuf::from(format!("/elsewhere/{n}")), 3);
+    }
+    app_state.poll_dir_sizes();
+    let mut kept: Vec<_> = app_state.dir_sizes.keys().cloned().collect();
+    kept.sort();
+    assert_eq!(kept, [left.join("shown"), right.join("shown")]);
+}
