@@ -1971,3 +1971,9 @@ msgstr Enter - Åpne
 
 msgid  Cannot pack "{path}" into itself
 msgstr Kan ikke pakke "{path}" inn i seg selv
+
+msgid  Night drive when left alone
+msgstr Nattkjøring når den blir latt i fred
+
+msgid  {minutes} min
+msgstr {minutes} min

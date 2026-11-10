@@ -29,7 +29,12 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
     if !event::poll(Duration::from_millis(100))? {
         return Ok(true);
     }
-    match event::read()? {
+    let event = event::read()?;
+    // Whatever wakes fm84 from the night drive does only that.
+    if matches!(event, Event::Key(_) | Event::Paste(_) | Event::Mouse(_)) && app_state.wake() {
+        return Ok(true);
+    }
+    match event {
         // Windows reports a press and a release for every key. Acting on the
         // release too would run each action twice, and toggles would cancel
         // themselves out. Repeat is kept so held keys still work.

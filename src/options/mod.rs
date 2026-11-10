@@ -246,6 +246,8 @@ const TAB_WIDTHS: [usize; 3] = [2, 4, 8];
 /// Zero turns highlighting off.
 const HIGHLIGHT_LIMITS_KIB: [u64; 4] = [0, 256, 512, 2048];
 const LARGE_FILE_LIMITS_MIB: [u64; 3] = [16, 64, 256];
+/// Zero turns the night drive off.
+const NIGHT_DRIVE_MINUTES: [u64; 7] = [0, 1, 3, 5, 10, 15, 30];
 
 /// Everything F11 can change, as it is kept in the config file.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -304,6 +306,9 @@ pub struct Options {
     /// Turbo: the theme's neon turned up, scanlines over the panels, and
     /// the logo blinking in F1.
     pub turbo: bool,
+    /// Left alone this many minutes, the panels give way to a drive down
+    /// the Outrun grid until the next key. Zero, and they never do.
+    pub night_drive_minutes: u64,
     pub tab_width: usize,
     /// The gutter in the viewer and the editor.
     pub line_numbers: bool,
@@ -362,6 +367,7 @@ impl Default for Options {
             outrun_bar: false,
             burst_delete: false,
             turbo: false,
+            night_drive_minutes: 0,
             tab_width: 4,
             line_numbers: true,
             scroll_bar: ScrollBarStyle::Heavy,

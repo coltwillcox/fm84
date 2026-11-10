@@ -1158,3 +1158,48 @@ fn turbo_turns_the_neon_up() {
     crate::display::apply(&app_state.options);
     assert_eq!(palette().title, plain.0);
 }
+
+/// F11's night drive: left alone long enough on the panels, and only with
+/// the option on, the screen goes to the grid with the logo over it; what
+/// comes in next only wakes it, and the panels are back as they were.
+#[test]
+fn left_alone_fm84_drives_until_a_key() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    let minutes = |count: u64| std::time::Instant::now().checked_sub(std::time::Duration::from_secs(count * 60)).unwrap();
+    let long_ago = minutes(5);
+    app_state.last_input = long_ago;
+    app_state.poll_night_drive();
+    assert!(app_state.night_drive.is_none(), "not with the option off");
+
+    // As long as F11 says, and no sooner.
+    app_state.options.night_drive_minutes = 5;
+    app_state.last_input = minutes(4);
+    app_state.poll_night_drive();
+    assert!(app_state.night_drive.is_none(), "not before it has been long enough");
+
+    app_state.last_input = long_ago;
+    app_state.dialog = Some(Dialog::Help);
+    app_state.poll_night_drive();
+    assert!(app_state.night_drive.is_none(), "not over something open");
+    app_state.dialog = None;
+
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let panels: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+
+    app_state.poll_night_drive();
+    assert!(app_state.night_drive.is_some());
+    render_ui(&mut terminal, &mut app_state);
+    let screen: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+    assert!(screen.contains("╚═╝     ╚═╝     ╚═╝"), "the logo");
+    assert!(!screen.contains("F10"), "the key bar gone with the panels");
+
+    // Woken, and nothing else: the panels as they were.
+    assert!(app_state.wake(), "a key that only wakes");
+    assert!(!app_state.wake(), "the next one goes through");
+    render_ui(&mut terminal, &mut app_state);
+    let back: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+    assert_eq!(back, panels);
+}

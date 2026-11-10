@@ -1972,3 +1972,9 @@ msgstr Enter - Aç
 
 msgid  Cannot pack "{path}" into itself
 msgstr "{path}" kendi içine paketlenemez
+
+msgid  Night drive when left alone
+msgstr Yalnız bırakılınca gece sürüşü
+
+msgid  {minutes} min
+msgstr {minutes} dk

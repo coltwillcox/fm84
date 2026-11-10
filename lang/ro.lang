@@ -2010,3 +2010,9 @@ msgstr Enter - Deschide
 
 msgid  Cannot pack "{path}" into itself
 msgstr Nu se poate împacheta „{path}” în el însuși
+
+msgid  Night drive when left alone
+msgstr Condus de noapte când e lăsat singur
+
+msgid  {minutes} min
+msgstr {minutes} min

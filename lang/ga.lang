@@ -2086,3 +2086,9 @@ msgstr Enter - Oscail
 
 msgid  Cannot pack "{path}" into itself
 msgstr Ní féidir "{path}" a phacáil isteach ann féin
+
+msgid  Night drive when left alone
+msgstr Tiomáint oíche nuair a fhágtar leis féin é
+
+msgid  {minutes} min
+msgstr {minutes} nóim

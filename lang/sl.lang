@@ -2049,3 +2049,9 @@ msgstr Enter - Odpri
 
 msgid  Cannot pack "{path}" into itself
 msgstr »{path}« ni mogoče stisniti vase
+
+msgid  Night drive when left alone
+msgstr Nočna vožnja, ko ostane sam
+
+msgid  {minutes} min
+msgstr {minutes} min

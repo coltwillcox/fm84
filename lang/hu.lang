@@ -1973,3 +1973,9 @@ msgstr Enter - Megnyitás
 
 msgid  Cannot pack "{path}" into itself
 msgstr Nem tömöríthető önmagába: „{path}”
+
+msgid  Night drive when left alone
+msgstr Éjszakai autózás, ha magára hagyják
+
+msgid  {minutes} min
+msgstr {minutes} perc

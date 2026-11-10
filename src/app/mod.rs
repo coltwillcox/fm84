@@ -43,6 +43,7 @@ mod info_column;
 mod jobs;
 mod listing;
 mod multi_rename;
+mod night_drive;
 mod open_with;
 mod preview;
 mod selection;
@@ -341,6 +342,10 @@ pub struct AppState {
     pub scores: crate::options::Scores,
     /// Rows bursting before a delete for good takes them.
     pub explosion: Option<Explosion>,
+    /// When a key, a paste or the mouse last came in, for the night drive.
+    pub last_input: Instant,
+    /// When the night drive began, while the screen is given over to it.
+    pub night_drive: Option<Instant>,
 }
 
 #[derive(Debug, Clone)]
@@ -709,6 +714,8 @@ impl AppState {
             basket: Vec::new(),
             info_cache: HashMap::new(),
             explosion: None,
+            last_input: Instant::now(),
+            night_drive: None,
             scores: if cfg!(test) { crate::options::Scores::default() } else { crate::options::Scores::load() },
             drive_strips: [Strip::default(), Strip::default()],
         }

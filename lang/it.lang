@@ -1972,3 +1972,9 @@ msgstr Invio - Apri
 
 msgid  Cannot pack "{path}" into itself
 msgstr Impossibile comprimere "{path}" dentro sé stesso
+
+msgid  Night drive when left alone
+msgstr Guida notturna se lasciato solo
+
+msgid  {minutes} min
+msgstr {minutes} min

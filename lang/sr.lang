@@ -2009,3 +2009,9 @@ msgstr Enter - Otvori
 
 msgid  Cannot pack "{path}" into itself
 msgstr Ne mogu da spakujem "{path}" u samog sebe
+
+msgid  Night drive when left alone
+msgstr Noćna vožnja kad ostane sam
+
+msgid  {minutes} min
+msgstr {minutes} min

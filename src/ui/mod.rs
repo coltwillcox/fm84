@@ -347,6 +347,19 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             return settled;
         }
 
+        // The night drive has the whole screen, drawn as Turbo draws when
+        // it is on; the panels are left as they were, for the next key.
+        if let Some(started) = app_state.night_drive {
+            let turbo = crate::display::turbo();
+            let frame = (started.elapsed().as_millis() / 100) as u64;
+            let scene = night_drive_scene(area.width as usize, area.height as usize, frame, !turbo || blink_lit());
+            f.render_widget(Paragraph::new(scene), area);
+            if turbo {
+                scanlines(f, area);
+            }
+            return settled;
+        }
+
         let chunks_main = screen_layout(area);
 
         settled.strips = Some(render_top_panel(f, chunks_main[0], app_state, drawn));

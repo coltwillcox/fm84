@@ -102,7 +102,7 @@ fn help() -> Vec<(&'static str, Vec<String>)> {
 }
 
 /// The logo from the README, between the keys and what fm84 is.
-const LOGO: [&str; 6] = [
+pub(super) const LOGO: [&str; 6] = [
     "███████╗███╗   ███╗ █████╗ ██╗  ██╗",
     "██╔════╝████╗ ████║██╔══██╗██║  ██║",
     "█████╗  ██╔████╔██║╚█████╔╝███████║",
@@ -239,7 +239,7 @@ pub fn key_runs(text: &str) -> Vec<(String, bool)> {
 /// off. Kept by the clock, as the frames come at least ten times a second,
 /// rather than by the terminal - many do not blink, and the blink modifiers
 /// are the marks the cursors are found by.
-fn blink_lit() -> bool {
+pub(super) fn blink_lit() -> bool {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(true, |since| since.as_millis() / 500 % 2 == 0)
 }
 

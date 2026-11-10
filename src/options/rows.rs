@@ -37,6 +37,7 @@ pub enum OptionRow {
     OutrunBar,
     BurstDelete,
     Turbo,
+    NightDrive,
     TabWidth,
     LineNumbers,
     ScrollBars,
@@ -47,7 +48,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 40] = [
+pub const OPTION_ROWS: [OptionRow; 41] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -80,6 +81,7 @@ pub const OPTION_ROWS: [OptionRow; 40] = [
     OptionRow::OutrunBar,
     OptionRow::BurstDelete,
     OptionRow::Turbo,
+    OptionRow::NightDrive,
     OptionRow::TabWidth,
     OptionRow::LineNumbers,
     OptionRow::ScrollBars,
@@ -125,6 +127,7 @@ impl OptionRow {
             OptionRow::OutrunBar => t!("Outrun progress bar"),
             OptionRow::BurstDelete => t!("Burst what is deleted for good"),
             OptionRow::Turbo => t!("Turbo: brighter neon, scanlines"),
+            OptionRow::NightDrive => t!("Night drive when left alone"),
             OptionRow::TabWidth => t!("Tab width"),
             OptionRow::LineNumbers => t!("Line numbers"),
             OptionRow::ScrollBars => t!("Scroll bars"),
@@ -242,6 +245,10 @@ impl Options {
             OptionRow::OutrunBar => on_off(self.outrun_bar),
             OptionRow::BurstDelete => on_off(self.burst_delete),
             OptionRow::Turbo => on_off(self.turbo),
+            OptionRow::NightDrive => match self.night_drive_minutes {
+                0 => t!("Off").to_string(),
+                minutes => t!("{minutes} min", minutes),
+            },
             OptionRow::TabWidth => self.tab_width.to_string(),
             OptionRow::LineNumbers => on_off(self.line_numbers),
             // Shown as it is drawn, both ways.
@@ -344,6 +351,7 @@ impl Options {
             OptionRow::OutrunBar => self.outrun_bar = !self.outrun_bar,
             OptionRow::BurstDelete => self.burst_delete = !self.burst_delete,
             OptionRow::Turbo => self.turbo = !self.turbo,
+            OptionRow::NightDrive => self.night_drive_minutes = step(&NIGHT_DRIVE_MINUTES, self.night_drive_minutes, forward),
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,
             OptionRow::ScrollBars => self.scroll_bar = step(&ScrollBarStyle::ALL, self.scroll_bar, forward),

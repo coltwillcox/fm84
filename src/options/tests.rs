@@ -43,6 +43,7 @@ fn a_saved_file_reads_back_the_same() {
         outrun_bar: true,
         burst_delete: true,
         turbo: true,
+        night_drive_minutes: 5,
     };
     assert_eq!(Options::parse(&options.serialize()), options);
     assert_eq!(Options::parse(&Options::default().serialize()), Options::default());
@@ -172,4 +173,23 @@ fn open_lines_read_as_extensions_and_command() {
     let lines = parse_associations(text);
     let read: Vec<(Vec<&str>, &str, bool)> = lines.iter().map(|line| (line.extensions.iter().map(String::as_str).collect(), line.command.as_str(), line.terminal)).collect();
     assert_eq!(read, [(vec!["pdf", "EPUB", "djvu"], "zathura {file}", false), (vec!["md"], "vim", true), (vec!["*"], "less", true)]);
+}
+
+/// F11's night drive steps through its minutes, Off among them, and a
+/// config can name any up to a day.
+#[test]
+fn the_night_drive_waits_as_many_minutes_as_asked() {
+    let mut options = Options::default();
+    assert_eq!(options.night_drive_minutes, 0, "off to begin with");
+    assert_eq!(options.value(OptionRow::NightDrive), t!("Off"));
+    options.cycle(OptionRow::NightDrive, true);
+    options.cycle(OptionRow::NightDrive, true);
+    assert_eq!(options.night_drive_minutes, 3);
+    assert_eq!(options.value(OptionRow::NightDrive), "3 min");
+    options.cycle(OptionRow::NightDrive, false);
+    options.cycle(OptionRow::NightDrive, false);
+    options.cycle(OptionRow::NightDrive, false);
+    assert_eq!(options.night_drive_minutes, 30, "round from Off to the longest");
+    assert_eq!(Options::parse("night_drive = 7\n").night_drive_minutes, 7);
+    assert_eq!(Options::parse("night_drive = forever\n").night_drive_minutes, 0);
 }

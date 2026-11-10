@@ -1972,3 +1972,9 @@ msgstr Enter - Abrir
 
 msgid  Cannot pack "{path}" into itself
 msgstr Não é possível compactar “{path}” dentro de si mesmo
+
+msgid  Night drive when left alone
+msgstr Condução noturna quando deixado sozinho
+
+msgid  {minutes} min
+msgstr {minutes} min
