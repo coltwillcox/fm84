@@ -1891,8 +1891,8 @@ msgstr Alt+G - Git : indexer, désindexer, abandonner, comparer
 msgid  R opens a branch, tag or commit as a folder
 msgstr R ouvre une branche, une étiquette ou un commit comme dossier
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - Dans le panier ; Alt+Maj+B le montre
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - Sur la mixtape ; Alt+Maj+B les liste
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Modifier les noms comme texte
@@ -2104,3 +2104,18 @@ msgstr Lecture de l’arborescence
 
 msgid  Not the top of the tree
 msgstr Pas le sommet de l’arborescence
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr sur un .001, assemble les morceaux ; trop gros, coupe
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - La corbeille comme dossier
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 ou Entrée remet, F8 vide
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Chasse aux fantômes : intouchés depuis des années
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 arborescence, Entrée envoie l’autre panneau

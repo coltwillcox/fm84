@@ -2004,8 +2004,8 @@ msgstr Alt+G - Git: stáitsigh, bain, caith amach, cuir i gcomparáid
 msgid  R opens a branch, tag or commit as a folder
 msgstr Osclaíonn R craobh, clib nó tiomantas mar fhillteán
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - Sa chiseán; taispeánann Alt+Shift+B é
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - Ar an mixtape; Alt+Shift+B liostaíonn iad
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Cuir na hainmneacha in eagar mar théacs
@@ -2220,3 +2220,18 @@ msgstr Ag léamh an chrainn
 
 msgid  Not the top of the tree
 msgstr Ní barr an chrainn
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr ar .001, nascann na píosaí; rómhór, roinneann
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - An bruscar mar fhillteán
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 nó Enter cuireann ar ais, F8 folmhaíonn
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Fiach taibhsí: gan bhaint le blianta
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 crann comhadlann, Enter seolann an ceann eile

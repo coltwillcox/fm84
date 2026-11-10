@@ -44,8 +44,8 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Alt+*` | Invert the selection of files and directories |
 | `Alt+Shift+Enter` / `Alt+Enter` | Size every directory in the panel, and map the space each entry takes |
 | `Ctrl+C` / `Alt+C` | Copy full paths / names to the clipboard |
-| `Alt+B` | Put what is chosen in the basket; in the basket, take it out |
-| `Alt+Shift+B` | Show the basket in the panel, all of it selected; again to go back |
+| `Alt+B` | Put what is chosen on the mixtape playing; on a tape shown, take it off |
+| `Alt+Shift+B` | List the mixtapes; with one shown, go back |
 
 ## 📝 File operations
 
@@ -57,7 +57,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `F3` | View file |
 | `F4` | Edit file (built-in, or the editor set under F11) |
 | `Shift+F4` | Create empty file |
-| `F5` | Copy (to the other panel, or wherever the dialog is told - into an archive too) |
+| `F5` | Copy (to the other panel, or wherever the dialog is told - into an archive too); on a `.001`, join the pieces back |
 | `F6` | Move (to the other panel, or wherever the dialog is told - into an archive too) |
 | `Alt+F5` / `Ctrl+Shift+F5` | Make a symbolic link (in the other panel, or wherever the dialog is told; `Tab` for a hard link) |
 | `F7` | Create directory (inside an archive too) |
@@ -66,6 +66,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `F9` | Open terminal (the one set under F11, if any) |
 | `F10` | Quit (twice during an operation; asks first about unsaved edits) |
 | `Shift+F10` | Quit, leaving `cd84` in the directory it started from |
+| `Alt+F10` | The panel as its drive's directory tree; again to go back |
 | `F11` | Options - panels, behaviour, appearance, viewer and editor |
 | `F12` | Preview cursor file in other panel |
 | `=` / `Shift+F3` | Compare two files side by side |
@@ -78,7 +79,42 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Alt+M` | User menu: run commands of your own (`E` edits them) |
 | `Alt+D` | Find duplicate files, fed to the panel with all but one of each selected |
 | `Alt+R` | Dossier: the directory summed up (`↑` `↓` scroll, `Esc` close) |
+| `Alt+Shift+G` | Ghost hunt: the files nobody has touched in two years, fed to the panel faded |
+| `Alt+T` | The trash as a folder; again to go back |
 | `Alt+G` | Git on what is chosen: `S` stage, `U` unstage, `D` discard changes (asks first), `C` compare with HEAD, `R` open a revision as a folder |
+
+## 📼 Mixtapes (Alt+Shift+B)
+
+| Key | Action |
+|-----|--------|
+| `Enter` / `1`…`9` | Show the tape in the panel, all of it selected, and play it |
+| `Space` | Play the tape, for Alt+B to add to |
+| `N` / `Insert` | A new tape (type its name, `Enter`) |
+| `R` / `F2` | Rename the tape |
+| `D` / `Delete` | Remove the tape - never its files |
+| `Esc` / `Alt+Shift+B` | Close |
+
+## 🗑️ The trash (Alt+T)
+
+| Key | Action |
+|-----|--------|
+| `F3` / `F5` | View / copy out, as from an archive |
+| `F6` / `Enter` on a file | Put back where it came from |
+| `F8` | Delete for good, asked first |
+| `Alt+T` | Back where the panel was |
+
+## 🌳 Directory tree (Alt+F10)
+
+| Key | Action |
+|-----|--------|
+| `↑` `↓`, `PageUp` / `PageDown`, `Home` / `End` | Move |
+| `→` / `+` | Open the directory, or go into it when it is open |
+| `←` / `-` | Close it, or go up to the one it is in |
+| `*` | Open everything below (a job; `Esc` stops it) |
+| `Enter` | Send the other panel there |
+| Typing | Go to the first directory on show starting with it (`↑` `↓` the others, `Esc` stop) |
+| `F5` / `F6` / `F7` / `F8` | Copy / move to the other panel, make a directory inside, delete |
+| `Esc` / `Alt+F10` | Back to the files, in the directory under the cursor |
 
 ## 🌿 Opening a revision (Alt+G, R)
 
@@ -98,6 +134,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `A` / `S` / `B` / `O` | Overwrite all / skip all / keep both all / overwrite all older |
 | `R` / `S` / `A` | Retry / skip / skip all, when an entry fails |
 | `R` / `C` | Check again / go on anyway, when the target has not the room |
+| `P` / `S` | Split into pieces / skip, a file too big for where it goes in one |
 | `D` | Delete permanently, when the trash will not take an entry |
 
 ## 🎨 Viewer
@@ -155,3 +192,4 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | Click a drive icon | Send the panel to that drive |
 | Click the git branch | List the repository's branches, to switch to another |
 | Click an F-key | Press it |
+| Click a tree's mark | Open or close that directory (double-click a name: `Enter`) |

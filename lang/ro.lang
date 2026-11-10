@@ -1928,8 +1928,8 @@ msgstr Alt+G - Git: pregătește, scoate, renunță, compară
 msgid  R opens a branch, tag or commit as a folder
 msgstr R deschide o ramură, o etichetă sau un commit ca dosar
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - În coș; Alt+Shift+B îl arată
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - Pe compilație; Alt+Shift+B le listează
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Editează numele ca text
@@ -2142,3 +2142,18 @@ msgstr Se citește arborele
 
 msgid  Not the top of the tree
 msgstr Nu vârful arborelui
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr pe un .001 unește părțile; prea mare, împarte
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - Coșul ca dosar
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 sau Enter pune înapoi, F8 golește
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Vânătoare de fantome: neatinse de ani
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 arborele directoarelor, Enter trimite celălalt

@@ -1890,8 +1890,8 @@ msgstr Alt+G - Git: köa, ta ur kö, kasta, jämför
 msgid  R opens a branch, tag or commit as a folder
 msgstr R öppnar en gren, en tagg eller en commit som mapp
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - I korgen; Alt+Shift+B visar den
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - På mixtapet; Alt+Shift+B listar dem
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Redigera namnen som text
@@ -2103,3 +2103,18 @@ msgstr Läser trädet
 
 msgid  Not the top of the tree
 msgstr Inte toppen av trädet
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr på en .001 fogas delarna ihop; för stor, delas
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - Papperskorgen som mapp
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 eller Enter lägger tillbaka, F8 tömmer
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Spökjakt: orört i åratal
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 katalogträd, Enter skickar den andra panelen

@@ -1890,8 +1890,8 @@ msgstr Alt+G - Git: подготви, отстрани, отфрли, споре
 msgid  R opens a branch, tag or commit as a folder
 msgstr R отвора гранка, ознака или комит како папка
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - Во кошничката; Alt+Shift+B ја прикажува
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - На микстејпот; Alt+Shift+B ги наведува
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Уреди ги имињата како текст
@@ -2103,3 +2103,18 @@ msgstr Читање на дрвото
 
 msgid  Not the top of the tree
 msgstr Не врвот на дрвото
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr на .001 ги спојува деловите; преголем, дели
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - Ѓубрето како папка
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 или Enter враќа, F8 празни
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Лов на духови: недопрени со години
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 дрво на папки, Enter го праќа другиот

@@ -1889,8 +1889,8 @@ msgstr Alt+G - Git: klaarzetten, terugnemen, verwerpen, vergelijken
 msgid  R opens a branch, tag or commit as a folder
 msgstr R opent een branch, tag of commit als map
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - In het mandje; Alt+Shift+B toont het
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - Op de mixtape; Alt+Shift+B toont ze
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - De namen als tekst bewerken
@@ -2102,3 +2102,18 @@ msgstr De boom lezen
 
 msgid  Not the top of the tree
 msgstr Niet de top van de boom
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr op een .001 voegt de delen samen; te groot, splitst
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - De prullenbak als map
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 of Enter zet terug, F8 leegt
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Spokenjacht: jaren onaangeroerd
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 mappenboom, Enter stuurt het andere paneel

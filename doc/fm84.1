@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-10" "fm84 0.47.0" "User Commands"
+.TH FM84 1 "2026-11-10" "fm84 0.48.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -180,6 +180,61 @@ What goes into an encrypted archive is encrypted with the same password.
 An archive written while a panel is in it is read again; one deleted is
 left.
 The scratch directory is removed when fm84 quits.
+.SH TRASH
+Alt+T opens the system's trash in the panel at
+.IR ~/@trash ,
+a folder that is not on the disk, gone into as an archive is.
+Everything in it is listed by the name it had, two of one name told apart
+as
+.IR "name (2)" ,
+and dated in the Modified column when it went.
+F3 views a file and F5 copies out; a directory in it is gone into.
+F6, or Enter on a file, puts what is chosen back where it came from, asking
+when the place has been taken since; F8 deletes it for good, always asked
+first.
+Only the whole of what went to the trash is put back or emptied, not what is
+inside a directory in it.
+The panel is read again as the trash changes.
+.PP
+On Linux this is the freedesktop.org trash, the home one and each drive's;
+on Windows the Recycle Bin.
+On macOS the trash is
+.I ~/.Trash
+and each drive's
+.IR .Trashes ,
+read only once the terminal fm84 runs in has Full Disk Access in System
+Settings, Privacy & Security; it can be looked into, copied out of and
+emptied, but not put back, macOS not saying where things came from.
+.SH TREE
+Alt+F10 turns the panel into the tree of its drive's directories, as ncd drew
+it, from the drive's root, opened down to the panel's directory with the
+cursor there.
+Inside an archive, a git commit or the trash, the tree is of that, from its
+top.
+Only directories are in it, by name, hidden ones as the options say.
+.PP
+Right or + opens the directory under the cursor, or goes into it when it is
+open; Left or \- closes it, or goes up to the one it is in.
+Up, Down, Page Up, Page Down, Home and End move.
+Enter sends the other panel to the directory, and the tree stays.
+Typing goes to the first directory on show whose name starts with what is
+typed, Up and Down to the others; Backspace takes a letter off, Esc the
+typing.
+.B *
+opens everything below the cursor, as a job that Esc stops, keeping what it
+got to: links to directories are not gone through, nor other filesystems,
+and it stops at 5000 directories.
+F5 and F6 copy and move the directory to the other panel, F7 makes one
+inside it, F8 deletes it, as in the list; never the top of the tree.
+Esc or Alt+F10 lists files again, in the directory under the cursor.
+.PP
+A click puts the cursor on a row, one on its mark opens or closes it, and a
+double click is Enter; the wheel moves the cursor.
+A directory is read the first time it is opened, on a thread: one on a mount
+that does not answer shows
+.B \[u2026]
+until it does, and holds nothing up.
+After a job, and Ctrl+R, what is open is read again.
 .SH LEAVING THE SHELL WHERE FM84 WAS LEFT
 A program cannot change the directory of the shell that started it, so
 quitting fm84 leaves the shell where it was.
@@ -398,10 +453,18 @@ Saving shows the plan; Enter runs it as one job, Esc goes back to the lines.
 A line that cannot be had says which, and nothing runs.
 .TP
 .B Alt+B Alt+Shift+B
-Alt+B puts what is chosen in the basket, from any directory; Alt+Shift+B shows
-the basket in the panel, all of it selected, for F5, F6 or Alt+P at once, and
-again goes back.
-Alt+B in the basket takes entries out of it, not off the disk.
+Mixtapes: baskets with names, kept across runs in the
+.I mixtapes
+file.
+Alt+B puts what is chosen on the tape playing, from any directory, starting
+one when there is none; Alt+Shift+B lists the tapes, the one playing marked.
+In the list, Enter or 1 to 9 shows a tape in the panel, all of it selected,
+for F5, F6 or Alt+P at once, and plays it; Space plays one without showing
+it; N or Insert starts a new one, R or F2 renames one, D or Delete removes
+one \- never its files; Esc closes.
+Alt+B on a tape shown takes entries off it, not off the disk, and
+Alt+Shift+B puts it away.
+Every tape follows its files as they are renamed and moved.
 .TP
 .B Alt+D
 Find the files under the directory, or among what is selected, that are the
@@ -413,6 +476,24 @@ Empty files, links and second names of one file are left out.
 A dossier of the directory: the kinds of file that take its room, the
 largest and the newest, its code's languages by lines, git's commits over
 the last eight weeks, and the copies in it.
+.TP
+.B Alt+Shift+G
+A ghost hunt: the files under the directory, or among what is selected, that
+nobody has read or written in two years, fed to the panel oldest first and
+drawn faded with a ghost beside them; nothing is selected.
+Refused on a filesystem mounted
+.BR noatime ,
+which keeps no access times.
+.TP
+.B Alt+T
+The trash as a folder; again, back where the panel was.
+See
+.BR TRASH .
+.TP
+.B Alt+F10
+The panel as the tree of its drive's directories.
+See
+.BR TREE .
 .TP
 .B Alt+G
 Git on what is chosen:
@@ -592,6 +673,26 @@ With
 .B Verify copies
 on, each file is read back from where it went and checked against the
 original before it takes its place.
+.IP
+A file larger than where it goes holds in one \- past 4 GiB, onto a FAT
+drive \- is asked about before anything is written: split into
+.IR name.001 ,
+.I name.002
+and on, with
+.I name.sha256
+beside them that
+.B sha256sum \-c
+reads, or left.
+F5 on a
+.I .001
+with a
+.I .002
+beside it joins the pieces back into the whole file, each checked against the
+.I .sha256
+as it goes through; one that does not match leaves nothing.
+Copied to a name ending in
+.IR .001 ,
+it is that piece copied as it is.
 .TP
 .B Alt+F5 Ctrl+Shift+F5
 Make a symbolic link to what is chosen, asking where as F5 does: for one
@@ -737,6 +838,9 @@ Check again, or go on anyway, when the target has not the room for what
 is about to be written - asked before anything is.
 Esc stops, the reason left in the status bar.
 .TP
+.B P S
+Split into pieces, or skip, a file too big for where it goes in one.
+.TP
 .B Y N K A S B O
 Overwrite, Skip, Keep both, Overwrite all, Skip all, Keep both all, or
 Overwrite all older, when a file is already there.
@@ -846,12 +950,15 @@ adds a column filled by the commands in the
 .I columns
 file, by extension; E on its row edits them.
 .BR "Outrun progress bar" ,
-.B Burst what is deleted for good
-and
+.BR "Burst what is deleted for good" ,
 .B Turbo
+and
+.B Night drive when left alone
 are for fun, all off to start with: a job drawn as a car driving towards the
-sun, the rows of a delete for good bursting first, and the neon turned up
-with scanlines over the panels.
+sun, the rows of a delete for good bursting first, the neon turned up
+with scanlines over the panels, and, left alone on the panels for the minutes
+it says, the screen given to a drive down the neon grid until the next key
+or touch of the mouse, which does nothing else.
 .B Language
 is Automatic, which follows the environment (see
 .BR ENVIRONMENT ),
@@ -937,6 +1044,17 @@ Made with examples the first time F11 edits it.
 .TP
 .I $XDG_CONFIG_HOME/fm84/scores
 F1's high scores, counted as the jobs finish.
+.TP
+.I $XDG_CONFIG_HOME/fm84/mixtapes
+Alt+B's mixtapes: a
+.I tape = name
+line starting each, the
+.I file = path
+and
+.I dir = path
+lines after it what is on it, and
+.I playing = name
+the one Alt+B adds to.
 .SH ENVIRONMENT
 .TP
 .B XDG_CONFIG_HOME

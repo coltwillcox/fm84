@@ -1890,8 +1890,8 @@ msgstr Alt+G - Git: hazırla, çıkar, at, karşılaştır
 msgid  R opens a branch, tag or commit as a folder
 msgstr R bir dalı, etiketi ya da commit'i klasör olarak açar
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - Sepete; Alt+Shift+B gösterir
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - Karışık kasete; Alt+Shift+B onları listeler
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Adları metin olarak düzenle
@@ -2103,3 +2103,18 @@ msgstr Ağaç okunuyor
 
 msgid  Not the top of the tree
 msgstr Ağacın tepesi olmaz
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr bir .001 üzerinde parçaları birleştirir; çok büyükse böler
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - Klasör olarak çöp
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 ya da Enter geri koyar, F8 boşaltır
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Hayalet avı: yıllardır dokunulmamış
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 dizin ağacı, Enter öbür paneli gönderir

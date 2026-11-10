@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.46.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.48.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -32,24 +32,27 @@
 
 <table align="center">
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-0.png" width="380"><br><sub><b>Dual panes</b><br>198 ROM folders beside a package tree. Each pane carries its own drive strip, the Name/Ext/Size/Modified/Attributes columns, and the free space on its own filesystem.</sub></td>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-1.png" width="380"><br><sub><b>F11 - Options</b><br>Panels, behaviour, appearance, viewer and editor. Every row changes in place with <code>Enter</code> or <code>&larr;</code>/<code>&rarr;</code>.</sub></td>
+<td colspan="2" align="center" valign="top"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-0.png" width="776"><br><sub><b>Dual panes</b><br>198 ROM folders beside a package tree. Each pane carries its own drive strip, the Name/Ext/Size/Modified/Attributes columns, and the free space on its own filesystem.</sub></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="380"><br><sub><b>Outrun</b><br>One of eighteen palettes - hot pink on near-black.</sub></td>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-3.png" width="380"><br><sub><b>Nord</b><br>The muted blue-grey end of the same range.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-1.png" width="380"><br><sub><b>Alt+F10 - Directory tree</b><br>The same ROM folders as the tree of the drive, ncd-style, opened down to where the panel was. Enter sends the other panel there.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-2.png" width="380"><br><sub><b>F11 - Options</b><br>Panels, behaviour, appearance, viewer and editor. Every row changes in place with <code>Enter</code> or <code>&larr;</code>/<code>&rarr;</code>.</sub></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-4.png" width="380"><br><sub><b>Picard</b><br>A starship's console - orange, periwinkle and tan on black, the cursor a deep blue band.</sub></td>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-5.png" width="380"><br><sub><b>Military</b><br>Olive drab and khaki, with brass titles and an amber marker.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-3.png" width="380"><br><sub><b>Outrun</b><br>One of eighteen palettes - hot pink on near-black.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-4.png" width="380"><br><sub><b>Nord</b><br>The muted blue-grey end of the same range.</sub></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-6.png" width="380"><br><sub><b>Catppuccin Latte</b><br>Light themes too, and the whole interface follows the palette, viewer and editor included.</sub></td>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-7.png" width="380"><br><sub><b>F12 - Preview</b><br>The opposite pane shows whatever the cursor is on, without leaving the panel you are in.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-5.png" width="380"><br><sub><b>Picard</b><br>A starship's console - orange, periwinkle and tan on black, the cursor a deep blue band.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-6.png" width="380"><br><sub><b>Military</b><br>Olive drab and khaki, with brass titles and an amber marker.</sub></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-8.png" width="380"><br><sub><b>F3 - Images</b><br>A JPEG as coloured ASCII, each character on its own colour. <code>F</code> switches Fit and Fill, <code>+</code>/<code>-</code> zoom, <code>X</code> cycles Image, Text and Hex.</sub></td>
-<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-9.png" width="380"><br><sub><b>F4 - Editor</b><br>Syntax highlighting, line numbers, selection and undo - editing fm84's own source.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-7.png" width="380"><br><sub><b>Catppuccin Latte</b><br>Light themes too, and the whole interface follows the palette, viewer and editor included.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-8.png" width="380"><br><sub><b>F12 - Preview</b><br>The opposite pane shows whatever the cursor is on, without leaving the panel you are in.</sub></td>
+</tr>
+<tr>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-9.png" width="380"><br><sub><b>F3 - Images</b><br>A JPEG as coloured ASCII, each character on its own colour. <code>F</code> switches Fit and Fill, <code>+</code>/<code>-</code> zoom, <code>X</code> cycles Image, Text and Hex.</sub></td>
+<td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-10.png" width="380"><br><sub><b>F4 - Editor</b><br>Syntax highlighting, line numbers, selection and undo - editing fm84's own source.</sub></td>
 </tr>
 </table>
 
@@ -83,12 +86,15 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🔭 **Alt+F7 find files** - by name, content or regex, size and age, on a thread of its own; `F` feeds the results to the panel
 - 👯 **Alt+D duplicates** - files the same as another, fed to the panel with all but one of each selected
 - 🗂️ **Alt+R dossier** - the directory summed up: kinds of file, the largest and newest, languages, git activity, copies
+- 👻 **Alt+Shift+G ghost hunt** - the files nobody has opened in two years, fed to the panel faded with a ghost beside them
 
 ### 📝 File operations
 - 📋 **Copy, move, rename, delete** - F5, F6, F2, F8 to the trash, Shift+F8 for good, with progress, cancel, and an ask for names already taken
 - ↩️ **Undo** - Ctrl+Z takes back the last rename, copy, move or move to the trash, refusing what has changed since
 - 📝 **The directory as text** - Ctrl+E edits the names in the editor: change a line to rename, delete it to delete, duplicate it to copy
-- 🧺 **Basket** - Alt+B gathers files from anywhere, Alt+Shift+B shows them all, to copy, move or pack at once
+- 📼 **Mixtapes** - Alt+B gathers files from anywhere onto named tapes kept across runs, Alt+Shift+B lists them and shows one, to copy, move or pack at once
+- 🗑️ **The trash as a folder** - Alt+T: look in, copy out, put back where it came from, or empty for good
+- ✂️ **Split and join** - a file too big for a FAT stick split into `.001`, `.002` with a `.sha256`; F5 on the `.001` joins and checks them
 - 💽 **Room checked first** - a copy that will not fit asks before it writes a byte, not halfway through
 - ✔️ **Verify copies** - an F11 option that reads each copied file back from the disk and checks it, for USB sticks and network mounts
 - 🏷️ **Multi-rename** - F2 on a selection, by `[N]`, `[E]`, `[C]` patterns with find, replace and case - and `[Exif:date]`, `[Tag:artist]`, `[Pdf:title]` from inside the files
@@ -110,6 +116,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 🖥️ Panels
 - 👀 **Live** - reread when the directory changes on disk; slow or dead mounts never freeze fm84
+- 🌳 **Directory tree** - Alt+F10 turns a panel into its drive's tree, ncd-style, opened and closed with the arrows; Enter sends the other panel there
 - 🧱 **Columns** - Name, Ext, Size, Modified, Attributes; Ctrl+F3…F6 or a click on a heading sorts
 - 🧮 **Info column** - filled by your own commands per extension: a picture's size, a song's length, a PDF's pages
 - 🔎 **Detail lines** - full name, exact size, timestamp, owner, mode and link target under the panels
@@ -131,7 +138,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### ⚙️ Options (F11)
 - 🎨 **18 themes**, light ones included, and 23 languages built in
 - 🧩 **Columns, sorting, date and size formats, icons, cursor, terminal, external editor, confirmations** - saved to `~/.config/fm84/config` as plain `key = value`
-- 🕹️ **For fun** - an Outrun progress bar, rows that burst when deleted for good, Turbo neon with scanlines, and arcade high scores in F1
+- 🕹️ **For fun** - an Outrun progress bar, rows that burst when deleted for good, Turbo neon with scanlines, a night drive when left alone, and arcade high scores in F1
 
 ---
 
@@ -187,7 +194,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.46.0
+fm84 --version          # fm84 0.48.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -283,5 +290,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.46.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.48.0 ▄▀▄▀▄▀</code>
 </p>

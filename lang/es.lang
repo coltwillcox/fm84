@@ -1891,8 +1891,8 @@ msgstr Alt+G - Git: preparar, quitar, descartar, comparar
 msgid  R opens a branch, tag or commit as a folder
 msgstr R abre una rama, etiqueta o commit como carpeta
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - A la cesta; Alt+Mayús+B la muestra
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - A la mixtape; Alt+Mayús+B las lista
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Editar los nombres como texto
@@ -2104,3 +2104,18 @@ msgstr Leyendo el árbol
 
 msgid  Not the top of the tree
 msgstr No la cima del árbol
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr sobre un .001, une las partes; demasiado grande, divide
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - La papelera como carpeta
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 o Intro devuelve, F8 vacía
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Caza de fantasmas: intactos en años
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 árbol de carpetas, Intro manda el otro panel

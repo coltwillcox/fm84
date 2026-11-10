@@ -1891,8 +1891,8 @@ msgstr Alt+G - Git: előkészítés, visszavonás, elvetés, összehasonlítás
 msgid  R opens a branch, tag or commit as a folder
 msgstr R egy ágat, címkét vagy commitot nyit meg mappaként
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - A kosárba; Alt+Shift+B megmutatja
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - A mixtape-re; Alt+Shift+B listázza őket
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - A nevek szerkesztése szövegként
@@ -2104,3 +2104,18 @@ msgstr A fa olvasása
 
 msgid  Not the top of the tree
 msgstr A fa tetején nem
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr .001-en összefűzi a részeket; túl nagy, bontja
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - A kuka mappaként
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 vagy Enter visszateszi, F8 üríti
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Szellemvadászat: évek óta érintetlen
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 könyvtárfa, Enter a másik panelt küldi

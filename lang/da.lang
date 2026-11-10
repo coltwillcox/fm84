@@ -1889,8 +1889,8 @@ msgstr Alt+G - Git: klargør, fjern, kassér, sammenlign
 msgid  R opens a branch, tag or commit as a folder
 msgstr R åbner en gren, et mærke eller et commit som mappe
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - I kurven; Alt+Shift+B viser den
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - På mixtapet; Alt+Shift+B viser dem
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Redigér navnene som tekst
@@ -2102,3 +2102,18 @@ msgstr Læser træet
 
 msgid  Not the top of the tree
 msgstr Ikke toppen af træet
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr på en .001 samles delene; for stor, deles
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - Papirkurven som mappe
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 eller Enter lægger tilbage, F8 tømmer
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Spøgelsesjagt: urørt i årevis
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 mappetræ, Enter sender det andet panel

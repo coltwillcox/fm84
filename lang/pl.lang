@@ -1928,8 +1928,8 @@ msgstr Alt+G - Git: dodaj, wycofaj, odrzuć, porównaj
 msgid  R opens a branch, tag or commit as a folder
 msgstr R otwiera gałąź, znacznik lub commit jako folder
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - Do koszyka; Alt+Shift+B go pokazuje
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - Na składankę; Alt+Shift+B je wylicza
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Edytuj nazwy jako tekst
@@ -2142,3 +2142,18 @@ msgstr Odczyt drzewa
 
 msgid  Not the top of the tree
 msgstr Nie szczyt drzewa
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr na .001 scala części; za duży, dzieli
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - Kosz jako folder
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 lub Enter przywraca, F8 opróżnia
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Polowanie na duchy: latami nieruszane
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 drzewo katalogów, Enter posyła drugi panel

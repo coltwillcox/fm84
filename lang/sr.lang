@@ -1927,8 +1927,8 @@ msgstr Alt+G - Git: pripremi, ukloni, odbaci, uporedi
 msgid  R opens a branch, tag or commit as a folder
 msgstr R otvara granu, oznaku ili komit kao fasciklu
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - U korpicu; Alt+Shift+B je prikazuje
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - Na mikstejp; Alt+Shift+B ih nabraja
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Uredi imena kao tekst
@@ -2141,3 +2141,18 @@ msgstr Čitanje stabla
 
 msgid  Not the top of the tree
 msgstr Ne vrh stabla
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr na .001 spaja delove; prevelik, deli
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - Smeće kao fascikla
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 ili Enter vraća, F8 prazni
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Lov na duhove: godinama netaknuto
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 stablo direktorijuma, Enter šalje drugu tablu

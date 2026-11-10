@@ -54,9 +54,39 @@ Everything fm84 does, in full. The [README](../README.md) has the short version,
 ## 🗂️ Dossier (Alt+R)
 - 📋 **The directory summed up** - its files, directories and size; what kinds of file take its room, each with a bar and its share; the five largest and the five newest; the languages its code is in, by lines; how many commits git has had in it a week, over the last eight; and how many files are copies of another, and the room they take. Worked out as a job, with the bar and Esc; `.git` is not gone into, and files over 8 MiB are not read for lines. **↑**/**↓**, PageUp/PageDown and Home/End scroll it, **Esc** closes it
 
-## 🧺 Basket (Alt+B)
-- ➕ **Gathered from anywhere** - **Alt+B** puts what is chosen in the basket, whichever directory it is in, and says how many it holds
-- 🧺 **Shown with Alt+Shift+B** - the basket fed to the panel, under the directory all of it is in, every entry selected, for **F5**, **F6** or **Alt+P** at once - each copied or packed under its own name. Alt+B there takes entries out of the basket, never off the disk; Alt+Shift+B again goes back. A rename takes the basket along; what is gone is let go of when it is shown. It lasts while fm84 runs
+## 📼 Mixtapes (Alt+B)
+- ➕ **Gathered from anywhere** - **Alt+B** puts what is chosen on the tape playing, whichever directory it is in, and says which tape and how many it holds. With no tape yet, it starts one called Mixtape
+- 📼 **Listed with Alt+Shift+B** - every tape by its name - "Release files", "Tax 2026", "Photos to sort" - with how much is on it, the one playing marked ▶. **Enter** or **1**…**9** shows a tape in the panel and plays it; **Space** plays one without showing it; **N** or **Insert** starts a new one, named where it is listed, which plays; **R** or **F2** renames one; **D** or **Delete** removes one - the tape, never the files on it. A name another tape has is refused
+- 🧺 **Shown in the panel** - fed as Find files feeds it, under the directory all of it is in, every entry selected, for **F5**, **F6** or **Alt+P** at once - each copied or packed under its own name. Alt+B there takes entries off the tape, never off the disk; Alt+Shift+B again goes back
+- 💾 **Kept across runs** - in the `mixtapes` file beside the config, written as they change. Every tape follows its files as they are renamed and moved in fm84; what is gone is let go of when the tape is shown
+
+## 👻 Ghost Hunt (Alt+Shift+G)
+- 🕸️ **What nobody has opened in years** - the files under the panel's directory, or among what is selected, last read and last written more than two years ago - a file written last month is not a ghost, whatever its access time says. Fed to the panel oldest first, each drawn faded with a ghost beside it
+- 🧹 **A clean-up list** - nothing is selected: what to let go of is picked one at a time, not one F8 away from all of it. A file with more than one name is there once
+- ⏱️ **Where the times are kept** - refused on a filesystem mounted `noatime`, which never updates when a file is read, so everything would look as old as it was made. `relatime`, the usual, keeps them close enough for years
+
+## 🗑️ The Trash (Alt+T)
+- 📂 **A folder of its own** - **Alt+T** opens the system's trash in the panel at `~/@trash`, which is not on the disk, gone into as an archive or a git commit is. Everything is listed by the name it had - two of one name told apart as `name (2)`, the latest keeping the name - and the Modified column says when it went. **Alt+T** again goes back where the panel was
+- 👀 **Looked into** - **F3** views a file, **F5** copies out, and a directory in the trash is gone into and copied out of as any is
+- ↩️ **Put back** - **F6**, or **Enter** on a file, puts what is chosen back where it came from, as a job; one whose place has been taken since is asked about, never written over
+- 🔥 **Emptied** - **F8** deletes what is chosen for good, always asked first. Only the whole of what went to the trash is put back or emptied, not what is inside a directory in it
+- 👀 **Live** - the panel is read again as the trash changes, whatever put something in it or took it out
+- 🍎 **On macOS** - with Full Disk Access for the terminal fm84 runs in, in System Settings, Privacy & Security, the trash is looked into, copied out of and emptied, but not put back: macOS does not say where things came from. Without it, fm84 says what is wanted
+
+## 🌳 Directory Tree (Alt+F10)
+- 🌲 **As ncd drew it** - **Alt+F10**, Norton Commander's tree key, turns the panel into the tree of its drive's directories, from its root, opened down to where the panel is, the cursor there and that directory in bold. Inside an archive, a git commit or the trash, the tree is of that, from its top. Only directories, by name; hidden ones as F11 says
+- ↔️ **Opened and closed** - **→** or **+** opens the directory under the cursor, or goes into it when it is open; **←** or **-** closes it, or goes up to the one it is in. Marks say which: ▾ open, ▸ closed or not read yet, … being read, ─ nothing in it
+- 📤 **The other panel follows** - **Enter** sends the other panel to the directory, and the tree stays, to go on choosing. **Esc** or **Alt+F10** again lists files, in the directory under the cursor
+- 🔍 **Typed to** - letters go to the first directory on show whose name starts with them, **↑** **↓** to the others, as the panels' quick search
+- 🌳 **All of it** - **`*`** opens everything below the cursor, as a job with **Esc**: links to directories are listed but not gone through, other filesystems - `/proc`, network mounts - are left alone, and it stops at 5000 directories
+- 📝 **Acted on** - **F5** and **F6** copy and move the directory to the other panel, **F7** makes one inside it, **F8** deletes it - inside an archive as they do there. Never the top of the tree
+- 🖱️ **The mouse** - a click puts the cursor on a row, one on its mark opens or closes it, a double click is Enter, and the wheel moves the cursor
+- 🪶 **Never in the way** - a directory is read the first time it is opened, on a thread: one on a mount that does not answer shows … and holds nothing up. After a job, and Ctrl+R, what is open is read again
+
+## ✂️ Split and Join
+- 📏 **Too big for where it goes** - before a copy or a move writes anything, a file larger than the drive it goes to holds in one - past 4 GiB onto FAT, told on Linux, macOS, the BSDs and Windows - is asked about: **P** splits it, **S** skips it, **Esc** stops
+- 🧩 **In pieces** - `name.001`, `name.002` and on, 4095 MiB each, with `name.sha256` beside them listing each piece, as `sha256sum -c` and Alt+H read it. Verified copies read each piece back. A move takes the file away once all of it is there
+- 🔗 **Joined back** - **F5** on a `.001`, with a `.002` beside it, offers to join them into the file they were cut from in the other panel; each piece is checked against the `.sha256` as it goes through, and one that does not match, or is missing, leaves nothing. Copied to a name ending in `.001`, it is that piece copied as it is
 
 ## 🔄 Synchronize Directories (Alt+S)
 - ⚖️ **All the way down** - the two panels' directories compared on a thread of its own, the plan filling in as differences are found and saying where it is looking. An entry on one side only is a difference, and is not gone into; a directory on both is gone into. Two files differ when one is newer, or when they are the same age and not the same size; times two seconds apart count as the same, as FAT keeps them. Links are compared as the links they are, never followed, and hidden entries are left out unless F11 shows them
@@ -226,6 +256,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 🚗 **Outrun progress bar** - a job drawn as a car driving down a neon grid towards the sun, in the theme's colours: the further it has got, the more is done, and the bigger the sun. Esc swerves it off the road. Off by default
 - 💥 **Burst what is deleted for good** - the rows burst into pixels for a moment before a delete for good takes them; never for the trash. Off by default
 - ⚡ **Turbo** - every theme's neon turned up - on a light one, only stronger - scanlines over the panels, and the logo blinking in F1. Off by default
+- 🌃 **Night drive when left alone** - left alone on the panels for 1, 3, 5, 10, 15 or 30 minutes, fm84 drives down the Outrun grid: palms going by, the sun on the horizon and the logo over it, as Turbo draws when it is on. Any key or the mouse, and the panels are back as they were - that key doing nothing else. Not over a dialog, a job, the Viewer or the Editor. Off by default
 
 **Viewer and editor**
 - ⇥ **Tab width** - 2, 4 or 8 columns, in the Viewer, the Editor and the preview
@@ -256,7 +287,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
   - 🚫 **Leave out** - patterns separated by `;`, as `tar --exclude` takes them: `.git` and `*.o` a file or a directory, `target/` a directory alone, and one with a `/` in it, as `src/*.rs`, found anywhere in a path. Kept for next time
   - 🔐 **Password**, typed twice, for a `.zip` or a `.7z` alone - see below
 
-  Modes, times and links go in as they are; a zip or a 7z cannot hold a name that is not UTF-8, which is asked about, and a tar keeps it as it is. A 7z is packed solid, as 7-Zip packs one. Two of what is packed with one name - from the basket, or Find files - are asked about as a copy asks. It is written beside where it goes and put there whole, so a cancel leaves nothing, and an archive made inside the directory being packed leaves itself out. One already at the name is written over only when F11 says Overwrite, and never one of what is being packed
+  Modes, times and links go in as they are; a zip or a 7z cannot hold a name that is not UTF-8, which is asked about, and a tar keeps it as it is. A 7z is packed solid, as 7-Zip packs one. Two of what is packed with one name - from a mixtape, or Find files - are asked about as a copy asks. It is written beside where it goes and put there whole, so a cancel leaves nothing, and an archive made inside the directory being packed leaves itself out. One already at the name is written over only when F11 says Overwrite, and never one of what is being packed
 - 🔐 **Passwords** - a `.zip` packed with one has its files encrypted with AES-256, its names in the clear, as a zip has them; a `.7z` has its names encrypted too, as `7z -mhe=on` does. 7-Zip, WinZip and macOS read them; Info-ZIP's `unzip` does not read AES. An encrypted archive asks for its password as it is gone into, copied out of, extracted, viewed or written into - a 7z with its names locked before anything - and again when the one given is wrong. Given, it is kept while fm84 runs, never on disk, and an archive just packed with one opens with it. Written into, an encrypted archive takes what comes in under the same password, and a zip given the wrong one is left as it was
 - 🔒 **Changed in place** - renaming inside an archive, F4, links and attributes still say "Archives are read-only" and leave it as it was: F3 shows a file instead of F4. A git commit opened as a folder is read-only throughout. Find files does not reach inside an archive yet
 - 🛡️ **Safe to open** - a name that would land outside where it is copied to - `../`, an absolute path, a drive - never gets into the listing, nor anything that would be written through a link in the archive. An encrypted zip entry says so in the detail lines

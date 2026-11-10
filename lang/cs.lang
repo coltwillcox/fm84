@@ -1928,8 +1928,8 @@ msgstr Alt+G - Git: připravit, odebrat, zahodit, porovnat
 msgid  R opens a branch, tag or commit as a folder
 msgstr R otevře větev, značku nebo commit jako složku
 
-msgid  Alt+B - Into the basket; Alt+Shift+B shows it
-msgstr Alt+B - Do košíku; Alt+Shift+B ho ukáže
+msgid  Alt+B - Onto the mixtape; Alt+Shift+B lists them
+msgstr Alt+B - Na mixtape; Alt+Shift+B je vypíše
 
 msgid  Ctrl+E - Edit the names as text
 msgstr Ctrl+E - Upravit názvy jako text
@@ -2142,3 +2142,18 @@ msgstr Čtení stromu
 
 msgid  Not the top of the tree
 msgstr Ne vrchol stromu
+
+msgid  on a .001, joins the pieces; too big, split
+msgstr na .001 spojí části; příliš velký rozdělí
+
+msgid  Alt+T - The trash as a folder
+msgstr Alt+T - Koš jako složka
+
+msgid  F6 or Enter puts back, F8 empties
+msgstr F6 nebo Enter vrátí, F8 vysype
+
+msgid  Alt+Shift+G - Ghost hunt: untouched for years
+msgstr Alt+Shift+G - Hon na duchy: léta nedotčené
+
+msgid  Alt+F10 directory tree, Enter sends the other
+msgstr Alt+F10 strom adresářů, Enter pošle druhý panel

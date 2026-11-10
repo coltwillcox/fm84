@@ -6,6 +6,20 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.48.0] - 2026-11-10
+
+### ✨ Added
+- 🌳 **Directory tree** - **Alt+F10**, as Norton Commander had it, turns a panel into the tree of its drive's directories, ncd-style, opened down to where the panel is. **→** and **+** open a directory, or go into one open already; **←** and **-** close it, or go up to the one it is in; **Enter** sends the other panel there and the tree stays; **Esc** or Alt+F10 again lists files again, in the directory under the cursor. Typing jumps to a name on show, ↑ ↓ to the next; **`*`** opens everything below, as a job - links to directories not gone through, other filesystems left alone, at most 5000. **F5** and **F6** copy and move the directory to the other panel, **F7** makes one inside it, **F8** deletes it; never the top. A click puts the cursor on a row, on its mark opens or closes it, and twice is Enter. Directories are read the first time they are opened, on a thread: a mount that does not answer shows `…` and holds nothing up. Inside an archive, a git commit or the trash, the tree is of that
+- 🗑️ **The trash as a folder** - **Alt+T** opens the system's trash in the panel, as an archive or a git commit is gone into: everything in it by the name it had, two of one name told apart, dated when it went. **F3** views, **F5** copies out, and a directory in it can be gone into; **F6**, or **Enter** on a file, puts back where it came from, asked about when the place is taken; **F8** empties for good, asked first. Only the whole of what went is put back or emptied. The panel follows the trash as it changes. On macOS, with Full Disk Access for the terminal, it is looked into, copied out of and emptied, but not put back - macOS does not say where things came from. Alt+T again goes back
+- 👻 **Ghost hunt** - **Alt+Shift+G** feeds the panel the files nobody has read or written in two years, oldest first, drawn faded with a ghost beside them - a clean-up list, nothing chosen. Not on a filesystem mounted `noatime`, where every file would look as old as it was made
+- ✂️ **Split and join** - a file too big for where it goes - past 4 GiB onto a FAT drive, told on Linux, macOS, the BSDs and Windows - is asked about before a copy or move writes anything: **P** splits it into `name.001`, `name.002` and on, with `name.sha256` beside them that `sha256sum -c` reads; **S** skips it. **F5** on the `.001` joins them back into the whole file, each piece checked against the `.sha256` as it goes through, and a piece that does not match leaves nothing
+- 📼 **Mixtapes** - the basket is now baskets with names, kept across runs: **Alt+B** adds to the tape playing; **Alt+Shift+B** lists the tapes - "Release files", "Tax 2026" - with **Enter** or **1**…**9** to show one in the panel, all of it chosen for F5, F6 or Alt+P, **Space** to play one, **N** a new one, **R** to rename, **D** to remove one, never its files. They follow renames and moves, every tape
+- 🌃 **Night drive** - an F11 option: left alone on the panels for 1, 3, 5, 10, 15 or 30 minutes, fm84 drives down the Outrun grid, palms going by, the sun on the horizon and the logo over it, drawn as Turbo draws when it is on. Any key or the mouse, and the panels are back as they were - that key doing nothing else. Off by default
+
+### 🛠️ Changed
+- 🧺 **The basket lasts** - what Alt+B gathers is kept in the `mixtapes` file beside the config, not lost when fm84 quits
+- ⌨️ **Alt+F10** - is the tree, not a quit; F10 and Shift+F10 quit as before
+
 ## [0.47.0] - 2026-11-10
 
 ### ✨ Added
