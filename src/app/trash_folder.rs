@@ -50,6 +50,9 @@ impl AppState {
     /// F6, or Enter on a file: `items`, chosen in the trash, put back where
     /// each came from. One whose place has been taken since is asked about.
     pub fn restore_from_trash(&mut self, items: Vec<(PathBuf, bool)>) {
+        if !crate::archive::trash::can_put_back() {
+            return self.display_error(crate::archive::trash::cannot_put_back().to_string());
+        }
         match self.trashed(&items) {
             Ok(found) => self.start_job(TransferKind::Restore, Clashes::Ask, move |progress| run_trash_ops(found, crate::archive::trash::restore, progress)),
             Err(message) => self.display_error(message),

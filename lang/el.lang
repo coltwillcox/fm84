@@ -2081,3 +2081,9 @@ msgstr Επαναφορά
 
 msgid  Cannot put back
 msgstr Δεν είναι δυνατή η επαναφορά
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Η ανάγνωση του κάδου χρειάζεται πλήρη πρόσβαση δίσκου για αυτό το τερματικό, στο System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr Το macOS δεν λέει από πού ήρθαν όσα είναι στον κάδο: αντιγράψτε τα έξω με F5

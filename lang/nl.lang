@@ -2080,3 +2080,9 @@ msgstr Terugzetten
 
 msgid  Cannot put back
 msgstr Kan niet terugzetten
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr De prullenbak lezen vraagt volledige schijftoegang voor deze terminal, in System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS zegt niet waar wat in de prullenbak ligt vandaan kwam: kopieer het eruit met F5

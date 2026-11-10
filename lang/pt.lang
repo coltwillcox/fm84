@@ -2081,3 +2081,9 @@ msgstr Devolvendo
 
 msgid  Cannot put back
 msgstr Não foi possível devolver
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Ler a lixeira exige acesso total ao disco para este terminal, em System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr O macOS não diz de onde veio o que está na lixeira: copie para fora com F5

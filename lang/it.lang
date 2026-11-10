@@ -2081,3 +2081,9 @@ msgstr Rimessa a posto
 
 msgid  Cannot put back
 msgstr Impossibile rimettere
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Leggere il cestino richiede l’accesso completo al disco per questo terminale, in System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS non dice da dove viene ciò che è nel cestino: copialo fuori con F5

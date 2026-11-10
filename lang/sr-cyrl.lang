@@ -2119,3 +2119,9 @@ msgstr Враћање
 
 msgid  Cannot put back
 msgstr Није могуће вратити
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Читање смећа тражи пун приступ диску за овај терминал, у System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS не каже одакле је дошло оно у смећу: копирајте га напоље са F5

@@ -2081,3 +2081,9 @@ msgstr Geri konuyor
 
 msgid  Cannot put back
 msgstr Geri konamıyor
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Çöpü okumak için bu uçbirime System Settings, Privacy & Security altında Tam Disk Erişimi gerekir
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS çöptekilerin nereden geldiğini söylemiyor: F5 ile dışarı kopyalayın

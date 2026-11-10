@@ -2081,3 +2081,9 @@ msgstr Lege zurück
 
 msgid  Cannot put back
 msgstr Zurücklegen nicht möglich
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Den Papierkorb zu lesen braucht vollen Festplattenzugriff für dieses Terminal, in System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS sagt nicht, woher etwas im Papierkorb kam: mit F5 herauskopieren

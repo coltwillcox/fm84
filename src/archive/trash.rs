@@ -31,6 +31,17 @@ pub fn changed() -> Option<std::time::SystemTime> {
     system::watched().iter().filter_map(|dir| std::fs::metadata(dir).and_then(|metadata| metadata.modified()).ok()).max()
 }
 
+/// Whether what is in the trash can be put back where it came from: not on
+/// macOS, which does not say where that was.
+pub fn can_put_back() -> bool {
+    cfg!(test) || !cfg!(target_os = "macos")
+}
+
+/// Why it cannot.
+pub fn cannot_put_back() -> &'static str {
+    t!("macOS does not say where things in the trash came from: copy it out with F5")
+}
+
 /// One thing in the trash: what the system knows it by, the name it had and
 /// where it was, when it went, and where its bytes are now.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -118,8 +129,89 @@ mod system {
     }
 }
 
-/// The trash on macOS can be put into but not looked through.
-#[cfg(all(not(test), not(any(windows, all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android"))))))]
+/// The trash on macOS: `~/.Trash`, and `.Trashes/<uid>` on each other
+/// drive, read as the folders they are. Nothing there says where each thing
+/// came from - the Finder keeps that to itself - so it can be looked at,
+/// copied out and emptied, but not put back. Reading the home one at all
+/// takes Full Disk Access for the terminal fm84 runs in.
+#[cfg(all(not(test), target_os = "macos"))]
+mod system {
+    use super::*;
+
+    /// The home trash first, then each drive's, those there.
+    fn trashes() -> Vec<PathBuf> {
+        // SAFETY: getuid cannot fail.
+        let uid = unsafe { libc::getuid() };
+        let home = std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".Trash"));
+        let drives = std::fs::read_dir("/Volumes").into_iter().flatten().flatten().map(|drive| drive.path().join(".Trashes").join(uid.to_string()));
+        home.into_iter().chain(drives).filter(|trash| trash.is_dir()).collect()
+    }
+
+    /// What the Finder keeps in a trash for itself, not anything thrown away.
+    fn is_finders(name: &OsStr) -> bool {
+        name == ".DS_Store" || name == ".localized"
+    }
+
+    pub fn list() -> io::Result<Vec<Trashed>> {
+        use std::os::unix::fs::MetadataExt;
+        let mut found = Vec::new();
+        for (at, trash) in trashes().into_iter().enumerate() {
+            let entries = match std::fs::read_dir(&trash) {
+                Ok(entries) => entries,
+                // The home trash is the one that says why; a drive's that
+                // cannot be read is passed over.
+                Err(error) if at == 0 && error.kind() == io::ErrorKind::PermissionDenied => {
+                    return Err(io::Error::new(io::ErrorKind::PermissionDenied, t!("Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security")));
+                }
+                Err(_) => continue,
+            };
+            for entry in entries.flatten() {
+                let name = entry.file_name();
+                if is_finders(&name) {
+                    continue;
+                }
+                let real = entry.path();
+                // Moved in, a thing's status changes: as near as there is to
+                // when it went.
+                let deleted = std::fs::symlink_metadata(&real).map(|metadata| metadata.ctime()).unwrap_or(0);
+                found.push(Trashed {
+                    id: real.clone().into_os_string(),
+                    name,
+                    original: PathBuf::new(),
+                    deleted,
+                    real,
+                });
+            }
+        }
+        Ok(found)
+    }
+
+    /// The thing in the trash that `id` - where it is - still names.
+    fn find(id: &OsStr) -> io::Result<PathBuf> {
+        let path = PathBuf::from(id);
+        if path.symlink_metadata().is_err() {
+            return Err(io::Error::new(io::ErrorKind::NotFound, t!("No longer in the trash")));
+        }
+        Ok(path)
+    }
+
+    pub fn restore(_id: &OsStr) -> io::Result<()> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, cannot_put_back()))
+    }
+
+    pub fn purge(id: &OsStr) -> io::Result<()> {
+        let path = find(id)?;
+        if path.symlink_metadata()?.is_dir() { std::fs::remove_dir_all(path) } else { std::fs::remove_file(path) }
+    }
+
+    /// The trashes themselves, which change as things go in and out.
+    pub fn watched() -> Vec<PathBuf> {
+        trashes()
+    }
+}
+
+/// Elsewhere the trash can be put into but not looked through.
+#[cfg(all(not(test), not(any(windows, target_os = "macos", all(unix, not(target_os = "ios"), not(target_os = "android"))))))]
 mod system {
     use super::*;
 

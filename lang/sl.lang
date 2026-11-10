@@ -2160,3 +2160,9 @@ msgstr Vračanje
 
 msgid  Cannot put back
 msgstr Ni mogoče vrniti
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Branje koša zahteva poln dostop do diska za ta terminal, v System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS ne pove, od kod je prišlo to, kar je v košu: skopirajte ven z F5

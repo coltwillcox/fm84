@@ -2082,3 +2082,9 @@ msgstr Remise en place
 
 msgid  Cannot put back
 msgstr Impossible de remettre
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Lire la corbeille demande l’accès complet au disque pour ce terminal, dans System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS ne dit pas d’où vient ce qui est dans la corbeille : copiez-le dehors avec F5

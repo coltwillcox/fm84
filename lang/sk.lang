@@ -2120,3 +2120,9 @@ msgstr Vracanie
 
 msgid  Cannot put back
 msgstr Nedá sa vrátiť
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Čítanie koša vyžaduje pre tento terminál plný prístup k disku, v System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS nehovorí, odkiaľ veci v koši prišli: skopírujte ich von pomocou F5

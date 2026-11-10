@@ -2198,3 +2198,9 @@ msgstr Ag cur ar ais
 
 msgid  Cannot put back
 msgstr Ní féidir é a chur ar ais
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Chun an bruscar a léamh, teastaíonn Lánrochtain Diosca don teirminéal seo, in System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr Ní insíonn macOS cá as ar tháinig a bhfuil sa bhruscar: cóipeáil amach é le F5

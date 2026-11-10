@@ -2081,3 +2081,9 @@ msgstr Lägger tillbaka
 
 msgid  Cannot put back
 msgstr Kan inte lägga tillbaka
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr Att läsa papperskorgen kräver full diskåtkomst för den här terminalen, i System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr macOS säger inte var det i papperskorgen kom ifrån: kopiera ut det med F5

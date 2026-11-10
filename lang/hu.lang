@@ -2082,3 +2082,9 @@ msgstr Visszatevés
 
 msgid  Cannot put back
 msgstr Nem tehető vissza
+
+msgid  Reading the trash needs Full Disk Access for this terminal, in System Settings, Privacy & Security
+msgstr A kuka olvasásához teljes lemezhozzáférés kell ennek a terminálnak, itt: System Settings, Privacy & Security
+
+msgid  macOS does not say where things in the trash came from: copy it out with F5
+msgstr A macOS nem mondja meg, honnan került valami a kukába: másolja ki F5-tel
