@@ -2009,3 +2009,40 @@ msgstr R/F2 - Rinomina    D/Canc - Rimuovi    Esc - Chiudi
 msgid  {count} entry
 msgstr[one] {count} elemento
 msgstr[other] {count} elementi
+
+msgctxt job
+msgid   Join
+msgstr  Unisci
+
+msgid  {piece} is not in {sums}
+msgstr {piece} non è in {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} non corrisponde al suo checksum
+
+msgid  {piece} is missing
+msgstr Manca {piece}
+
+msgid  Join pieces
+msgstr Unisci le parti
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Unisci «{name}» e le parti dopo di esso in:
+
+msgid  Enter - Join
+msgstr Invio - Unisci
+
+msgid  Joining
+msgstr Unione
+
+msgid  Cannot join
+msgstr Impossibile unire
+
+msgid  Too big for one file
+msgstr Troppo grande per un solo file
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, e {path} accetta file fino a {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Dividi in parti    S - Salta    Esc - Annulla

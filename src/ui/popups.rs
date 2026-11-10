@@ -378,6 +378,10 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
         render_job_room(f, area, short, app_state.quit_armed);
         return;
     }
+    if let Some(too_big) = &job.too_big {
+        render_job_too_big(f, area, too_big, app_state.quit_armed);
+        return;
+    }
     let elapsed = job.started.elapsed();
     if elapsed < TRANSFER_POPUP_DELAY {
         return;
@@ -388,6 +392,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
     } else {
         match job.kind {
             TransferKind::Copy => t!("Copying"),
+            TransferKind::Join => t!("Joining"),
             TransferKind::Move => t!("Moving"),
             TransferKind::Delete => t!("Deleting"),
             TransferKind::Trash => t!("Moving to trash"),
@@ -472,6 +477,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
 fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind, problem: &crate::app::JobProblem, quit_armed: bool) {
     let title = match kind {
         TransferKind::Copy => t!("Cannot copy"),
+        TransferKind::Join => t!("Cannot join"),
         TransferKind::Move => t!("Cannot move"),
         TransferKind::Delete => t!("Cannot delete"),
         TransferKind::Trash => t!("Cannot move to trash"),
@@ -524,6 +530,32 @@ fn render_job_room(f: &mut ratatui::Frame<'_>, area: Rect, short: &crate::fs_ops
         Line::from(Span::styled(printable_name(&crate::app::room_needed(short)), style_columns())),
         Line::from(""),
         key_hints(t!("R - Check again    C - Go on anyway    Esc - Cancel")),
+    ];
+    if quit_armed {
+        lines.push(key_hints(t!("F10 again - Quit")));
+    }
+    f.render_widget(Paragraph::new(lines).alignment(Alignment::Center).wrap(ratatui::widgets::Wrap { trim: true }), popup_area.inner(Margin { vertical: 1, horizontal: 2 }));
+}
+
+/// A file larger than where it goes takes in one, asked about before
+/// anything is written: split it into pieces that fit, or leave it.
+fn render_job_too_big(f: &mut ratatui::Frame<'_>, area: Rect, too_big: &crate::app::TooBig, quit_armed: bool) {
+    let title = format!(" {} ", t!("Too big for one file"));
+    // Taller than the room question: the path it names often wraps.
+    let popup_area = popup_rect(45, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let said = t!("{size}, and {path} takes files of up to {limit}", size = format_size(too_big.size), path = too_big.dir.display(), limit = format_size(too_big.limit));
+    let mut lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(shown_name(&too_big.path), style_title())),
+        Line::from(""),
+        Line::from(Span::styled(printable_name(&said), style_columns())),
+        Line::from(""),
+        key_hints(t!("P - Split into pieces    S - Skip    Esc - Cancel")),
     ];
     if quit_armed {
         lines.push(key_hints(t!("F10 again - Quit")));
@@ -1271,6 +1303,8 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(super) enum Destination {
     Copy,
+    /// The first of a file's pieces, all of them joined back into it.
+    Join,
     Move,
     Symlink,
     HardLink,
@@ -1283,6 +1317,7 @@ impl Destination {
         use Destination::*;
         match (self, count, is_dir) {
             (Extract, _, _) => t!("Extract archive").to_string(),
+            (Join, _, _) => t!("Join pieces").to_string(),
             (Copy, 1, false) => t!("Copy file").to_string(),
             (Copy, 1, true) => t!("Copy directory").to_string(),
             (Copy, count, _) => tn!(count, "Copy {count} item", "Copy {count} items", count),
@@ -1314,6 +1349,7 @@ impl Destination {
             (HardLink, 1) => t!("Hard link \"{name}\" at:", name),
             (HardLink, count) => tn!(count, "Hard link {count} item at: {names}", "Hard link {count} items at: {names}", count, names),
             (Extract, _) => t!("Extract \"{name}\" to:", name),
+            (Join, _) => t!("Join \"{name}\" and the pieces after it into:", name),
             (Pack, 1) => t!("Pack \"{name}\" into:", name),
             (Pack, count) => tn!(count, "Pack {count} item into: {names}", "Pack {count} items into: {names}", count, names),
         }
@@ -1322,6 +1358,7 @@ impl Destination {
     fn enter(self) -> &'static str {
         match self {
             Destination::Copy => t!("Enter - Copy"),
+            Destination::Join => t!("Enter - Join"),
             Destination::Move => t!("Enter - Move"),
             Destination::Symlink => t!("Enter - Symlink"),
             Destination::HardLink => t!("Enter - Hard link"),

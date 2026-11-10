@@ -1056,3 +1056,34 @@ fn bursting_a_delete_is_an_option() {
     }
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// F5 on the first of a file's pieces offers to join them, into the file
+/// they were cut from in the other panel; on a piece that is not the first,
+/// or on a lone .001, it is a copy as any other.
+#[test]
+fn f5_on_a_first_piece_joins() {
+    let dir = std::env::temp_dir().join(format!("fm84-join-keys-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let (src, dst) = (dir.join("src"), dir.join("dst"));
+    std::fs::create_dir_all(&src).unwrap();
+    std::fs::create_dir_all(&dst).unwrap();
+    for name in ["big.iso.001", "big.iso.002", "lone.001"] {
+        std::fs::write(src.join(name), name).unwrap();
+    }
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.open_dir(Side::Right, dst.clone(), None);
+    app_state.active_side = Side::Left;
+    let f5_on = |app_state: &mut AppState, name: &str| {
+        app_state.open_dir(Side::Left, src.clone(), Some(name.as_ref()));
+        press(app_state, KeyCode::F(5));
+        match app_state.dialog.take() {
+            Some(Dialog::Transfer { default, join, .. }) => (default, join),
+            _ => panic!("no copy dialog"),
+        }
+    };
+    assert_eq!(f5_on(&mut app_state, "big.iso.001"), (dst.join("big.iso"), true));
+    assert_eq!(f5_on(&mut app_state, "big.iso.002"), (dst.join("big.iso.002"), false));
+    assert_eq!(f5_on(&mut app_state, "lone.001"), (dst.join("lone.001"), false));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

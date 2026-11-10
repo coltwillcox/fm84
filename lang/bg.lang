@@ -2008,3 +2008,40 @@ msgstr R/F2 - Преименуване    D/Del - Премахване    Esc - 
 msgid  {count} entry
 msgstr[one] {count} елемент
 msgstr[other] {count} елемента
+
+msgctxt job
+msgid   Join
+msgstr  Съединяване
+
+msgid  {piece} is not in {sums}
+msgstr {piece} не е в {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} не съвпада с контролната си сума
+
+msgid  {piece} is missing
+msgstr {piece} липсва
+
+msgid  Join pieces
+msgstr Съединяване на части
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Съединяване на „{name}“ и частите след него в:
+
+msgid  Enter - Join
+msgstr Enter - Съединяване
+
+msgid  Joining
+msgstr Съединяване
+
+msgid  Cannot join
+msgstr Не може да се съедини
+
+msgid  Too big for one file
+msgstr Твърде голям за един файл
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, а {path} приема файлове до {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Разделяне на части    S - Пропускане    Esc - Отказ

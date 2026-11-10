@@ -2010,3 +2010,40 @@ msgstr R/F2 - Átnevezés    D/Del - Eltávolítás    Esc - Bezárás
 msgid  {count} entry
 msgstr[one] {count} elem
 msgstr[other] {count} elem
+
+msgctxt job
+msgid   Join
+msgstr  Összefűzés
+
+msgid  {piece} is not in {sums}
+msgstr {piece} nincs benne ebben: {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} nem egyezik az ellenőrzőösszegével
+
+msgid  {piece} is missing
+msgstr {piece} hiányzik
+
+msgid  Join pieces
+msgstr Részek összefűzése
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr „{name}” és az utána következő részek összefűzése ide:
+
+msgid  Enter - Join
+msgstr Enter - Összefűzés
+
+msgid  Joining
+msgstr Összefűzés
+
+msgid  Cannot join
+msgstr Nem fűzhető össze
+
+msgid  Too big for one file
+msgstr Túl nagy egyetlen fájlnak
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, és {path} legfeljebb {limit} méretű fájlt fogad
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Részekre bontás    S - Kihagyás    Esc - Mégse

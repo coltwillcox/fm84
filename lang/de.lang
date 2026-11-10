@@ -2009,3 +2009,40 @@ msgstr R/F2 - Umbenennen    D/Entf - Entfernen    Esc - Schließen
 msgid  {count} entry
 msgstr[one] {count} Eintrag
 msgstr[other] {count} Einträge
+
+msgctxt job
+msgid   Join
+msgstr  Zusammenfügen
+
+msgid  {piece} is not in {sums}
+msgstr {piece} steht nicht in {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} passt nicht zu seiner Prüfsumme
+
+msgid  {piece} is missing
+msgstr {piece} fehlt
+
+msgid  Join pieces
+msgstr Teile zusammenfügen
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr „{name}“ und die Teile danach zusammenfügen in:
+
+msgid  Enter - Join
+msgstr Enter - Zusammenfügen
+
+msgid  Joining
+msgstr Füge zusammen
+
+msgid  Cannot join
+msgstr Zusammenfügen nicht möglich
+
+msgid  Too big for one file
+msgstr Zu groß für eine Datei
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, und {path} nimmt Dateien bis {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - In Teile aufteilen    S - Überspringen    Esc - Abbrechen

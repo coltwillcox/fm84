@@ -2088,3 +2088,40 @@ msgstr[one] {count} element
 msgstr[two] {count} elementa
 msgstr[few] {count} elementi
 msgstr[other] {count} elementov
+
+msgctxt job
+msgid   Join
+msgstr  Združi
+
+msgid  {piece} is not in {sums}
+msgstr {piece} ni v {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} se ne ujema s svojo kontrolno vsoto
+
+msgid  {piece} is missing
+msgstr {piece} manjka
+
+msgid  Join pieces
+msgstr Združi dele
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Združi »{name}« in dele za njim v:
+
+msgid  Enter - Join
+msgstr Enter - Združi
+
+msgid  Joining
+msgstr Združevanje
+
+msgid  Cannot join
+msgstr Ni mogoče združiti
+
+msgid  Too big for one file
+msgstr Prevelika za eno datoteko
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, {path} pa sprejme datoteke do {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Razdeli na dele    S - Preskoči    Esc - Prekliči

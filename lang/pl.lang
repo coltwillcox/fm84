@@ -2048,3 +2048,40 @@ msgid  {count} entry
 msgstr[one] {count} pozycja
 msgstr[few] {count} pozycje
 msgstr[other] {count} pozycji
+
+msgctxt job
+msgid   Join
+msgstr  Scal
+
+msgid  {piece} is not in {sums}
+msgstr {piece} nie ma w {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} nie zgadza się ze swoją sumą kontrolną
+
+msgid  {piece} is missing
+msgstr Brakuje {piece}
+
+msgid  Join pieces
+msgstr Scal części
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Scal „{name}” i części po nim do:
+
+msgid  Enter - Join
+msgstr Enter - Scal
+
+msgid  Joining
+msgstr Scalanie
+
+msgid  Cannot join
+msgstr Nie można scalić
+
+msgid  Too big for one file
+msgstr Za duży na jeden plik
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, a {path} przyjmuje pliki do {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Podziel na części    S - Pomiń    Esc - Anuluj

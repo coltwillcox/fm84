@@ -199,14 +199,25 @@ pub(super) fn open_transfer(app_state: &mut AppState, is_copy: bool) {
     }
     // Where the other panel is going, should it be on its way somewhere.
     let other = app_state.panel_dir(!app_state.active_side);
+    // F5 on the first of a file's pieces joins them, into the file they
+    // were cut from - not out of an archive, where they are not on the disk.
+    let joined = match &sources[..] {
+        [(file, false)] if is_copy && app_state.panel_archive(app_state.active_side).is_none() && crate::fs_ops::pieces_of(file).is_some() => crate::fs_ops::whole_of(file),
+        _ => None,
+    };
     if !app_state.options.confirm_copy_move {
-        go_transfer(app_state, &sources, &other, true, is_copy);
+        match (&sources[..], &joined) {
+            ([(file, _)], Some(whole)) => submit_transfer(app_state, vec![(file.clone(), other.join(whole.file_name().unwrap_or_default()), false)], true),
+            _ => go_transfer(app_state, &sources, &other, true, is_copy),
+        }
         return;
     }
-    let (default, into_dir) = match &sources[..] {
-        [(file, false)] => (other.join(file.file_name().unwrap_or_default()), false),
+    let (default, into_dir) = match (&sources[..], &joined) {
+        (_, Some(whole)) => (other.join(whole.file_name().unwrap_or_default()), false),
+        ([(file, false)], None) => (other.join(file.file_name().unwrap_or_default()), false),
         _ => (other, true),
     };
+    let join = joined.is_some();
     // A directory gets a separator on the end, which says it is one and
     // leaves the cursor where a name would be typed.
     let mut opened_with = default.to_string_lossy().into_owned();
@@ -215,12 +226,22 @@ pub(super) fn open_transfer(app_state: &mut AppState, is_copy: bool) {
     }
     let mut input = TextInput::new();
     input.set(opened_with.clone());
-    app_state.dialog = Some(Dialog::Transfer { sources, is_copy, input, opened_with, default });
+    app_state.dialog = Some(Dialog::Transfer {
+        sources,
+        is_copy,
+        input,
+        opened_with,
+        default,
+        join,
+    });
 }
 
 /// Enter on the copy or move dialog.
 pub(super) fn handle_transfer_confirm(app_state: &mut AppState) {
-    let Some(Dialog::Transfer { sources, is_copy, input, opened_with, default }) = app_state.dialog.take() else {
+    let Some(Dialog::Transfer {
+        sources, is_copy, input, opened_with, default, ..
+    }) = app_state.dialog.take()
+    else {
         return;
     };
     // As it opened: the file to exactly that path - so one in the way is

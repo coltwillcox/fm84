@@ -2008,3 +2008,40 @@ msgstr R/F2 - Omdøb    D/Del - Fjern    Esc - Luk
 msgid  {count} entry
 msgstr[one] {count} element
 msgstr[other] {count} elementer
+
+msgctxt job
+msgid   Join
+msgstr  Saml
+
+msgid  {piece} is not in {sums}
+msgstr {piece} er ikke i {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} passer ikke med sin kontrolsum
+
+msgid  {piece} is missing
+msgstr {piece} mangler
+
+msgid  Join pieces
+msgstr Saml dele
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Saml "{name}" og delene efter den i:
+
+msgid  Enter - Join
+msgstr Enter - Saml
+
+msgid  Joining
+msgstr Samler
+
+msgid  Cannot join
+msgstr Kan ikke samle
+
+msgid  Too big for one file
+msgstr For stor til én fil
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, og {path} tager filer på højst {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Del i stykker    S - Spring over    Esc - Annullér

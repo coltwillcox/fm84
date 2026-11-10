@@ -2047,3 +2047,40 @@ msgid  {count} entry
 msgstr[one] {count} stavka
 msgstr[few] {count} stavke
 msgstr[other] {count} stavki
+
+msgctxt job
+msgid   Join
+msgstr  Spoji
+
+msgid  {piece} is not in {sums}
+msgstr {piece} nije u {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} se ne slaže sa svojim kontrolnim zbirom
+
+msgid  {piece} is missing
+msgstr Nedostaje {piece}
+
+msgid  Join pieces
+msgstr Spoji delove
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Spoji „{name}” i delove posle njega u:
+
+msgid  Enter - Join
+msgstr Enter - Spoji
+
+msgid  Joining
+msgstr Spajanje
+
+msgid  Cannot join
+msgstr Nije moguće spojiti
+
+msgid  Too big for one file
+msgstr Prevelik za jednu datoteku
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, a {path} prima datoteke do {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Podeli na delove    S - Preskoči    Esc - Otkaži

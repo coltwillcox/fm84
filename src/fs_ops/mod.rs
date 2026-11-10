@@ -20,7 +20,8 @@ mod owners;
 mod pack;
 mod paths;
 mod repack;
+mod split;
 mod transfer;
 mod writing;
 
-pub use self::{delete::*, extract::*, listing::*, mounts::*, owners::*, pack::*, paths::*, repack::*, transfer::*, writing::*};
+pub use self::{delete::*, extract::*, listing::*, mounts::*, owners::*, pack::*, paths::*, repack::*, split::*, transfer::*, writing::*};

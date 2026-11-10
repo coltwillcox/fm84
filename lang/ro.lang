@@ -2048,3 +2048,40 @@ msgid  {count} entry
 msgstr[one] {count} element
 msgstr[few] {count} elemente
 msgstr[other] {count} de elemente
+
+msgctxt job
+msgid   Join
+msgstr  Unește
+
+msgid  {piece} is not in {sums}
+msgstr {piece} nu este în {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} nu se potrivește cu suma sa de control
+
+msgid  {piece} is missing
+msgstr Lipsește {piece}
+
+msgid  Join pieces
+msgstr Unește părțile
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Unește „{name}” și părțile de după el în:
+
+msgid  Enter - Join
+msgstr Enter - Unește
+
+msgid  Joining
+msgstr Se unește
+
+msgid  Cannot join
+msgstr Nu se poate uni
+
+msgid  Too big for one file
+msgstr Prea mare pentru un singur fișier
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, iar {path} primește fișiere de cel mult {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Împarte în părți    S - Sari peste    Esc - Anulează

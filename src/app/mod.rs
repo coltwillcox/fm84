@@ -181,6 +181,9 @@ pub enum Dialog {
         input: TextInput,
         opened_with: String,
         default: PathBuf,
+        /// The one file is the first of a file's pieces, and the copy joins
+        /// them all - to any name but a first piece's.
+        join: bool,
     },
     /// Ctrl+Shift+F5, waiting to be confirmed: a symbolic link to each of
     /// `sources`, made where `input` says - or a hard link, which Tab

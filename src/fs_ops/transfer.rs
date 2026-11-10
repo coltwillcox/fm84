@@ -376,9 +376,9 @@ fn copy_file_content(source: &Path, dest: &Path, report: Report<'_>) -> Result<T
 }
 
 /// A reader that hashes what passes through it.
-struct Hashing<'a, R> {
-    inner: R,
-    hasher: &'a std::cell::RefCell<sha2::Sha256>,
+pub(super) struct Hashing<'a, R> {
+    pub(super) inner: R,
+    pub(super) hasher: &'a std::cell::RefCell<sha2::Sha256>,
 }
 
 impl<R: Read> Read for Hashing<'_, R> {
@@ -394,7 +394,7 @@ impl<R: Read> Read for Hashing<'_, R> {
 /// Flushed to the device first and its pages let go of, so what is read is
 /// what the device kept, not what the system still has in memory from
 /// writing it. Counted on the bar as the copy was.
-fn read_back(temp: &Path, source: &std::cell::RefCell<sha2::Sha256>, report: Report<'_>) -> Result<Transfer, Error> {
+pub(super) fn read_back(temp: &Path, source: &std::cell::RefCell<sha2::Sha256>, report: Report<'_>) -> Result<Transfer, Error> {
     use sha2::Digest;
     let mut file = File::open(temp)?;
     file.sync_all()?;

@@ -2010,3 +2010,40 @@ msgstr R/F2 - Renommer    D/Suppr - Retirer    Échap - Fermer
 msgid  {count} entry
 msgstr[one] {count} élément
 msgstr[other] {count} éléments
+
+msgctxt job
+msgid   Join
+msgstr  Assembler
+
+msgid  {piece} is not in {sums}
+msgstr {piece} n’est pas dans {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} ne correspond pas à sa somme de contrôle
+
+msgid  {piece} is missing
+msgstr {piece} manque
+
+msgid  Join pieces
+msgstr Assembler les morceaux
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Assembler « {name} » et les morceaux qui le suivent dans :
+
+msgid  Enter - Join
+msgstr Entrée - Assembler
+
+msgid  Joining
+msgstr Assemblage
+
+msgid  Cannot join
+msgstr Impossible d’assembler
+
+msgid  Too big for one file
+msgstr Trop gros pour un seul fichier
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, et {path} prend des fichiers d’au plus {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Couper en morceaux    S - Ignorer    Échap - Annuler

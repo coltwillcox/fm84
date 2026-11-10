@@ -2010,3 +2010,40 @@ msgstr R/F2 - Renombrar    D/Supr - Quitar    Esc - Cerrar
 msgid  {count} entry
 msgstr[one] {count} elemento
 msgstr[other] {count} elementos
+
+msgctxt job
+msgid   Join
+msgstr  Unir
+
+msgid  {piece} is not in {sums}
+msgstr {piece} no está en {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} no coincide con su suma de comprobación
+
+msgid  {piece} is missing
+msgstr Falta {piece}
+
+msgid  Join pieces
+msgstr Unir partes
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Unir «{name}» y las partes que lo siguen en:
+
+msgid  Enter - Join
+msgstr Intro - Unir
+
+msgid  Joining
+msgstr Uniendo
+
+msgid  Cannot join
+msgstr No se puede unir
+
+msgid  Too big for one file
+msgstr Demasiado grande para un archivo
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, y {path} admite archivos de hasta {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Dividir en partes    S - Saltar    Esc - Cancelar

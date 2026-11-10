@@ -2009,3 +2009,40 @@ msgstr R/F2 - Преименувај    D/Del - Отстрани    Esc - Зат
 msgid  {count} entry
 msgstr[one] {count} ставка
 msgstr[other] {count} ставки
+
+msgctxt job
+msgid   Join
+msgstr  Спои
+
+msgid  {piece} is not in {sums}
+msgstr {piece} не е во {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} не се совпаѓа со својата контролна сума
+
+msgid  {piece} is missing
+msgstr {piece} недостасува
+
+msgid  Join pieces
+msgstr Спои делови
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Спои „{name}“ и деловите по него во:
+
+msgid  Enter - Join
+msgstr Enter - Спои
+
+msgid  Joining
+msgstr Спојување
+
+msgid  Cannot join
+msgstr Не може да се спои
+
+msgid  Too big for one file
+msgstr Преголем за една датотека
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, а {path} прима датотеки до {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Подели на делови    S - Прескокни    Esc - Откажи

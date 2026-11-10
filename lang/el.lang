@@ -2009,3 +2009,40 @@ msgstr R/F2 - Μετονομασία    D/Del - Αφαίρεση    Esc - Κλε
 msgid  {count} entry
 msgstr[one] {count} στοιχείο
 msgstr[other] {count} στοιχεία
+
+msgctxt job
+msgid   Join
+msgstr  Ένωση
+
+msgid  {piece} is not in {sums}
+msgstr Το {piece} δεν είναι στο {sums}
+
+msgid  {piece} does not match its checksum
+msgstr Το {piece} δεν ταιριάζει με το άθροισμα ελέγχου του
+
+msgid  {piece} is missing
+msgstr Το {piece} λείπει
+
+msgid  Join pieces
+msgstr Ένωση τμημάτων
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Ένωση του «{name}» και των τμημάτων μετά από αυτό σε:
+
+msgid  Enter - Join
+msgstr Enter - Ένωση
+
+msgid  Joining
+msgstr Ένωση
+
+msgid  Cannot join
+msgstr Δεν είναι δυνατή η ένωση
+
+msgid  Too big for one file
+msgstr Πολύ μεγάλο για ένα αρχείο
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, και το {path} δέχεται αρχεία έως {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Διαίρεση σε τμήματα    S - Παράλειψη    Esc - Άκυρο

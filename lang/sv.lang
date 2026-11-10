@@ -2009,3 +2009,40 @@ msgstr R/F2 - Byt namn    D/Del - Ta bort    Esc - Stäng
 msgid  {count} entry
 msgstr[one] {count} post
 msgstr[other] {count} poster
+
+msgctxt job
+msgid   Join
+msgstr  Foga ihop
+
+msgid  {piece} is not in {sums}
+msgstr {piece} finns inte i {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} stämmer inte med sin kontrollsumma
+
+msgid  {piece} is missing
+msgstr {piece} saknas
+
+msgid  Join pieces
+msgstr Foga ihop delar
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Foga ihop "{name}" och delarna efter den till:
+
+msgid  Enter - Join
+msgstr Enter - Foga ihop
+
+msgid  Joining
+msgstr Fogar ihop
+
+msgid  Cannot join
+msgstr Kan inte foga ihop
+
+msgid  Too big for one file
+msgstr För stor för en fil
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, och {path} tar filer på högst {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Dela i bitar    S - Hoppa över    Esc - Avbryt

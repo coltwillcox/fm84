@@ -247,3 +247,128 @@ fn verify_copies_reads_back_what_a_job_copies() {
     assert_eq!(std::fs::read(dir.join("copy").join("b")).unwrap(), vec![9u8; 3000]);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A file larger than where it goes takes in one is asked about before
+/// anything is written. Split, it lands as pieces that fit with a
+/// .sha256 beside them that sha256sum reads; F5 on the first piece joins
+/// them back, checked; and a piece gone bad fails the join, leaving
+/// nothing.
+#[test]
+fn a_file_too_big_for_where_it_goes_is_split_and_joined_back() {
+    let dir = std::env::temp_dir().join(format!("fm84-split-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let stick = dir.join("stick");
+    std::fs::create_dir_all(&stick).unwrap();
+    std::fs::create_dir_all(dir.join("home")).unwrap();
+    crate::fs_ops::test_limits::set(&stick, 10);
+    let content: Vec<u8> = (0..25u8).collect();
+    let source = dir.join("big.iso");
+    std::fs::write(&source, &content).unwrap();
+    std::fs::write(dir.join("small.txt"), "fits").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    let started = std::time::Instant::now();
+    let wait = |app_state: &mut AppState, done: &dyn Fn(&AppState) -> bool| {
+        while !done(app_state) {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never got there");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
+    };
+    let asked = |app_state: &AppState| app_state.workers.job.as_ref().is_some_and(|job| job.too_big.is_some());
+
+    // Asked before anything goes - the small file that fits too.
+    let items = vec![(source.clone(), stick.join("big.iso"), false), (dir.join("small.txt"), stick.join("small.txt"), false)];
+    app_state.start_transfer(items.clone(), true, crate::app::Clashes::Ask);
+    wait(&mut app_state, &asked);
+    let too_big = app_state.workers.job.as_ref().unwrap().too_big.clone().unwrap();
+    assert_eq!((too_big.size, too_big.limit), (25, 10));
+    assert!(!stick.join("small.txt").exists());
+
+    // Skipped, the rest goes on.
+    app_state.workers.job.as_mut().unwrap().answer(crate::app::Answer::Skip);
+    wait(&mut app_state, &|app_state| app_state.workers.job.is_none());
+    assert_eq!(app_state.error.take().as_deref(), Some("Copy finished, 1 entry skipped"));
+    assert!(stick.join("small.txt").exists() && !crate::fs_ops::piece_path(&stick.join("big.iso"), 1).exists());
+
+    // Split: three pieces of ten bytes at most, and their checksums.
+    app_state.start_transfer(items[..1].to_vec(), true, crate::app::Clashes::Ask);
+    wait(&mut app_state, &asked);
+    app_state.workers.job.as_mut().unwrap().answer(crate::app::Answer::Split);
+    wait(&mut app_state, &|app_state| app_state.workers.job.is_none());
+    assert_eq!(app_state.error, None);
+    let whole = stick.join("big.iso");
+    let pieces: Vec<Vec<u8>> = (1..=3).map(|number| std::fs::read(crate::fs_ops::piece_path(&whole, number)).unwrap()).collect();
+    assert_eq!(pieces.iter().map(Vec::len).collect::<Vec<_>>(), [10, 10, 5]);
+    assert_eq!(pieces.concat(), content);
+    assert!(!whole.exists() && !crate::fs_ops::piece_path(&whole, 4).exists());
+    let (sums, not_understood) = crate::checksum::parse_sums(&std::fs::read(crate::fs_ops::sums_path(&whole)).unwrap());
+    assert_eq!(not_understood, 0);
+    assert_eq!(sums.iter().map(|line| line.name.clone()).collect::<Vec<_>>(), ["big.iso.001", "big.iso.002", "big.iso.003"].map(std::path::PathBuf::from));
+    // Ctrl+Z takes the pieces back, as a copy's.
+    assert!(matches!(app_state.undo.last(), Some(undo) if undo.kind == crate::app::UndoKind::Copy));
+
+    // F5 on the first piece joins them all, back into the whole file.
+    let first = crate::fs_ops::piece_path(&whole, 1);
+    assert_eq!(crate::fs_ops::pieces_of(&first).map(|pieces| pieces.len()), Some(3));
+    let back = dir.join("home").join("big.iso");
+    assert!(crate::fs_ops::joining(&first, &back).is_some());
+    assert!(crate::fs_ops::joining(&first, &dir.join("home").join("big.iso.001")).is_none(), "to a first piece's name, a copy of it");
+    app_state.start_transfer(vec![(first.clone(), back.clone(), false)], true, crate::app::Clashes::Ask);
+    assert_eq!(app_state.workers.job.as_ref().unwrap().kind, crate::app::TransferKind::Join);
+    wait(&mut app_state, &|app_state| app_state.workers.job.is_none());
+    assert_eq!(app_state.error, None);
+    assert_eq!(std::fs::read(&back).unwrap(), content);
+
+    // A piece gone bad: the join fails on it, asked about, and leaves
+    // nothing behind.
+    let mut bad = pieces[1].clone();
+    bad[0] ^= 1;
+    std::fs::write(crate::fs_ops::piece_path(&whole, 2), bad).unwrap();
+    let again = dir.join("home").join("again.iso");
+    app_state.start_transfer(vec![(first.clone(), again.clone(), false)], true, crate::app::Clashes::Ask);
+    wait(&mut app_state, &|app_state| app_state.workers.job.as_ref().is_some_and(|job| job.problem.is_some()));
+    assert_eq!(app_state.workers.job.as_ref().unwrap().problem.as_ref().unwrap().message, "big.iso.002 does not match its checksum");
+    app_state.workers.job.as_mut().unwrap().answer(crate::app::Answer::Skip);
+    wait(&mut app_state, &|app_state| app_state.workers.job.is_none());
+    assert!(!again.exists());
+    assert!(std::fs::read_dir(dir.join("home")).unwrap().count() == 1, "no temporary left");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A move split goes once its pieces are there; and a split onto pieces
+/// already there writes over them when told to, taking away any left from
+/// a split into more.
+#[test]
+fn a_move_split_takes_the_file_away_and_old_pieces_with_it() {
+    let dir = std::env::temp_dir().join(format!("fm84-split-move-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let stick = dir.join("stick");
+    std::fs::create_dir_all(&stick).unwrap();
+    crate::fs_ops::test_limits::set(&stick, 10);
+    let source = dir.join("big.bin");
+    std::fs::write(&source, vec![7u8; 15]).unwrap();
+    let whole = stick.join("big.bin");
+    for number in 1..=4 {
+        std::fs::write(crate::fs_ops::piece_path(&whole, number), "old").unwrap();
+    }
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.start_transfer(vec![(source.clone(), whole.clone(), false)], false, crate::app::Clashes::ReplaceAll);
+    let started = std::time::Instant::now();
+    while app_state.workers.job.is_some() {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
+        if let Some(job) = app_state.workers.job.as_mut().filter(|job| job.too_big.is_some()) {
+            job.answer(crate::app::Answer::Split);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert_eq!(app_state.error, None);
+    assert!(!source.exists(), "moved");
+    assert_eq!(std::fs::read(crate::fs_ops::piece_path(&whole, 2)).unwrap(), vec![7u8; 5]);
+    assert!(!crate::fs_ops::piece_path(&whole, 3).exists(), "old pieces gone");
+    std::fs::remove_dir_all(&dir).unwrap();
+}

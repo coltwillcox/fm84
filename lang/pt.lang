@@ -2009,3 +2009,40 @@ msgstr R/F2 - Renomear    D/Del - Remover    Esc - Fechar
 msgid  {count} entry
 msgstr[one] {count} item
 msgstr[other] {count} itens
+
+msgctxt job
+msgid   Join
+msgstr  Juntar
+
+msgid  {piece} is not in {sums}
+msgstr {piece} não está em {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} não confere com sua soma de verificação
+
+msgid  {piece} is missing
+msgstr Falta {piece}
+
+msgid  Join pieces
+msgstr Juntar partes
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Juntar "{name}" e as partes depois dele em:
+
+msgid  Enter - Join
+msgstr Enter - Juntar
+
+msgid  Joining
+msgstr Juntando
+
+msgid  Cannot join
+msgstr Não foi possível juntar
+
+msgid  Too big for one file
+msgstr Grande demais para um arquivo
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, e {path} aceita arquivos de até {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Dividir em partes    S - Pular    Esc - Cancelar

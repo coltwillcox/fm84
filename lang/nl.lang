@@ -2008,3 +2008,40 @@ msgstr R/F2 - Hernoemen    D/Del - Verwijderen    Esc - Sluiten
 msgid  {count} entry
 msgstr[one] {count} item
 msgstr[other] {count} items
+
+msgctxt job
+msgid   Join
+msgstr  Samenvoegen
+
+msgid  {piece} is not in {sums}
+msgstr {piece} staat niet in {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} klopt niet met zijn controlesom
+
+msgid  {piece} is missing
+msgstr {piece} ontbreekt
+
+msgid  Join pieces
+msgstr Delen samenvoegen
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr "{name}" en de delen erna samenvoegen tot:
+
+msgid  Enter - Join
+msgstr Enter - Samenvoegen
+
+msgid  Joining
+msgstr Samenvoegen
+
+msgid  Cannot join
+msgstr Kan niet samenvoegen
+
+msgid  Too big for one file
+msgstr Te groot voor één bestand
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, en {path} neemt bestanden tot {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - In delen splitsen    S - Overslaan    Esc - Annuleren

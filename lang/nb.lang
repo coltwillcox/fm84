@@ -2008,3 +2008,40 @@ msgstr R/F2 - Gi nytt navn    D/Del - Fjern    Esc - Lukk
 msgid  {count} entry
 msgstr[one] {count} element
 msgstr[other] {count} elementer
+
+msgctxt job
+msgid   Join
+msgstr  Sett sammen
+
+msgid  {piece} is not in {sums}
+msgstr {piece} står ikke i {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} stemmer ikke med sjekksummen sin
+
+msgid  {piece} is missing
+msgstr {piece} mangler
+
+msgid  Join pieces
+msgstr Sett sammen deler
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Sett sammen «{name}» og delene etter den i:
+
+msgid  Enter - Join
+msgstr Enter - Sett sammen
+
+msgid  Joining
+msgstr Setter sammen
+
+msgid  Cannot join
+msgstr Kan ikke sette sammen
+
+msgid  Too big for one file
+msgstr For stor for én fil
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, og {path} tar filer på opptil {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Del i biter    S - Hopp over    Esc - Avbryt

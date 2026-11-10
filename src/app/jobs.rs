@@ -31,6 +31,10 @@ pub struct TransferJob {
     /// on whether to look again, go on anyway or stop. Asked before anything
     /// is written.
     pub room: Option<Shortfall>,
+    /// A file larger than where it goes takes in one, waiting on whether to
+    /// split it into pieces, skip it or stop. Asked before anything is
+    /// written.
+    pub too_big: Option<TooBig>,
     answers: Sender<Answer>,
     /// Entries left where they were, by Skip or Skip all, to say so at the end.
     pub skipped: u64,
@@ -103,6 +107,8 @@ pub enum TransferKind {
     Sync,
     /// Ctrl+Z, taking back the last of the others.
     Undo,
+    /// F5 on the first of a file's pieces: all of them joined back into it.
+    Join,
     /// Ctrl+E's plan: deletes, renames and copies.
     DirEdit,
     /// Alt+D, looking for files the same as another.
@@ -125,6 +131,7 @@ impl TransferKind {
             TransferKind::Checksum => tc!("job", "Checksum"),
             TransferKind::Sync => tc!("job", "Synchronize"),
             TransferKind::Undo => tc!("job", "Undo"),
+            TransferKind::Join => tc!("job", "Join"),
             TransferKind::DirEdit => tc!("job", "Edit as text"),
             TransferKind::Duplicates => tc!("job", "Find duplicates"),
             TransferKind::Dossier => tc!("job", "Dossier"),
@@ -148,7 +155,7 @@ impl TransferJob {
 
     /// Answer the question on screen, letting the worker go on.
     pub fn answer(&mut self, answer: Answer) {
-        if self.problem.take().is_some() || self.clash.take().is_some() || self.room.take().is_some() {
+        if self.problem.take().is_some() || self.clash.take().is_some() || self.room.take().is_some() || self.too_big.take().is_some() {
             let _ = self.answers.send(answer);
         }
     }
@@ -179,6 +186,17 @@ pub enum Clashes {
     KeepBothAll,
     /// Write over a file only when it is older than the one replacing it.
     ReplaceOlder,
+}
+
+/// A file larger than the filesystem it is going to takes in one - past
+/// 4 GiB, onto FAT - and how large a file there may be.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TooBig {
+    pub path: PathBuf,
+    pub size: u64,
+    /// The directory it goes into, standing for its filesystem.
+    pub dir: PathBuf,
+    pub limit: u64,
 }
 
 /// What the popup shows while the worker waits for an answer.
@@ -213,6 +231,8 @@ pub enum Answer {
     KeepBothAll,
     /// Go on although there seems not to be the room.
     GoOn,
+    /// Split a file too big for where it goes into pieces that fit.
+    Split,
 }
 
 /// What the worker sends back. Bytes are per chunk rather than a running total,
@@ -227,6 +247,8 @@ pub(super) enum JobUpdate {
     Clash(JobClash),
     /// Stuck on a filesystem without the room until an Answer comes back.
     Room(Shortfall),
+    /// Stuck on a file too big for where it goes until an Answer comes back.
+    TooBig(TooBig),
     /// One more entry left where it was.
     Skipped,
     /// What a checksum job found.
@@ -300,6 +322,48 @@ impl<'a> JobProgress<'a> {
         }
     }
 
+    /// Before anything is written: for each file larger than the filesystem
+    /// it goes to takes in one, ask whether to split it into pieces that
+    /// fit, to skip it, or to stop. By the items, the size of piece each is
+    /// to be cut into - or None to copy it as it is, or to leave it, as
+    /// `skipped` says. None for the lot when the job has stopped here.
+    fn splits(&mut self, items: &[(PathBuf, PathBuf, bool)], sizes: &[u64]) -> Option<(Vec<Option<u64>>, Vec<bool>)> {
+        let mut splits = vec![None; items.len()];
+        let mut skipped = vec![false; items.len()];
+        for (index, ((source, dest, is_dir), &size)) in items.iter().zip(sizes).enumerate() {
+            let regular = std::fs::symlink_metadata(source).is_ok_and(|metadata| metadata.is_file());
+            let Some((dir, limit)) = (!*is_dir && regular)
+                .then(|| crate::fs_ops::nearest_existing_dir(dest))
+                .flatten()
+                .and_then(|dir| crate::fs_ops::max_file_size(&dir).map(|limit| (dir, limit)))
+            else {
+                continue;
+            };
+            if size <= limit {
+                continue;
+            }
+            let question = TooBig { path: source.clone(), size, dir, limit };
+            let answer = if self.cancel.load(Ordering::Relaxed) || self.updates.send(JobUpdate::TooBig(question)).is_err() {
+                Answer::Abort
+            } else {
+                self.answers.recv().unwrap_or(Answer::Abort)
+            };
+            match answer {
+                Answer::Split => splits[index] = Some(crate::fs_ops::piece_size(limit)),
+                Answer::Skip => {
+                    skipped[index] = true;
+                    let _ = self.updates.send(JobUpdate::Skipped);
+                    let _ = self.updates.send(JobUpdate::Advanced(self.to_count(size)));
+                }
+                _ => {
+                    let _ = self.updates.send(JobUpdate::Finished(Ok(Transfer::Cancelled)));
+                    return None;
+                }
+            }
+        }
+        Some((splits, skipped))
+    }
+
     /// Tell the journal of something done.
     pub(super) fn did(&self, done: Done) {
         let _ = self.updates.send(JobUpdate::Did(done));
@@ -354,7 +418,7 @@ impl Progress for JobProgress<'_> {
             }
             Answer::Delete => Reply::Delete,
             // Answers to other questions, which a failure is never asked.
-            Answer::Overwrite | Answer::OverwriteAll | Answer::OverwriteOlder | Answer::KeepBoth | Answer::KeepBothAll | Answer::GoOn => Reply::Skip,
+            Answer::Overwrite | Answer::OverwriteAll | Answer::OverwriteOlder | Answer::KeepBoth | Answer::KeepBothAll | Answer::GoOn | Answer::Split => Reply::Skip,
         }
     }
 
@@ -410,7 +474,7 @@ impl Progress for JobProgress<'_> {
                         self.clashes = Clashes::ReplaceOlder;
                         replace_if_older(modified(source), modified(dest))
                     }
-                    Answer::Abort | Answer::Retry | Answer::Delete | Answer::GoOn => Clash::Abort,
+                    Answer::Abort | Answer::Retry | Answer::Delete | Answer::GoOn | Answer::Split => Clash::Abort,
                 }
             }
             Clashes::ReplaceAll => Clash::Replace,
@@ -602,7 +666,12 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, mut progres
         // rename() replaces a file, or an empty directory, without a word, so
         // only a name nothing has taken goes this way. One that is taken goes
         // through move_path, which asks about a file and merges a directory.
-        if !is_copy && !path_exists(&dest) && rename_in_place(&source, &dest) {
+        // Nor one too big for where it goes, which is asked about below.
+        let too_big = || {
+            let limit = crate::fs_ops::nearest_existing_dir(&dest).and_then(|dir| crate::fs_ops::max_file_size(&dir));
+            limit.is_some_and(|limit| std::fs::symlink_metadata(&source).is_ok_and(|metadata| metadata.is_file() && metadata.len() > limit))
+        };
+        if !is_copy && !path_exists(&dest) && !too_big() && rename_in_place(&source, &dest) {
             if let Some(mark) = Mark::of(&dest, false) {
                 progress.did(Done::Moved { from: source, to: dest, mark });
             }
@@ -611,19 +680,60 @@ fn run_transfer(items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, mut progres
         remaining.push((source, dest, is_dir));
     }
 
+    // The first of a file's pieces, copied to a name that is not one: all
+    // of them joined, and counted as all of them.
+    let joins: Vec<Option<Vec<PathBuf>>> = remaining.iter().map(|(source, dest, is_dir)| if is_copy && !is_dir { crate::fs_ops::joining(source, dest) } else { None }).collect();
+
     // Only what is actually going to be copied needs counting, and the
     // room for it is looked for before any of it goes.
-    let sizes: Vec<u64> = remaining.iter().map(|item| measure(std::slice::from_ref(item))).collect();
-    let _ = progress.updates.send(JobUpdate::Total(progress.to_count(sizes.iter().sum())));
+    let sizes: Vec<u64> = remaining.iter().zip(&joins).map(|(item, join)| join.as_deref().map_or_else(|| measure(std::slice::from_ref(item)), crate::fs_ops::joined_size)).collect();
+    // A join is checked against its checksum file, not read back: counted
+    // once on the bar however copies are verified.
+    let total = sizes.iter().zip(&joins).map(|(&size, join)| if join.is_some() { size } else { progress.to_count(size) }).sum();
+    let _ = progress.updates.send(JobUpdate::Total(total));
     if !progress.room_for(&crate::fs_ops::writes(&remaining, &sizes, is_copy)) {
         return;
     }
+    // Too big for where it goes, a file is split, or left, as answered.
+    let Some((splits, skipped)) = progress.splits(&remaining, &sizes) else {
+        return;
+    };
 
-    for (source, dest, is_dir) in remaining {
+    for (((source, dest, is_dir), join), (split, skip)) in remaining.into_iter().zip(joins).zip(splits.into_iter().zip(skipped)) {
+        if skip {
+            continue;
+        }
+        if let Some(piece) = split {
+            // Moved, the file goes once all its pieces are there. Neither
+            // way is it taken back by Ctrl+Z: undoing a move split would
+            // delete the only copy left.
+            let result = match crate::fs_ops::split_file(&source, &dest, piece, &mut progress) {
+                Ok((Transfer::Done, written)) => {
+                    if is_copy {
+                        for path in written {
+                            if let Some(mark) = Mark::of(&path, false) {
+                                progress.did(Done::Copied { to: path, mark });
+                            }
+                        }
+                    } else if !written.is_empty() {
+                        let _ = std::fs::remove_file(&source);
+                    }
+                    Ok(Transfer::Done)
+                }
+                Ok((transfer, _)) => Ok(transfer),
+                Err(error) => Err(error),
+            };
+            match result {
+                Ok(Transfer::Done) => continue,
+                outcome => return progress.finish(outcome),
+            }
+        }
         // Only what went where nothing was can be undone: taking back what
         // was written over, or merged into, would take what was there too.
         let new = !path_exists(&dest);
-        let result = if is_copy {
+        let result = if let Some(pieces) = join {
+            crate::fs_ops::join_pieces(&pieces, &dest, &mut progress)
+        } else if is_copy {
             copy_path(source.clone(), dest.clone(), is_dir, &mut progress)
         } else {
             move_path(source.clone(), dest.clone(), &mut progress)
@@ -697,6 +807,7 @@ impl AppState {
         match job.kind {
             // Each byte counted twice on the bar, read back, when verified.
             TransferKind::Copy => scores.bytes_copied += if verified { job.done / 2 } else { job.done },
+            TransferKind::Join => scores.bytes_copied += job.done,
             TransferKind::Move => scores.bytes_moved += job.done,
             TransferKind::Delete | TransferKind::Trash => scores.deleted += job.done,
             TransferKind::DirEdit => {
@@ -744,6 +855,7 @@ impl AppState {
             problem: None,
             clash: None,
             room: None,
+            too_big: None,
             answers,
             skipped: 0,
             after: None,
@@ -810,7 +922,11 @@ impl AppState {
     /// asked about, written over, or left. A directory onto a directory is
     /// merged whichever it is.
     pub fn start_transfer(&mut self, items: Vec<(PathBuf, PathBuf, bool)>, is_copy: bool, clashes: Clashes) {
-        let kind = if is_copy { TransferKind::Copy } else { TransferKind::Move };
+        let kind = match &items[..] {
+            [(source, dest, false)] if is_copy && crate::fs_ops::joining(source, dest).is_some() => TransferKind::Join,
+            _ if is_copy => TransferKind::Copy,
+            _ => TransferKind::Move,
+        };
         self.start_job(kind, clashes, move |progress| run_transfer(items, is_copy, progress));
     }
 
@@ -847,12 +963,13 @@ impl AppState {
                 Ok(JobUpdate::Advanced(amount)) => job.done += amount,
                 // Asked after Esc, which answered nothing then: there was no
                 // question on screen yet. Esc is the answer, so it is not shown.
-                Ok(JobUpdate::Problem(_) | JobUpdate::Clash(_) | JobUpdate::Room(_)) if job.is_cancelling() => {
+                Ok(JobUpdate::Problem(_) | JobUpdate::Clash(_) | JobUpdate::Room(_) | JobUpdate::TooBig(_)) if job.is_cancelling() => {
                     let _ = job.answers.send(Answer::Abort);
                 }
                 Ok(JobUpdate::Problem(problem)) => job.problem = Some(problem),
                 Ok(JobUpdate::Clash(clash)) => job.clash = Some(clash),
                 Ok(JobUpdate::Room(short)) => job.room = Some(short),
+                Ok(JobUpdate::TooBig(too_big)) => job.too_big = Some(too_big),
                 Ok(JobUpdate::Skipped) => job.skipped += 1,
                 Ok(JobUpdate::Checksums(report)) => job.checksums = Some(report),
                 Ok(JobUpdate::Did(done)) => job.did.push(done),
@@ -878,7 +995,7 @@ impl AppState {
         self.count_scores(&job, &result);
         // Whatever was done, the job finished or not.
         let undo_kind = match job.kind {
-            TransferKind::Copy => Some(UndoKind::Copy),
+            TransferKind::Copy | TransferKind::Join => Some(UndoKind::Copy),
             TransferKind::Move => Some(UndoKind::Move),
             TransferKind::Trash => Some(UndoKind::Trash),
             TransferKind::DirEdit => Some(UndoKind::Edit),

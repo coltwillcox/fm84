@@ -269,6 +269,9 @@ fn job_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         // answers here either.
         KeyCode::Char('r') | KeyCode::Char('R') if job.room.is_some() => job.answer(Answer::Retry),
         KeyCode::Char('c') | KeyCode::Char('C') if job.room.is_some() => job.answer(Answer::GoOn),
+        // Too big for where it goes in one file: in pieces, or not at all.
+        KeyCode::Char('p') | KeyCode::Char('P') if job.too_big.is_some() => job.answer(Answer::Split),
+        KeyCode::Char('s') | KeyCode::Char('S') if job.too_big.is_some() => job.answer(Answer::Skip),
         // An entry that failed, waiting on what to do about it.
         KeyCode::Char('r') | KeyCode::Char('R') if job.problem.is_some() => job.answer(Answer::Retry),
         KeyCode::Char('s') | KeyCode::Char('S') if job.problem.is_some() => job.answer(Answer::Skip),

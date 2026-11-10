@@ -2009,3 +2009,40 @@ msgstr R/F2 - Yeniden adlandır    D/Del - Kaldır    Esc - Kapat
 msgid  {count} entry
 msgstr[one] {count} öğe
 msgstr[other] {count} öğe
+
+msgctxt job
+msgid   Join
+msgstr  Birleştir
+
+msgid  {piece} is not in {sums}
+msgstr {piece}, {sums} içinde yok
+
+msgid  {piece} does not match its checksum
+msgstr {piece} sağlama toplamıyla eşleşmiyor
+
+msgid  {piece} is missing
+msgstr {piece} eksik
+
+msgid  Join pieces
+msgstr Parçaları birleştir
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr "{name}" ve ardındaki parçaları şuraya birleştir:
+
+msgid  Enter - Join
+msgstr Enter - Birleştir
+
+msgid  Joining
+msgstr Birleştiriliyor
+
+msgid  Cannot join
+msgstr Birleştirilemiyor
+
+msgid  Too big for one file
+msgstr Tek dosya için çok büyük
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}; {path} en çok {limit} boyutunda dosya alır
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Parçalara böl    S - Atla    Esc - İptal

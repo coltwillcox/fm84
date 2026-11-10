@@ -2048,3 +2048,40 @@ msgid  {count} entry
 msgstr[one] {count} položka
 msgstr[few] {count} položky
 msgstr[other] {count} položek
+
+msgctxt job
+msgid   Join
+msgstr  Spojit
+
+msgid  {piece} is not in {sums}
+msgstr {piece} není v {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} nesouhlasí se svým kontrolním součtem
+
+msgid  {piece} is missing
+msgstr {piece} chybí
+
+msgid  Join pieces
+msgstr Spojit části
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Spojit „{name}“ a části po něm do:
+
+msgid  Enter - Join
+msgstr Enter - Spojit
+
+msgid  Joining
+msgstr Spojování
+
+msgid  Cannot join
+msgstr Nelze spojit
+
+msgid  Too big for one file
+msgstr Příliš velký na jeden soubor
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, a {path} bere soubory nejvýše {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Rozdělit na části    S - Přeskočit    Esc - Zrušit

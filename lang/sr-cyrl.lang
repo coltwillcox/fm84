@@ -2047,3 +2047,40 @@ msgid  {count} entry
 msgstr[one] {count} ставка
 msgstr[few] {count} ставке
 msgstr[other] {count} ставки
+
+msgctxt job
+msgid   Join
+msgstr  Споји
+
+msgid  {piece} is not in {sums}
+msgstr {piece} није у {sums}
+
+msgid  {piece} does not match its checksum
+msgstr {piece} се не слаже са својим контролним збиром
+
+msgid  {piece} is missing
+msgstr Недостаје {piece}
+
+msgid  Join pieces
+msgstr Споји делове
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Споји „{name}” и делове после њега у:
+
+msgid  Enter - Join
+msgstr Enter - Споји
+
+msgid  Joining
+msgstr Спајање
+
+msgid  Cannot join
+msgstr Није могуће спојити
+
+msgid  Too big for one file
+msgstr Превелик за једну датотеку
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, а {path} прима датотеке до {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Подели на делове    S - Прескочи    Esc - Откажи

@@ -2126,3 +2126,40 @@ msgstr[two] {count} mhír
 msgstr[few] {count} mhír
 msgstr[many] {count} mír
 msgstr[other] {count} mír
+
+msgctxt job
+msgid   Join
+msgstr  Nasc
+
+msgid  {piece} is not in {sums}
+msgstr Níl {piece} i {sums}
+
+msgid  {piece} does not match its checksum
+msgstr Ní hionann {piece} agus a suim sheiceála
+
+msgid  {piece} is missing
+msgstr Tá {piece} ar iarraidh
+
+msgid  Join pieces
+msgstr Nasc na píosaí
+
+msgid  Join "{name}" and the pieces after it into:
+msgstr Nasc "{name}" agus na píosaí ina dhiaidh isteach i:
+
+msgid  Enter - Join
+msgstr Enter - Nasc
+
+msgid  Joining
+msgstr Ag nascadh
+
+msgid  Cannot join
+msgstr Ní féidir nascadh
+
+msgid  Too big for one file
+msgstr Rómhór do chomhad amháin
+
+msgid  {size}, and {path} takes files of up to {limit}
+msgstr {size}, agus glacann {path} le comhaid suas le {limit}
+
+msgid  P - Split into pieces    S - Skip    Esc - Cancel
+msgstr P - Roinn ina phíosaí    S - Scipeáil    Esc - Cealaigh

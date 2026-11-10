@@ -182,6 +182,7 @@ fn every_input_field_wears_the_rename_colours() {
                 input: typed(),
                 opened_with: String::new(),
                 default: std::path::PathBuf::from("/b"),
+                join: false,
             },
         ),
         (
@@ -294,6 +295,7 @@ fn popups_share_a_width_and_keep_to_the_panels() {
                 input,
                 opened_with: String::new(),
                 default: PathBuf::from("/b"),
+                join: false,
             },
         ),
         (
