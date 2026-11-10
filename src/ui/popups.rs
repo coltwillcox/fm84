@@ -798,6 +798,66 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     f.render_widget(Paragraph::new(lines), inner);
 }
 
+/// Alt+Shift+B: the mixtapes, numbered for 1 to 9, each with how much is on
+/// it, the one playing marked. A name being typed is typed where the tape's
+/// name is - or, for a new one, in a row of its own after the highlight.
+pub(super) fn render_mixtapes_popup(f: &mut ratatui::Frame<'_>, area: Rect, tapes: &crate::options::Mixtapes, list: &crate::app::MixtapeList) {
+    let popup_area = popup_rect(60, area);
+    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Mixtapes")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    // One blank row and two of keys under the list.
+    let rows = (inner.height as usize).saturating_sub(3);
+
+    // The rows as listed, a new tape being named among them.
+    let new_at = list.naming.as_ref().filter(|naming| !naming.renaming).map(|_| if tapes.tapes.is_empty() { 0 } else { list.index + 1 });
+    let mut entries: Vec<Option<usize>> = (0..tapes.tapes.len()).map(Some).collect();
+    if let Some(at) = new_at {
+        entries.insert(at, None);
+    }
+    let highlight = new_at.unwrap_or(list.index);
+
+    let mut lines = Vec::new();
+    if entries.is_empty() {
+        lines.push(Line::from(Span::styled(t!("No mixtapes yet - N starts one"), style_file())));
+    }
+    let first = if rows > 0 && highlight >= rows { highlight + 1 - rows } else { 0 };
+    for (row, entry) in entries.iter().enumerate().skip(first).take(rows) {
+        let selected = row == highlight;
+        let base = if selected { style_title().bg(palette().selected_background) } else { style_dir() };
+        let tape = entry.and_then(|index| tapes.tapes.get(index));
+        let label = match entry {
+            Some(index) if *index < 9 => format!("{} ", index + 1),
+            _ => "  ".to_string(),
+        };
+        let mark = if entry.is_some() && *entry == Some(tapes.playing) { "▶ " } else { "  " };
+        let count = tape.map(|tape| tn!(tape.items.len(), "{count} entry", "{count} entries", count = tape.items.len())).unwrap_or_default();
+        let room = width.saturating_sub(label.len() + 2 + display_width(&count) + 1);
+        let mut spans = vec![Span::styled(format!("{label}{mark}"), base)];
+        match &list.naming {
+            Some(naming) if selected => spans.extend(naming.input.cursor_spans_within(room, style_input(), style_input_cursor())),
+            _ => spans.push(Span::styled(tail_of(&printable_name(tape.map_or("", |tape| tape.name.as_str())), room), base)),
+        }
+        let used: usize = spans.iter().map(|span| display_width(&span.content)).sum();
+        spans.push(Span::styled(format!("{count:>0$}", width.saturating_sub(used)), base));
+        lines.push(Line::from(spans));
+    }
+    while lines.len() < rows + 1 {
+        lines.push(Line::from(""));
+    }
+    if list.naming.is_some() {
+        lines.push(key_hints(t!("Enter - OK    Esc - Cancel")).centered());
+        lines.push(Line::from(""));
+    } else {
+        lines.push(key_hints(t!("Enter/1-9 - Show    Space - Play    N/Ins - New")).centered());
+        lines.push(key_hints(t!("R/F2 - Rename    D/Del - Remove    Esc - Close")).centered());
+    }
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
 /// Alt+M: the user's commands, each with what it runs beside it, numbered as
 /// the bookmarks are - laid out as they are, too.
 pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, menu: &crate::app::UserMenu) {

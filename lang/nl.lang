@@ -1677,14 +1677,8 @@ msgstr Bezig met zoeken naar dubbele bestanden
 msgid  No duplicates found
 msgstr Geen dubbele bestanden gevonden
 
-msgid  Basket: {count}
-msgstr Mandje: {count}
 
-msgid  The basket is empty
-msgstr Het mandje is leeg
 
-msgid  The basket holds files on more than one drive
-msgstr Het mandje bevat bestanden op meer dan één schijf
 
 msgid  F Follow
 msgstr F Volgen
@@ -1977,3 +1971,40 @@ msgstr Nachtrit als het met rust gelaten wordt
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} is leeg
+
+msgid  There is a mixtape called {name} already
+msgstr Er is al een mixtape met de naam {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Kan de mixtapes niet opslaan: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} bevat bestanden op meer dan één schijf
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtapes
+
+msgid  No mixtapes yet - N starts one
+msgstr Nog geen mixtapes - N begint er een
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Annuleren
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Tonen    Space - Afspelen    N/Ins - Nieuw
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Hernoemen    D/Del - Verwijderen    Esc - Sluiten
+
+msgid  {count} entry
+msgstr[one] {count} item
+msgstr[other] {count} items

@@ -1677,14 +1677,8 @@ msgstr Leter etter duplikater
 msgid  No duplicates found
 msgstr Ingen duplikater funnet
 
-msgid  Basket: {count}
-msgstr Kurv: {count}
 
-msgid  The basket is empty
-msgstr Kurven er tom
 
-msgid  The basket holds files on more than one drive
-msgstr Kurven har filer på mer enn én stasjon
 
 msgid  F Follow
 msgstr F Følg
@@ -1977,3 +1971,40 @@ msgstr Nattkjøring når den blir latt i fred
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} er tom
+
+msgid  There is a mixtape called {name} already
+msgstr Det finnes allerede en mixtape som heter {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Kan ikke lagre mixtapene: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} har filer på mer enn én disk
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtaper
+
+msgid  No mixtapes yet - N starts one
+msgstr Ingen mixtaper ennå - N starter en
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Avbryt
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Vis    Space - Spill    N/Ins - Ny
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Gi nytt navn    D/Del - Fjern    Esc - Lukk
+
+msgid  {count} entry
+msgstr[one] {count} element
+msgstr[other] {count} elementer

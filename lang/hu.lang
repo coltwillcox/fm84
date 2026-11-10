@@ -1679,14 +1679,8 @@ msgstr Ismétlődések keresése folyamatban
 msgid  No duplicates found
 msgstr Nincsenek ismétlődések
 
-msgid  Basket: {count}
-msgstr Kosár: {count}
 
-msgid  The basket is empty
-msgstr A kosár üres
 
-msgid  The basket holds files on more than one drive
-msgstr A kosárban több meghajtón lévő fájlok vannak
 
 msgid  F Follow
 msgstr F Követés
@@ -1979,3 +1973,40 @@ msgstr Éjszakai autózás, ha magára hagyják
 
 msgid  {minutes} min
 msgstr {minutes} perc
+
+msgid  {tape} is empty
+msgstr {tape} üres
+
+msgid  There is a mixtape called {name} already
+msgstr Már van {name} nevű mixtape
+
+msgid  Cannot save the mixtapes: {e}
+msgstr A mixtape-ek nem menthetők: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} egynél több meghajtón lévő fájlokat tartalmaz
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtape-ek
+
+msgid  No mixtapes yet - N starts one
+msgstr Még nincs mixtape - N indít egyet
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Mégse
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Megjelenítés    Szóköz - Lejátszás    N/Ins - Új
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Átnevezés    D/Del - Eltávolítás    Esc - Bezárás
+
+msgid  {count} entry
+msgstr[one] {count} elem
+msgstr[other] {count} elem

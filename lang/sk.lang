@@ -1716,14 +1716,8 @@ msgstr Hľadanie duplikátov
 msgid  No duplicates found
 msgstr Nenašli sa žiadne duplikáty
 
-msgid  Basket: {count}
-msgstr Košík: {count}
 
-msgid  The basket is empty
-msgstr Košík je prázdny
 
-msgid  The basket holds files on more than one drive
-msgstr Košík obsahuje súbory na viac ako jednej jednotke
 
 msgid  F Follow
 msgstr F Sledovať
@@ -2016,3 +2010,41 @@ msgstr Nočná jazda, keď je ponechaný sám
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} je prázdna
+
+msgid  There is a mixtape called {name} already
+msgstr Mixtape s názvom {name} už existuje
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Mixtapy nemožno uložiť: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} obsahuje súbory na viac ako jednom disku
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtapy
+
+msgid  No mixtapes yet - N starts one
+msgstr Zatiaľ žiadne mixtapy - N založí prvú
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Zrušiť
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Zobraziť    Space - Prehrať    N/Ins - Nová
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Premenovať    D/Del - Odobrať    Esc - Zavrieť
+
+msgid  {count} entry
+msgstr[one] {count} položka
+msgstr[few] {count} položky
+msgstr[other] {count} položiek

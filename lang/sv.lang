@@ -1678,14 +1678,8 @@ msgstr Letar efter dubbletter
 msgid  No duplicates found
 msgstr Inga dubbletter hittades
 
-msgid  Basket: {count}
-msgstr Korg: {count}
 
-msgid  The basket is empty
-msgstr Korgen är tom
 
-msgid  The basket holds files on more than one drive
-msgstr Korgen har filer på mer än en enhet
 
 msgid  F Follow
 msgstr F Följ
@@ -1978,3 +1972,40 @@ msgstr Nattkörning när den lämnas ifred
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} är tom
+
+msgid  There is a mixtape called {name} already
+msgstr Det finns redan ett mixtape som heter {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Kan inte spara mixtapen: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} har filer på mer än en enhet
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtapes
+
+msgid  No mixtapes yet - N starts one
+msgstr Inga mixtapes än - N startar ett
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Avbryt
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Visa    Space - Spela    N/Ins - Nytt
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Byt namn    D/Del - Ta bort    Esc - Stäng
+
+msgid  {count} entry
+msgstr[one] {count} post
+msgstr[other] {count} poster

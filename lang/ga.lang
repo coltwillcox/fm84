@@ -1792,14 +1792,8 @@ msgstr Dúblaigh á lorg
 msgid  No duplicates found
 msgstr Níor aimsíodh aon dúblach
 
-msgid  Basket: {count}
-msgstr Ciseán: {count}
 
-msgid  The basket is empty
-msgstr Tá an ciseán folamh
 
-msgid  The basket holds files on more than one drive
-msgstr Tá comhaid ar níos mó ná tiomántán amháin sa chiseán
 
 msgid  F Follow
 msgstr F Lean
@@ -2092,3 +2086,43 @@ msgstr Tiomáint oíche nuair a fhágtar leis féin é
 
 msgid  {minutes} min
 msgstr {minutes} nóim
+
+msgid  {tape} is empty
+msgstr Tá {tape} folamh
+
+msgid  There is a mixtape called {name} already
+msgstr Tá mixtape darb ainm {name} ann cheana
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Ní féidir na mixtapes a shábháil: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr Tá comhaid ar níos mó ná tiomántán amháin ar {tape}
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtapes
+
+msgid  No mixtapes yet - N starts one
+msgstr Níl aon mixtape fós - Tosaíonn N ceann
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Cealaigh
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Taispeáin    Space - Seinn    N/Ins - Nua
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Athainmnigh    D/Del - Bain    Esc - Dún
+
+msgid  {count} entry
+msgstr[one] {count} mhír
+msgstr[two] {count} mhír
+msgstr[few] {count} mhír
+msgstr[many] {count} mír
+msgstr[other] {count} mír

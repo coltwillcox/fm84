@@ -1716,14 +1716,8 @@ msgstr Se caută duplicatele
 msgid  No duplicates found
 msgstr Nu s-au găsit duplicate
 
-msgid  Basket: {count}
-msgstr Coș: {count}
 
-msgid  The basket is empty
-msgstr Coșul este gol
 
-msgid  The basket holds files on more than one drive
-msgstr Coșul are fișiere pe mai multe unități
 
 msgid  F Follow
 msgstr F Urmărește
@@ -2016,3 +2010,41 @@ msgstr Condus de noapte când e lăsat singur
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} este goală
+
+msgid  There is a mixtape called {name} already
+msgstr Există deja o compilație numită {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Compilațiile nu pot fi salvate: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} are fișiere pe mai multe unități
+
+msgid  Mixtape
+msgstr Compilație
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Compilații
+
+msgid  No mixtapes yet - N starts one
+msgstr Încă nicio compilație - N începe una
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Anulează
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Arată    Space - Redă    N/Ins - Nouă
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Redenumește    D/Del - Elimină    Esc - Închide
+
+msgid  {count} entry
+msgstr[one] {count} element
+msgstr[few] {count} elemente
+msgstr[other] {count} de elemente

@@ -1678,14 +1678,8 @@ msgstr Kopyalar aranıyor
 msgid  No duplicates found
 msgstr Kopya bulunamadı
 
-msgid  Basket: {count}
-msgstr Sepet: {count}
 
-msgid  The basket is empty
-msgstr Sepet boş
 
-msgid  The basket holds files on more than one drive
-msgstr Sepette birden fazla sürücüdeki dosyalar var
 
 msgid  F Follow
 msgstr F İzle
@@ -1978,3 +1972,40 @@ msgstr Yalnız bırakılınca gece sürüşü
 
 msgid  {minutes} min
 msgstr {minutes} dk
+
+msgid  {tape} is empty
+msgstr {tape} boş
+
+msgid  There is a mixtape called {name} already
+msgstr {name} adlı bir karışık kaset zaten var
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Karışık kasetler kaydedilemiyor: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} birden fazla sürücüde dosya içeriyor
+
+msgid  Mixtape
+msgstr Karışık kaset
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Karışık kasetler
+
+msgid  No mixtapes yet - N starts one
+msgstr Henüz karışık kaset yok - N yenisini başlatır
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - Tamam    Esc - İptal
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Göster    Space - Çal    N/Ins - Yeni
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Yeniden adlandır    D/Del - Kaldır    Esc - Kapat
+
+msgid  {count} entry
+msgstr[one] {count} öğe
+msgstr[other] {count} öğe

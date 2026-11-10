@@ -1716,14 +1716,8 @@ msgstr Traženje duplikata
 msgid  No duplicates found
 msgstr Nema duplikata
 
-msgid  Basket: {count}
-msgstr Košarica: {count}
 
-msgid  The basket is empty
-msgstr Košarica je prazna
 
-msgid  The basket holds files on more than one drive
-msgstr Košarica sadrži datoteke na više od jednog pogona
 
 msgid  F Follow
 msgstr F Prati
@@ -2016,3 +2010,41 @@ msgstr Noćna vožnja kad ostane sam
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} je prazan
+
+msgid  There is a mixtape called {name} already
+msgstr Već postoji mixtape imena {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Mixtapeovi se ne mogu spremiti: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} ima datoteke na više od jednog diska
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtapeovi
+
+msgid  No mixtapes yet - N starts one
+msgstr Još nema mixtapeova - N započinje jedan
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - U redu    Esc - Odustani
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Prikaži    Space - Pusti    N/Ins - Novi
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Preimenuj    D/Del - Ukloni    Esc - Zatvori
+
+msgid  {count} entry
+msgstr[one] {count} stavka
+msgstr[few] {count} stavke
+msgstr[other] {count} stavki

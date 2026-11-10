@@ -149,14 +149,17 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'p' {
             open_pack(app_state);
         }
-        // Alt+B puts what is chosen in the basket, or takes it out of the
-        // basket on show; Alt+Shift+B shows it, or puts it away.
+        // Alt+B puts what is chosen on the mixtape playing, or takes it off
+        // the tape on show; Alt+Shift+B lists the tapes, or puts the one on
+        // show away.
         if in_panel && c == 'b' {
             let items = chosen_items(app_state);
             app_state.basket_toggle(items);
         }
         if in_panel && c == 'B' {
             app_state.open_basket();
+        } else if c == 'B' && modifiers.contains(KeyModifiers::ALT) && app_state.error.is_none() && matches!(&app_state.dialog, Some(Dialog::Mixtapes(list)) if list.naming.is_none()) {
+            app_state.dialog = None;
         }
         // Alt+R, the directory summed up.
         if in_panel && c == 'r' {
@@ -517,6 +520,33 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                 _ => {}
             }
         }
+        Some(Dialog::Mixtapes(list)) if list.naming.is_some() => match code {
+            KeyCode::Esc => app_state.cancel_mixtape_name(),
+            KeyCode::Enter => app_state.commit_mixtape_name(),
+            _ => edit_text(app_state, code),
+        },
+        Some(Dialog::Mixtapes(_)) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Enter => app_state.show_mixtape(),
+            KeyCode::Char(' ') => app_state.play_mixtape(),
+            KeyCode::Up => app_state.move_mixtape_cursor(-1),
+            KeyCode::Down => app_state.move_mixtape_cursor(1),
+            KeyCode::Home => app_state.move_mixtape_cursor(isize::MIN),
+            KeyCode::End => app_state.move_mixtape_cursor(isize::MAX),
+            KeyCode::Insert | KeyCode::Char('n' | 'N') => app_state.name_mixtape(false),
+            KeyCode::F(2) | KeyCode::Char('r' | 'R') => app_state.name_mixtape(true),
+            KeyCode::Delete | KeyCode::Char('d' | 'D') => app_state.remove_mixtape(),
+            // 1 to 9 show that one straight away.
+            KeyCode::Char(c @ '1'..='9') => {
+                let wanted = c as usize - '1' as usize;
+                if wanted < app_state.tapes.tapes.len() {
+                    app_state.move_mixtape_cursor(isize::MIN);
+                    app_state.move_mixtape_cursor(wanted as isize);
+                    app_state.show_mixtape();
+                }
+            }
+            _ => {}
+        },
         Some(Dialog::UserMenu(_)) => match code {
             KeyCode::Esc => app_state.dialog = None,
             KeyCode::Enter => run_user_menu_entry(app_state),

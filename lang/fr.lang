@@ -1679,14 +1679,8 @@ msgstr Recherche des doublons
 msgid  No duplicates found
 msgstr Aucun doublon trouvé
 
-msgid  Basket: {count}
-msgstr Panier : {count}
 
-msgid  The basket is empty
-msgstr Le panier est vide
 
-msgid  The basket holds files on more than one drive
-msgstr Le panier contient des fichiers sur plus d'un lecteur
 
 msgid  F Follow
 msgstr F Suivre
@@ -1979,3 +1973,40 @@ msgstr Conduite de nuit quand il est laissé seul
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} est vide
+
+msgid  There is a mixtape called {name} already
+msgstr Une mixtape s’appelle déjà {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Impossible d’enregistrer les mixtapes : {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} contient des fichiers sur plusieurs lecteurs
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape} : {count}
+
+msgid  Mixtapes
+msgstr Mixtapes
+
+msgid  No mixtapes yet - N starts one
+msgstr Aucune mixtape pour l’instant - N en commence une
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Entrée - OK    Échap - Annuler
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Entrée/1-9 - Afficher    Espace - Lire    N/Inser - Nouvelle
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Renommer    D/Suppr - Retirer    Échap - Fermer
+
+msgid  {count} entry
+msgstr[one] {count} élément
+msgstr[other] {count} éléments

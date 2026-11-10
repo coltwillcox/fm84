@@ -1679,14 +1679,8 @@ msgstr Buscando duplicados
 msgid  No duplicates found
 msgstr No se encontraron duplicados
 
-msgid  Basket: {count}
-msgstr Cesta: {count}
 
-msgid  The basket is empty
-msgstr La cesta está vacía
 
-msgid  The basket holds files on more than one drive
-msgstr La cesta tiene archivos en más de una unidad
 
 msgid  F Follow
 msgstr F Seguir
@@ -1979,3 +1973,40 @@ msgstr Conducción nocturna al quedarse solo
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} está vacía
+
+msgid  There is a mixtape called {name} already
+msgstr Ya hay una mixtape llamada {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr No se pueden guardar las mixtapes: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} tiene archivos en más de una unidad
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtapes
+
+msgid  No mixtapes yet - N starts one
+msgstr Aún no hay mixtapes - N empieza una
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Intro - Aceptar    Esc - Cancelar
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Intro/1-9 - Mostrar    Espacio - Reproducir    N/Ins - Nueva
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Renombrar    D/Supr - Quitar    Esc - Cerrar
+
+msgid  {count} entry
+msgstr[one] {count} elemento
+msgstr[other] {count} elementos

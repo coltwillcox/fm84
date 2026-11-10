@@ -5,13 +5,14 @@ use std::io;
 use std::path::PathBuf;
 
 mod config;
+mod mixtapes;
 mod rows;
 mod scores;
 mod session;
 #[cfg(test)]
 mod tests;
 
-pub use self::{config::*, rows::*, scores::*, session::*};
+pub use self::{config::*, mixtapes::*, rows::*, scores::*, session::*};
 
 /// What the file rows are ordered by.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

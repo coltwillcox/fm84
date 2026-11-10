@@ -59,7 +59,7 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*, multi_rename::*,
+    archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*, multi_rename::*,
     open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, undo::*, user_menu::*, viewing::*,
 };
 
@@ -232,6 +232,9 @@ pub enum Dialog {
     FindFiles(Box<FindFiles>),
     /// Ctrl+D: the directories kept to go back to, and the one highlighted.
     Bookmarks { list: Vec<PathBuf>, index: usize },
+    /// Alt+Shift+B: the mixtapes, the one highlighted, and a name being
+    /// typed for one.
+    Mixtapes(Box<MixtapeList>),
     /// Alt+Down: the directories visited, narrowed by what is typed.
     History(Box<HistoryList>),
     /// Alt+M: the user's own commands.
@@ -332,9 +335,9 @@ pub struct AppState {
     pub stay_put: bool,
     /// What the last jobs did, the latest last, for Ctrl+Z.
     pub undo: Vec<Undo>,
-    /// Alt+B's basket: what has been gathered, as paths, and whether each
-    /// is a directory.
-    pub basket: Vec<(PathBuf, bool)>,
+    /// Alt+B's mixtapes: baskets with names, kept across runs, one of them
+    /// playing - the one Alt+B adds to.
+    pub tapes: crate::options::Mixtapes,
     /// What the Info column's commands gave, by the file as it was and the
     /// command, so a reread runs nothing that has run already.
     pub info_cache: HashMap<(PathBuf, u64, Option<SystemTime>, String), String>,
@@ -711,7 +714,7 @@ impl AppState {
             quit_armed: false,
             stay_put: false,
             undo: Vec::new(),
-            basket: Vec::new(),
+            tapes: if cfg!(test) { crate::options::Mixtapes::default() } else { crate::options::Mixtapes::load() },
             info_cache: HashMap::new(),
             explosion: None,
             last_input: Instant::now(),
@@ -739,6 +742,7 @@ impl AppState {
             Dialog::Revision(list) => Some(&mut list.input),
             Dialog::Options { editing } => editing.as_mut(),
             Dialog::History(list) => Some(&mut list.input),
+            Dialog::Mixtapes(list) => list.naming.as_mut().map(|naming| &mut naming.input),
             Dialog::Attributes(form) => form.fields.get_mut(form.focus).map(|field| &mut field.input),
             Dialog::MultiRename(rename) => rename.fields.get_mut(rename.focus),
             Dialog::FindFiles(find) => match find.as_mut() {

@@ -1678,14 +1678,8 @@ msgstr Αναζήτηση διπλότυπων
 msgid  No duplicates found
 msgstr Δεν βρέθηκαν διπλότυπα
 
-msgid  Basket: {count}
-msgstr Καλάθι: {count}
 
-msgid  The basket is empty
-msgstr Το καλάθι είναι άδειο
 
-msgid  The basket holds files on more than one drive
-msgstr Το καλάθι έχει αρχεία σε περισσότερους από έναν δίσκους
 
 msgid  F Follow
 msgstr F Παρακολούθηση
@@ -1978,3 +1972,40 @@ msgstr Νυχτερινή οδήγηση όταν μένει μόνο του
 
 msgid  {minutes} min
 msgstr {minutes} λεπ.
+
+msgid  {tape} is empty
+msgstr Το {tape} είναι άδειο
+
+msgid  There is a mixtape called {name} already
+msgstr Υπάρχει ήδη mixtape με όνομα {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Δεν είναι δυνατή η αποθήκευση των mixtape: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr Το {tape} έχει αρχεία σε περισσότερους από έναν δίσκους
+
+msgid  Mixtape
+msgstr Mixtape
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Mixtape
+
+msgid  No mixtapes yet - N starts one
+msgstr Κανένα mixtape ακόμα - Το N ξεκινά ένα
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Άκυρο
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Εμφάνιση    Space - Αναπαραγωγή    N/Ins - Νέο
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Μετονομασία    D/Del - Αφαίρεση    Esc - Κλείσιμο
+
+msgid  {count} entry
+msgstr[one] {count} στοιχείο
+msgstr[other] {count} στοιχεία

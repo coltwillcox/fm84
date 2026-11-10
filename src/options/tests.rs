@@ -193,3 +193,33 @@ fn the_night_drive_waits_as_many_minutes_as_asked() {
     assert_eq!(Options::parse("night_drive = 7\n").night_drive_minutes, 7);
     assert_eq!(Options::parse("night_drive = forever\n").night_drive_minutes, 0);
 }
+
+/// The mixtapes file: each tape's name and what is on it, odd names and
+/// all, and which is playing.
+#[test]
+fn mixtapes_read_back_the_same() {
+    let mixtapes = Mixtapes {
+        tapes: vec![
+            Tape {
+                name: "Release files".into(),
+                items: vec![(PathBuf::from("/srv/out/fm84.tar.gz"), false), (PathBuf::from(" edged %"), true)],
+            },
+            Tape { name: "Tax 2026".into(), items: Vec::new() },
+        ],
+        playing: 1,
+    };
+    assert_eq!(Mixtapes::parse(&mixtapes.serialize()), mixtapes);
+    // A file before any tape has nowhere to go, and a tape not there does
+    // not play.
+    let read = Mixtapes::parse("file = /lost\nplaying = Gone\ntape = One\nfile = /a\n");
+    assert_eq!(
+        read.tapes,
+        vec![Tape {
+            name: "One".into(),
+            items: vec![(PathBuf::from("/a"), false)]
+        }]
+    );
+    assert_eq!(read.playing, 0);
+    assert_eq!(Mixtapes::default().fresh_name("Mixtape"), "Mixtape");
+    assert_eq!(mixtapes.fresh_name("Tax 2026"), "Tax 2026 2");
+}

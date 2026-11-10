@@ -1716,14 +1716,8 @@ msgstr Szukanie duplikatów
 msgid  No duplicates found
 msgstr Nie znaleziono duplikatów
 
-msgid  Basket: {count}
-msgstr Koszyk: {count}
 
-msgid  The basket is empty
-msgstr Koszyk jest pusty
 
-msgid  The basket holds files on more than one drive
-msgstr Koszyk zawiera pliki z więcej niż jednego dysku
 
 msgid  F Follow
 msgstr F Śledź
@@ -2016,3 +2010,41 @@ msgstr Nocna jazda, gdy zostanie sam
 
 msgid  {minutes} min
 msgstr {minutes} min
+
+msgid  {tape} is empty
+msgstr {tape} jest pusta
+
+msgid  There is a mixtape called {name} already
+msgstr Jest już składanka o nazwie {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Nie można zapisać składanek: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} ma pliki na więcej niż jednym dysku
+
+msgid  Mixtape
+msgstr Składanka
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Składanki
+
+msgid  No mixtapes yet - N starts one
+msgstr Nie ma jeszcze składanek - N zaczyna nową
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Anuluj
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Pokaż    Spacja - Odtwarzaj    N/Ins - Nowa
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Zmień nazwę    D/Del - Usuń    Esc - Zamknij
+
+msgid  {count} entry
+msgstr[one] {count} pozycja
+msgstr[few] {count} pozycje
+msgstr[other] {count} pozycji

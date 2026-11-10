@@ -1677,14 +1677,8 @@ msgstr Търсят се дубликати
 msgid  No duplicates found
 msgstr Не са намерени дубликати
 
-msgid  Basket: {count}
-msgstr Кошница: {count}
 
-msgid  The basket is empty
-msgstr Кошницата е празна
 
-msgid  The basket holds files on more than one drive
-msgstr Кошницата съдържа файлове на повече от едно устройство
 
 msgid  F Follow
 msgstr F Следене
@@ -1977,3 +1971,40 @@ msgstr Нощно каране, когато е оставен сам
 
 msgid  {minutes} min
 msgstr {minutes} мин
+
+msgid  {tape} is empty
+msgstr {tape} е празна
+
+msgid  There is a mixtape called {name} already
+msgstr Вече има микстейп с име {name}
+
+msgid  Cannot save the mixtapes: {e}
+msgstr Микстейповете не могат да се запишат: {e}
+
+msgid  {tape} holds files on more than one drive
+msgstr {tape} съдържа файлове на повече от едно устройство
+
+msgid  Mixtape
+msgstr Микстейп
+
+msgid  {tape}: {count}
+msgstr {tape}: {count}
+
+msgid  Mixtapes
+msgstr Микстейпове
+
+msgid  No mixtapes yet - N starts one
+msgstr Още няма микстейпове - N започва нов
+
+msgid  Enter - OK    Esc - Cancel
+msgstr Enter - OK    Esc - Отказ
+
+msgid  Enter/1-9 - Show    Space - Play    N/Ins - New
+msgstr Enter/1-9 - Показване    Space - Пускане    N/Ins - Нов
+
+msgid  R/F2 - Rename    D/Del - Remove    Esc - Close
+msgstr R/F2 - Преименуване    D/Del - Премахване    Esc - Затваряне
+
+msgid  {count} entry
+msgstr[one] {count} елемент
+msgstr[other] {count} елемента

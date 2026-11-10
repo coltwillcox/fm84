@@ -439,6 +439,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             Some(Dialog::Attributes(form)) => attribute_rows = render_attributes_popup(f, area, form),
             Some(Dialog::Branches(list)) => branch_rows = render_branches_popup(f, area, list),
             Some(Dialog::Bookmarks { list, index }) => render_bookmarks_popup(f, area, list, *index, &app_state.panel_dir(app_state.active_side)),
+            Some(Dialog::Mixtapes(list)) => render_mixtapes_popup(f, area, &app_state.tapes, list),
             Some(Dialog::History(list)) => render_history_popup(f, area, list, &app_state.panel_dir(app_state.active_side)),
             Some(Dialog::UserMenu(menu)) => render_user_menu_popup(f, area, menu),
             Some(Dialog::OpenWith(menu)) => render_open_with_popup(f, area, menu),

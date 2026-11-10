@@ -321,6 +321,7 @@ fn popups_share_a_width_and_keep_to_the_panels() {
         ),
         (" Unsaved Changes ", Dialog::SaveChanges { then_quit: false }),
         (" Bookmarks ", Dialog::Bookmarks { list: vec![PathBuf::from("/a")], index: 0 }),
+        (" Mixtapes ", Dialog::Mixtapes(Box::new(crate::app::MixtapeList { index: 0, naming: None }))),
         (" Directory History ", history),
         (
             " User Menu ",

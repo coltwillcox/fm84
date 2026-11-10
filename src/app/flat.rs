@@ -12,7 +12,8 @@ pub struct Flat {
     /// What Find files fed it, by their paths from `dir`, and whether each
     /// is a directory. None for Ctrl+B's walk.
     pub feed: Option<Arc<Vec<(PathBuf, bool)>>>,
-    /// The feed is Alt+Shift+B's basket, which Alt+B takes entries out of.
+    /// The feed is the mixtape playing, shown from Alt+Shift+B, which Alt+B
+    /// takes entries out of.
     pub basket: bool,
 }
 
@@ -22,11 +23,17 @@ impl AppState {
     /// list holds paths, and at the next reread one no longer there is
     /// taken to be gone.
     pub fn feed_follow(&mut self, moves: &[(PathBuf, PathBuf)]) {
-        // The basket follows its files, and what is inside a directory in it.
-        for (path, _) in &mut self.basket {
+        // The mixtapes follow their files, and what is inside a directory on
+        // one - every tape, not only the one playing.
+        let mut followed = false;
+        for (path, _) in self.tapes.tapes.iter_mut().flat_map(|tape| &mut tape.items) {
             if let Some(moved) = moves.iter().find_map(|(from, to)| path.strip_prefix(from).ok().map(|below| if below.as_os_str().is_empty() { to.clone() } else { to.join(below) })) {
                 *path = moved;
+                followed = true;
             }
+        }
+        if followed {
+            self.save_tapes();
         }
         for flat in [&mut self.left.flat, &mut self.right.flat].into_iter().flatten() {
             let Some(feed) = &flat.feed else { continue };
