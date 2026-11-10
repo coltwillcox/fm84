@@ -2100,5 +2100,5 @@ msgstr Отворени са първите {count} директории
 msgid  Reading the tree
 msgstr Четене на дървото
 
-msgid  Not the root of the drive
-msgstr Не и коренът на устройството
+msgid  Not the top of the tree
+msgstr Не и върхът на дървото

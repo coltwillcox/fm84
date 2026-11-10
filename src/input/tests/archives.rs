@@ -754,3 +754,51 @@ fn a_locked_7z_asks_from_outside_too() {
     crate::archive::forget_password(&here.join("box.7z"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// F5 and F8 on the tree inside an archive do what they do there: copied
+/// out of it to the other panel, deleted from it. Its top is left alone.
+#[test]
+fn the_tree_f_keys_inside_an_archive() {
+    let dir = scratch("tree-keys");
+    let archive = dir.join("box.zip");
+    zip(&archive, &[("keep/a.txt", Put::File(b"a")), ("gone/b.txt", Put::File(b"b"))]);
+    std::fs::create_dir_all(dir.join("out")).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.options.confirm_copy_move = false;
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Right, dir.join("out"), None);
+    app_state.open_dir(Side::Left, archive.clone(), None);
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::F(10), KeyModifiers::ALT));
+    let finish = |app_state: &mut AppState| {
+        let started = std::time::Instant::now();
+        while app_state.workers.job.is_some() {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "never finished");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
+        assert_eq!(app_state.error, None);
+    };
+    // The top: the whole archive, not to be copied or deleted from here.
+    press(&mut app_state, KeyCode::F(5));
+    assert_eq!(app_state.error.take().as_deref(), Some("Not the top of the tree"));
+
+    // keep, after gone: copied out.
+    press(&mut app_state, KeyCode::Right);
+    press(&mut app_state, KeyCode::Down);
+    assert_eq!(app_state.tree_cursor(Side::Left), Some(archive.join("keep")));
+    press(&mut app_state, KeyCode::F(5));
+    finish(&mut app_state);
+    assert_eq!(std::fs::read_to_string(dir.join("out/keep/a.txt")).unwrap(), "a");
+
+    // gone: deleted from the archive, asked first.
+    press(&mut app_state, KeyCode::Up);
+    assert_eq!(app_state.tree_cursor(Side::Left), Some(archive.join("gone")));
+    press(&mut app_state, KeyCode::F(8));
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    let index = crate::archive::index(&archive).unwrap();
+    assert!(index.find(std::path::Path::new("gone")).is_none());
+    assert!(index.find(std::path::Path::new("keep/a.txt")).is_some());
+    std::fs::remove_dir_all(&dir).unwrap();
+}

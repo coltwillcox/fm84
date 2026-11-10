@@ -2101,5 +2101,5 @@ msgstr Die ersten {count} Verzeichnisse geöffnet
 msgid  Reading the tree
 msgstr Lese den Baum
 
-msgid  Not the root of the drive
-msgstr Nicht die Wurzel des Laufwerks
+msgid  Not the top of the tree
+msgstr Nicht die Spitze des Baums

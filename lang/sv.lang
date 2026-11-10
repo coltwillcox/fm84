@@ -2101,5 +2101,5 @@ msgstr Öppnade de första {count} katalogerna
 msgid  Reading the tree
 msgstr Läser trädet
 
-msgid  Not the root of the drive
-msgstr Inte enhetens rot
+msgid  Not the top of the tree
+msgstr Inte toppen av trädet

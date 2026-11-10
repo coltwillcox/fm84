@@ -2140,5 +2140,5 @@ msgstr Otwarto pierwsze {count} katalogów
 msgid  Reading the tree
 msgstr Odczyt drzewa
 
-msgid  Not the root of the drive
-msgstr Nie katalog główny dysku
+msgid  Not the top of the tree
+msgstr Nie szczyt drzewa

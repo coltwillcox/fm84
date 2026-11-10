@@ -51,8 +51,9 @@ fn device(_path: &Path) -> Option<u64> {
 }
 
 /// The worker thread behind `*`: every directory under `start`, counted as
-/// it goes, what it read sent whether it ended or was stopped.
-fn run_open_tree(side: Side, start: PathBuf, options: crate::options::Options, mut progress: JobProgress<'_>) {
+/// it goes, what it read sent whether it ended or was stopped. In an
+/// archive there are no links to directories, nor other filesystems.
+fn run_open_tree(side: Side, start: PathBuf, archive: Option<PathBuf>, options: crate::options::Options, mut progress: JobProgress<'_>) {
     let disk = device(&start);
     let mut read = Vec::new();
     let mut stack = vec![start];
@@ -66,11 +67,11 @@ fn run_open_tree(side: Side, start: PathBuf, options: crate::options::Options, m
             stopped = true;
             break;
         }
-        let dirs = crate::fs_ops::list_subdirs(&dir, &options).unwrap_or_default();
+        let dirs = tree_dirs(&dir, archive.as_deref(), &options).unwrap_or_default();
         for name in &dirs {
             let below = dir.join(name);
             let link = std::fs::symlink_metadata(&below).is_ok_and(|metadata| metadata.file_type().is_symlink());
-            if !link && device(&below) == disk {
+            if archive.is_some() || (!link && device(&below) == disk) {
                 stack.push(below);
             }
         }
@@ -92,9 +93,30 @@ pub struct TreeRow {
     pub mark: TreeMark,
 }
 
+/// The directories in `dir`, for the tree: from the disk - or, for a tree
+/// inside an archive, a git commit or the trash, from its index.
+fn tree_dirs(dir: &Path, archive: Option<&Path>, options: &crate::options::Options) -> io::Result<Vec<OsString>> {
+    let Some(archive) = archive else {
+        return crate::fs_ops::list_subdirs(dir, options);
+    };
+    let Ok(inner) = dir.strip_prefix(archive) else { return Ok(Vec::new()) };
+    let index = crate::archive::index(archive)?;
+    let mut names: Vec<OsString> = index
+        .children(inner)
+        .filter(|entry| entry.kind == crate::archive::EntryKind::Dir)
+        .map(|entry| entry.name().to_os_string())
+        .filter(|name| options.show_hidden || !crate::fs_ops::is_hidden(&name.to_string_lossy(), None))
+        .collect();
+    crate::fs_ops::sort_dir_names(&mut names, options);
+    Ok(names)
+}
+
 /// A panel's tree.
 pub struct Tree {
+    /// The top of the tree: the drive's root, or the archive it is inside.
     pub root: PathBuf,
+    /// The archive, git commit or trash the tree is of, when it is of one.
+    archive: Option<PathBuf>,
     /// Each directory read so far, and the directories in it by name.
     children: HashMap<PathBuf, Vec<OsString>>,
     /// Directories still being read.
@@ -194,9 +216,9 @@ impl AppState {
             return;
         }
         let (sender, answer) = mpsc::channel();
-        let read = dir.clone();
+        let (read, archive) = (dir.clone(), tree.archive.clone());
         std::thread::spawn(move || {
-            let _ = sender.send(crate::fs_ops::list_subdirs(&read, &options));
+            let _ = sender.send(tree_dirs(&read, archive.as_deref(), &options));
         });
         match answer.recv_timeout(wait) {
             Ok(dirs) => {
@@ -208,9 +230,10 @@ impl AppState {
         }
     }
 
-    /// Alt+F10: the active panel as the tree of its drive, opened down to
-    /// its directory with the cursor there - or, as the tree already, back
-    /// to listing files, in the directory under the cursor.
+    /// Alt+F10: the active panel as the tree of its drive - or, inside an
+    /// archive, a git commit or the trash, of that - opened down to its
+    /// directory with the cursor there; or, as the tree already, back to
+    /// listing files, in the directory under the cursor.
     pub fn toggle_tree(&mut self) {
         let side = self.active_side;
         if let Some(tree) = self.panel_mut(side).tree.take() {
@@ -220,20 +243,22 @@ impl AppState {
             }
             return;
         }
-        // Inside an archive, the tree is of the disk around it, and the
-        // panel goes out there too: what the tree's F-keys do is to the disk.
-        let dir = self.panel_real_dir(side);
-        if self.panel_archive(side).is_some() {
-            self.open_dir(side, dir.clone(), None);
-        }
-        let root = dir.ancestors().last().unwrap_or(&dir).to_path_buf();
-        let chain: Vec<PathBuf> = dir.ancestors().map(Path::to_path_buf).collect::<Vec<_>>().into_iter().rev().collect();
+        // Inside an archive, the tree is of the archive, from its top; and
+        // the panel stays in it, for the F-keys to do what they do there.
+        let archive = self.panel_archive(side).cloned();
+        let dir = self.panel(side).dir.clone();
+        let root = match &archive {
+            Some(archive) => archive.clone(),
+            None => dir.ancestors().last().unwrap_or(&dir).to_path_buf(),
+        };
+        let chain: Vec<PathBuf> = dir.ancestors().take_while(|above| above.starts_with(&root)).map(Path::to_path_buf).collect::<Vec<_>>().into_iter().rev().collect();
         self.search_input.clear();
         self.panel_mut(side).tree = Some(Tree {
             root,
             children: HashMap::new(),
             pending: HashMap::new(),
             batch: None,
+            archive,
             expanded: chain.iter().cloned().collect(),
             rows: Vec::new(),
             cursor: 0,
@@ -264,9 +289,10 @@ impl AppState {
         let Some(tree) = self.panel_mut(side).tree.as_mut() else { return };
         let open: Vec<PathBuf> = tree.rows.iter().filter(|row| row.mark == TreeMark::Open).map(|row| row.path.clone()).collect();
         let (sender, answer) = mpsc::channel();
+        let archive = tree.archive.clone();
         std::thread::spawn(move || {
             for dir in open {
-                let read = crate::fs_ops::list_subdirs(&dir, &options).unwrap_or_default();
+                let read = tree_dirs(&dir, archive.as_deref(), &options).unwrap_or_default();
                 if sender.send((dir, read)).is_err() {
                     return;
                 }
@@ -366,7 +392,8 @@ impl AppState {
             return;
         };
         let options = self.options.clone();
-        self.start_job(TransferKind::Tree, Clashes::Ask, move |progress| run_open_tree(side, start, options, progress));
+        let archive = self.panel(side).tree.as_ref().and_then(|tree| tree.archive.clone());
+        self.start_job(TransferKind::Tree, Clashes::Ask, move |progress| run_open_tree(side, start, archive, options, progress));
     }
 
     /// What `*` read, taken into `side`'s tree: each directory with some of
@@ -391,6 +418,12 @@ impl AppState {
     pub fn tree_cursor(&self, side: Side) -> Option<PathBuf> {
         let tree = self.panel(side).tree.as_ref()?;
         tree.rows.get(tree.cursor).map(|row| row.path.clone())
+    }
+
+    /// The top of `side`'s tree, which the F-keys leave alone: the drive's
+    /// root, or the whole of the archive it is of.
+    pub fn tree_top(&self, side: Side) -> Option<&Path> {
+        self.panel(side).tree.as_ref().map(|tree| tree.root.as_path())
     }
 
     /// `path`, just made, shown in the active panel's tree: the directory it

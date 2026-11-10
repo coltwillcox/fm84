@@ -2140,5 +2140,5 @@ msgstr Otevřeno prvních {count} adresářů
 msgid  Reading the tree
 msgstr Čtení stromu
 
-msgid  Not the root of the drive
-msgstr Ne kořen disku
+msgid  Not the top of the tree
+msgstr Ne vrchol stromu

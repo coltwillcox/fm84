@@ -336,12 +336,17 @@ pub fn list_subdirs(path: &Path, options: &Options) -> Result<Vec<OsString>, Err
         }
         dirs.push(name);
     }
-    let key = |name: &OsString| {
+    sort_dir_names(&mut dirs, options);
+    Ok(dirs)
+}
+
+/// Directory names in the order the tree lists them: by name, in case or
+/// not as F11 says.
+pub fn sort_dir_names(names: &mut [OsString], options: &Options) {
+    names.sort_by_cached_key(|name| {
         let text = name.to_string_lossy().into_owned();
         if options.case_sensitive { text } else { text.to_lowercase() }
-    };
-    dirs.sort_by_cached_key(key);
-    Ok(dirs)
+    });
 }
 
 fn compare_rows(a: &Item, b: &Item, options: &Options) -> std::cmp::Ordering {

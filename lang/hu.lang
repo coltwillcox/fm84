@@ -2102,5 +2102,5 @@ msgstr Az első {count} könyvtár kinyitva
 msgid  Reading the tree
 msgstr A fa olvasása
 
-msgid  Not the root of the drive
-msgstr A meghajtó gyökerén nem
+msgid  Not the top of the tree
+msgstr A fa tetején nem

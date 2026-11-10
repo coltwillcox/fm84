@@ -2180,5 +2180,5 @@ msgstr Odprtih prvih {count} map
 msgid  Reading the tree
 msgstr Branje drevesa
 
-msgid  Not the root of the drive
-msgstr Ne koren diska
+msgid  Not the top of the tree
+msgstr Ne vrh drevesa

@@ -2102,5 +2102,5 @@ msgstr Les {count} premiers dossiers ouverts
 msgid  Reading the tree
 msgstr Lecture de l’arborescence
 
-msgid  Not the root of the drive
-msgstr Pas la racine du lecteur
+msgid  Not the top of the tree
+msgstr Pas le sommet de l’arborescence

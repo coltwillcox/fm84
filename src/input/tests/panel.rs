@@ -655,11 +655,11 @@ fn the_f_keys_act_on_the_tree_directory() {
     finish(&mut app_state);
     assert!(!dir.join("tree/photos").exists());
 
-    // Not the drive's root.
+    // Not the top of the tree.
     press(&mut app_state, KeyCode::Home);
     assert_eq!(cursor(&app_state).parent(), None);
     press(&mut app_state, KeyCode::F(8));
     assert!(app_state.dialog.is_none());
-    assert_eq!(app_state.error.take().as_deref(), Some("Not the root of the drive"));
+    assert_eq!(app_state.error.take().as_deref(), Some("Not the top of the tree"));
     std::fs::remove_dir_all(&dir).unwrap();
 }

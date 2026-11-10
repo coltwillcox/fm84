@@ -168,3 +168,68 @@ fn star_opens_everything_below() {
     assert_eq!(under(&app_state, &dir.join("e")), [("f".to_string(), TreeMark::Empty), ("loop".to_string(), TreeMark::Unread)]);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Inside an archive the tree is of the archive, from its top, read from
+/// its index: the other panel sent into it, a directory copied out, and the
+/// archive's whole refused.
+#[test]
+fn the_tree_inside_an_archive_is_of_the_archive() {
+    use crate::archive::fixtures::{Put, scratch, zip};
+    let dir = scratch("tree-zip");
+    let archive = dir.join("photos.zip");
+    zip(&archive, &[("2024/june/beach.jpg", Put::File(b"sand")), ("2024/july/", Put::Dir), ("docs/", Put::Dir), ("readme.txt", Put::File(b"hi"))]);
+    std::fs::create_dir_all(dir.join("out")).unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Right, dir.join("out"), None);
+    app_state.open_dir(Side::Left, archive.join("2024/june"), None);
+    app_state.toggle_tree();
+    let tree = app_state.left.tree.as_ref().unwrap();
+    assert_eq!(tree.rows[0].path, archive, "the archive is the top");
+    assert_eq!(at(&app_state), archive.join("2024/june"));
+    assert_eq!(under(&app_state, &archive), [("2024".to_string(), TreeMark::Open), ("docs".to_string(), TreeMark::Unread)]);
+    assert_eq!(
+        under(&app_state, &archive.join("2024")),
+        [("july".to_string(), TreeMark::Unread), ("june".to_string(), TreeMark::Empty)],
+        "june holds a file and no directories"
+    );
+    assert!(app_state.panel_archive(Side::Left).is_some(), "the panel stays in it");
+
+    // Enter: the other panel into the archive there.
+    app_state.tree_move(-1);
+    assert_eq!(at(&app_state), archive.join("2024/july"));
+    app_state.tree_enter();
+    assert_eq!(app_state.right.dir, archive.join("2024/july"));
+    assert_eq!(app_state.panel_archive(Side::Right), Some(&archive));
+
+    // Copied out: june, from the archive to the disk.
+    app_state.open_dir(Side::Right, dir.join("out"), None);
+    app_state.tree_move(1);
+    app_state.start_extract(archive.clone(), vec![(PathBuf::from("2024/june/beach.jpg"), dir.join("out/beach.jpg"))], crate::app::Clashes::Ask, None);
+    let started = std::time::Instant::now();
+    while app_state.workers.job.is_some() {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "never finished");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert_eq!(std::fs::read_to_string(dir.join("out/beach.jpg")).unwrap(), "sand");
+
+    // `*` reads the archive's index, all of it.
+    app_state.tree_move(isize::MIN);
+    app_state.tree_open_all();
+    while app_state.workers.job.is_some() {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "never finished");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert_eq!(under(&app_state, &archive), [("2024".to_string(), TreeMark::Open), ("docs".to_string(), TreeMark::Empty)]);
+
+    // Esc: the panel lists that directory of the archive.
+    app_state.tree_move(isize::MAX);
+    assert_eq!(at(&app_state), archive.join("docs"));
+    app_state.toggle_tree();
+    assert_eq!(app_state.left.dir, archive.join("docs"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

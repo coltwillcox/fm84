@@ -101,6 +101,14 @@ fn the_trash_is_looked_into_put_back_and_emptied() {
         app_state.poll_listings();
     }
 
+    // The tree in the trash: of what is in it, from its top.
+    app_state.toggle_tree();
+    let tree = app_state.left.tree.as_ref().unwrap();
+    assert_eq!(tree.rows[0].path, folder);
+    assert_eq!(tree.rows.len(), 1, "files only: nothing under it in the tree");
+    app_state.toggle_tree();
+    assert_eq!(app_state.left.dir, folder);
+
     // Alt+T again: back where the panel was.
     app_state.toggle_trash();
     assert_eq!(app_state.left.dir, home);

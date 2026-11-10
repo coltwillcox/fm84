@@ -2140,5 +2140,5 @@ msgstr Otvoreno prvih {count} direktorija
 msgid  Reading the tree
 msgstr Čitanje stabla
 
-msgid  Not the root of the drive
-msgstr Ne korijen diska
+msgid  Not the top of the tree
+msgstr Ne vrh stabla

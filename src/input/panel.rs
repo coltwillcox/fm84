@@ -179,8 +179,9 @@ fn tree_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::Char(c) if c.is_alphanumeric() || "._ ".contains(c) || (typing && c == '-') => app_state.tree_search_add(c),
         KeyCode::Char('*') => app_state.tree_open_all(),
         // On the directory under the cursor, as in the list: copied or moved
-        // to the other panel, made in, deleted. Not on the drive's root.
-        KeyCode::F(5 | 6 | 8) | KeyCode::Delete if chosen_items(app_state).is_empty() => app_state.display_error(t!("Not the root of the drive").to_string()),
+        // to the other panel, made in, deleted - in an archive, as it is
+        // done there. Not on the top of the tree.
+        KeyCode::F(5 | 6 | 8) | KeyCode::Delete if chosen_items(app_state).is_empty() => app_state.display_error(t!("Not the top of the tree").to_string()),
         KeyCode::F(5) => open_transfer(app_state, true),
         KeyCode::F(6) => open_transfer(app_state, false),
         KeyCode::F(7) => toggle_create(app_state, true),
@@ -287,9 +288,11 @@ fn open_externally(app_state: &mut AppState, path: PathBuf, is_dir: bool) {
 /// entry under the cursor when nothing is. Never the parent entry.
 pub(super) fn chosen_items(app_state: &AppState) -> Vec<(PathBuf, bool)> {
     let panel = app_state.panel(app_state.active_side);
-    // In the tree, the directory under the cursor - never the drive's root.
+    // In the tree, the directory under the cursor - never the top of it,
+    // the drive's root or the whole of an archive.
     if panel.tree.is_some() {
-        return app_state.tree_cursor(app_state.active_side).filter(|path| path.parent().is_some()).map(|path| vec![(path, true)]).unwrap_or_default();
+        let top = app_state.tree_top(app_state.active_side);
+        return app_state.tree_cursor(app_state.active_side).filter(|path| Some(path.as_path()) != top).map(|path| vec![(path, true)]).unwrap_or_default();
     }
     let (children, selected, state, dir) = (&panel.children, &panel.selected, &panel.state, &panel.dir);
     let chosen: Vec<&crate::app::Item> = if selected.is_empty() {

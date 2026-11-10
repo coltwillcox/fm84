@@ -2101,5 +2101,5 @@ msgstr İlk {count} dizin açıldı
 msgid  Reading the tree
 msgstr Ağaç okunuyor
 
-msgid  Not the root of the drive
-msgstr Sürücünün kökü olmaz
+msgid  Not the top of the tree
+msgstr Ağacın tepesi olmaz

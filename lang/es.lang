@@ -2102,5 +2102,5 @@ msgstr Abiertas las primeras {count} carpetas
 msgid  Reading the tree
 msgstr Leyendo el árbol
 
-msgid  Not the root of the drive
-msgstr No la raíz de la unidad
+msgid  Not the top of the tree
+msgstr No la cima del árbol
