@@ -9,7 +9,7 @@
 //! the UI goes on without it and picks it up when it comes.
 
 use crate::fs_ops::Mount;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Condvar, Mutex, PoisonError};
@@ -119,6 +119,15 @@ impl Drop for Watch {
 /// the listing it is watching saw, so a change made while it was being read
 /// is still reported. `probe` is what is asked: the directory itself, or the
 /// archive file for a directory inside one, which has no time of its own.
+/// When `probe` last changed: its modified time - or, for the trash
+/// folder, which is not on the disk, the trash's own.
+pub fn modified(probe: &Path) -> Option<SystemTime> {
+    if crate::archive::trash::is_trash_folder(probe) {
+        return crate::archive::trash::changed();
+    }
+    std::fs::metadata(probe).and_then(|metadata| metadata.modified()).ok()
+}
+
 pub fn watch_dir(dir: PathBuf, probe: PathBuf, mut stamp: Option<SystemTime>, mut usage: Option<(u64, u64)>, interval: Duration, events: Sender<WatchEvent>) -> Watch {
     let stop = Arc::new(AtomicBool::new(false));
     let (watched, worker_stop) = (dir.clone(), Arc::clone(&stop));
@@ -128,14 +137,15 @@ pub fn watch_dir(dir: PathBuf, probe: PathBuf, mut stamp: Option<SystemTime>, mu
             if worker_stop.load(Ordering::Relaxed) {
                 return;
             }
-            let now = std::fs::metadata(&probe).and_then(|metadata| metadata.modified()).ok();
+            let now = modified(&probe);
             if now != stamp {
                 stamp = now;
                 if events.send(WatchEvent::Changed { dir: watched.clone() }).is_err() {
                     return;
                 }
             }
-            let now = crate::fs_ops::disk_usage(&probe);
+            // The trash folder's room is its home directory's.
+            let now = crate::fs_ops::disk_usage(probe.parent().filter(|_| crate::archive::trash::is_trash_folder(&probe)).unwrap_or(&probe));
             if now != usage {
                 usage = now;
                 if events.send(WatchEvent::Disk { dir: watched.clone(), usage }).is_err() {

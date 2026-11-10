@@ -180,7 +180,7 @@ fn read_archive_listing(dir: &Path, located: crate::archive::Located, options: &
         Err(e) if crate::archive::locked(&e).is_some() => (dir.to_path_buf(), Err(e)),
         Err(e) => (dir.to_path_buf(), Err(std::io::Error::new(e.kind(), t!("not readable as an archive ({e})", e)))),
     };
-    let stamp = std::fs::metadata(&archive).and_then(|metadata| metadata.modified()).ok();
+    let stamp = crate::background::modified(&archive);
     Listed {
         dir: Some(found),
         items,

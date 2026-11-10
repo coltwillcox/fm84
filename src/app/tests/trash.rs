@@ -88,6 +88,19 @@ fn the_trash_is_looked_into_put_back_and_emptied() {
     assert_eq!(std::fs::read_dir(&keep).unwrap().count(), 1);
     assert!(!home.join("old/photos").exists());
 
+    // Something trashed meanwhile, elsewhere: the panel shows it of itself,
+    // as it would a directory changing.
+    std::fs::write(home.join("late.txt"), "late").unwrap();
+    throw(&home.join("late.txt"), &keep, 1_700_000_300);
+    let started = Instant::now();
+    while names(&app_state) != ["a.txt", "late.txt"] {
+        assert!(started.elapsed() < Duration::from_secs(10), "never seen: {:?}", names(&app_state));
+        std::thread::sleep(Duration::from_millis(5));
+        app_state.poll_watchers();
+        app_state.refresh_stale_panels();
+        app_state.poll_listings();
+    }
+
     // Alt+T again: back where the panel was.
     app_state.toggle_trash();
     assert_eq!(app_state.left.dir, home);

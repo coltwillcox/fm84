@@ -23,6 +23,14 @@ pub fn is_trash_folder(path: &Path) -> bool {
     path.file_name() == Some(OsStr::new(TRASH_NAME)) && trash_folder().is_some_and(|folder| folder == path)
 }
 
+/// When the trash last changed - something put in, put back or emptied -
+/// as the latest time of the directories that change with it, for the
+/// panel showing it to be read again. The folder itself is not on the disk
+/// to have a time of its own.
+pub fn changed() -> Option<std::time::SystemTime> {
+    system::watched().iter().filter_map(|dir| std::fs::metadata(dir).and_then(|metadata| metadata.modified()).ok()).max()
+}
+
 /// One thing in the trash: what the system knows it by, the name it had and
 /// where it was, when it went, and where its bytes are now.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -87,6 +95,24 @@ mod system {
         trash::os_limited::restore_all([find(id)?]).map_err(error)
     }
 
+    /// Each trash's `info` directory - the home one's and each drive's -
+    /// which gains a file for each thing put in and loses it as it goes.
+    #[cfg(unix)]
+    pub fn watched() -> Vec<PathBuf> {
+        trash::os_limited::trash_folders().map(|folders| folders.into_iter().map(|folder| folder.join("info")).collect()).unwrap_or_default()
+    }
+
+    /// Each drive's recycle bin, a folder in it for each user, whose time
+    /// moves as things go in and out.
+    #[cfg(windows)]
+    pub fn watched() -> Vec<PathBuf> {
+        (b'A'..=b'Z')
+            .map(|letter| PathBuf::from(format!("{}:\\$Recycle.Bin", letter as char)))
+            .filter_map(|bin| std::fs::read_dir(bin).ok())
+            .flat_map(|users| users.flatten().map(|user| user.path()))
+            .collect()
+    }
+
     pub fn purge(id: &OsStr) -> io::Result<()> {
         trash::os_limited::purge_all([find(id)?]).map_err(error)
     }
@@ -112,6 +138,10 @@ mod system {
     pub fn purge(_id: &OsStr) -> io::Result<()> {
         Err(unsupported())
     }
+
+    pub fn watched() -> Vec<PathBuf> {
+        Vec::new()
+    }
 }
 
 pub use system::{list, purge, restore};
@@ -127,6 +157,7 @@ pub mod system {
 
     /// `path` put in the stand-in trash, its bytes moved into `keep`.
     pub fn throw(path: &Path, keep: &Path, deleted: i64) {
+        *KEPT.lock().unwrap() = Some(keep.to_path_buf());
         let mut items = ITEMS.lock().unwrap();
         let real = keep.join(format!("{}", items.len()));
         std::fs::rename(path, &real).unwrap();
@@ -157,6 +188,14 @@ pub mod system {
             return Err(io::Error::new(io::ErrorKind::AlreadyExists, t!("{path} already exists", path = to.display())));
         }
         std::fs::rename(&item.real, to)
+    }
+
+    /// The directory the stand-in keeps its bytes in, which changes as
+    /// they come and go.
+    static KEPT: Mutex<Option<PathBuf>> = Mutex::new(None);
+
+    pub fn watched() -> Vec<PathBuf> {
+        KEPT.lock().unwrap().iter().cloned().collect()
     }
 
     pub fn purge(id: &OsStr) -> io::Result<()> {
