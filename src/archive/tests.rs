@@ -76,6 +76,41 @@ fn names_that_reach_outside_are_refused() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// A commit made by hand can hold a tree named `..`, which git lists what
+/// is in as `../x`: refused as an archive's would be.
+#[test]
+fn a_commits_names_that_reach_outside_are_refused() {
+    let dir = scratch("git-dots");
+    let git = |arguments: &[&str], input: &str| -> Option<String> {
+        use std::io::Write;
+        let mut child = std::process::Command::new("git")
+            .arg("-C")
+            .arg(&dir)
+            .args(["-c", "user.name=fm84", "-c", "user.email=fm84@localhost"])
+            .args(arguments)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .ok()?;
+        child.stdin.take()?.write_all(input.as_bytes()).ok()?;
+        let output = child.wait_with_output().ok()?;
+        output.status.success().then(|| String::from_utf8_lossy(&output.stdout).trim().to_string())
+    };
+    // No git to run, nothing to test.
+    if git(&["init", "--quiet"], "").is_none() {
+        return;
+    }
+    let blob = git(&["hash-object", "-w", "--stdin"], "x\n").unwrap();
+    let inner = git(&["mktree"], &format!("100644 blob {blob}\tescape\n")).unwrap();
+    let outer = git(&["mktree"], &format!("040000 tree {inner}\t..\n100644 blob {blob}\tfine.txt\n")).unwrap();
+    let commit = git(&["commit-tree", &outer, "-m", "dots"], "").unwrap();
+
+    let index = super::index::Index::read_git(&dir, &commit).unwrap();
+    assert_eq!(names(&index, ""), ["fine.txt"]);
+    assert_eq!(index.refused, 2, "the tree and what is in it");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// A tar name need not be UTF-8, and comes through as the bytes it is.
 #[cfg(unix)]
 #[test]

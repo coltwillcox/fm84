@@ -195,6 +195,13 @@ impl Index {
             let (Some(mode), Some(kind), Some(object), Some(size)) = (fields.next(), fields.next(), fields.next(), fields.next()) else {
                 continue;
             };
+            // Git keeps a tree named `..` when it was made by hand and is
+            // not checked, and lists what is in it as `../x`: refused as in
+            // any archive, or copying it out would write outside.
+            let Some(path) = inner_path(&record[tab + 1..]) else {
+                index.refused += 1;
+                continue;
+            };
             let mode = u32::from_str_radix(mode, 8).unwrap_or(0);
             let (kind, position) = match kind {
                 "tree" => (EntryKind::Dir, None),
@@ -206,7 +213,7 @@ impl Index {
                 index.objects.push(object.to_string());
             }
             index.add(Entry {
-                path: path_from_bytes(&record[tab + 1..]),
+                path,
                 kind,
                 size: size.parse().unwrap_or(0),
                 modified,
