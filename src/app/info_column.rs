@@ -217,12 +217,17 @@ fn run_command(command: &str, path: &Path) -> String {
     let command = if uses_entries(command).0 { command.to_string() } else { format!("{command} {{file}}") };
     let mut process = shell_command(&command, &values);
     process.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null());
+    // A group of its own, so what the shell starts - a pipeline, something
+    // sent to the background - can be stopped along with it.
+    #[cfg(unix)]
+    std::os::unix::process::CommandExt::process_group(&mut process, 0);
     let Ok(mut child) = process.spawn() else {
         return String::new();
     };
     // Read on a thread of its own, so a command that writes a lot cannot
     // fill the pipe and stand still; and given up on, should something it
-    // started keep the pipe open past its end.
+    // started keep the pipe open past its end - which is then stopped, so
+    // the pipe closes and the thread ends rather than wait on it for good.
     let (sender, read) = mpsc::channel();
     if let Some(mut stdout) = child.stdout.take() {
         std::thread::spawn(move || {
@@ -237,17 +242,39 @@ fn run_command(command: &str, path: &Path) -> String {
             Ok(Some(_)) => break,
             Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(5)),
             _ => {
+                stop_group(&child);
                 let _ = child.kill();
                 let _ = child.wait();
                 return String::new();
             }
         }
     }
-    let out = read.recv_timeout(Duration::from_millis(200)).unwrap_or_default();
+    let out = match read.recv_timeout(Duration::from_millis(200)) {
+        Ok(out) => out,
+        // Still held open: what is left is stopped, and what was written
+        // before that comes in as the pipe closes.
+        Err(_) => {
+            stop_group(&child);
+            read.recv_timeout(Duration::from_millis(200)).unwrap_or_default()
+        }
+    };
     let text = String::from_utf8_lossy(&out);
     let line = text.lines().map(str::trim).find(|line| !line.is_empty()).unwrap_or_default();
     line.chars().filter(|c| !c.is_control()).take(LONGEST).collect()
 }
+
+/// Everything left of the group `child` leads. Its id stays taken while
+/// anything is left in it, so after the shell is gone it still names them.
+#[cfg(unix)]
+fn stop_group(child: &std::process::Child) {
+    if let Ok(group) = libc::pid_t::try_from(child.id()) {
+        // SAFETY: kill only sends a signal; a group gone already is ESRCH.
+        unsafe { libc::kill(-group, libc::SIGKILL) };
+    }
+}
+
+#[cfg(not(unix))]
+fn stop_group(_child: &std::process::Child) {}
 
 #[cfg(test)]
 mod tests {
@@ -258,5 +285,24 @@ mod tests {
         let mut values = vec!["1920x1080", "800x600", "10:02", "9:58", "Page", "page 2", "page 10", "007"];
         values.sort_by(|a, b| natural(a, b));
         assert_eq!(values, ["007", "9:58", "10:02", "800x600", "1920x1080", "Page", "page 2", "page 10"]);
+    }
+
+    /// Something a command leaves running with its output open is stopped
+    /// once the value is in, not left holding the pipe and the reader.
+    #[cfg(unix)]
+    #[test]
+    fn what_a_command_leaves_running_is_stopped() {
+        let dir = std::env::temp_dir().join(format!("fm84-info-left-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("file");
+        std::fs::write(&file, "").unwrap();
+        let mark = dir.join("mark");
+        let command = format!("(sleep 1; touch '{}') & echo now {{file}}", mark.display());
+        let value = run_command(&command, &file);
+        assert!(value.starts_with("now"), "{value:?}");
+        std::thread::sleep(Duration::from_millis(1500));
+        assert!(!mark.exists(), "the background part was left running");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
