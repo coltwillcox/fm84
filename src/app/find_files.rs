@@ -182,6 +182,17 @@ impl AppState {
         };
         loop {
             match search.updates.try_recv() {
+                // Stopped, its last few still on their way.
+                Ok(_) if search.done => {}
+                // Stopped at as many as a panel lists, which is all F could
+                // feed it: `*` from / would otherwise hold every path there is.
+                Ok(crate::search::Update::Found(..)) if search.results.len() >= crate::constants::FLAT_MAX => {
+                    search.cancel.store(true, Ordering::Relaxed);
+                    search.looking_in = None;
+                    search.done = true;
+                    self.find_note = Some(t!("Only the first {count} files are listed", count = crate::constants::FLAT_MAX));
+                    break;
+                }
                 Ok(crate::search::Update::Looking(dir)) => search.looking_in = Some(dir),
                 Ok(crate::search::Update::Found(path, is_dir)) => search.results.push((path, is_dir)),
                 Ok(crate::search::Update::Finished { unreadable }) => {
@@ -268,5 +279,41 @@ impl AppState {
         };
         self.dialog = None;
         self.open_dir(self.active_side, dir, Some(&name));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A search that finds more than a panel lists stops there, and says so.
+    #[test]
+    fn a_search_stops_at_as_many_as_a_panel_lists() {
+        let mut app_state = AppState::new();
+        let (sender, updates) = mpsc::channel();
+        let cancel = Arc::new(AtomicBool::new(false));
+        app_state.dialog = Some(Dialog::FindFiles(Box::new(FindFiles::Found(Search {
+            start: PathBuf::from("/"),
+            label: String::new(),
+            results: Vec::new(),
+            cursor: 0,
+            scroll: 0,
+            looking_in: Some(PathBuf::from("/")),
+            done: false,
+            unreadable: 0,
+            cancel: Arc::clone(&cancel),
+            updates,
+        }))));
+        for n in 0..crate::constants::FLAT_MAX + 5 {
+            sender.send(crate::search::Update::Found(PathBuf::from(format!("/{n}")), false)).unwrap();
+        }
+        app_state.poll_find_files();
+        app_state.poll_find_files();
+        let Some(Dialog::FindFiles(find)) = &app_state.dialog else { panic!("still open") };
+        let FindFiles::Found(search) = find.as_ref() else { panic!("still the results") };
+        assert_eq!(search.results.len(), crate::constants::FLAT_MAX);
+        assert!(search.done && search.looking_in.is_none());
+        assert!(cancel.load(Ordering::Relaxed), "the walk is told to stop");
+        assert!(app_state.find_note.is_some());
     }
 }
