@@ -341,11 +341,11 @@ pub fn list_subdirs(path: &Path, options: &Options) -> Result<Vec<OsString>, Err
 }
 
 /// Directory names in the order the tree lists them: by name, in case or
-/// not as F11 says.
+/// not as F11 says, and two alike but for case by the names themselves.
 pub fn sort_dir_names(names: &mut [OsString], options: &Options) {
     names.sort_by_cached_key(|name| {
         let text = name.to_string_lossy().into_owned();
-        if options.case_sensitive { text } else { text.to_lowercase() }
+        (if options.case_sensitive { text } else { text.to_lowercase() }, name.clone())
     });
 }
 
@@ -361,7 +361,10 @@ fn compare_rows(a: &Item, b: &Item, options: &Options) -> std::cmp::Ordering {
     }
 
     let text = |a: &str, b: &str| if options.case_sensitive { a.cmp(b) } else { a.to_lowercase().cmp(&b.to_lowercase()) };
-    let name = || text(&a.name_full, &b.name_full);
+    // Two names alike but for case are put in order by the names
+    // themselves, as Find puts them - not left in the order the directory
+    // happened to give them, which can change from one reading to the next.
+    let name = || text(&a.name_full, &b.name_full).then_with(|| a.name_os.cmp(&b.name_os));
     let order = match options.sort_key {
         SortKey::Name => name(),
         SortKey::Extension => text(&a.extension, &b.extension).then_with(name),
@@ -645,4 +648,26 @@ pub fn describe(path: &Path, is_dir: bool) -> Option<Description> {
         attributes: format_attributes(&metadata, is_dir, is_symlink),
         link: is_symlink.then(|| fs::read_link(path).ok()).flatten().map(|target| target.display().to_string()),
     })
+}
+
+#[cfg(test)]
+mod sort_tests {
+    use super::*;
+
+    /// Names alike but for case come in one order, whichever the directory
+    /// gives them in - the order Find puts them in.
+    #[test]
+    fn names_alike_but_for_case_are_ordered_by_the_names() {
+        let options = Options { case_sensitive: false, ..Options::default() };
+        let names = ["readme", "README", "Readme"];
+        for first in 0..names.len() {
+            let mut rows: Vec<Item> = names.iter().cycle().skip(first).take(names.len()).map(|name| flat_row(OsString::from(name), false, 0, None, String::new())).collect();
+            rows.sort_by(|a, b| compare_rows(a, b, &options));
+            let order: Vec<&str> = rows.iter().map(|row| row.name_full.as_str()).collect();
+            assert_eq!(order, ["README", "Readme", "readme"]);
+        }
+        let mut dirs: Vec<OsString> = names.iter().map(OsString::from).collect();
+        sort_dir_names(&mut dirs, &options);
+        assert_eq!(dirs, ["README", "Readme", "readme"]);
+    }
 }
