@@ -215,9 +215,23 @@ pub fn discard(path: &Path) -> Result<(), String> {
 /// The file at `path` as the last commit has it.
 pub fn at_head(path: &Path) -> Result<Vec<u8>, String> {
     let (dir, name) = where_and_name(path)?;
+    git_bytes(dir, &[OsStr::new("show"), head_spec(name).as_os_str()])
+}
+
+/// How big the file at `path` is as the last commit has it, asked before
+/// reading it.
+pub fn size_at_head(path: &Path) -> Result<u64, String> {
+    let (dir, name) = where_and_name(path)?;
+    let output = git_bytes(dir, &[OsStr::new("cat-file"), OsStr::new("-s"), head_spec(name).as_os_str()])?;
+    let said = String::from_utf8_lossy(&output);
+    said.trim().parse().map_err(|_| said.trim().to_string())
+}
+
+/// `HEAD:./name`, the file in the directory git runs in as HEAD has it.
+fn head_spec(name: &OsStr) -> OsString {
     let mut spec = OsString::from("HEAD:./");
     spec.push(name);
-    git_bytes(dir, &[OsStr::new("show"), spec.as_os_str()])
+    spec
 }
 
 /// A commit that changed a file, and where the file was then.

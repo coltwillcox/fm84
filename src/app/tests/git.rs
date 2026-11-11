@@ -34,6 +34,14 @@ fn alt_g_asks_before_discarding_and_compares_with_head() {
     assert_eq!(state.right_path, file);
     app_state.close_diff();
 
+    // What the commit has is not read past the limit on opening files.
+    app_state.options.large_file_mib = 0;
+    app_state.open_git(vec![(file.clone(), false)]);
+    app_state.git_compare_head();
+    assert!(matches!(app_state.screen, Screen::Panels));
+    assert!(app_state.error.take().is_some_and(|error| error.starts_with("Too large to compare")));
+    app_state.options = Options::default();
+
     // D asks; only the answer throws the change away.
     app_state.open_git(vec![(file.clone(), false)]);
     app_state.git_act(GitAction::Discard);

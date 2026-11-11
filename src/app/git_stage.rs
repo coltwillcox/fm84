@@ -170,6 +170,16 @@ impl AppState {
         let [(path, false)] = items.as_slice() else {
             return self.display_error(t!("Only a file can be compared with HEAD").to_string());
         };
+        // Asked first, as for the file itself: what the commit has can be
+        // far larger, and is read whole.
+        let limit = self.options.large_file_bytes();
+        match crate::git::size_at_head(path) {
+            Ok(size) if size > limit => {
+                return self.display_error(t!("Too large to compare: {path} ({size}; F11 sets the limit)", path = path.display(), size = crate::utils::format_size(size)));
+            }
+            Err(message) => return self.display_error(message),
+            Ok(_) => {}
+        }
         let committed = match crate::git::at_head(path) {
             Ok(bytes) => bytes,
             Err(message) => return self.display_error(message),
