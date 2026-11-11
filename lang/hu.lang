@@ -75,6 +75,9 @@ msgstr Alt+A - Jogok, tulajdonos, idő
 msgid  Alt+Down every directory visited
 msgstr Alt+Le minden meglátogatott mappa
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J ugrás pár betűvel, a leggyakoribb elöl
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (vagy Ctrl+Shift+F5) link, Tab hard
 
@@ -104,6 +107,9 @@ msgstr Alt+S - A két mappa szinkronizálása
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter minden mappa mérete és térképe
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U a helytérkép blokkokban, Enter belép
 
 msgid  Appearance
 msgstr Megjelenés

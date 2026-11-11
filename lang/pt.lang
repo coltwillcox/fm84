@@ -74,6 +74,9 @@ msgstr Alt+A - Permissões, dono, hora
 msgid  Alt+Down every directory visited
 msgstr Alt+Baixo todas as pastas visitadas
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J pular com algumas letras, as mais usadas primeiro
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (ou Ctrl+Shift+F5) link, Tab físico
 
@@ -103,6 +106,9 @@ msgstr Alt+S - Sincronizar as duas pastas
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter tamanho e mapa de todas as pastas
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U o mapa de espaço em blocos, Enter entra
 
 msgid  Appearance
 msgstr Aparência

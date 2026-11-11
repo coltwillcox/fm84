@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.49.3** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.50.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -73,6 +73,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 🗂️ Navigation
 - 📁 **Dual panes** with **tabs** in each (Ctrl+T, Ctrl+W, Alt+1…9), swapped with Ctrl+U, synced with Alt+I
 - 🧭 **Go anywhere** - Ctrl+L types a path with Tab completion, Alt+←/→ back and forward, Alt+↓ every directory visited, Ctrl+D bookmarks
+- 🦘 **Alt+J jump** - a few letters of any directory gone to before, in any run, the most used lately first, as zoxide ranks them
 - 💿 **Drive strip** - click a mount, or Alt+F1 / Alt+F2; removable and optical media get their own icons
 - 🚀 **Open with** - Shift+Enter or Ctrl+O as the system would, Alt+O to pick a program, your own per extension in `open`
 - 🌿 **Git** - the branch after the path (click it to switch), and M/S/?/!/U marks on each name
@@ -107,6 +108,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - ✅ **Selection** - Space, `+` / `-` by pattern, `*` to invert; Ctrl+C / Alt+C copy paths or names
 - 📂 **Directory sizes** - Space on one, Alt+Shift+Enter on all, counted in the background as `du` counts
 - 🗺️ **Space map** - after Alt+Shift+Enter, a bar behind each row shows what takes the space, as ncdu does
+- 🧱 **Space map screen** - Alt+U draws the directory as neon blocks by size, a treemap to walk with the arrows and Enter
 
 ### 📦 Archives
 - 📂 **Gone into like directories** - zip, 7z and tar in gzip, zstd, xz or bzip2; view, preview, copy out and compare inside them
@@ -140,7 +142,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### ⚙️ Options (F11)
 - 🎨 **18 themes**, light ones included, and 23 languages built in
-- 🧩 **Columns, sorting, date and size formats, icons, cursor, terminal, external editor, confirmations** - saved to `~/.config/fm84/config` as plain `key = value`
+- 🧩 **Columns, sorting, date and size formats, icons, square or rounded corners, cursor, terminal, external editor, confirmations** - saved to `~/.config/fm84/config` as plain `key = value`
 - 🕹️ **For fun** - an Outrun progress bar, rows that burst when deleted for good, Turbo neon with scanlines, a night drive when left alone, and arcade high scores in F1
 
 ---
@@ -197,7 +199,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.49.3
+fm84 --version          # fm84 0.50.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -293,5 +295,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.49.3 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.50.0 ▄▀▄▀▄▀</code>
 </p>

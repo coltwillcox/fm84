@@ -73,6 +73,9 @@ msgstr Alt+A - Права, власник, време
 msgid  Alt+Down every directory visited
 msgstr Alt+Доле сви посећени директоријуми
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J скок са неколико слова, најкоришћеније прво
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (или Ctrl+Shift+F5) веза, Tab чврста
 
@@ -96,6 +99,9 @@ msgstr Alt+P - Спакуј: Tab формат, ниво, лозинка
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter величина и мапа свих директоријума
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U мапа простора у блоковима, Enter улази
 
 msgid  Appearance
 msgstr Изглед

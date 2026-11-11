@@ -6,6 +6,26 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.50.0] - 2026-11-11
+
+### ✨ Added
+- 🦘 **Jump to a directory** - **Alt+J** lists every directory the panels have gone to, in this run and the ones before, the one used most and most lately first, as zoxide ranks them: a visit counts four times within the hour, twice within the day, half within the week and a quarter after. Typing narrows it - each word in the path in the order typed, the last in the directory's own name, so `pro fm` is `~/programs/fm84`; lower case matches either case. **Enter** goes. Where the panel is already is left out, and what is inside an archive, a git commit or the trash is never kept; one gone since is said to be, and forgotten. Kept in a `jumps` file beside the config, written as fm84 quits onto what another fm84 left there meanwhile
+- 🧱 **The space map as a screen** - **Alt+U** draws the panel's entries as blocks as big as the room each takes, the largest near square, outlined in its own colour with its name and size inside where they fit. Directories are counted as Alt+Shift+Enter counts them, the blocks growing as they are; what is too small for a block of its own shares one, as `+37`. The arrows go from block to block, **Enter** goes into a directory and maps it in its turn - or on a file, back to the panel with the cursor on it - **Backspace** goes up, **Esc** back to the panel on the block chosen. A click chooses a block, and one on the block chosen goes in
+- 📁 **Directory brackets** - an F11 option: off, a directory is drawn as `src` rather than `[src]`. On by default
+- ⬜ **Corners** - an F11 option: square or rounded, on every box fm84 draws. Square by default
+
+### 🐛 Fixed
+- 🎨 **File colours in a flat view** - Ctrl+B's and Find's files are named by their path, so a whole name in the `colors` file, as `makefile`, never matched there; a file is coloured by its own name
+- 🕰️ **A picture from a file's git history** - Alt+Left decoded an old version of a picture whatever it would unpack to; past what opening one asks about, it is shown as the binary it is. And one shown so no longer kept every step after it in hex: the view goes back to the picture as soon as there is one to draw
+- 📏 **A large file from a file's git history** - an old version was read whole, past F11's size limit on opening files; git is asked its size first, and one too large is refused, saying so
+- 🏷️ **Brackets of a name's own in multi-rename** - `[[C]] [N]` came out as written rather than `[3] a`; the token inside is read, the bracket around it kept
+- ✍️ **F4 on a picture** - decoded the whole of it, and read the next one ahead, only to say it is binary; it says so without reading the file
+- 🔠 **Names alike but for case** - `README` and `readme`, with case ignored, came in whatever order the directory gave, which can change from one reading to the next; they are put in order by the names themselves, in the panels and the tree, as Find already did
+- 🇷🇴 **Romanian counts** - those ending in 01 to 19, as 101, took the form with "de"; they take the form without it, as 2 to 19 do
+- 🧑‍🔧 **Alt+G on several files** - stopped at the first that failed, leaving the rest not staged, unstaged or discarded; every one is tried, and the first failure said
+- ⚖️ **Comparing with HEAD** - read HEAD's version whole before any limit; git is asked its size first, and one past F11's limit is refused
+- 🧰 **Alt+O's applications** - one whose program had been uninstalled, its desktop entry left behind, was still offered; one whose `TryExec` is not there is left out
+
 ## [0.49.3] - 2026-11-11
 
 ### 🐛 Fixed

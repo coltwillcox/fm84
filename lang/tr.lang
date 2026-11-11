@@ -74,6 +74,9 @@ msgstr Alt+A - İzinler, sahip, zaman
 msgid  Alt+Down every directory visited
 msgstr Alt+Aşağı ziyaret edilen tüm dizinler
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J birkaç harfle atla, en çok kullanılan önce
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (ya da Ctrl+Shift+F5) bağ, Tab sabit
 
@@ -103,6 +106,9 @@ msgstr Alt+S - İki dizini eşitle
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter tüm dizinlerin boyutu ve haritası
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U alan haritası bloklar hâlinde, Enter girer
 
 msgid  Appearance
 msgstr Görünüm

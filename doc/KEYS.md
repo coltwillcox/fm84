@@ -20,6 +20,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Ctrl+L` | Go to a path (`Tab` completes a name; or click the path) |
 | `Alt+←` / `Alt+→` | Back / forward through where the tab has been |
 | `Alt+↓` | Every directory visited, across the tabs (type to narrow, `Enter` go) |
+| `Alt+J` | Jump to a directory gone to before, most used lately first (type a few letters, `Enter` go) |
 | `Ctrl+D` | Bookmarks (`A` add, `D` remove, `Enter` or `1`…`9` go) |
 | `Alt+F1` / `Alt+F2` | Choose a drive for the left / right panel (Ctrl works too, or click an icon) |
 | `Ctrl+T` / `Ctrl+W` | New tab / close tab |
@@ -43,6 +44,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `*` | Invert the selection of files |
 | `Alt+*` | Invert the selection of files and directories |
 | `Alt+Shift+Enter` / `Alt+Enter` | Size every directory in the panel, and map the space each entry takes |
+| `Alt+U` | The space map as a screen of blocks by size |
 | `Ctrl+C` / `Alt+C` | Copy full paths / names to the clipboard |
 | `Alt+B` | Put what is chosen on the mixtape playing; on a tape shown, take it off |
 | `Alt+Shift+B` | List the mixtapes; with one shown, go back |
@@ -115,6 +117,16 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | Typing | Go to the first directory on show starting with it (`↑` `↓` the others, `Esc` stop) |
 | `F5` / `F6` / `F7` / `F8` | Copy / move to the other panel, make a directory inside, delete |
 | `Esc` / `Alt+F10` | Back to the files, in the directory under the cursor |
+
+## 🧱 Space map (Alt+U)
+
+| Key | Action |
+|-----|--------|
+| `↑` `↓` `←` `→` | To the block that way |
+| `Enter` | Into the directory, mapped in its turn; on a file, back to the panel on it |
+| `Backspace` | Up a directory |
+| `Esc` | Back to the panel, its cursor on the block chosen |
+| Click | Choose a block; on the one chosen, `Enter` |
 
 ## 🌿 Opening a revision (Alt+G, R)
 

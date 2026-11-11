@@ -74,6 +74,9 @@ msgstr Alt+A - Дозволи, сопственик, време
 msgid  Alt+Down every directory visited
 msgstr Alt+Долу сите посетени папки
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J скок со неколку букви, најкористените прво
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (или Ctrl+Shift+F5) врска, Tab тврда
 
@@ -103,6 +106,9 @@ msgstr Alt+S - Усогласи ги двете папки
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter големина и карта на сите папки
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U мапата на просторот во блокови, Enter влегува
 
 msgid  Appearance
 msgstr Изглед

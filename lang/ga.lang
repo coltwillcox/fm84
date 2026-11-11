@@ -74,6 +74,9 @@ msgstr Alt+A - Ceadanna, úinéir, am
 msgid  Alt+Down every directory visited
 msgstr Alt+Síos gach comhadlann ar tugadh cuairt uirthi
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J léim le cúpla litir, na cinn is mó úsáide ar dtús
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (nó Ctrl+Shift+F5) nasc, Tab crua
 
@@ -103,6 +106,9 @@ msgstr Alt+S - Sioncrónaigh an dá chomhadlann
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter méid agus léarscáil gach comhadlainne
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U an léarscáil spáis ina bloic, Enter isteach
 
 msgid  Appearance
 msgstr Cuma

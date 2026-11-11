@@ -193,7 +193,8 @@ Config: {config}
 Beside it: session, bookmarks, menu (Alt+M's commands), open (the programs
 files open with, by extension), columns (the commands that fill the Info
 column), colors (the colours files are drawn in, by extension), scores (F1's
-high scores) and mixtapes (Alt+B's tapes).
+high scores), mixtapes (Alt+B's tapes) and jumps (the directories Alt+J
+jumps to).
 The language follows LANGUAGE, LC_ALL, LC_MESSAGES and LANG, unless F11's
 Language picks one: English, Bulgarian (bg), Czech (cs), Danish (da), German
 (de), Greek (el), Spanish (es), French (fr), Irish (ga), Croatian (hr),

@@ -75,6 +75,9 @@ msgstr Alt+A - Droits, propriétaire, date
 msgid  Alt+Down every directory visited
 msgstr Alt+Bas tous les dossiers visités
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J aller par quelques lettres, le plus utilisé d'abord
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (ou Ctrl+Maj+F5) lien, Tab physique
 
@@ -104,6 +107,9 @@ msgstr Alt+S - Synchroniser les deux dossiers
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Maj+Entrée taille et carte de tous les dossiers
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U la carte de l'espace en blocs, Entrée entre
 
 msgid  Appearance
 msgstr Apparence

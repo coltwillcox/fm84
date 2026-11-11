@@ -74,6 +74,9 @@ msgstr Alt+A - Práva, vlastník, čas
 msgid  Alt+Down every directory visited
 msgstr Alt+Dole všetky navštívené priečinky
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J skok podľa pár písmen, najpoužívanejšie prvé
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (alebo Ctrl+Shift+F5) odkaz, Tab pevný
 
@@ -103,6 +106,9 @@ msgstr Alt+S - Synchronizovať oba priečinky
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter veľkosť a mapa všetkých priečinkov
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U mapa miesta v blokoch, Enter vstúpi
 
 msgid  Appearance
 msgstr Vzhľad

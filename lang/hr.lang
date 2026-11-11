@@ -74,6 +74,9 @@ msgstr Alt+A - Dozvole, vlasnik, vrijeme
 msgid  Alt+Down every directory visited
 msgstr Alt+Dolje sve posjećene mape
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J skok s nekoliko slova, najkorištenije prvo
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (ili Ctrl+Shift+F5) poveznica, Tab čvrsta
 
@@ -103,6 +106,9 @@ msgstr Alt+S - Uskladi dvije mape
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter veličina i karta svih mapa
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U karta prostora u blokovima, Enter ulazi
 
 msgid  Appearance
 msgstr Izgled

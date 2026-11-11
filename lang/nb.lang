@@ -73,6 +73,9 @@ msgstr Alt+A - Rettigheter, eier, tid
 msgid  Alt+Down every directory visited
 msgstr Alt+Ned alle besøkte mapper
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J hopp med noen bokstaver, mest brukte først
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (eller Ctrl+Shift+F5) lenke, Tab hard
 
@@ -102,6 +105,9 @@ msgstr Alt+S - Synkroniser de to mappene
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter størrelse og kart over alle mapper
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U plasskartet som blokker, Enter går inn
 
 msgid  Appearance
 msgstr Utseende

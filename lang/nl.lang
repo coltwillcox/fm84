@@ -73,6 +73,9 @@ msgstr Alt+A - Rechten, eigenaar, tijd
 msgid  Alt+Down every directory visited
 msgstr Alt+Omlaag alle bezochte mappen
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J springen met een paar letters, meest gebruikt eerst
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (of Ctrl+Shift+F5) koppeling, Tab hard
 
@@ -102,6 +105,9 @@ msgstr Alt+S - De twee mappen synchroniseren
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter grootte en kaart van alle mappen
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U de ruimtekaart als blokken, Enter gaat erin
 
 msgid  Appearance
 msgstr Weergave

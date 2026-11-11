@@ -541,7 +541,7 @@ dependencies = [
 
 [[package]]
 name = "fm84"
-version = "0.49.3"
+version = "0.50.0"
 dependencies = [
  "bzip2",
  "chrono",

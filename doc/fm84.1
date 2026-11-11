@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-11" "fm84 0.49.3" "User Commands"
+.TH FM84 1 "2026-11-11" "fm84 0.50.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -370,6 +370,25 @@ newest first, opening on the newest that is not the panel's own.
 Typing narrows it to the paths holding every word typed; Up and Down
 choose, Enter goes, Esc closes.
 .TP
+.B Alt+J
+Jump: every directory the panels have gone to, in this run and those before,
+the one used most and most lately first, as
+.BR zoxide (1)
+ranks them - each visit counting four times within the hour, twice within
+the day, half within the week and a quarter after.
+Not the panel's own, nor what is inside an archive, a git commit or the
+trash.
+Typing narrows it: each word in the path in the order typed, the last of them
+in the directory's own name, so
+.B pro fm
+is
+.I ~/programs/fm84
+but not
+.IR ~/programs ;
+all in lower case matches either case.
+Up and Down choose, Enter goes, Esc closes; one gone since is said to be, and
+forgotten.
+.TP
 .B Ctrl+D
 Bookmarks.
 .B Enter
@@ -416,6 +435,20 @@ draws it.
 The cursor's row keeps its colour; the lines under the panels give its share
 of the whole.
 The map stays with the directory, gone while the panel is elsewhere.
+.TP
+.B Alt+U
+The space map as a screen: the panel's entries as blocks, each as big as the
+room it takes, the largest near square, outlined in its own colour with its
+name and size inside where they fit.
+Directories are counted as Alt+Shift+Enter counts them, and the blocks grow
+as they are.
+What is too small for a block of its own shares one, as
+.BR + N .
+The arrows go to the block that way, Enter goes into a directory and maps
+it in its turn, or on a file goes back to the panel with the cursor on it;
+Backspace goes up, Esc goes back to the panel, its cursor on the block
+chosen.
+A click chooses a block, and one on the block chosen is Enter.
 .TP
 .B + \-
 Select or deselect by pattern:
@@ -984,6 +1017,12 @@ adds a column filled by the commands in the
 file, by extension; E on its row edits them.
 .B Full\-height column lines
 runs the lines between the columns down to the bottom of the panels.
+.B Directory brackets
+draws a directory as
+.IR [name] ,
+on to start with; off, as its name alone.
+.B Corners
+are square or rounded, on every box fm84 draws.
 E on the
 .B Theme
 row edits the
@@ -1117,6 +1156,12 @@ and
 lines after it what is on it, and
 .I playing = name
 the one Alt+B adds to.
+.TP
+.I $XDG_CONFIG_HOME/fm84/jumps
+Alt+J's directories: a
+.I jump = count last path
+line each, how much it has been gone to and when last, in seconds since 1970.
+Written as fm84 quits, onto what another fm84 left there meanwhile.
 .SH ENVIRONMENT
 .TP
 .B XDG_CONFIG_HOME

@@ -73,6 +73,9 @@ msgstr Alt+A - Права, собственик, време
 msgid  Alt+Down every directory visited
 msgstr Alt+Надолу всички посетени директории
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J скок по няколко букви, най-ползваните първо
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (или Ctrl+Shift+F5) връзка, Tab твърда
 
@@ -102,6 +105,9 @@ msgstr Alt+S - Синхронизиране на двете директории
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter размер и карта на всички директории
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U картата на мястото в блокове, Enter влиза
 
 msgid  Appearance
 msgstr Външен вид

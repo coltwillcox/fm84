@@ -74,6 +74,9 @@ msgstr Alt+A - Permisiuni, proprietar, timp
 msgid  Alt+Down every directory visited
 msgstr Alt+Jos toate directoarele vizitate
 
+msgid  Alt+J jump by a few letters, most used first
+msgstr Alt+J salt după câteva litere, cele mai folosite întâi
+
 msgid  Alt+F5 (or Ctrl+Shift+F5) link, Tab hard
 msgstr Alt+F5 (sau Ctrl+Shift+F5) legătură, Tab fixă
 
@@ -103,6 +106,9 @@ msgstr Alt+S - Sincronizează cele două directoare
 
 msgid  Alt+Shift+Enter size and map every directory
 msgstr Alt+Shift+Enter dimensiunea și harta tuturor directoarelor
+
+msgid  Alt+U the space map as blocks, Enter goes in
+msgstr Alt+U harta spațiului în blocuri, Enter intră
 
 msgid  Appearance
 msgstr Aspect
