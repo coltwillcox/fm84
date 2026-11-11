@@ -30,7 +30,10 @@ impl AttributeField {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AttributeKind {
     Mode,
+    /// Only where a file has an owner and a group to change: not on Windows.
+    #[cfg(unix)]
     Owner,
+    #[cfg(unix)]
     Group,
     Modified,
 }
@@ -39,7 +42,9 @@ impl AttributeKind {
     pub fn label(self) -> &'static str {
         match self {
             AttributeKind::Mode => t!("Mode"),
+            #[cfg(unix)]
             AttributeKind::Owner => t!("Owner"),
+            #[cfg(unix)]
             AttributeKind::Group => t!("Group"),
             AttributeKind::Modified => t!("Modified"),
         }
@@ -141,8 +146,6 @@ impl AppState {
                 AttributeKind::Owner => crate::fs_ops::user_id(text).map(|uid| change.owner = Some(uid)).ok_or_else(|| t!("No such user: {text}", text)),
                 #[cfg(unix)]
                 AttributeKind::Group => crate::fs_ops::group_id(text).map(|gid| change.group = Some(gid)).ok_or_else(|| t!("No such group: {text}", text)),
-                #[cfg(not(unix))]
-                AttributeKind::Owner | AttributeKind::Group => Ok(()),
                 AttributeKind::Modified => crate::attributes::parse_time(text).map(|time| change.modified = Some(time)),
             };
             if let Err(e) = read {
