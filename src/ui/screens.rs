@@ -378,7 +378,7 @@ pub(super) fn render_treemap(f: &mut ratatui::Frame<'_>, area: Rect, app_state: 
         }
         let outline = Block::default()
             .borders(Borders::ALL)
-            .border_type(if chosen { ratatui::widgets::BorderType::Thick } else { ratatui::widgets::BorderType::Rounded })
+            .border_type(if chosen { ratatui::widgets::BorderType::Thick } else { ratatui::widgets::BorderType::Plain })
             .border_style(Style::default().fg(color).add_modifier(if chosen { Modifier::BOLD } else { Modifier::empty() }))
             .style(fill);
         let room = outline.inner(rect);
