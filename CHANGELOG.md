@@ -6,6 +6,11 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.49.2] - 2026-11-11
+
+### 🛠️ Changed
+- 🏷️ **The README's version** - said 0.48.0 through 0.49.1; it says the version it comes with
+
 ## [0.49.1] - 2026-11-11
 
 ### 🐛 Fixed
