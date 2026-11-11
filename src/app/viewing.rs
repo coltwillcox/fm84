@@ -306,7 +306,7 @@ impl AppState {
 
     /// F on text: follow the file as it grows, at its end, or stop.
     pub fn viewer_toggle_follow(&mut self) {
-        let height = self.drawn.viewer_viewport_height;
+        let height = self.drawn.viewer_rows();
         if let Screen::Viewer(state) = &mut self.screen
             && state.mode == ViewMode::Text
             && !state.from_edit
@@ -330,7 +330,7 @@ impl AppState {
     /// read again from the start. One gone is gone quietly, as tail -f has it.
     pub fn poll_follow(&mut self) {
         const EVERY: Duration = Duration::from_millis(250);
-        let (height, width) = (self.drawn.viewer_viewport_height, self.drawn.viewer_viewport_width);
+        let (height, width) = (self.drawn.viewer_rows(), self.drawn.viewer_viewport_width);
         let Screen::Viewer(state) = &mut self.screen else {
             return;
         };
@@ -415,7 +415,7 @@ impl AppState {
 
     pub fn viewer_scroll_down(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
-            let max = state.total_lines.saturating_sub(self.drawn.viewer_viewport_height);
+            let max = state.total_lines.saturating_sub(self.drawn.viewer_rows());
             state.scroll_offset = (state.scroll_offset + 1).min(max);
         }
     }
@@ -430,15 +430,15 @@ impl AppState {
 
     pub fn viewer_page_down(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
-            let max = state.total_lines.saturating_sub(self.drawn.viewer_viewport_height);
-            state.scroll_offset = (state.scroll_offset + self.drawn.viewer_viewport_height).min(max);
+            let max = state.total_lines.saturating_sub(self.drawn.viewer_rows());
+            state.scroll_offset = (state.scroll_offset + self.drawn.viewer_rows()).min(max);
         }
     }
 
     pub fn viewer_page_up(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
             state.follow = None;
-            state.scroll_offset = state.scroll_offset.saturating_sub(self.drawn.viewer_viewport_height);
+            state.scroll_offset = state.scroll_offset.saturating_sub(self.drawn.viewer_rows());
         }
     }
 
@@ -594,7 +594,7 @@ impl AppState {
     /// to the left into view, so the offset goes the other way. Both offsets
     /// move at once, which is the whole point of doing this with the mouse.
     pub fn viewer_pan_to(&mut self, column: u16, row: u16) {
-        let (width, height) = (self.drawn.viewer_viewport_width, self.drawn.viewer_viewport_height);
+        let (width, height) = (self.drawn.viewer_viewport_width, self.drawn.viewer_rows());
         if let Screen::Viewer(state) = &mut self.screen
             && let Some(((from_column, from_row), (from_horizontal, from_vertical))) = state.pan_from
         {
@@ -620,7 +620,7 @@ impl AppState {
     /// Start the view at `offset`, from a scroll bar: a line down, or a
     /// column along. No further than the keys go.
     pub fn viewer_scroll_to(&mut self, vertical: bool, offset: usize) {
-        let (height, width) = (self.drawn.viewer_viewport_height, self.drawn.viewer_viewport_width);
+        let (height, width) = (self.drawn.viewer_rows(), self.drawn.viewer_viewport_width);
         if let Screen::Viewer(state) = &mut self.screen {
             if vertical {
                 state.follow = None;
@@ -633,7 +633,7 @@ impl AppState {
 
     pub fn viewer_end(&mut self) {
         if let Screen::Viewer(state) = &mut self.screen {
-            state.scroll_offset = state.total_lines.saturating_sub(self.drawn.viewer_viewport_height);
+            state.scroll_offset = state.total_lines.saturating_sub(self.drawn.viewer_rows());
         }
     }
 }
@@ -657,5 +657,28 @@ mod tests {
         assert_eq!((image.width(), image.height()), (4, 4));
         assert!(cache.pending.is_none());
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Opened in a terminal too small to draw it, the viewer has no height
+    /// to go by yet: End and Page Down still stop on the last row, not one
+    /// past it, which showed nothing once the terminal was big enough.
+    #[test]
+    fn the_end_is_a_row_before_the_viewer_is_drawn() {
+        let path = std::env::temp_dir().join(format!("fm84-undrawn-{}.txt", std::process::id()));
+        std::fs::write(&path, "one\ntwo\nthree\n").unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        app_state.open_viewer(path.clone()).unwrap();
+        assert_eq!(app_state.drawn.viewer_viewport_height, 0);
+        let total = app_state.viewer().unwrap().total_lines;
+        app_state.viewer_end();
+        assert_eq!(app_state.viewer().unwrap().scroll_offset, total - 1);
+        app_state.viewer_home();
+        app_state.viewer_page_down();
+        app_state.viewer_page_down();
+        app_state.viewer_page_down();
+        app_state.viewer_scroll_down();
+        assert_eq!(app_state.viewer().unwrap().scroll_offset, total - 1);
+        std::fs::remove_file(path).unwrap();
     }
 }

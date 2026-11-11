@@ -560,6 +560,16 @@ pub struct Drawn {
     pub scroll_bars: Vec<crate::scroll_bar::ScrollBar>,
 }
 
+impl Drawn {
+    /// Rows the viewer's text has room for, as the keys scroll it: never
+    /// none. Before the viewer is first drawn - opened while the terminal is
+    /// too small to draw anything - none is known, and End or Page Down
+    /// went one past the last row, to a page of nothing once there was room.
+    pub fn viewer_rows(&self) -> usize {
+        self.viewer_viewport_height.max(1)
+    }
+}
+
 /// The threads working for the UI, and how long it waits on them.
 pub struct Workers {
     /// Where the detail lines are gathered.
