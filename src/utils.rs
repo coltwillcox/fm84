@@ -186,13 +186,6 @@ pub fn display_column(line: &str, char_col: usize) -> usize {
     line.chars().take(char_col).map(char_display_width).sum()
 }
 
-pub fn color_for_extension(ext: &str) -> Color {
-    if ext.is_empty() {
-        return crate::display::palette().file;
-    }
-    extension_color(ext, crate::display::light_background())
-}
-
 /// The colour hashed from an extension, for a light background or a dark one.
 pub fn extension_color(ext: &str, light: bool) -> Color {
     // Simple hash of extension bytes.

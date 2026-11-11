@@ -485,10 +485,15 @@ pub fn set_file_colors(rules: Vec<crate::options::ColorRule>) {
 /// of the `colors` file for it, or the colour picked for its extension. A
 /// colour of the user's own is drawn as written, Turbo or not.
 pub fn file_style(name: &str, extension: &str) -> (Color, ratatui::style::Modifier) {
-    let light = light_background();
+    file_style_on(name, extension, light_background())
+}
+
+/// `file_style` on a light background or a dark one.
+pub fn file_style_on(name: &str, extension: &str, light: bool) -> (Color, ratatui::style::Modifier) {
     let own = FILE_COLORS.with_borrow(|colors| colors.rules.iter().find(|rule| rule.applies(name)).map(|rule| (if light { rule.light } else { rule.dark }, rule.modifiers)));
     let (color, modifiers) = own.unwrap_or_default();
-    (color.unwrap_or_else(|| crate::utils::color_for_extension(extension)), modifiers)
+    let hashed = || if extension.is_empty() { palette().file } else { crate::utils::extension_color(extension, light) };
+    (color.unwrap_or_else(hashed), modifiers)
 }
 
 /// Whether Turbo is on, for the frame being drawn.

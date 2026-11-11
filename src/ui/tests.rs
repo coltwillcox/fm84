@@ -1160,13 +1160,14 @@ fn files_are_drawn_in_the_colours_file_gives_them() {
     assert_eq!(drawn(&mut app_state, "plain").0, crate::utils::extension_color("txt", false), "no line for it");
     assert_eq!(drawn(&mut app_state, "sub").0, palette().directory, "a directory is a directory");
 
-    app_state.options.theme = crate::options::Theme::GithubLight;
-    assert_eq!(drawn(&mut app_state, "main").0, Color::Rgb(0, 0x44, 0), "light takes the second");
-    assert_eq!(drawn(&mut app_state, "pack").0, Color::Rgb(255, 0, 0), "or the one there is");
+    // On a light background - asked of the lookup itself, as a light theme
+    // set for drawing would show in the tests drawing beside this one.
+    let light = |name: &str, extension: &str| crate::display::file_style_on(name, extension, true).0;
+    assert_eq!(light("main.rs", "rs"), Color::Rgb(0, 0x44, 0), "light takes the second");
+    assert_eq!(light("pack.tar.gz", "gz"), Color::Rgb(255, 0, 0), "or the one there is");
+    assert_eq!(light("plain.txt", "txt"), crate::utils::extension_color("txt", true), "and the hashed one its own");
 
     crate::display::set_file_colors(Vec::new());
-    app_state.options = Options::default();
-    crate::display::apply(&app_state.options);
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
