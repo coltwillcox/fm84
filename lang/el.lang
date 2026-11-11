@@ -29,6 +29,9 @@ msgstr +/- επιλογή/αποεπιλογή με μοτίβο, * αντιστ
 msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
 msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 μέσα
 
+msgid  .jar .apk .docx and other zips, .deb .iso: read
+msgstr .jar .apk .docx και άλλα zip, .deb .iso: ανάγνωση
+
 msgid  12-hour
 msgstr 12ωρο
 
@@ -620,6 +623,9 @@ msgstr Ξανά F10 - Έξοδος
 
 msgid  F11 - Options (Alt+F1/F2 drives)
 msgstr F11 - Ρυθμίσεις (Alt+F1/F2 μονάδες)
+
+msgid  E on Theme: file colours by extension
+msgstr E στο Θέμα: χρώματα αρχείων ανά επέκταση
 
 msgid  F12 - Preview in other panel
 msgstr F12 - Προεπισκόπηση στο άλλο πάνελ
@@ -1886,6 +1892,9 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] επίσης
 
 msgid  F on text follows it as it grows
 msgstr Το F σε κείμενο το παρακολουθεί καθώς μεγαλώνει
+
+msgid  Alt+Left/Right through its git history
+msgstr Alt+Αριστερά/Δεξιά στο ιστορικό git του
 
 msgid  Ctrl+Z - Undo the last rename, copy, move or trash
 msgstr Ctrl+Z - Αναίρεση τελευταίας μετονομασίας, αντιγραφής, μετακίνησης ή κάδου

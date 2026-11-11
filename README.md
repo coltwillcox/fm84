@@ -110,6 +110,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 
 ### 📦 Archives
 - 📂 **Gone into like directories** - zip, 7z and tar in gzip, zstd, xz or bzip2; view, preview, copy out and compare inside them
+- 💿 **Packages and images** - `.jar`, `.apk`, `.docx` and the other zips by another name, `.deb` packages and `.iso` images, read-only
 - ✍️ **Written into** - F5 and F6 copy and move in, F7 makes, F8 deletes, all of it written whole or not at all
 - 🗃️ **Alt+P packs, Alt+F9 extracts** - with a level, one archive for each, patterns to leave out, and a move; safe against paths that would escape
 - 🔐 **Passwords** - zip and 7z packed with AES-256, and asked for when an encrypted one is opened
@@ -119,6 +120,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🌳 **Directory tree** - Alt+F10 turns a panel into its drive's tree, ncd-style, opened and closed with the arrows; Enter sends the other panel there
 - 🧱 **Columns** - Name, Ext, Size, Modified, Attributes; Ctrl+F3…F6 or a click on a heading sorts
 - 🧮 **Info column** - filled by your own commands per extension: a picture's size, a song's length, a PDF's pages
+- 🎨 **File colours** - by extension from a `colors` file of your own, with bold, italic and a second colour for light themes
 - 🔎 **Detail lines** - full name, exact size, timestamp, owner, mode and link target under the panels
 - 📊 **Status bar** - selection, disk usage and a clickable F-key bar
 - 🛡️ **Any name** - not-UTF-8 names work as themselves, escape sequences in names are drawn harmless
@@ -127,6 +129,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 📄 **Text, hex, and images as coloured ASCII** - PNG, JPEG, GIF, WebP, BMP; fit, fill, zoom, drag, page through a folder
 - 🔎 **Find, regex, go to line, wrap, selection** - and a prompt before anything huge is loaded
 - 📜 **Follow** - `F` on a log keeps the view at its end as it grows, as `tail -f`
+- 🕰️ **Time machine** - Alt+Left and Alt+Right step the file back and on through the git commits that changed it
 
 ### ✍️ Editor (F4)
 - 🌈 **Syntax highlighting**, undo/redo, find and replace with regex, indent and comment lines

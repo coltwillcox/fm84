@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-10" "fm84 0.48.0" "User Commands"
+.TH FM84 1 "2026-11-11" "fm84 0.49.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -107,6 +107,33 @@ The panel's path runs through it, as
 .IR ~/photos.zip/2024 ,
 so tabs, history, bookmarks, Ctrl+L and remembered directories work inside
 one; Backspace at its top comes back out onto the archive.
+.PP
+Zips by another name \-
+.IR .jar ,
+.IR .war ,
+.IR .apk ,
+.IR .aab ,
+.IR .xpi ,
+.IR .whl ,
+.IR .epub ,
+.IR .cbz ,
+.IR .docx ,
+.IR .xlsx ,
+.IR .pptx ,
+.IR .odt ,
+.I .ods
+and
+.I .odp
+\- a
+.I .deb
+package, its
+.I control.tar
+and
+.I data.tar
+each a folder, and an
+.I .iso
+image, with Rock Ridge and Joliet names, are gone into the same way, but
+read\-only: viewed, copied out and extracted, never written into.
 .PP
 F5 copies out of an archive, a directory whole, asking about files in the way as any
 copy does; times and permissions come out as the archive kept them, and links
@@ -869,6 +896,12 @@ Zoom an image in or out.
 .B PageUp PageDown
 Previous or next picture in the folder, when one is open.
 .TP
+.B Alt+Left Alt+Right
+The file as the commit before, or after, the one shown had it, through
+the commits that changed it, renames followed; past the newest, the file
+as it is.
+The status bar says which commit of how many, when and its subject.
+.TP
 .B Ctrl+C
 Copy the selection.
 .SS Editor
@@ -949,6 +982,13 @@ what the scroll bars are drawn with, highlighting and image settings.
 adds a column filled by the commands in the
 .I columns
 file, by extension; E on its row edits them.
+.B Full\-height column lines
+runs the lines between the columns down to the bottom of the panels.
+E on the
+.B Theme
+row edits the
+.I colors
+file.
 .BR "Outrun progress bar" ,
 .BR "Burst what is deleted for good" ,
 .B Turbo
@@ -1041,6 +1081,28 @@ The commands that fill the Info column, by extension, a line each as
 .IR "jpg png = identify \-format '%wx%h' {file}" ;
 the first line a command prints is what the column shows.
 Made with examples the first time F11 edits it.
+.TP
+.I $XDG_CONFIG_HOME/fm84/colors
+The colours files are drawn in, by extension, a line each as
+.IR "rs toml = #dea584" :
+.IR #rrggbb ,
+.IR #rgb ,
+0 to 255 or a name such as
+.BR bright\-red ,
+with
+.BR bold ,
+.BR italic ,
+.B underline
+or
+.BR dim ;
+two, as
+.IR "md = #7aa2f7 / #1a4b95" ,
+for dark themes and light ones.
+.B *
+is every file, and the first line that fits wins; a file with none keeps
+the colour picked for its extension.
+Made with examples the first time F11 edits it; read again within a second
+of a change.
 .TP
 .I $XDG_CONFIG_HOME/fm84/scores
 F1's high scores, counted as the jobs finish.

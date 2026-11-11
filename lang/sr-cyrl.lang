@@ -28,6 +28,9 @@ msgstr +/- избор/поништавање по обрасцу, * обрни
 msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
 msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 унутра
 
+msgid  .jar .apk .docx and other zips, .deb .iso: read
+msgstr .jar .apk .docx и други zip, .deb .iso: читање
+
 msgid  12-hour
 msgstr 12-часовни
 
@@ -610,6 +613,9 @@ msgstr Поново F10 - Излаз
 
 msgid  F11 - Options (Alt+F1/F2 drives)
 msgstr F11 - Опције (Alt+F1/F2 дискови)
+
+msgid  E on Theme: file colours by extension
+msgstr E на Тема: боје датотека по наставку
 
 msgid  F12 - Preview in other panel
 msgstr F12 - Приказ у другом панелу
@@ -1923,6 +1929,9 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] такође
 
 msgid  F on text follows it as it grows
 msgstr F на тексту га прати док расте
+
+msgid  Alt+Left/Right through its git history
+msgstr Alt+Лево/Десно кроз његову git историју
 
 msgid  Ctrl+Z - Undo the last rename, copy, move or trash
 msgstr Ctrl+Z - Опозови последње преименовање, копирање, премештање или корпу

@@ -29,6 +29,9 @@ msgstr +/- zaznacz/odznacz wg wzorca, * odwróć
 msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
 msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 w środku
 
+msgid  .jar .apk .docx and other zips, .deb .iso: read
+msgstr .jar .apk .docx i inne zipy, .deb .iso: odczyt
+
 msgid  12-hour
 msgstr 12-godzinny
 
@@ -620,6 +623,9 @@ msgstr Ponownie F10 - Wyjdź
 
 msgid  F11 - Options (Alt+F1/F2 drives)
 msgstr F11 - Opcje (Alt+F1/F2 dyski)
+
+msgid  E on Theme: file colours by extension
+msgstr E na Motywie: kolory plików wg rozszerzenia
 
 msgid  F12 - Preview in other panel
 msgstr F12 - Podgląd w drugim panelu
@@ -1924,6 +1930,9 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] też
 
 msgid  F on text follows it as it grows
 msgstr F na tekście śledzi go, gdy rośnie
+
+msgid  Alt+Left/Right through its git history
+msgstr Alt+Lewo/Prawo przez jego historię w gicie
 
 msgid  Ctrl+Z - Undo the last rename, copy, move or trash
 msgstr Ctrl+Z - Cofnij ostatnią zmianę nazwy, kopię, przeniesienie lub kosz

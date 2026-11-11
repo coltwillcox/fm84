@@ -6,6 +6,25 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.49.0] - 2026-11-11
+
+### ✨ Added
+- 🕰️ **A file's git history in the viewer** - **Alt+Left** in F3 shows the file as the last commit that changed it had it, again for the one before, and on back; **Alt+Right** comes forward, and past the newest is the file as it is. Renames are followed, merges passed over. Where the view was stays, as far as the other version goes, and wrap, hex, fit and zoom with it; the status bar says which commit of how many, how long ago and its subject. Follow waits for the file as it is
+- 📦 **More archives gone into** - zips by other names - `.jar`, `.war`, `.apk`, `.aab`, `.xpi`, `.whl`, `.epub`, `.cbz`, `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`, `.odp` - a `.deb`, its `control.tar` and `data.tar` each a folder, and an `.iso` image, with Rock Ridge and Joliet names, links and modes. All read-only: gone into, viewed, copied out and extracted as any archive, never written into
+- 🎨 **File colours of your own** - a `colors` file beside the config gives files a colour by extension, a line each as `rs toml = #dea584`: `#rrggbb`, `#rgb`, 0 to 255 or a name as `bright-red`, with `bold`, `italic`, `underline` or `dim`, or one alone to keep the colour fm84 picks. `md = #7aa2f7 / #1a4b95` is one for dark themes and one for light ones. Two-part endings as `tar.gz` and whole names as `makefile` work; `*` is every file. The first line for a file wins, and one with none keeps its colour as before. **E** on F11's Theme row edits it, made with examples the first time; a change shows within a second of saving
+- ┃ **Full-height column lines** - an F11 option: the lines between the columns run through the heading and down to the bottom of the panel, not only beside the entries. Off by default
+
+### 🐛 Fixed
+- 🧮 **An Info column command left running** - what one started in the background, or a pipeline whose end had gone, held a thread for good. It is stopped with the command
+- 📡 **A log followed for hours** - was held whole; past what was open when Follow began, it is let go of from the top, as a terminal's scrollback is
+- 🔭 **Find files from `/`** - kept every path it found; it stops at as many as a panel lists, which is all F could feed it, and says so
+- 📏 **Directory sizes** - every one Alt+Shift+Enter ever counted was kept; past a limit, only those of what the panels show are
+- 🖼️ **A picture opened while it was read ahead** - was decoded a second time beside it, two of it at full size at once. It is waited for
+- 💬 **Ctrl+/ with the cursor in the indent** - moved the cursor past the comment mark; it stays where it was
+- 🎞️ **An MP4 with a made-up atom size** - could set the tag reader going round for good
+- 🏷️ **Git marks after a rename in the work tree** - for a file moved and added with `-N`, where it came from was read as an entry of its own, and could mark the wrong one
+- 🛡️ **A git commit made by hand** - holding a tree named `..` listed what was in it as `../x`, which copying out would have written outside the target. It is refused, as in any archive
+
 ## [0.48.0] - 2026-11-10
 
 ### ✨ Added

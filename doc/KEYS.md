@@ -146,6 +146,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `+` / `-` | Zoom an image in or out |
 | `W` | Wrap long lines, or scroll them sideways |
 | `PageUp` / `PageDown` | Previous / next picture in the folder |
+| `Alt+Left` / `Alt+Right` | The file as the commit before / after had it; past the newest, as it is now |
 | `Drag` | Move a picture about |
 | `Ctrl+C` | Copy selection |
 

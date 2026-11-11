@@ -29,6 +29,9 @@ msgstr +/- selectează/deselectează după model, * inversează
 msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
 msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 înăuntru
 
+msgid  .jar .apk .docx and other zips, .deb .iso: read
+msgstr .jar .apk .docx și alte zip, .deb .iso: citire
+
 msgid  12-hour
 msgstr 12 ore
 
@@ -620,6 +623,9 @@ msgstr F10 din nou - Ieșire
 
 msgid  F11 - Options (Alt+F1/F2 drives)
 msgstr F11 - Opțiuni (Alt+F1/F2 unități)
+
+msgid  E on Theme: file colours by extension
+msgstr E pe Temă: culorile fișierelor după extensie
 
 msgid  F12 - Preview in other panel
 msgstr F12 - Previzualizare în celălalt panou
@@ -1924,6 +1930,9 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] de asemenea
 
 msgid  F on text follows it as it grows
 msgstr F pe text îl urmărește cât crește
+
+msgid  Alt+Left/Right through its git history
+msgstr Alt+Stânga/Dreapta prin istoricul său git
 
 msgid  Ctrl+Z - Undo the last rename, copy, move or trash
 msgstr Ctrl+Z - Anulează ultima redenumire, copiere, mutare sau coș

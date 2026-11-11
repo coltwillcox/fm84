@@ -30,6 +30,9 @@ msgstr +/- kijelölés/elengedés mintával, * fordít
 msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
 msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 benne
 
+msgid  .jar .apk .docx and other zips, .deb .iso: read
+msgstr .jar .apk .docx és más zipek, .deb .iso: olvasás
+
 msgid  12-hour
 msgstr 12 órás
 
@@ -621,6 +624,9 @@ msgstr Újra F10 - Kilépés
 
 msgid  F11 - Options (Alt+F1/F2 drives)
 msgstr F11 - Beállítások (Alt+F1/F2 meghajtók)
+
+msgid  E on Theme: file colours by extension
+msgstr E a Témán: fájlszínek kiterjesztés szerint
 
 msgid  F12 - Preview in other panel
 msgstr F12 - Előnézet a másik panelben
@@ -1887,6 +1893,9 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] is
 
 msgid  F on text follows it as it grows
 msgstr F szövegen követi, ahogy nő
+
+msgid  Alt+Left/Right through its git history
+msgstr Alt+Bal/Jobb a git-előzményein át
 
 msgid  Ctrl+Z - Undo the last rename, copy, move or trash
 msgstr Ctrl+Z - Az utolsó átnevezés, másolás, áthelyezés vagy lomtár visszavonása

@@ -29,6 +29,9 @@ msgstr +/- selecionar/desmarcar por padrão, * inverter
 msgid  .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 inside
 msgstr .zip .7z .tar(.gz .zst .xz .bz2): F5 F6 F7 F8 dentro
 
+msgid  .jar .apk .docx and other zips, .deb .iso: read
+msgstr .jar .apk .docx e outros zip, .deb .iso: leitura
+
 msgid  12-hour
 msgstr 12 horas
 
@@ -620,6 +623,9 @@ msgstr F10 de novo - Sair
 
 msgid  F11 - Options (Alt+F1/F2 drives)
 msgstr F11 - Opções (Alt+F1/F2 unidades)
+
+msgid  E on Theme: file colours by extension
+msgstr E em Tema: cores dos arquivos por extensão
 
 msgid  F12 - Preview in other panel
 msgstr F12 - Prévia no outro painel
@@ -1776,7 +1782,7 @@ msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - 
 msgstr ↑↓ - Mover    Enter/←→ - Mudar    E - Editar os comandos    Esc - Fechar
 
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
-msgstr ↑↓ - Mover    Enter/←→ - Mudar    E - Editar as cores dos ficheiros    Esc - Fechar
+msgstr ↑↓ - Mover    Enter/←→ - Mudar    E - Editar as cores dos arquivos    Esc - Fechar
 
 msgid  No config directory to keep the commands in
 msgstr Não há pasta de configuração para guardar os comandos
@@ -1886,6 +1892,9 @@ msgstr [Exif:date] [Tag:artist] [Pdf:title] também
 
 msgid  F on text follows it as it grows
 msgstr F num texto o acompanha enquanto cresce
+
+msgid  Alt+Left/Right through its git history
+msgstr Alt+Esquerda/Direita pelo histórico do git
 
 msgid  Ctrl+Z - Undo the last rename, copy, move or trash
 msgstr Ctrl+Z - Desfazer a última renomeação, cópia, movimento ou lixeira
