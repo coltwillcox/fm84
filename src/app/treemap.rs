@@ -55,7 +55,13 @@ impl AppState {
     /// The block at `index` of those drawn, as the panel's cursor. The rest
     /// of them together is no one entry to put it on.
     pub fn treemap_choose(&mut self, index: Option<usize>) {
-        if let Some(&(Tile::Entry(entry), _)) = index.and_then(|index| self.drawn.treemap.get(index)) {
+        // The blocks are as last drawn, which a terminal too small to draw
+        // the map in leaves as they were for another directory: one past
+        // the entries this one has is not one of them.
+        let count = self.panel(self.active_side).children.len();
+        if let Some(&(Tile::Entry(entry), _)) = index.and_then(|index| self.drawn.treemap.get(index))
+            && entry < count
+        {
             self.panel_mut(self.active_side).state.select(Some(entry));
         }
     }
@@ -83,5 +89,36 @@ impl AppState {
         if let Some(parent) = dir.parent() {
             self.open_dir(side, parent.to_path_buf(), dir.file_name());
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Blocks drawn for another directory - left as they were by a terminal
+    /// too small to draw the map in - put no cursor past this one's entries.
+    #[test]
+    fn a_block_drawn_for_another_directory_is_not_chosen() {
+        let dir = std::env::temp_dir().join(format!("fm84-treemap-stale-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("only.txt"), "x").unwrap();
+        let mut app_state = AppState::new();
+        app_state.options = crate::options::Options::default();
+        app_state.active_side = Side::Left;
+        app_state.open_dir(Side::Left, dir.clone(), None);
+        while app_state.panel_busy(Side::Left) {
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_listings();
+        }
+        let count = app_state.left.children.len();
+        let before = app_state.left.state.selected();
+        app_state.drawn.treemap = vec![(Tile::Entry(count + 3), Rect::new(0, 0, 10, 5))];
+        app_state.treemap_choose(Some(0));
+        assert_eq!(app_state.left.state.selected(), before);
+        app_state.treemap_move(Direction::Right);
+        assert!(app_state.left.state.selected().is_some_and(|index| index < count));
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
