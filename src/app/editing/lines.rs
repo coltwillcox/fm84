@@ -125,6 +125,9 @@ impl AppState {
                 state.cursor_line = last;
                 state.cursor_col = state.lines[last].chars().count();
             } else {
+                // An anchor on the cursor, selecting nothing, would select
+                // what the cursor moved past.
+                state.selection_anchor = None;
                 state.cursor_col = state.cursor_col.saturating_add_signed(cursor_shift).min(state.lines[state.cursor_line].chars().count());
             }
             state.modified = true;
@@ -181,6 +184,7 @@ impl AppState {
                 state.cursor_line = last;
                 state.cursor_col = state.lines[last].chars().count();
             } else {
+                state.selection_anchor = None;
                 state.cursor_col = cursor_col.min(state.lines[state.cursor_line].chars().count());
             }
             state.modified = true;

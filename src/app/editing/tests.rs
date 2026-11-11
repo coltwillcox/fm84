@@ -510,3 +510,27 @@ fn a_picture_refused_by_the_editor_is_never_decoded() {
     assert_eq!((state.file_size, state.syntax_name.as_str(), state.total_lines), (size, "Binary", 1));
     std::fs::remove_file(&path).unwrap();
 }
+
+/// Shift+Down on the last line goes nowhere and selects nothing; the
+/// anchor it set is not left behind for Backspace to join a line out from
+/// under, and the next one to cut a selection from lines no longer there.
+#[test]
+fn an_empty_selection_does_not_outlive_an_edit() {
+    let (mut app_state, path) = editor_with("empty-selection", "x\n\n");
+    app_state.drawn.editor_viewport_height = 10;
+    app_state.editor_state_cursor(2, 0);
+    app_state.editor_prepare_move(true);
+    app_state.editor_cursor_down();
+    app_state.editor_backspace();
+    app_state.editor_backspace();
+    assert_eq!(app_state.editor().unwrap().lines, ["x"]);
+    assert_eq!(selected(&app_state), None);
+
+    // Nor does an indent move the cursor away from one, selecting the indent.
+    app_state.editor_state_cursor(0, 0);
+    app_state.editor_prepare_move(true);
+    app_state.editor_cursor_left();
+    app_state.editor_indent(true);
+    assert_eq!(selected(&app_state), None);
+    std::fs::remove_file(path).unwrap();
+}

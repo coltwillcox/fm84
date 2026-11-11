@@ -501,7 +501,15 @@ impl AppState {
     /// Shared by cut, paste, typing, Backspace and Delete.
     pub(super) fn delete_selection(&mut self) -> Option<usize> {
         let state = self.editor_mut()?;
-        let ((first_line, first_col), (last_line, last_col)) = state.selection()?;
+        // An anchor on the cursor itself - Shift+Down on the last line, which
+        // goes nowhere - selects nothing, but left behind it would point at
+        // a place the edit to come may take away, a line joined to the one
+        // above, and the next edit would cut a selection out of lines that
+        // are not there.
+        let Some(((first_line, first_col), (last_line, last_col))) = state.selection() else {
+            state.selection_anchor = None;
+            return None;
+        };
 
         let head = char_slice(&state.lines[first_line], 0, first_col);
         let last = &state.lines[last_line];
