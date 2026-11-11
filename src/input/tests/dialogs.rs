@@ -352,3 +352,32 @@ fn quitting_asks_about_unsaved_edits_first() {
     assert!(app_state.error.is_none());
     std::fs::remove_file(path).unwrap();
 }
+
+/// End in a popup's list is held to the list when it is drawn - which a
+/// terminal too small to draw it never does. Down or Page Down after it
+/// stays at the end, rather than running past the largest number there is.
+#[test]
+fn down_after_end_in_a_popup_list_stays_at_the_end() {
+    let dir = std::env::temp_dir().join(format!("fm84-popup-end-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("a.txt"), "a\n").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dossier();
+    let started = std::time::Instant::now();
+    while app_state.workers.job.is_some() {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "never finished");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert!(matches!(app_state.dialog, Some(Dialog::Dossier(_))));
+    for code in [KeyCode::End, KeyCode::Down, KeyCode::PageDown] {
+        press(&mut app_state, code);
+    }
+    let Some(Dialog::Dossier(view)) = &app_state.dialog else { panic!("closed") };
+    assert_eq!(view.scroll, usize::MAX);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

@@ -717,9 +717,9 @@ pub(super) fn dossier_key(app_state: &mut AppState, code: KeyCode) {
     };
     match code {
         KeyCode::Up => view.scroll = view.scroll.saturating_sub(1),
-        KeyCode::Down => view.scroll += 1,
+        KeyCode::Down => view.scroll = view.scroll.saturating_add(1),
         KeyCode::PageUp => view.scroll = view.scroll.saturating_sub(view.room),
-        KeyCode::PageDown => view.scroll += view.room,
+        KeyCode::PageDown => view.scroll = view.scroll.saturating_add(view.room),
         KeyCode::Home => view.scroll = 0,
         // Held to what there is when it is drawn.
         KeyCode::End => view.scroll = usize::MAX,
@@ -735,9 +735,9 @@ pub(super) fn dir_edit_key(app_state: &mut AppState, code: KeyCode) {
     };
     match code {
         KeyCode::Up => plan.scroll = plan.scroll.saturating_sub(1),
-        KeyCode::Down => plan.scroll += 1,
+        KeyCode::Down => plan.scroll = plan.scroll.saturating_add(1),
         KeyCode::PageUp => plan.scroll = plan.scroll.saturating_sub(plan.room),
-        KeyCode::PageDown => plan.scroll += plan.room,
+        KeyCode::PageDown => plan.scroll = plan.scroll.saturating_add(plan.room),
         KeyCode::Home => plan.scroll = 0,
         // Held to what there is when it is drawn.
         KeyCode::End => plan.scroll = usize::MAX,
@@ -753,9 +753,9 @@ pub(super) fn checksums_key(app_state: &mut AppState, code: KeyCode) {
     };
     match code {
         KeyCode::Up => view.scroll = view.scroll.saturating_sub(1),
-        KeyCode::Down => view.scroll += 1,
+        KeyCode::Down => view.scroll = view.scroll.saturating_add(1),
         KeyCode::PageUp => view.scroll = view.scroll.saturating_sub(view.room),
-        KeyCode::PageDown => view.scroll += view.room,
+        KeyCode::PageDown => view.scroll = view.scroll.saturating_add(view.room),
         KeyCode::Home => view.scroll = 0,
         // Held to what there is when it is drawn.
         KeyCode::End => view.scroll = usize::MAX,
