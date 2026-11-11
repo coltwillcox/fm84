@@ -213,6 +213,7 @@ impl AppState {
         // stepping back as quick as stepping on.
         if self.options.image_prefetch
             && let Screen::Viewer(previous) = std::mem::replace(&mut self.screen, Screen::Panels)
+            && !super::time_machine::in_the_past(&previous)
             && let Some(image) = previous.image
         {
             self.image_cache.keep(previous.file_path, image, previous.syntax_name);
@@ -309,6 +310,8 @@ impl AppState {
         if let Screen::Viewer(state) = &mut self.screen
             && state.mode == ViewMode::Text
             && !state.from_edit
+            // What a commit had does not grow.
+            && !super::time_machine::in_the_past(state)
         {
             state.follow = match state.follow {
                 Some(_) => None,
@@ -474,9 +477,9 @@ impl AppState {
         if let Screen::Viewer(state) = &mut self.screen {
             let next = state.next_mode();
             if next == ViewMode::Hex && state.bytes.is_empty() && state.file_size > 0 {
-                match std::fs::read(&state.file_path) {
+                match Self::viewer_bytes(state) {
                     Ok(bytes) => state.bytes = bytes,
-                    Err(e) => error = Some(e.to_string()),
+                    Err(e) => error = Some(e),
                 }
             }
 

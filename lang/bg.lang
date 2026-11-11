@@ -304,6 +304,9 @@ msgstr Щракнете върху клона на git, за да го смен�
 msgid  Clock
 msgstr Часовник
 
+msgid  Commit {at}/{count}
+msgstr Къмит {at}/{count}
+
 msgid  Compare
 msgstr Сравняване
 
@@ -835,6 +838,9 @@ msgstr Още няма клонове: нищо не е подавано
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Още няма команди - E ги добавя, като етикет = команда, в
+
+msgid  No commits of {name} to step through
+msgstr Няма къмити на {name}, през които да се мине
 
 msgid  No config directory
 msgstr Няма директория за настройки

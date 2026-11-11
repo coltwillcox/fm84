@@ -305,6 +305,9 @@ msgstr Klik na gałąź git ją przełącza
 msgid  Clock
 msgstr Zegar
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Porównanie
 
@@ -836,6 +839,9 @@ msgstr Brak gałęzi: nic nie zostało zatwierdzone
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Brak poleceń - E je dodaje, jako nazwa = polecenie, w
+
+msgid  No commits of {name} to step through
+msgstr Brak commitów pliku {name} do przejrzenia
 
 msgid  No config directory
 msgstr Brak katalogu konfiguracji

@@ -82,6 +82,19 @@ pub struct ViewerState {
     pub rows_width: usize,
     /// F on text: following the file as it grows, as tail -f does.
     pub follow: Option<Follow>,
+    /// Alt+Left and Alt+Right: the file's commits, once asked for, and
+    /// which of them is shown.
+    /// Boxed: most files viewed are never stepped back through.
+    pub history: Option<Box<History>>,
+}
+
+/// A file's git history, stepped through in the viewer.
+#[derive(Debug, Default)]
+pub struct History {
+    /// Newest first.
+    pub commits: Vec<crate::git::FileCommit>,
+    /// The commit whose version is shown; None for the file as it is now.
+    pub at: Option<usize>,
 }
 
 /// Following a file that grows: when it was last looked at, and the bytes
@@ -160,15 +173,20 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
     if !metadata.is_file() {
         return Err(Error::new(std::io::ErrorKind::InvalidInput, t!("Not a regular file: {path}", path = path.display())));
     }
-    let file_size = metadata.len();
+    Ok(content_of(path, std::fs::read(path)?, decoded))
+}
+
+/// The viewer on `bytes`, the contents of the file at `path` - as it is on
+/// the disk, or as a commit had it.
+pub fn content_of(path: &Path, bytes: Vec<u8>, decoded: Option<(DynamicImage, String)>) -> ViewerState {
+    let file_size = bytes.len() as u64;
 
     // Check binary first
-    if is_binary_file(path)? {
-        let bytes = std::fs::read(path)?;
+    if looks_binary(&bytes) {
         // An image opens as ASCII art, drawn once the viewer width is known.
         // Anything that fails to decode is shown as the binary it is.
         if let Some((image, syntax_name)) = decoded.or_else(|| load_image(&bytes)) {
-            return Ok(ViewerState {
+            return ViewerState {
                 file_path: path.to_path_buf(),
                 content_lines: Vec::new(),
                 scroll_offset: 0,
@@ -193,10 +211,11 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
                 rows: Vec::new(),
                 rows_width: 0,
                 follow: None,
-            });
+                history: None,
+            };
         }
 
-        return Ok(ViewerState {
+        return ViewerState {
             file_path: path.to_path_buf(),
             content_lines: Vec::new(),
             scroll_offset: 0,
@@ -221,7 +240,8 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
             rows: Vec::new(),
             rows_width: 0,
             follow: None,
-        });
+            history: None,
+        };
     }
 
     // Load text file. Only the head of it was checked, so a byte that is not
@@ -229,7 +249,7 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
     // ASCII - can still turn up. Read strictly, that refused the whole file;
     // it is shown with a replacement character in its place instead, and X
     // still shows the bytes as they are.
-    let content = match String::from_utf8(std::fs::read(path)?) {
+    let content = match String::from_utf8(bytes) {
         Ok(content) => content,
         Err(e) => String::from_utf8_lossy(e.as_bytes()).into_owned(),
     };
@@ -246,7 +266,7 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
     let max_line_width = lines.iter().map(|line| crate::utils::line_display_width(line)).max().unwrap_or(0);
     let syntax_name = detect_syntax(path);
 
-    Ok(ViewerState {
+    ViewerState {
         file_path: path.to_path_buf(),
         content_lines: lines,
         scroll_offset: 0,
@@ -271,7 +291,8 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
         rows: Vec::new(),
         rows_width: 0,
         follow: None,
-    })
+        history: None,
+    }
 }
 
 /// What a preview has to show: the head of a file as lines, or as the bytes a

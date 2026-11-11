@@ -154,3 +154,77 @@ fn a_revision_opens_as_a_read_only_folder() {
     assert_eq!(app_state.error.as_deref(), Some("No such revision: nowhere"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+Left and Alt+Right in the viewer: the file as each commit that
+/// changed it had it, back to the first and on to the file as it is now,
+/// the view and the matches kept as it goes. A version from the past is
+/// not followed, and its hexdump is of it, not of the file on the disk.
+#[test]
+fn the_viewer_steps_through_a_files_history() {
+    let dir = std::env::temp_dir().join(format!("fm84-time-machine-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let git = |arguments: &[&str]| {
+        std::process::Command::new("git")
+            .arg("-C")
+            .arg(&dir)
+            .args(["-c", "user.name=fm84", "-c", "user.email=fm84@localhost", "-c", "commit.gpgsign=false"])
+            .args(arguments)
+            .output()
+            .is_ok_and(|output| output.status.success())
+    };
+    if !git(&["init", "--quiet"]) {
+        return;
+    }
+    let file = dir.join("notes.txt");
+    for (text, subject) in [("a\nb\nfirst\n", "first"), ("a\nb\nsecond\n", "second")] {
+        std::fs::write(&file, text).unwrap();
+        assert!(git(&["add", "notes.txt"]) && git(&["commit", "--quiet", "-m", subject]));
+    }
+    std::fs::write(&file, "a\nb\nnow\n").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.drawn.viewer_viewport_height = 10;
+    app_state.open_viewer(file.clone()).unwrap();
+    app_state.viewer_mut().unwrap().scroll_offset = 1;
+    app_state.find_shown = true;
+    let shown = |app_state: &AppState| app_state.viewer().unwrap().content_lines[2].clone();
+    let at = |app_state: &AppState| app_state.viewer().unwrap().history.as_ref().and_then(|history| history.at);
+
+    // Nothing newer than the file as it is.
+    app_state.viewer_step_history(false);
+    assert_eq!(shown(&app_state), "now");
+    app_state.viewer_step_history(true);
+    assert_eq!((shown(&app_state), at(&app_state)), ("second".to_string(), Some(0)));
+    let state = app_state.viewer().unwrap();
+    assert_eq!(state.scroll_offset, 1, "the view stays where it was");
+    assert_eq!(state.history.as_ref().unwrap().commits[0].subject, "second");
+    assert!(app_state.find_shown, "the matches stay marked");
+    app_state.viewer_step_history(true);
+    assert_eq!(shown(&app_state), "first");
+    // Nothing older than the first.
+    app_state.viewer_step_history(true);
+    assert_eq!((shown(&app_state), at(&app_state)), ("first".to_string(), Some(1)));
+
+    app_state.viewer_toggle_follow();
+    assert!(app_state.viewer().unwrap().follow.is_none(), "a commit's version does not grow");
+    app_state.viewer_next_mode();
+    assert_eq!(app_state.viewer().unwrap().bytes, b"a\nb\nfirst\n");
+    app_state.viewer_step_history(false);
+    let state = app_state.viewer().unwrap();
+    assert_eq!((state.mode, state.bytes.as_slice()), (crate::viewer::ViewMode::Hex, b"a\nb\nsecond\n".as_slice()), "a hexdump stays one");
+    app_state.viewer_next_mode();
+
+    app_state.viewer_step_history(false);
+    assert_eq!((shown(&app_state), at(&app_state)), ("now".to_string(), None));
+    assert!(app_state.error.is_none(), "{:?}", app_state.error);
+
+    // A file git has never had has no history.
+    let new = dir.join("new.txt");
+    std::fs::write(&new, "new\n").unwrap();
+    app_state.open_viewer(new).unwrap();
+    app_state.viewer_step_history(true);
+    assert_eq!(app_state.error.as_deref(), Some("No commits of new.txt to step through"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

@@ -304,6 +304,9 @@ msgstr Klik op de git-branch om te wisselen
 msgid  Clock
 msgstr Klok
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Vergelijken
 
@@ -835,6 +838,9 @@ msgstr Nog geen branches: er is niets gecommit
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Nog geen opdrachten - E voegt ze toe, als label = opdracht, in
+
+msgid  No commits of {name} to step through
+msgstr Geen commits van {name} om doorheen te stappen
 
 msgid  No config directory
 msgstr Geen configuratiemap

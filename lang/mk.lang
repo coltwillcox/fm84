@@ -305,6 +305,9 @@ msgstr Клик на git гранката ја менува
 msgid  Clock
 msgstr Часовник
 
+msgid  Commit {at}/{count}
+msgstr Комит {at}/{count}
+
 msgid  Compare
 msgstr Споредба
 
@@ -836,6 +839,9 @@ msgstr Сè уште нема гранки: ништо не е комитира�
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Сè уште нема наредби - E ги додава, како назив = наредба, во
+
+msgid  No commits of {name} to step through
+msgstr Нема комити на {name} за прелистување
 
 msgid  No config directory
 msgstr Нема папка за поставки

@@ -305,6 +305,9 @@ msgstr Κλικ στον κλάδο git για αλλαγή
 msgid  Clock
 msgstr Ρολόι
 
+msgid  Commit {at}/{count}
+msgstr Υποβολή {at}/{count}
+
 msgid  Compare
 msgstr Σύγκριση
 
@@ -836,6 +839,9 @@ msgstr Δεν υπάρχουν κλάδοι: δεν έχει γίνει commit
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Δεν υπάρχουν εντολές - το E τις προσθέτει, ως ετικέτα = εντολή, στο
+
+msgid  No commits of {name} to step through
+msgstr Δεν υπάρχουν υποβολές του {name} για περιήγηση
 
 msgid  No config directory
 msgstr Δεν υπάρχει φάκελος ρυθμίσεων

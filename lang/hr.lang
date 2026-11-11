@@ -305,6 +305,9 @@ msgstr Klik na git granu je mijenja
 msgid  Clock
 msgstr Sat
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Usporedba
 
@@ -836,6 +839,9 @@ msgstr Još nema grana: ništa nije predano
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Još nema naredbi - E ih dodaje, kao naziv = naredba, u
+
+msgid  No commits of {name} to step through
+msgstr Nema commitova datoteke {name} za pregledavanje
 
 msgid  No config directory
 msgstr Nema mape za postavke

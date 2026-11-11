@@ -55,6 +55,7 @@ mod tabs;
 #[cfg(test)]
 mod tests;
 mod text_input;
+mod time_machine;
 mod trash_folder;
 mod tree;
 mod undo;

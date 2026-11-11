@@ -305,6 +305,9 @@ msgstr Klick auf den git-Branch wechselt ihn
 msgid  Clock
 msgstr Uhr
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Vergleich
 
@@ -836,6 +839,9 @@ msgstr Noch keine Branches: nichts wurde committet
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Noch keine Befehle - E fügt sie hinzu, als Name = Befehl, in
+
+msgid  No commits of {name} to step through
+msgstr Keine Commits von {name} zum Durchblättern
 
 msgid  No config directory
 msgstr Kein Konfigurationsverzeichnis

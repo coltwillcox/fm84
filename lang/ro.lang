@@ -305,6 +305,9 @@ msgstr Clic pe ramura git pentru a o schimba
 msgid  Clock
 msgstr Ceas
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Compară
 
@@ -836,6 +839,9 @@ msgstr Încă nicio ramură: nimic nu a fost înregistrat
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Încă nicio comandă - E le adaugă, ca etichetă = comandă, în
+
+msgid  No commits of {name} to step through
+msgstr Niciun commit al lui {name} prin care să treci
 
 msgid  No config directory
 msgstr Niciun director de configurare

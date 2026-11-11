@@ -304,6 +304,9 @@ msgstr Klikk på git-grenen for å bytte
 msgid  Clock
 msgstr Klokke
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Sammenlign
 
@@ -835,6 +838,9 @@ msgstr Ingen grener ennå: ingenting er committet
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Ingen kommandoer ennå - E legger dem til, som navn = kommando, i
+
+msgid  No commits of {name} to step through
+msgstr Ingen commits av {name} å bla gjennom
 
 msgid  No config directory
 msgstr Ingen konfigurasjonsmappe

@@ -135,7 +135,18 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             let line_seg = t!("Line {at}/{count}", at = viewer_state.row(viewer_state.scroll_offset).0 + 1, count = viewer_state.line_count());
             let size_seg = format_size(viewer_state.file_size);
             let zoom_seg = t!("+/- Zoom {zoom}%", zoom = viewer_state.image_zoom);
-            let mut segments = vec![filename.as_str(), line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()];
+            let mut segments = vec![filename.as_str()];
+            // Stepped back through its history: which commit, how long ago,
+            // and what it said it did.
+            let commit = viewer_state.history.as_ref().and_then(|history| {
+                let at = history.at?;
+                let commit = history.commits.get(at)?;
+                let when = std::time::UNIX_EPOCH + std::time::Duration::from_secs(commit.when.max(0) as u64);
+                let ago = crate::utils::format_modified(when, crate::options::DateFormat::Relative, std::time::SystemTime::now());
+                Some([t!("Commit {at}/{count}", at = history.commits.len() - at, count = history.commits.len()), ago, printable_name(&commit.subject)])
+            });
+            segments.extend(commit.iter().flatten().map(String::as_str));
+            segments.extend([line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()]);
             let hints_from = segments.len();
             // Bracketed half is the view you are in. Omitted on the notice F4
             // raises for a binary, where there is nothing to toggle.

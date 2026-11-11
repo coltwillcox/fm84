@@ -306,6 +306,9 @@ msgstr Clic en la rama git para cambiarla
 msgid  Clock
 msgstr Reloj
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Comparar
 
@@ -837,6 +840,9 @@ msgstr Aún no hay ramas: no se ha hecho ningún commit
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Aún no hay órdenes - E las añade, como etiqueta = orden, en
+
+msgid  No commits of {name} to step through
+msgstr No hay commits de {name} que recorrer
 
 msgid  No config directory
 msgstr No hay carpeta de configuración

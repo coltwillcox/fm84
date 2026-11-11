@@ -220,6 +220,63 @@ pub fn at_head(path: &Path) -> Result<Vec<u8>, String> {
     git_bytes(dir, &[OsStr::new("show"), spec.as_os_str()])
 }
 
+/// A commit that changed a file, and where the file was then.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FileCommit {
+    pub hash: String,
+    /// When it was made, in seconds since the epoch.
+    pub when: i64,
+    pub subject: String,
+    /// The file's path in that commit, from the top of the repository, as
+    /// git writes it: it may have had another name before a rename.
+    pub path: Vec<u8>,
+}
+
+/// The commits that changed the file at `path`, newest first, followed back
+/// through its renames. A merge is left out: what it holds of the file is
+/// what one of its parents had.
+pub fn file_history(path: &Path) -> Result<Vec<FileCommit>, String> {
+    let (dir, name) = where_and_name(path)?;
+    let output = git_bytes(
+        dir,
+        &[OsStr::new("log"), OsStr::new("--follow"), OsStr::new("-z"), OsStr::new("--name-only"), OsStr::new("--format=%x01%H%x00%ct%x00%s"), OsStr::new("--"), name],
+    )?;
+    let mut commits = Vec::new();
+    for record in output.split(|&byte| byte == 1).filter(|record| !record.is_empty()) {
+        let mut fields = record.split(|&byte| byte == 0);
+        let (Some(hash), Some(when), Some(subject), Some(path)) = (fields.next(), fields.next(), fields.next(), fields.next()) else {
+            continue;
+        };
+        let path = path.strip_prefix(b"\n").unwrap_or(path);
+        if path.is_empty() {
+            continue;
+        }
+        commits.push(FileCommit {
+            hash: String::from_utf8_lossy(hash).into_owned(),
+            when: String::from_utf8_lossy(when).trim().parse().unwrap_or(0),
+            subject: String::from_utf8_lossy(subject).into_owned(),
+            path: path.to_vec(),
+        });
+    }
+    Ok(commits)
+}
+
+/// The file `commit` is of, as it was in that commit - read in the
+/// repository `dir` is in.
+pub fn file_at(dir: &Path, commit: &FileCommit) -> Result<Vec<u8>, String> {
+    let mut spec = commit.hash.clone().into_bytes();
+    spec.push(b':');
+    spec.extend_from_slice(&commit.path);
+    #[cfg(unix)]
+    let spec = {
+        use std::os::unix::ffi::OsStrExt;
+        OsStr::from_bytes(&spec).to_os_string()
+    };
+    #[cfg(not(unix))]
+    let spec = OsString::from(String::from_utf8_lossy(&spec).into_owned());
+    git_bytes(dir, &[OsStr::new("cat-file"), OsStr::new("blob"), spec.as_os_str()])
+}
+
 /// When each commit that changed anything under `dir` in the last `weeks`
 /// weeks was made, in seconds since the epoch, newest first.
 pub fn commit_times(dir: &Path, weeks: usize) -> Result<Vec<i64>, String> {
@@ -614,6 +671,43 @@ mod tests {
         assert_eq!(status(&dir).unwrap().mark(OsStr::new("first.txt"), false), Some(Mark::Staged));
         unstage(&file).unwrap();
         assert_eq!(status(&dir).unwrap().mark(OsStr::new("first.txt"), false), Some(Mark::Untracked));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+    /// A file's commits, newest first and back through a rename, and the
+    /// file as each of them had it - asked from a directory below the top.
+    #[test]
+    fn a_files_history_follows_it_through_a_rename() {
+        let Some(dir) = repository("history") else {
+            return;
+        };
+        let run = |arguments: &[&str]| {
+            let output = Command::new("git")
+                .arg("-C")
+                .arg(&dir)
+                .args(["-c", "user.name=fm84", "-c", "user.email=fm84@localhost", "-c", "commit.gpgsign=false"])
+                .args(arguments)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        };
+        std::fs::write(dir.join("file.txt"), "second\n").unwrap();
+        run(&["commit", "--quiet", "-am", "second"]);
+        std::fs::create_dir_all(dir.join("sub")).unwrap();
+        run(&["mv", "file.txt", "sub/moved.txt"]);
+        run(&["commit", "--quiet", "-m", "moved"]);
+        let file = dir.join("sub").join("moved.txt");
+        let history = file_history(&file).unwrap();
+        let subjects: Vec<&str> = history.iter().map(|commit| commit.subject.as_str()).collect();
+        assert_eq!(subjects, ["moved", "second", "first"]);
+        assert_eq!(history[0].path, b"sub/moved.txt");
+        assert_eq!(history[2].path, b"file.txt");
+        assert!(history.iter().all(|commit| commit.hash.len() >= 40 && commit.when > 0));
+        let below = dir.join("sub");
+        assert_eq!(file_at(&below, &history[1]).unwrap(), b"second\n");
+        assert_eq!(file_at(&below, &history[2]).unwrap(), b"main\n");
+        // A file git has never seen has no history to step through.
+        std::fs::write(below.join("new.txt"), "new\n").unwrap();
+        assert!(file_history(&below.join("new.txt")).unwrap().is_empty());
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }

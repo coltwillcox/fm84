@@ -305,6 +305,9 @@ msgstr Cliceáil ar chraobh git chun í a athrú
 msgid  Clock
 msgstr Clog
 
+msgid  Commit {at}/{count}
+msgstr Tiomantas {at}/{count}
+
 msgid  Compare
 msgstr Cuir i gcomparáid
 
@@ -836,6 +839,9 @@ msgstr Gan craobhacha fós: níor tiomnaíodh aon rud
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Gan orduithe fós - cuireann E leis iad, mar lipéad = ordú, in
+
+msgid  No commits of {name} to step through
+msgstr Níl aon tiomantais de {name} le siúl tríd
 
 msgid  No config directory
 msgstr Gan comhadlann chumraíochta

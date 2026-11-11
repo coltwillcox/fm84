@@ -22,6 +22,9 @@ pub(super) fn viewer_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::Char('-') | KeyCode::Char('_') => app_state.viewer_zoom(false),
         KeyCode::Down => app_state.viewer_scroll_down(),
         KeyCode::Up => app_state.viewer_scroll_up(),
+        // Back and on through the file's git history.
+        KeyCode::Left if key.modifiers.contains(KeyModifiers::ALT) => app_state.viewer_step_history(true),
+        KeyCode::Right if key.modifiers.contains(KeyModifiers::ALT) => app_state.viewer_step_history(false),
         KeyCode::Left => app_state.viewer_scroll_left(),
         KeyCode::Right => app_state.viewer_scroll_right(),
         // On a picture these step through the folder; there is nothing to

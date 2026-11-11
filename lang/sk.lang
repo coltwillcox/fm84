@@ -305,6 +305,9 @@ msgstr Klik na git vetvu ju prepne
 msgid  Clock
 msgstr Hodiny
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Porovnanie
 
@@ -836,6 +839,9 @@ msgstr Zatiaľ žiadne vetvy: nič nebolo commitnuté
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Zatiaľ žiadne príkazy - E ich pridá, ako názov = príkaz, do
+
+msgid  No commits of {name} to step through
+msgstr {name} nemá žiadne commity na prechádzanie
 
 msgid  No config directory
 msgstr Nie je priečinok nastavení

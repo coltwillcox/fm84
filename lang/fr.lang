@@ -306,6 +306,9 @@ msgstr Cliquer sur la branche git pour en changer
 msgid  Clock
 msgstr Horloge
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Comparaison
 
@@ -837,6 +840,9 @@ msgstr Pas encore de branches : aucun commit
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Pas encore de commandes - E les ajoute, comme nom = commande, dans
+
+msgid  No commits of {name} to step through
+msgstr Aucun commit de {name} à parcourir
 
 msgid  No config directory
 msgstr Pas de dossier de configuration

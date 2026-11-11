@@ -305,6 +305,9 @@ msgstr Klik na git větev ji přepne
 msgid  Clock
 msgstr Hodiny
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Porovnání
 
@@ -836,6 +839,9 @@ msgstr Zatím žádné větve: nic nebylo commitnuto
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Zatím žádné příkazy - E je přidá, jako název = příkaz, do
+
+msgid  No commits of {name} to step through
+msgstr {name} nemá žádné commity k procházení
 
 msgid  No config directory
 msgstr Není složka nastavení

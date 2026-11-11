@@ -305,6 +305,9 @@ msgstr Değiştirmek için git dalına tıkla
 msgid  Clock
 msgstr Saat
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Karşılaştır
 
@@ -836,6 +839,9 @@ msgstr Henüz dal yok: hiçbir şey işlenmedi
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Henüz komut yok - E ekler, etiket = komut olarak, şu dosyada:
+
+msgid  No commits of {name} to step through
+msgstr {name} için gezinilecek commit yok
 
 msgid  No config directory
 msgstr Ayar dizini yok

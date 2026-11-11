@@ -305,6 +305,9 @@ msgstr Clique no ramo git para trocá-lo
 msgid  Clock
 msgstr Relógio
 
+msgid  Commit {at}/{count}
+msgstr Commit {at}/{count}
+
 msgid  Compare
 msgstr Comparar
 
@@ -836,6 +839,9 @@ msgstr Nenhum ramo ainda: nada foi commitado
 
 msgid  No commands yet - E adds them, as label = command, in
 msgstr Nenhum comando ainda - E os adiciona, como rótulo = comando, em
+
+msgid  No commits of {name} to step through
+msgstr Não há commits de {name} para percorrer
 
 msgid  No config directory
 msgstr Não há pasta de configuração
