@@ -144,6 +144,13 @@ impl Options {
                         _ => options.icon_style,
                     }
                 }
+                "corners" => {
+                    options.corners = match value {
+                        "square" => Corners::Square,
+                        "rounded" => Corners::Rounded,
+                        _ => options.corners,
+                    }
+                }
                 "clock" => {
                     options.clock = match value {
                         "24" => Clock::Hours24,
@@ -269,6 +276,8 @@ impl Options {
              # theme paints the theme's own background; terminal keeps the terminal's.\n\
              background = {}\n\
              icons = {}\n\
+             # The corners of every box: square or rounded.\n\
+             corners = {}\n\
              # 24, 12 or off.\n\
              clock = {}\n\
              # bar, block or underline is the terminal's cursor; classic a reversed cell.\n\
@@ -328,6 +337,10 @@ impl Options {
             self.theme.key(),
             if self.theme_background { "theme" } else { "terminal" },
             icons,
+            match self.corners {
+                Corners::Square => "square",
+                Corners::Rounded => "rounded",
+            },
             clock,
             cursor,
             self.cursor_blink,

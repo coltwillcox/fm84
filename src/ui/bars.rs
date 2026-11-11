@@ -380,7 +380,7 @@ pub(super) fn tail_of(text: &str, room: usize) -> String {
 /// click can be told which it landed on. Those that do not fit whole are
 /// dropped from the end: a half-drawn label reads worse than a missing one.
 pub(super) fn render_fkey_bar(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, drawn: &mut Drawn) {
-    f.render_widget(Block::default().borders(Borders::LEFT | Borders::BOTTOM | Borders::RIGHT).border_style(style_border()), area);
+    f.render_widget(Block::default().borders(Borders::LEFT | Borders::BOTTOM | Borders::RIGHT).border_type(crate::display::border_type()).border_style(style_border()), area);
 
     // Two corners, then each label with a dash between. The last label's
     // trailing space can fall off the end unnoticed, hence the one spare column.

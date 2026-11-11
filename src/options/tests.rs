@@ -31,6 +31,7 @@ fn a_saved_file_reads_back_the_same() {
         theme: Theme::GithubLight,
         theme_background: false,
         icon_style: IconStyle::Plain,
+        corners: Corners::Rounded,
         clock: Clock::Off,
         cursor: CursorShape::Underline,
         cursor_blink: false,

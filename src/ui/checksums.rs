@@ -58,7 +58,11 @@ pub(super) fn render_checksums_popup(f: &mut ratatui::Frame<'_>, area: Rect, vie
     let room = (inner.height as usize).saturating_sub(head.len() + 1 + keys.len()).max(1);
     let scroll = view.scroll.min(rows.len().saturating_sub(room));
 
-    let mut block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let mut block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     if room < rows.len() {
         let shown = format!(" {}-{}/{} ", scroll + 1, (scroll + room).min(rows.len()), rows.len());
         block = block.title_bottom(Line::from(Span::styled(shown, style_columns())).right_aligned());
@@ -100,7 +104,11 @@ pub(super) fn render_dir_edit_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan
     let room = (inner.height as usize).saturating_sub(1 + keys.len()).max(1);
     let scroll = plan.scroll.min(ops.len().saturating_sub(room));
     let title = format!(" {} ", tc!("job", "Edit as text"));
-    let mut block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let mut block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     if room < ops.len() {
         let shown = format!(" {}-{}/{} ", scroll + 1, (scroll + room).min(ops.len()), ops.len());
         block = block.title_bottom(Line::from(Span::styled(shown, style_columns())).right_aligned());

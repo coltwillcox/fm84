@@ -29,7 +29,11 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
     // A border row each side, a blank row above and below the list, and two
     // for the key hint under it.
     let popup_area = centered(screen_layout(area)[2], popup_width, list.len() + 6);
-    let mut popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Options")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let mut popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Options")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     // On a short terminal the list scrolls, keeping the cursor row in view.
     // The blank rows and the hint around it take three.

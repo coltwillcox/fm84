@@ -33,6 +33,7 @@ pub enum OptionRow {
     Theme,
     ThemeBackground,
     IconStyle,
+    Corners,
     Clock,
     Cursor,
     CursorBlink,
@@ -50,7 +51,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 43] = [
+pub const OPTION_ROWS: [OptionRow; 44] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -79,6 +80,7 @@ pub const OPTION_ROWS: [OptionRow; 43] = [
     OptionRow::Theme,
     OptionRow::ThemeBackground,
     OptionRow::IconStyle,
+    OptionRow::Corners,
     OptionRow::Clock,
     OptionRow::Cursor,
     OptionRow::CursorBlink,
@@ -127,6 +129,7 @@ impl OptionRow {
             OptionRow::Theme => t!("Theme"),
             OptionRow::ThemeBackground => t!("Background"),
             OptionRow::IconStyle => t!("Icons"),
+            OptionRow::Corners => t!("Corners"),
             OptionRow::Clock => t!("Clock"),
             OptionRow::Cursor => t!("Cursor"),
             OptionRow::CursorBlink => t!("Cursor blinks"),
@@ -234,6 +237,11 @@ impl Options {
                 IconStyle::NerdFont => "Nerd Font",
                 IconStyle::NerdFontMono => "Nerd Font Mono",
                 IconStyle::Plain => t!("Plain"),
+            }
+            .to_string(),
+            OptionRow::Corners => match self.corners {
+                Corners::Square => t!("Square"),
+                Corners::Rounded => t!("Rounded"),
             }
             .to_string(),
             OptionRow::Clock => match self.clock {
@@ -348,6 +356,9 @@ impl Options {
             OptionRow::IconStyle => {
                 let styles = [IconStyle::NerdFont, IconStyle::NerdFontMono, IconStyle::Plain];
                 self.icon_style = step(&styles, self.icon_style, forward);
+            }
+            OptionRow::Corners => {
+                self.corners = step(&[Corners::Square, Corners::Rounded], self.corners, forward);
             }
             OptionRow::Clock => {
                 let clocks = [Clock::Hours24, Clock::Hours12, Clock::Off];

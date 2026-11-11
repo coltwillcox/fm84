@@ -439,6 +439,8 @@ thread_local! {
     /// F11's Turbo: every theme's neon turned up. Per thread, as the cursor
     /// is, for the tests that draw side by side.
     static TURBO: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// F11's corners, rounded or not - per thread as Turbo is.
+    static ROUNDED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 /// The `colors` file as last read, and when, so an edit to it shows within a
@@ -553,6 +555,13 @@ pub fn apply(options: &Options) {
     TAB_WIDTH.store(options.tab_width, Ordering::Relaxed);
     DECIMAL_SIZES.store(options.size_units == SizeUnits::Decimal, Ordering::Relaxed);
     TURBO.with(|cell| cell.set(options.turbo));
+    ROUNDED.with(|cell| cell.set(options.corners == crate::options::Corners::Rounded));
+}
+
+/// The lines every box is drawn in: square corners, or rounded ones as F11
+/// says.
+pub fn border_type() -> ratatui::widgets::BorderType {
+    if ROUNDED.with(std::cell::Cell::get) { ratatui::widgets::BorderType::Rounded } else { ratatui::widgets::BorderType::Plain }
 }
 
 pub fn palette() -> &'static Palette {

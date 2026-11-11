@@ -172,6 +172,13 @@ pub enum OnExisting {
     KeepBoth,
 }
 
+/// The corners of every box fm84 draws: square, or rounded off.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Corners {
+    Square,
+    Rounded,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Clock {
     Hours24,
@@ -303,6 +310,7 @@ pub struct Options {
     /// A light theme needs it; on a dark terminal its text would vanish.
     pub theme_background: bool,
     pub icon_style: IconStyle,
+    pub corners: Corners,
     pub clock: Clock,
     pub cursor: CursorShape,
     /// Whether the terminal's cursor blinks; nothing to Classic.
@@ -371,6 +379,7 @@ impl Default for Options {
             theme: Theme::Synthwave,
             theme_background: true,
             icon_style: IconStyle::NerdFont,
+            corners: Corners::Square,
             clock: Clock::Hours24,
             cursor: CursorShape::Bar,
             cursor_blink: true,

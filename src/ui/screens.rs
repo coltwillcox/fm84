@@ -10,7 +10,11 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         let prefix = if viewer_state.from_edit { t!("Edit:") } else { t!("View:") };
         let title = format!(" {} {} ", prefix, filename);
 
-        let border_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).border_style(style_border());
+        let border_block = Block::default()
+            .title(Line::from(Span::styled(title, style_title())).centered())
+            .borders(Borders::ALL)
+            .border_type(crate::display::border_type())
+            .border_style(style_border());
 
         let inner_area = border_block.inner(area);
         f.render_widget(border_block, area);
@@ -152,6 +156,7 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
     let block = Block::default()
         .title(Line::from(Span::styled(format!(" {} ", t!("Compare")), style_title())).centered())
         .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
         .border_style(style_border());
     let inner = block.inner(area);
     let Screen::Diff(state) = &app_state.screen else {
@@ -214,7 +219,11 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         let modified = if editor_state.modified { format!(" [{}]", t!("Modified")) } else { String::new() };
         let title = format!(" {} {}{} ", t!("Edit:"), filename, modified);
 
-        let border_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).border_style(style_border());
+        let border_block = Block::default()
+            .title(Line::from(Span::styled(title, style_title())).centered())
+            .borders(Borders::ALL)
+            .border_type(crate::display::border_type())
+            .border_style(style_border());
 
         let inner_area = border_block.inner(area);
         f.render_widget(border_block, area);
@@ -339,7 +348,11 @@ pub(super) fn render_treemap(f: &mut ratatui::Frame<'_>, area: Rect, app_state: 
     let figure = if counting { format!("{}…", format_size(total)) } else { format_size(total) };
     let name = Some(shown_name(&panel.dir)).filter(|name| !name.is_empty()).unwrap_or_else(|| printable_name(&panel.dir.to_string_lossy()));
     let title = format!(" {} {} · {} ", t!("Space map"), name, figure);
-    let frame = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).border_style(style_border());
+    let frame = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .border_style(style_border());
     let inner = frame.inner(area);
     f.render_widget(frame, area);
 
@@ -378,7 +391,7 @@ pub(super) fn render_treemap(f: &mut ratatui::Frame<'_>, area: Rect, app_state: 
         }
         let outline = Block::default()
             .borders(Borders::ALL)
-            .border_type(if chosen { ratatui::widgets::BorderType::Thick } else { ratatui::widgets::BorderType::Plain })
+            .border_type(if chosen { ratatui::widgets::BorderType::Thick } else { crate::display::border_type() })
             .border_style(Style::default().fg(color).add_modifier(if chosen { Modifier::BOLD } else { Modifier::empty() }))
             .style(fill);
         let room = outline.inner(rect);

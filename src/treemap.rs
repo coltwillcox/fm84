@@ -100,7 +100,11 @@ fn squarify(areas: &[f64], mut frame: Frame, placed: &mut Vec<Frame>) {
                 placed.push(Frame { x: frame.x, y, width, height });
                 y += height;
             }
-            frame = Frame { x: frame.x + width, width: frame.width - width, ..frame };
+            frame = Frame {
+                x: frame.x + width,
+                width: frame.width - width,
+                ..frame
+            };
         } else {
             // A row along the top.
             let height = if frame.width > 0.0 { (sum / frame.width).min(frame.height) } else { 0.0 };
@@ -110,7 +114,11 @@ fn squarify(areas: &[f64], mut frame: Frame, placed: &mut Vec<Frame>) {
                 placed.push(Frame { x, y: frame.y, width, height });
                 x += width;
             }
-            frame = Frame { y: frame.y + height, height: frame.height - height, ..frame };
+            frame = Frame {
+                y: frame.y + height,
+                height: frame.height - height,
+                ..frame
+            };
         }
         start = end;
     }

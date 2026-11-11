@@ -295,7 +295,11 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
     let room = (inner.height as usize).max(1);
     let first = scroll.min(help.len().saturating_sub(room));
 
-    let mut popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Help/About")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let mut popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Help/About")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     if room < help.len() {
         let shown = format!(" {}-{}/{} ", first + 1, (first + room).min(help.len()), help.len());
         popup_block = popup_block.title_bottom(Line::from(Span::styled(shown, style_columns())).right_aligned());

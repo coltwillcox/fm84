@@ -125,7 +125,11 @@ pub(super) fn render_dossier_popup(f: &mut ratatui::Frame<'_>, area: Rect, view:
     let scroll = view.scroll.min(rows.len().saturating_sub(room));
 
     let title = format!(" {} ", t!("Dossier: {name}", name = shown_name(&view.dossier.dir)));
-    let mut block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let mut block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     if room < rows.len() {
         let shown = format!(" {}-{}/{} ", scroll + 1, (scroll + room).min(rows.len()), rows.len());
         block = block.title_bottom(Line::from(Span::styled(shown, style_columns())).right_aligned());

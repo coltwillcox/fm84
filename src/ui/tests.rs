@@ -1530,3 +1530,31 @@ fn the_tree_answers_the_mouse() {
     assert_eq!(app_state.right.dir, dir.join("two"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// F11's corners: square to start with, and rounded on every box when asked
+/// for - the screen's own frame, the panels and a popup over them alike.
+#[test]
+fn corners_can_be_rounded_everywhere() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    assert_eq!(app_state.options.corners, crate::options::Corners::Square);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    let mut screen = |app_state: &mut AppState| {
+        crate::display::apply(&app_state.options);
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer();
+        (0..30).flat_map(|y| (0..100).map(move |x| (x, y))).map(|(x, y)| buffer[(x, y)].symbol().to_string()).collect::<String>()
+    };
+    app_state.dialog = Some(Dialog::Options { editing: None });
+    let square = screen(&mut app_state);
+    assert!(square.contains('┌') && square.contains('┘'));
+    assert!(!square.contains('╭') && !square.contains('╯'));
+
+    app_state.options.corners = crate::options::Corners::Rounded;
+    let rounded = screen(&mut app_state);
+    assert!(!rounded.contains('┌') && !rounded.contains('┐') && !rounded.contains('└') && !rounded.contains('┘'), "a square corner left");
+    assert!(rounded.matches('╭').count() >= 2, "the frame and the popup");
+    assert_eq!(rounded.matches('╭').count(), square.matches('┌').count());
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+}

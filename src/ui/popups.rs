@@ -127,7 +127,11 @@ pub(super) fn fit_rows(mut blocks: Vec<Vec<Line<'static>>>, room: usize) -> Vec<
 
 pub(super) fn render_error_popup(f: &mut ratatui::Frame<'_>, area: Rect, message: &str) {
     let popup_area = popup_rect(20, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Error")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Error")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -143,6 +147,7 @@ pub(super) fn render_revision_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     let popup_block = Block::default()
         .title(Line::from(Span::styled(format!(" {} ", t!("Open a revision as a folder")), style_title())).centered())
         .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
         .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -220,6 +225,7 @@ pub(super) fn render_create_popup(f: &mut ratatui::Frame<'_>, area: Rect, is_dir
     let popup_block = Block::default()
         .title(Line::from(Span::styled(format!(" {} ", if is_dir { t!("Create Directory") } else { t!("Create File") }), style_title())).centered())
         .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
         .style(style_border());
 
     clear(f, popup_area);
@@ -255,7 +261,11 @@ pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items:
     };
     let title = format!(" {title} ");
 
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -286,7 +296,11 @@ pub(super) fn render_delete_popup(f: &mut ratatui::Frame<'_>, area: Rect, items:
 /// pressed, whether to throw its changes away.
 pub(super) fn render_git_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[(PathBuf, bool)], discarding: bool) {
     let popup_area = popup_rect(30, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(" Git ", style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(" Git ", style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -308,7 +322,11 @@ pub(super) fn render_git_popup(f: &mut ratatui::Frame<'_>, area: Rect, items: &[
 /// date, so which to keep can be weighed, and the answers.
 fn render_job_clash(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, clash: &crate::app::JobClash) {
     let popup_area = popup_rect(40, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Already there")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Already there")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -413,7 +431,11 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
     let title = format!(" {title} ");
     let outrun = app_state.options.outrun_bar;
     let popup_area = popup_rect(if outrun { 60 } else { 30 }, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -495,7 +517,11 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
     };
     let title = format!(" {title} ");
     let popup_area = popup_rect(30, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -524,7 +550,11 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
 fn render_job_room(f: &mut ratatui::Frame<'_>, area: Rect, short: &crate::fs_ops::Shortfall, quit_armed: bool) {
     let title = format!(" {} ", t!("Not enough room"));
     let popup_area = popup_rect(30, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -547,7 +577,11 @@ fn render_job_too_big(f: &mut ratatui::Frame<'_>, area: Rect, too_big: &crate::a
     let title = format!(" {} ", t!("Too big for one file"));
     // Taller than the room question: the path it names often wraps.
     let popup_area = popup_rect(45, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -575,6 +609,7 @@ pub(super) fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
     let popup_block = Block::default()
         .title(Line::from(Span::styled(format!(" {} ", t!("Changed on disk")), style_title())).centered())
         .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
         .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -611,7 +646,11 @@ pub(super) fn render_disk_changed_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
 /// Alt+F7: where the search starts, the fields, and what goes in them.
 pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, start: &Path, form: &crate::app::FindForm) {
     let popup_area = popup_rect(45, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Find files")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Find files")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -672,7 +711,11 @@ pub(super) fn render_find_files_form(f: &mut ratatui::Frame<'_>, area: Rect, sta
 pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, search: &crate::app::Search) -> usize {
     let popup_area = popup_rect(80, area);
     let title = format!(" {} {} ", t!("Find:"), printable_name(&search.label));
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -734,7 +777,11 @@ pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, 
 /// written beside its field.
 pub(super) fn render_attributes_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &AttributesForm) -> Vec<(Rect, u16)> {
     let popup_area = popup_rect(50, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Attributes")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Attributes")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -802,7 +849,11 @@ fn mode_preview(_mode: u32) -> String {
 /// keeping the end of it, which tells them apart.
 pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &[PathBuf], index: usize, here: &Path) {
     let popup_area = popup_rect(60, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Bookmarks")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Bookmarks")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -839,7 +890,11 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
 /// name is - or, for a new one, in a row of its own after the highlight.
 pub(super) fn render_mixtapes_popup(f: &mut ratatui::Frame<'_>, area: Rect, tapes: &crate::options::Mixtapes, list: &crate::app::MixtapeList) {
     let popup_area = popup_rect(60, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Mixtapes")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Mixtapes")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -898,7 +953,11 @@ pub(super) fn render_mixtapes_popup(f: &mut ratatui::Frame<'_>, area: Rect, tape
 /// the bookmarks are - laid out as they are, too.
 pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, menu: &crate::app::UserMenu) {
     let popup_area = popup_rect(60, area);
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("User Menu")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("User Menu")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -945,7 +1004,11 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     let popup_area = popup_rect(60, area);
     let name = menu.path.file_name().map(|name| printable_name(&name.to_string_lossy())).unwrap_or_default();
     let title = format!(" {} ", t!("Open {name} With", name = cut_to(&name, (popup_area.width as usize).saturating_sub(16))));
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -987,7 +1050,11 @@ pub(super) fn render_multi_rename_popup(f: &mut ratatui::Frame<'_>, area: Rect, 
     let popup_area = popup_rect(80, area);
     let count = rename.entries.len();
     let title = format!(" {} ", tn!(count, "Rename {count} Entry", "Rename {count} Entries", count));
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -1076,7 +1143,11 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &c
     // As wide as the panels: a path and both sides' sizes and ages to fit.
     let panels = screen_layout(area)[2];
     let popup_area = centered(panels, (panels.width as usize).saturating_sub(4).max(1), popup_rect(80, area).height as usize);
-    let popup_block = Block::default().title(Line::from(Span::styled(format!(" {} ", t!("Synchronize")), style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Synchronize")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -1224,6 +1295,7 @@ pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list:
     let popup_block = Block::default()
         .title(Line::from(Span::styled(format!(" {} ", if list.jump { t!("Jump to a directory") } else { t!("Directory History") }), style_title())).centered())
         .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
         .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1270,7 +1342,11 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     let most = popup_rect(60, area);
     let popup_area = centered(most, most.width as usize, list.names.len() + 6);
     let title = format!(" {} {} ", t!("Branches:"), shown_name(&list.dir));
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
 
@@ -1380,7 +1456,11 @@ pub(super) fn render_destination_popup(f: &mut ratatui::Frame<'_>, area: Rect, s
 
     let title = format!(" {} ", kind.title(count, sources.first().is_some_and(|(_, is_dir)| *is_dir)));
 
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1421,7 +1501,11 @@ pub(super) fn render_pack_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &c
     let count = sources.len();
     let kind = Destination::Pack;
     let title = format!(" {} ", kind.title(count, sources.first().is_some_and(|(_, is_dir)| *is_dir)));
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1508,7 +1592,11 @@ pub(super) fn render_pack_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &c
 pub(super) fn render_password_popup(f: &mut ratatui::Frame<'_>, area: Rect, archive: &std::path::Path, input: &TextInput, wrong: bool) {
     let popup_area = popup_rect(30, area);
     let title = format!(" {} ", t!("Password"));
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
     let width = popup_inner(popup_area).width as usize;
@@ -1528,7 +1616,11 @@ pub(super) fn render_large_file_popup(f: &mut ratatui::Frame<'_>, area: Rect, la
     let name = shown_name(&large.path);
     let popup_area = popup_rect(30, area);
     let title = format!(" {} ", if large.dimensions.is_some() { t!("Large Picture") } else { t!("Large File") });
-    let popup_block = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).style(style_border());
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(title, style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
 
     clear(f, popup_area);
     f.render_widget(popup_block, popup_area);
@@ -1559,6 +1651,7 @@ pub(super) fn render_editor_save_popup(f: &mut ratatui::Frame<'_>, area: Rect) {
     let popup_block = Block::default()
         .title(Line::from(Span::styled(format!(" {} ", t!("Unsaved Changes")), style_title())).centered())
         .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
         .style(style_border());
 
     clear(f, popup_area);

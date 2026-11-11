@@ -326,6 +326,7 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
         .title_top(Line::from(title).centered())
         .title_top(Line::from(clock).right_aligned())
         .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT)
+        .border_type(crate::display::border_type())
         .border_style(style_border());
 
     let inner = block_top.inner(area);
@@ -480,8 +481,8 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     let mut state_left_view = TableState::default();
     state_left_view.select(app_state.left.state.selected().map(|s| s.saturating_sub(offset_left)));
 
-    let block_left = Block::default().borders(Borders::LEFT).border_style(style_border());
-    let block_right = Block::default().borders(Borders::RIGHT).border_style(style_border());
+    let block_left = Block::default().borders(Borders::LEFT).border_type(crate::display::border_type()).border_style(style_border());
+    let block_right = Block::default().borders(Borders::RIGHT).border_type(crate::display::border_type()).border_style(style_border());
     // Where each heading lands, laid out as the table lays out its columns,
     // for a click to sort by. Not under the preview, which covers one panel.
     drawn.sort_headers.clear();
@@ -780,7 +781,10 @@ fn cut_to_width(text: &str, room: usize) -> String {
 }
 
 fn render_preview(f: &mut ratatui::Frame<'_>, area: Rect, preview: &crate::app::PreviewState, side: Side) {
-    let block = Block::default().borders(if side.is_left() { Borders::LEFT } else { Borders::RIGHT }).border_style(style_border());
+    let block = Block::default()
+        .borders(if side.is_left() { Borders::LEFT } else { Borders::RIGHT })
+        .border_type(crate::display::border_type())
+        .border_style(style_border());
     let inner = block.inner(area);
 
     clear(f, area);
