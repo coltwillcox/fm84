@@ -227,12 +227,12 @@ impl Language {
                 (2..=4, tens) if !(12..=14).contains(&tens) => Form::Few,
                 _ => Form::Other,
             },
-            // 1 one; 0, and 2 to 19 by the last two digits, few - "5
-            // fișiere"; the rest other, which takes "de" - "20 de fișiere",
-            // "101 de fișiere".
+            // 1 one; 0, and 1 to 19 by the last two digits, few - "5
+            // fișiere", "101 fișiere"; the rest other, which takes "de" -
+            // "20 de fișiere", "100 de fișiere".
             Language::Romanian => match (count, count % 100) {
                 (1, _) => Form::One,
-                (0, _) | (_, 2..=19) => Form::Few,
+                (0, _) | (_, 1..=19) => Form::Few,
                 _ => Form::Other,
             },
             // By the whole number, as the noun after it changes: 1 one, 2

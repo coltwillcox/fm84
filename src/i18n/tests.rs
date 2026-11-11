@@ -44,11 +44,12 @@ fn serbian_counts_take_one_few_or_other() {
         [0, 1, 2, 3, 6, 7, 10, 11, 21, 102].map(irish),
         [Form::Other, Form::One, Form::Two, Form::Few, Form::Few, Form::Many, Form::Many, Form::Other, Form::Other, Form::Other]
     );
-    // Romanian: 0 and 2 to 19 few, by the last two digits; 20 on other.
+    // Romanian: 0, and 1 to 19 by the last two digits, few - 1 alone is
+    // one; 20 on, and 100, other.
     let romanian = |count| Language::Romanian.plural(count);
     assert_eq!(
-        [0, 1, 2, 19, 20, 21, 101, 102, 119, 120].map(romanian),
-        [Form::Few, Form::One, Form::Few, Form::Few, Form::Other, Form::Other, Form::Other, Form::Few, Form::Few, Form::Other]
+        [0, 1, 2, 19, 20, 21, 100, 101, 102, 119, 120, 1001].map(romanian),
+        [Form::Few, Form::One, Form::Few, Form::Few, Form::Other, Form::Other, Form::Other, Form::Few, Form::Few, Form::Few, Form::Other, Form::Few]
     );
     // French counts nothing as one.
     assert_eq!(Language::French.plural(0), Form::One);
