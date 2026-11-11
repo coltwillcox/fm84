@@ -14,6 +14,7 @@ fn a_saved_file_reads_back_the_same() {
         column_attributes: false,
         column_info: true,
         full_height_lines: true,
+        dir_brackets: false,
         git_marks: false,
         date_format: DateFormat::Relative,
         size_units: SizeUnits::Decimal,

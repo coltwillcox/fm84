@@ -16,6 +16,7 @@ pub enum OptionRow {
     ColumnAttributes,
     ColumnInfo,
     FullHeightLines,
+    DirBrackets,
     GitMarks,
     DateFormat,
     SizeUnits,
@@ -49,7 +50,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 42] = [
+pub const OPTION_ROWS: [OptionRow; 43] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -61,6 +62,7 @@ pub const OPTION_ROWS: [OptionRow; 42] = [
     OptionRow::ColumnAttributes,
     OptionRow::ColumnInfo,
     OptionRow::FullHeightLines,
+    OptionRow::DirBrackets,
     OptionRow::GitMarks,
     OptionRow::DateFormat,
     OptionRow::SizeUnits,
@@ -108,6 +110,7 @@ impl OptionRow {
             OptionRow::ColumnAttributes => t!("Attributes column"),
             OptionRow::ColumnInfo => t!("Info column, from commands"),
             OptionRow::FullHeightLines => t!("Full-height column lines"),
+            OptionRow::DirBrackets => t!("Directory brackets"),
             OptionRow::GitMarks => t!("Git marks"),
             OptionRow::DateFormat => t!("Date format"),
             OptionRow::SizeUnits => t!("Size units"),
@@ -190,6 +193,7 @@ impl Options {
             OptionRow::ColumnAttributes => on_off(self.column_attributes),
             OptionRow::ColumnInfo => on_off(self.column_info),
             OptionRow::FullHeightLines => on_off(self.full_height_lines),
+            OptionRow::DirBrackets => on_off(self.dir_brackets),
             OptionRow::GitMarks => on_off(self.git_marks),
             OptionRow::DateFormat => match self.date_format {
                 DateFormat::Short => "dd/mm/yy",
@@ -314,6 +318,7 @@ impl Options {
             OptionRow::ColumnAttributes => self.column_attributes = !self.column_attributes,
             OptionRow::ColumnInfo => self.column_info = !self.column_info,
             OptionRow::FullHeightLines => self.full_height_lines = !self.full_height_lines,
+            OptionRow::DirBrackets => self.dir_brackets = !self.dir_brackets,
             OptionRow::GitMarks => self.git_marks = !self.git_marks,
             OptionRow::DateFormat => {
                 let formats = [DateFormat::Short, DateFormat::Iso, DateFormat::Relative];

@@ -1818,6 +1818,9 @@ msgstr Kolona Info, iz komandi
 msgid  Full-height column lines
 msgstr Linije kolona celom visinom
 
+msgid  Directory brackets
+msgstr Zagrade oko direktorijuma
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Pomeri    Enter/←→ - Promeni    E - Uredi komande    Esc - Zatvori
 

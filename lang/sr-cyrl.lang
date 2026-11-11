@@ -1818,6 +1818,9 @@ msgstr Колона Инфо, из команди
 msgid  Full-height column lines
 msgstr Линије колона целом висином
 
+msgid  Directory brackets
+msgstr Заграде око директоријума
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Помери    Enter/←→ - Промени    E - Уреди команде    Esc - Затвори
 

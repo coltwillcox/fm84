@@ -1819,6 +1819,9 @@ msgstr Stĺpec Info z príkazov
 msgid  Full-height column lines
 msgstr Čiary medzi stĺpcami cez celú výšku
 
+msgid  Directory brackets
+msgstr Zátvorky okolo adresárov
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Pohyb    Enter/←→ - Zmeniť    E - Upraviť príkazy    Esc - Zavrieť
 

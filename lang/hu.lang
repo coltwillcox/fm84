@@ -1782,6 +1782,9 @@ msgstr Infó oszlop, parancsokból
 msgid  Full-height column lines
 msgstr Oszlopvonalak teljes magasságban
 
+msgid  Directory brackets
+msgstr Zárójelek a könyvtárak körül
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Mozgás    Enter/←→ - Módosítás    E - Parancsok szerkesztése    Esc - Bezárás
 

@@ -88,6 +88,7 @@ impl Options {
                 "column_attributes" => options.column_attributes = flag(options.column_attributes),
                 "column_info" => options.column_info = flag(options.column_info),
                 "full_height_lines" => options.full_height_lines = flag(options.full_height_lines),
+                "dir_brackets" => options.dir_brackets = flag(options.dir_brackets),
                 "git_marks" => options.git_marks = flag(options.git_marks),
                 "date_format" => {
                     options.date_format = match value {
@@ -236,6 +237,8 @@ impl Options {
              column_info = {}\n\
              # The lines between the columns down to the bottom of the panel.\n\
              full_height_lines = {}\n\
+             # Directories as [name].\n\
+             dir_brackets = {}\n\
              # M modified, S staged, ? untracked, ! ignored, U in conflict.\n\
              git_marks = {}\n\
              # short, iso or relative.\n\
@@ -303,6 +306,7 @@ impl Options {
             self.column_attributes,
             self.column_info,
             self.full_height_lines,
+            self.dir_brackets,
             self.git_marks,
             date_format,
             size_units,

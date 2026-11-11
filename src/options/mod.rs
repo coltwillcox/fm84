@@ -268,6 +268,8 @@ pub struct Options {
     /// The lines between the columns drawn the whole height of the panel,
     /// heading and empty rows too, not only beside the entries.
     pub full_height_lines: bool,
+    /// A directory's name drawn between brackets, `[src]`.
+    pub dir_brackets: bool,
     /// Mark what git says of each entry - modified, staged, untracked,
     /// ignored, in conflict - at the end of its name.
     pub git_marks: bool,
@@ -351,6 +353,7 @@ impl Default for Options {
             column_attributes: true,
             column_info: false,
             full_height_lines: false,
+            dir_brackets: true,
             git_marks: true,
             date_format: DateFormat::Short,
             size_units: SizeUnits::Binary,

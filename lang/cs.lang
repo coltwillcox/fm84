@@ -1819,6 +1819,9 @@ msgstr Sloupec Info z příkazů
 msgid  Full-height column lines
 msgstr Čáry mezi sloupci přes celou výšku
 
+msgid  Directory brackets
+msgstr Závorky kolem adresářů
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Pohyb    Enter/←→ - Změnit    E - Upravit příkazy    Esc - Zavřít
 

@@ -1224,6 +1224,36 @@ fn column_lines_can_run_the_whole_height() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// F11's directory brackets: on, as they start, a directory reads [name];
+/// off, its name alone - a file either way as it was.
+#[test]
+fn directory_brackets_can_be_turned_off() {
+    let dir = std::env::temp_dir().join(format!("fm84-dir-brackets-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("inner")).unwrap();
+    std::fs::write(dir.join("one.txt"), "1").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    assert!(app_state.options.dir_brackets, "on to start with");
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Right, dir.clone(), None);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+    let mut screen = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer();
+        (0..30).map(|y| (0..120).map(|x| buffer[(x, y)].symbol()).collect::<String>()).collect::<Vec<String>>().join("\n")
+    };
+    let on = screen(&mut app_state);
+    assert!(on.contains("[inner]") && on.contains("one "), "{on}");
+
+    app_state.options.dir_brackets = false;
+    let off = screen(&mut app_state);
+    assert!(!off.contains("[inner]") && off.contains("inner") && off.contains("one "), "{off}");
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// F11's Turbo: the neon turned up, the panels in scanlines, and the logo
 /// in F1 blinking - and none of it with Turbo off.
 #[test]

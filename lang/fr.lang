@@ -1782,6 +1782,9 @@ msgstr Colonne Info, par des commandes
 msgid  Full-height column lines
 msgstr Lignes de colonnes sur toute la hauteur
 
+msgid  Directory brackets
+msgstr Crochets autour des dossiers
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Parcourir    Entrée/←→ - Changer    E - Modifier les commandes    Échap - Fermer
 

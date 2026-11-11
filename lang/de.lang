@@ -1781,6 +1781,9 @@ msgstr Info-Spalte, aus Befehlen
 msgid  Full-height column lines
 msgstr Spaltenlinien über die volle Höhe
 
+msgid  Directory brackets
+msgstr Klammern um Verzeichnisse
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Bewegen    Enter/←→ - Ändern    E - Befehle bearbeiten    Esc - Schließen
 

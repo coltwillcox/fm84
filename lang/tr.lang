@@ -1781,6 +1781,9 @@ msgstr Bilgi sütunu, komutlardan
 msgid  Full-height column lines
 msgstr Tam boy sütun çizgileri
 
+msgid  Directory brackets
+msgstr Dizin köşeli parantezleri
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Gez    Enter/←→ - Değiştir    E - Komutları düzenle    Esc - Kapat
 

@@ -665,7 +665,7 @@ fn build_viewport_rows(app_state: &AppState, side: Side, viewport_height: usize,
             Style::default().fg(text_color).add_modifier(modifiers)
         };
 
-        let (dir_prefix, dir_suffix) = if child.is_dir { ("[", "]") } else { ("", "") };
+        let (dir_prefix, dir_suffix) = if child.is_dir && app_state.options.dir_brackets { ("[", "]") } else { ("", "") };
 
         let bracket_style = if is_selected { Style::default().fg(palette().selected_marker) } else { Style::default().fg(palette().directory_bracket) };
 
