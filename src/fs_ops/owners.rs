@@ -4,7 +4,7 @@ use super::*;
 
 /// Who owns it, by name where the system can say and by number where it cannot.
 #[cfg(unix)]
-pub(super) fn owner_of(metadata: &fs::Metadata) -> String {
+pub fn owner_of(metadata: &fs::Metadata) -> String {
     use std::os::unix::fs::MetadataExt;
     let (uid, gid) = (metadata.uid(), metadata.gid());
 
@@ -80,6 +80,6 @@ fn lookup_entry<E, T>(call: impl Fn(&mut E, *mut libc::c_char, libc::size_t, *mu
 }
 
 #[cfg(not(unix))]
-pub(super) fn owner_of(_metadata: &fs::Metadata) -> String {
+pub fn owner_of(_metadata: &fs::Metadata) -> String {
     String::new()
 }
