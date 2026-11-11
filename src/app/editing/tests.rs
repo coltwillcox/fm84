@@ -491,3 +491,22 @@ fn commenting_keeps_the_cursor_with_its_text() {
     assert_eq!(cursor(&app_state), 4);
     std::fs::remove_file(path).unwrap();
 }
+
+/// F4 on a picture says it is binary without decoding it: nothing of it is
+/// kept, and the size shown is the file's.
+#[test]
+fn a_picture_refused_by_the_editor_is_never_decoded() {
+    let path = std::env::temp_dir().join(format!("fm84-edit-picture-{}.png", std::process::id()));
+    image::DynamicImage::new_rgba8(8, 8).save(&path).unwrap();
+    let size = std::fs::metadata(&path).unwrap().len();
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.open_editor(path.clone()).unwrap();
+    let state = app_state.viewer().expect("the notice is in the viewer");
+    assert!(state.from_edit);
+    assert!(state.image.is_none(), "decoded only to be thrown away");
+    assert!(state.bytes.is_empty());
+    assert_eq!(state.mode, crate::viewer::ViewMode::Text);
+    assert_eq!((state.file_size, state.syntax_name.as_str(), state.total_lines), (size, "Binary", 1));
+    std::fs::remove_file(&path).unwrap();
+}

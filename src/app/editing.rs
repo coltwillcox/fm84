@@ -242,18 +242,17 @@ impl AppState {
         let disk_stamp = DiskStamp::of(&file_path);
 
         if is_binary_file(&file_path).unwrap_or(false) {
-            self.open_viewer(file_path)?;
-            if let Screen::Viewer(state) = &mut self.screen {
-                // Editing is refused outright; F3 is where a binary gets read.
-                state.from_edit = true;
-                state.mode = ViewMode::Text;
-                state.bytes = Vec::new();
-                state.image = None;
-                state.image_lines = Vec::new();
-                state.image_colors = Vec::new();
-                state.content_lines = Vec::new();
-                state.total_lines = 1;
-            }
+            // Editing is refused outright; F3 is where a binary gets read. So
+            // nothing of it is read here - a picture decoded only to be
+            // thrown away could take gigabytes - and no picture beside it is
+            // read ahead.
+            let mut state = crate::viewer::content_as(&file_path, Vec::new(), None, false);
+            state.from_edit = true;
+            state.file_size = file_size;
+            state.syntax_name = t!("Binary").to_string();
+            state.content_lines = Vec::new();
+            state.total_lines = 1;
+            self.screen = Screen::Viewer(state);
             return Ok(());
         }
 
