@@ -282,6 +282,11 @@ fn desktop_entry(id: &str, app_dirs: &[PathBuf]) -> Option<Opener> {
     if yes("Hidden") || entry.get("Type").is_some_and(|kind| kind != "Application") {
         return None;
     }
+    // A program said to be needed that is not there: the application has
+    // been taken off, though its entry was left behind.
+    if entry.get("TryExec").is_some_and(|program| !program.is_empty() && !installed(&unescape(program))) {
+        return None;
+    }
     let exec = unescape(entry.get("Exec")?);
     let words = split_exec(&exec);
     if words.is_empty() {
@@ -299,6 +304,16 @@ fn desktop_entry(id: &str, app_dirs: &[PathBuf]) -> Option<Opener> {
         },
         terminal: yes("Terminal"),
     })
+}
+
+/// Whether `program` can be run: a path to it that is there, or a name
+/// found on PATH, as TryExec asks.
+fn installed(program: &str) -> bool {
+    let program = Path::new(program);
+    if program.is_absolute() {
+        return program.is_file();
+    }
+    std::env::var_os("PATH").is_some_and(|path| std::env::split_paths(&path).any(|dir| dir.join(program).is_file()))
 }
 
 /// A desktop file's value with its escapes read: `\s` a space, `\n`, `\t`,
@@ -498,9 +513,13 @@ mod tests {
         std::fs::write(apps.join("kde4/kate.desktop"), entry("Kate", "kate", "")).unwrap();
         std::fs::write(apps.join("gone.desktop"), entry("Gone", "gone", "")).unwrap();
         std::fs::write(apps.join("hidden.desktop"), entry("Hidden", "hidden", "Hidden=true\n")).unwrap();
+        // Its program taken off, its entry left behind.
+        std::fs::write(apps.join("uninstalled.desktop"), entry("Uninstalled", "uninstalled", "TryExec=/nowhere/uninstalled\n")).unwrap();
+        let sh = std::env::current_exe().unwrap();
+        std::fs::write(apps.join("kde4/kate.desktop"), entry("Kate", "kate", &format!("TryExec={}\n", sh.display()))).unwrap();
         std::fs::write(
             apps.join("mimeinfo.cache"),
-            "[MIME Cache]\ntext/rust=editor.desktop;gone.desktop;\ntext/plain=hidden.desktop;kde4-kate.desktop;editor.desktop;missing.desktop;\n",
+            "[MIME Cache]\ntext/rust=editor.desktop;gone.desktop;\ntext/plain=hidden.desktop;kde4-kate.desktop;editor.desktop;missing.desktop;uninstalled.desktop;\n",
         )
         .unwrap();
         std::fs::write(config[0].join("mimeapps.list"), "[Default Applications]\ntext/plain=viewer.desktop\n[Removed Associations]\ntext/rust=gone.desktop;\n").unwrap();
