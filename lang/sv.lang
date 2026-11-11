@@ -1772,6 +1772,9 @@ msgstr Info-kolumn, från kommandon
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Flytta    Enter/←→ - Ändra    E - Redigera kommandona    Esc - Stäng
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Flytta    Enter/←→ - Ändra    E - Redigera filfärgerna    Esc - Stäng
+
 msgid  No config directory to keep the commands in
 msgstr Ingen konfigurationsmapp att spara kommandona i
 

@@ -1121,6 +1121,55 @@ fn a_row_deleted_for_good_bursts() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// The `colors` file's colours in the panel: the first line for a file wins,
+/// a light theme takes the second of a pair, a style alone keeps the hashed
+/// colour, and a directory or a file with no line is drawn as ever.
+#[test]
+fn files_are_drawn_in_the_colours_file_gives_them() {
+    use ratatui::style::Color;
+    let dir = std::env::temp_dir().join(format!("fm84-file-colours-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("sub.rs")).unwrap();
+    for name in ["main.rs", "pack.tar.gz", "notes.md", "plain.txt", "Makefile"] {
+        std::fs::write(dir.join(name), "").unwrap();
+    }
+    crate::display::set_file_colors(crate::options::parse_colors("tar.gz = #ff0000\ngz rs = #00ff00 / #004400\nmakefile = #0000ff\nmd = bold\nrs = #ffffff\n"));
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+    let mut drawn = |app_state: &mut AppState, name: &str| {
+        crate::display::apply(&app_state.options);
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer();
+        let (x, y) = (0..30)
+            .find_map(|y| {
+                let text: String = (0..60).map(|x| buffer[(x, y)].symbol().to_string()).collect();
+                text.find(name).map(|byte| (text[..byte].chars().count() as u16, y))
+            })
+            .unwrap_or_else(|| panic!("{name} drawn"));
+        (buffer[(x, y)].fg, buffer[(x, y)].modifier)
+    };
+    assert_eq!(drawn(&mut app_state, "pack").0, Color::Rgb(255, 0, 0), "the first line for it");
+    assert_eq!(drawn(&mut app_state, "main").0, Color::Rgb(0, 255, 0), "not the later one");
+    assert_eq!(drawn(&mut app_state, "Makefile").0, Color::Rgb(0, 0, 255), "a whole name");
+    let (color, modifier) = drawn(&mut app_state, "notes");
+    assert_eq!(color, crate::utils::extension_color("md", false), "a style alone keeps the colour");
+    assert!(modifier.contains(Modifier::BOLD));
+    assert_eq!(drawn(&mut app_state, "plain").0, crate::utils::extension_color("txt", false), "no line for it");
+    assert_eq!(drawn(&mut app_state, "sub").0, palette().directory, "a directory is a directory");
+
+    app_state.options.theme = crate::options::Theme::GithubLight;
+    assert_eq!(drawn(&mut app_state, "main").0, Color::Rgb(0, 0x44, 0), "light takes the second");
+    assert_eq!(drawn(&mut app_state, "pack").0, Color::Rgb(255, 0, 0), "or the one there is");
+
+    crate::display::set_file_colors(Vec::new());
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// F11's Turbo: the neon turned up, the panels in scanlines, and the logo
 /// in F1 blinking - and none of it with Turbo off.
 #[test]

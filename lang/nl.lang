@@ -1771,6 +1771,9 @@ msgstr Info-kolom, uit opdrachten
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Verplaatsen    Enter/←→ - Wijzigen    E - Opdrachten bewerken    Esc - Sluiten
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Verplaatsen    Enter/←→ - Wijzigen    E - Bestandskleuren bewerken    Esc - Sluiten
+
 msgid  No config directory to keep the commands in
 msgstr Geen configuratiemap om de opdrachten in te bewaren
 

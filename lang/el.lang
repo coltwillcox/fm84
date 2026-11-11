@@ -1772,6 +1772,9 @@ msgstr Στήλη Πληρ., από εντολές
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Μετακίνηση    Enter/←→ - Αλλαγή    E - Επεξεργασία εντολών    Esc - Κλείσιμο
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Μετακίνηση    Enter/←→ - Αλλαγή    E - Επεξεργασία χρωμάτων αρχείων    Esc - Κλείσιμο
+
 msgid  No config directory to keep the commands in
 msgstr Δεν υπάρχει κατάλογος ρυθμίσεων για τις εντολές
 

@@ -1771,6 +1771,9 @@ msgstr Колона Инфо, от команди
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Местене    Enter/←→ - Промяна    E - Редактирай командите    Esc - Затваряне
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Местене    Enter/←→ - Промяна    E - Редактирай цветовете на файловете    Esc - Затваряне
+
 msgid  No config directory to keep the commands in
 msgstr Няма папка с настройки, в която да се пазят командите
 

@@ -1810,6 +1810,9 @@ msgstr Kolumna Info, z poleceń
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Ruch    Enter/←→ - Zmień    E - Edytuj polecenia    Esc - Zamknij
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Ruch    Enter/←→ - Zmień    E - Edytuj kolory plików    Esc - Zamknij
+
 msgid  No config directory to keep the commands in
 msgstr Brak katalogu konfiguracji na polecenia
 

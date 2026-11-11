@@ -1810,6 +1810,9 @@ msgstr Coloana Info, din comenzi
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Mută    Enter/←→ - Schimbă    E - Editează comenzile    Esc - Închide
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Mută    Enter/←→ - Schimbă    E - Editează culorile fișierelor    Esc - Închide
+
 msgid  No config directory to keep the commands in
 msgstr Nu există director de configurare pentru comenzi
 

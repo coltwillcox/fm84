@@ -1809,6 +1809,9 @@ msgstr Kolona Info, iz komandi
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Pomeri    Enter/←→ - Promeni    E - Uredi komande    Esc - Zatvori
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Pomeri    Enter/←→ - Promeni    E - Uredi boje datoteka    Esc - Zatvori
+
 msgid  No config directory to keep the commands in
 msgstr Nema fascikle podešavanja za komande
 

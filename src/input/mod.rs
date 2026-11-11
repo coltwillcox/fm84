@@ -351,6 +351,8 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Left => app_state.options_change(false),
             // E on the Info row: the commands that fill it.
             KeyCode::Char('e' | 'E') if crate::options::OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::ColumnInfo => app_state.edit_columns(),
+            // E on the Theme row: the colours files are drawn in.
+            KeyCode::Char('e' | 'E') if crate::options::OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::Theme => app_state.edit_colors(),
             _ => {}
         },
         Some(Dialog::Rename(_)) => match code {

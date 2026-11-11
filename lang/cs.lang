@@ -1810,6 +1810,9 @@ msgstr Sloupec Info z příkazů
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Pohyb    Enter/←→ - Změnit    E - Upravit příkazy    Esc - Zavřít
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Pohyb    Enter/←→ - Změnit    E - Upravit barvy souborů    Esc - Zavřít
+
 msgid  No config directory to keep the commands in
 msgstr Chybí složka nastavení pro uložení příkazů
 

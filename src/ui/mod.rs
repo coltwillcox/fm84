@@ -194,6 +194,7 @@ pub fn render_ui<B: Backend>(terminal: &mut Terminal<B>, app_state: &mut AppStat
     }
 
     crate::display::set_classic_cursor(app_state.options.cursor == crate::options::CursorShape::Classic);
+    crate::display::refresh_file_colors();
     let mut settled = Settled::default();
     let _ = terminal.draw(|f| {
         settled = draw_frame(f, app_state, &mut drawn);

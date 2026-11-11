@@ -1849,6 +1849,9 @@ msgstr Stolpec Info, iz ukazov
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Premik    Enter/←→ - Spremeni    E - Uredi ukaze    Esc - Zapri
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Premik    Enter/←→ - Spremeni    E - Uredi barve datotek    Esc - Zapri
+
 msgid  No config directory to keep the commands in
 msgstr Ni mape z nastavitvami za ukaze
 

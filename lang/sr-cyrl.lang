@@ -1809,6 +1809,9 @@ msgstr Колона Инфо, из команди
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Помери    Enter/←→ - Промени    E - Уреди команде    Esc - Затвори
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Помери    Enter/←→ - Промени    E - Уреди боје датотека    Esc - Затвори
+
 msgid  No config directory to keep the commands in
 msgstr Нема фасцикле подешавања за команде
 

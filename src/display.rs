@@ -441,6 +441,56 @@ thread_local! {
     static TURBO: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
+/// The `colors` file as last read, and when, so an edit to it shows within a
+/// second of saving without a read every frame.
+struct FileColors {
+    rules: Vec<crate::options::ColorRule>,
+    modified: Option<std::time::SystemTime>,
+    checked: Option<std::time::Instant>,
+}
+
+thread_local! {
+    /// Per thread, as Turbo is: the tests give each their own rules.
+    static FILE_COLORS: std::cell::RefCell<FileColors> = const { std::cell::RefCell::new(FileColors { rules: Vec::new(), modified: None, checked: None }) };
+}
+
+/// Read the `colors` file again if it changed since it was last read - at
+/// most once a second. Called as each frame starts. The tests read none,
+/// rather than whatever is in the config of whoever runs them.
+pub fn refresh_file_colors() {
+    if cfg!(test) {
+        return;
+    }
+    FILE_COLORS.with_borrow_mut(|colors| {
+        if colors.checked.is_some_and(|checked| checked.elapsed() < std::time::Duration::from_secs(1)) {
+            return;
+        }
+        colors.checked = Some(std::time::Instant::now());
+        let path = crate::options::config_path("colors");
+        let modified = path.and_then(|path| std::fs::metadata(path).and_then(|meta| meta.modified()).ok());
+        if modified != colors.modified {
+            colors.modified = modified;
+            colors.rules = crate::options::load_colors();
+        }
+    });
+}
+
+/// The rules files are drawn by, in place of the `colors` file's.
+#[cfg(test)]
+pub fn set_file_colors(rules: Vec<crate::options::ColorRule>) {
+    FILE_COLORS.with_borrow_mut(|colors| colors.rules = rules);
+}
+
+/// The colour and the styles to draw a file named `name` in: the first line
+/// of the `colors` file for it, or the colour picked for its extension. A
+/// colour of the user's own is drawn as written, Turbo or not.
+pub fn file_style(name: &str, extension: &str) -> (Color, ratatui::style::Modifier) {
+    let light = light_background();
+    let own = FILE_COLORS.with_borrow(|colors| colors.rules.iter().find(|rule| rule.applies(name)).map(|rule| (if light { rule.light } else { rule.dark }, rule.modifiers)));
+    let (color, modifiers) = own.unwrap_or_default();
+    (color.unwrap_or_else(|| crate::utils::color_for_extension(extension)), modifiers)
+}
+
 /// Whether Turbo is on, for the frame being drawn.
 pub fn turbo() -> bool {
     TURBO.with(std::cell::Cell::get)

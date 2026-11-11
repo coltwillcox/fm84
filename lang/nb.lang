@@ -1771,6 +1771,9 @@ msgstr Info-kolonne, fra kommandoer
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Flytt    Enter/←→ - Endre    E - Rediger kommandoene    Esc - Lukk
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Flytt    Enter/←→ - Endre    E - Rediger filfargene    Esc - Lukk
+
 msgid  No config directory to keep the commands in
 msgstr Ingen konfigurasjonsmappe å lagre kommandoene i
 

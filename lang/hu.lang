@@ -1773,6 +1773,9 @@ msgstr Infó oszlop, parancsokból
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Mozgás    Enter/←→ - Módosítás    E - Parancsok szerkesztése    Esc - Bezárás
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Mozgás    Enter/←→ - Módosítás    E - Fájlszínek szerkesztése    Esc - Bezárás
+
 msgid  No config directory to keep the commands in
 msgstr Nincs beállításmappa a parancsoknak
 

@@ -1773,6 +1773,9 @@ msgstr Colonne Info, par des commandes
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Parcourir    Entrée/←→ - Changer    E - Modifier les commandes    Échap - Fermer
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Parcourir    Entrée/←→ - Changer    E - Modifier les couleurs des fichiers    Échap - Fermer
+
 msgid  No config directory to keep the commands in
 msgstr Aucun répertoire de configuration où garder les commandes
 

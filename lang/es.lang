@@ -1773,6 +1773,9 @@ msgstr Columna Info, de comandos
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Mover    Intro/←→ - Cambiar    E - Editar los comandos    Esc - Cerrar
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Mover    Intro/←→ - Cambiar    E - Editar los colores de archivo    Esc - Cerrar
+
 msgid  No config directory to keep the commands in
 msgstr No hay carpeta de configuración donde guardar los comandos
 

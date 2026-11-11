@@ -1772,6 +1772,9 @@ msgstr Info-Spalte, aus Befehlen
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Bewegen    Enter/←→ - Ändern    E - Befehle bearbeiten    Esc - Schließen
 
+msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close
+msgstr ↑↓ - Bewegen    Enter/←→ - Ändern    E - Dateifarben bearbeiten    Esc - Schließen
+
 msgid  No config directory to keep the commands in
 msgstr Kein Konfigurationsverzeichnis für die Befehle
 

@@ -4,6 +4,7 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 
+mod colors;
 mod config;
 mod mixtapes;
 mod rows;
@@ -12,7 +13,7 @@ mod session;
 #[cfg(test)]
 mod tests;
 
-pub use self::{config::*, mixtapes::*, rows::*, scores::*, session::*};
+pub use self::{colors::*, config::*, mixtapes::*, rows::*, scores::*, session::*};
 
 /// What the file rows are ordered by.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

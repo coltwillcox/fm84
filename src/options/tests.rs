@@ -223,3 +223,49 @@ fn mixtapes_read_back_the_same() {
     assert_eq!(Mixtapes::default().fresh_name("Mixtape"), "Mixtape");
     assert_eq!(mixtapes.fresh_name("Tax 2026"), "Tax 2026 2");
 }
+
+/// The `colors` file: colours by hex, short hex, number or name, a pair for
+/// dark themes and light ones, styles with a colour or alone - and a line
+/// that makes no sense passed over.
+#[test]
+fn the_colors_file_reads_colours_pairs_and_styles() {
+    use ratatui::style::{Color, Modifier};
+    let rules = parse_colors(
+        "# a comment\n\
+         rs .TOML = #dea584\n\
+         jpg png = bright-magenta\n\
+         tar.gz = bold 202\n\
+         md = #7af / #1a4b95\n\
+         log = dim\n\
+         makefile = italic underline cyan\n\
+         bad = nocolour\n\
+         two = red blue\n\
+         three = red / green / blue\n\
+         = red\n\
+         empty =\n",
+    );
+    let line = |extension: &str| rules.iter().find(|rule| rule.extensions.iter().any(|it| it == extension)).cloned();
+    assert_eq!(rules.len(), 6, "{rules:#?}");
+    let rs = line("rs").unwrap();
+    assert_eq!((rs.dark, rs.light, rs.modifiers), (Some(Color::Rgb(0xde, 0xa5, 0x84)), Some(Color::Rgb(0xde, 0xa5, 0x84)), Modifier::empty()));
+    assert_eq!(rs.extensions, ["rs", "TOML"], "the dot gone, the case kept");
+    assert_eq!(line("png").unwrap().dark, Some(Color::LightMagenta));
+    let tar = line("tar.gz").unwrap();
+    assert_eq!((tar.dark, tar.modifiers), (Some(Color::Indexed(202)), Modifier::BOLD));
+    let md = line("md").unwrap();
+    assert_eq!((md.dark, md.light), (Some(Color::Rgb(0x77, 0xaa, 0xff)), Some(Color::Rgb(0x1a, 0x4b, 0x95))));
+    let log = line("log").unwrap();
+    assert_eq!((log.dark, log.light, log.modifiers), (None, None, Modifier::DIM), "a style alone keeps the colour");
+    assert_eq!(line("makefile").unwrap().modifiers, Modifier::ITALIC | Modifier::UNDERLINED);
+    for bad in ["bad", "two", "three", "empty"] {
+        assert!(line(bad).is_none(), "{bad}");
+    }
+
+    // Which file a line is for: by the end of its name, any case, a whole
+    // name too, and * for every one.
+    assert!(rs.applies("main.rs") && rs.applies("Cargo.toml") && rs.applies("MAIN.RS"));
+    assert!(!rs.applies("main.rsx") && !rs.applies("rs.txt") && !rs.applies("ars"));
+    assert!(tar.applies("x.tar.gz") && !tar.applies("x.gz"));
+    assert!(line("makefile").unwrap().applies("Makefile") && rs.applies("rs"));
+    assert!(parse_colors("* = red")[0].applies("anything"));
+}

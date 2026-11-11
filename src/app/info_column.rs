@@ -157,6 +157,20 @@ impl AppState {
             self.display_error(t!("No config directory to keep the commands in").to_string());
             return;
         };
+        self.edit_config(file);
+    }
+
+    /// E on F11's Theme row: the `colors` file, in whichever editor F4 uses.
+    /// What it says shows within a second of saving it.
+    pub fn edit_colors(&mut self) {
+        self.dialog = None;
+        match crate::options::colors_file() {
+            Some(file) => self.edit_config(file),
+            None => self.display_error(t!("No config directory").to_string()),
+        }
+    }
+
+    fn edit_config(&mut self, file: PathBuf) {
         if self.options.editor.trim().is_empty() {
             self.request_open(file, true);
         } else {
