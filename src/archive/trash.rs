@@ -54,6 +54,26 @@ pub struct Trashed {
     pub real: PathBuf,
 }
 
+/// A failure the system gave the trash, as the error it is: its kind -
+/// denied, not found - and the system's own words for it. On Windows the
+/// code is an HRESULT, a Win32 error wrapped as `0x8007xxxx`; anything else
+/// there is left to the description, which the crate starts with a tag.
+#[cfg(any(test, windows, all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android"))))]
+fn os_error(code: i32, description: String) -> io::Error {
+    let raw = if cfg!(windows) { win32_code(code) } else { Some(code).filter(|&code| code > 0) };
+    match raw {
+        Some(raw) => io::Error::from_raw_os_error(raw),
+        None => io::Error::other(description.strip_prefix("windows error: ").map(str::to_string).unwrap_or(description)),
+    }
+}
+
+/// The Win32 error inside an HRESULT that wraps one.
+#[cfg(any(test, windows, all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android"))))]
+fn win32_code(hresult: i32) -> Option<i32> {
+    let hresult = hresult as u32;
+    (hresult & 0xFFFF_0000 == 0x8007_0000).then_some((hresult & 0xFFFF) as i32)
+}
+
 #[cfg(all(not(test), any(windows, all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))))]
 mod system {
     use super::*;
@@ -64,6 +84,8 @@ mod system {
             // Only the freedesktop trash has this one: not on Windows.
             #[cfg(unix)]
             trash::Error::FileSystem { source, .. } => source,
+            trash::Error::Os { code, description } => os_error(code, description),
+            trash::Error::Unknown { description } => io::Error::other(description),
             other => io::Error::other(format!("{other:?}")),
         }
     }
@@ -295,5 +317,27 @@ pub mod system {
     pub fn purge(id: &OsStr) -> io::Result<()> {
         let item = take(id)?;
         if item.real.is_dir() { std::fs::remove_dir_all(&item.real) } else { std::fs::remove_file(&item.real) }
+    }
+}
+
+#[cfg(test)]
+mod os_error_tests {
+    use super::*;
+
+    /// A Win32 error comes out of its HRESULT; anything else is no Win32
+    /// error, and is left to the description, its tag taken off.
+    #[test]
+    fn a_systems_failure_reads_as_the_error_it_is() {
+        // E_ACCESSDENIED, ERROR_FILE_NOT_FOUND wrapped.
+        assert_eq!(win32_code(0x8007_0005_u32 as i32), Some(5));
+        assert_eq!(win32_code(0x8007_0002_u32 as i32), Some(2));
+        // E_FAIL and S_OK wrap none.
+        assert_eq!(win32_code(0x8000_4005_u32 as i32), None);
+        assert_eq!(win32_code(0), None);
+        if !cfg!(windows) {
+            assert_eq!(os_error(2, String::new()).kind(), io::ErrorKind::NotFound);
+            let told = os_error(0, "windows error: it broke".to_string());
+            assert_eq!(told.to_string(), "it broke");
+        }
     }
 }
