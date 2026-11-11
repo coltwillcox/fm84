@@ -1,5 +1,6 @@
 //! Alt+Down: the directories the panels have been in, across every tab, to
-//! go back to any of them at once rather than a step at a time.
+//! go back to any of them at once rather than a step at a time - and Alt+J,
+//! the ones gone to in every run, the most used and most recent first.
 
 use super::*;
 
@@ -11,6 +12,8 @@ pub struct HistoryList {
     /// What `input` lets through, in the same order.
     pub shown: Vec<PathBuf>,
     pub index: usize,
+    /// Alt+J's, narrowed as zoxide narrows, rather than Alt+Down's.
+    pub jump: bool,
 }
 
 impl HistoryList {
@@ -19,6 +22,12 @@ impl HistoryList {
     fn narrow(&mut self) {
         let fold = !self.input.text.chars().any(char::is_uppercase);
         let folded = |text: &str| -> String { if fold { text.chars().map(crate::find::fold_char).collect() } else { text.to_string() } };
+        if self.jump {
+            let words: Vec<&str> = self.input.text.split_whitespace().collect();
+            self.shown = self.all.iter().filter(|path| crate::options::jump_matches(path, &words)).cloned().collect();
+            self.index = 0;
+            return;
+        }
         let words: Vec<String> = self.input.text.split_whitespace().map(folded).collect();
         self.shown = self.all.iter().filter(|path| words.iter().all(|word| folded(&path.to_string_lossy()).contains(word.as_str()))).cloned().collect();
         self.index = 0;
@@ -52,6 +61,22 @@ impl AppState {
             shown: all.clone(),
             all,
             index,
+            jump: false,
+        })));
+    }
+
+    /// Alt+J: the directories gone to, in this run and those before, the one
+    /// most used lately first - not where the active panel is already, as
+    /// that is no jump at all.
+    pub fn open_jumps(&mut self) {
+        let here = self.panel_dir(self.active_side);
+        let all: Vec<PathBuf> = self.jumps.ranked(crate::options::now_seconds()).into_iter().filter(|path| *path != here).collect();
+        self.dialog = Some(Dialog::History(Box::new(HistoryList {
+            input: TextInput::new(),
+            shown: all.clone(),
+            all,
+            index: 0,
+            jump: true,
         })));
     }
 

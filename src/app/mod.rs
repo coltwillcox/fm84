@@ -345,6 +345,8 @@ pub struct AppState {
     /// Alt+B's mixtapes: baskets with names, kept across runs, one of them
     /// playing - the one Alt+B adds to.
     pub tapes: crate::options::Mixtapes,
+    /// Every directory gone to, across runs, for Alt+J.
+    pub jumps: crate::options::Jumps,
     /// What the Info column's commands gave, by the file as it was and the
     /// command, so a reread runs nothing that has run already.
     pub info_cache: HashMap<(PathBuf, u64, Option<SystemTime>, String), String>,
@@ -729,6 +731,7 @@ impl AppState {
             stay_put: false,
             undo: Vec::new(),
             tapes: if cfg!(test) { crate::options::Mixtapes::default() } else { crate::options::Mixtapes::load() },
+            jumps: if cfg!(test) { crate::options::Jumps::default() } else { crate::options::Jumps::load() },
             info_cache: HashMap::new(),
             explosion: None,
             last_input: Instant::now(),

@@ -8,6 +8,7 @@ mod duplicates;
 mod ghosts;
 mod git;
 mod info_column;
+mod jumps;
 mod jobs;
 mod panels;
 mod scores;

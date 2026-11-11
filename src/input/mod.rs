@@ -190,6 +190,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'd' {
             app_state.find_duplicates();
         }
+        // Alt+J, a directory gone to before, by a few letters of it.
+        if in_panel && c == 'j' {
+            app_state.open_jumps();
+        }
         // Alt+I sends the other panel to this one's directory.
         if in_panel && c == 'i' {
             app_state.same_dir_in_other_panel();

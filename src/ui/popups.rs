@@ -1222,7 +1222,7 @@ fn from_home(path: &Path) -> String {
 pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list: &crate::app::HistoryList, here: &Path) {
     let popup_area = popup_rect(60, area);
     let popup_block = Block::default()
-        .title(Line::from(Span::styled(format!(" {} ", t!("Directory History")), style_title())).centered())
+        .title(Line::from(Span::styled(format!(" {} ", if list.jump { t!("Jump to a directory") } else { t!("Directory History") }), style_title())).centered())
         .borders(Borders::ALL)
         .style(style_border());
     clear(f, popup_area);

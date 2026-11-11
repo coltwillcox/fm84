@@ -403,6 +403,8 @@ impl AppState {
         // else that is not there as typed stays where it is, and says so.
         let to_file = pending.travel == Travel::GoTo && found != pending.dir && pending.dir.parent() == Some(found.as_path()) && listed.items.as_ref().is_ok_and(|items| items.iter().any(|item| Some(item.name_os.as_os_str()) == pending.dir.file_name()));
         if pending.travel == Travel::GoTo && found != pending.dir && !to_file {
+            // Gone since: not one to jump to again.
+            self.jumps.forget(&pending.dir);
             self.display_error(t!("No such file or directory: {path}", path = pending.dir.display()));
             return false;
         }
@@ -429,6 +431,11 @@ impl AppState {
             if leaving.dir != found {
                 self.forget_sizes_in(&leaving.dir);
                 self.record_visit(&leaving.dir, &found);
+                // Only what is on the disk: an archive, a commit or the
+                // trash may not be there to jump back to.
+                if listed.archive.is_none() {
+                    self.jumps.visit(&found, crate::options::now_seconds());
+                }
             }
         }
 

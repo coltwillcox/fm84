@@ -277,6 +277,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         let _ = options::save_session(&panel(app_state.tab_dirs(Side::Left)), &panel(app_state.tab_dirs(Side::Right)));
     }
 
+    let _ = app_state.jumps.save();
     crate::archive::clean_scratch();
     // Shift+F10 leaves the shell where it was: nothing written, and cd84
     // finds the file empty.
