@@ -434,6 +434,7 @@ pub fn calculate_dir_size(path: &Path) -> Result<u64, Error> {
     SizeWalk {
         cancel: &AtomicBool::new(false),
         found: &mut |_| {},
+        #[cfg(unix)]
         linked: None,
     }
     .dir(path, None)
@@ -489,6 +490,7 @@ pub fn walk_dir_size(path: &Path, cancel: &AtomicBool, found: &mut dyn FnMut(u64
     SizeWalk {
         cancel,
         found,
+        #[cfg(unix)]
         linked: Some(std::collections::HashSet::new()),
     }
     .dir(path, None)
@@ -498,7 +500,9 @@ struct SizeWalk<'a> {
     cancel: &'a AtomicBool,
     found: &'a mut dyn FnMut(u64),
     /// The hard-linked files met so far, by device and inode, when each is
-    /// to be counted once. None counts every link.
+    /// to be counted once. None counts every link. Windows has no inode to
+    /// tell one by, and counts every one.
+    #[cfg(unix)]
     linked: Option<std::collections::HashSet<(u64, u64)>>,
 }
 
