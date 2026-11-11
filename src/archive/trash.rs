@@ -61,6 +61,8 @@ mod system {
     fn error(error: trash::Error) -> io::Error {
         match error {
             trash::Error::RestoreCollision { path, .. } => io::Error::new(io::ErrorKind::AlreadyExists, t!("{path} already exists", path = path.display())),
+            // Only the freedesktop trash has this one: not on Windows.
+            #[cfg(unix)]
             trash::Error::FileSystem { source, .. } => source,
             other => io::Error::other(format!("{other:?}")),
         }
