@@ -44,6 +44,14 @@ fn alt_g_asks_before_discarding_and_compares_with_head() {
     assert_eq!(std::fs::read_to_string(&file).unwrap(), "one\ntwo\n");
     assert_eq!(app_state.find_note.as_deref(), Some("Changes discarded"));
 
+    // One that fails leaves the rest to be done all the same.
+    let other = dir.join("other.txt");
+    std::fs::write(&other, "new\n").unwrap();
+    app_state.open_git(vec![(dir.join("gone.txt"), false), (other.clone(), false)]);
+    app_state.git_act(GitAction::Stage);
+    assert!(app_state.error.take().is_some(), "the failure is told");
+    assert!(!git(&["diff", "--cached", "--quiet", "--exit-code", "--", "other.txt"]), "staged after the one that failed");
+
     // A directory has no one file to compare.
     app_state.open_git(vec![(dir.clone(), true)]);
     app_state.git_compare_head();

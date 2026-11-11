@@ -69,7 +69,14 @@ impl AppState {
             GitAction::Unstage => crate::git::unstage,
             GitAction::Discard => crate::git::discard,
         };
-        let failed = items.iter().find_map(|(path, _)| run(path).err());
+        // Each of them, whichever fails: stopping at the first left the rest
+        // not done, and nothing said which. The first failure is told.
+        let mut failed = None;
+        for (path, _) in &items {
+            if let Err(message) = run(path) {
+                failed.get_or_insert(message);
+            }
+        }
         // The marks come again with the listing, and a file discarded is
         // what it was.
         self.reload_panel(Side::Left, None);
