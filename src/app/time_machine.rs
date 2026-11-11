@@ -63,12 +63,16 @@ impl AppState {
             Err(e) => return self.display_error(e),
         };
         let Some(state) = self.viewer_mut() else { return };
-        // A hexdump stays one, of text as of anything else.
-        let raw = (state.mode == ViewMode::Hex).then(|| bytes.clone());
-        // A picture is decoded only to be drawn, and only within what
-        // opening one is allowed without asking: an old version can unpack
-        // to far more than the one opened did. Past that it is a hexdump.
-        let pictures = raw.is_none() && crate::viewer::image_cost_of(&bytes).is_none_or(|cost| cost <= crate::constants::IMAGE_MAX_DECODED);
+        // A hexdump stays one, of text as of anything else - when it was
+        // chosen, and not a picture too big to draw shown as one.
+        let chosen = state.mode == ViewMode::Hex && (state.image.is_some() || crate::viewer::image_cost_of(&state.bytes).is_none());
+        let raw = chosen.then(|| bytes.clone());
+        // A picture is decoded only to be drawn - and a past one only within
+        // what opening one is allowed without asking: an old version can
+        // unpack to far more than the one opened did. Past that it is a
+        // hexdump. The file as it is was opened already, asked about or not.
+        let affordable = || crate::viewer::image_cost_of(&bytes).is_none_or(|cost| cost <= crate::constants::IMAGE_MAX_DECODED);
+        let pictures = raw.is_none() && (going_to.is_none() || affordable());
         let mut fresh = crate::viewer::content_as(&path, bytes, None, pictures);
         if let Some(raw) = raw
             && fresh.mode == ViewMode::Text

@@ -250,6 +250,12 @@ fn the_viewer_steps_through_a_files_history() {
     app_state.viewer_step_history(true);
     let state = app_state.viewer().unwrap();
     assert_eq!((state.mode, state.image.is_some(), state.bytes.len()), (crate::viewer::ViewMode::Hex, false, huge.len()));
+    // Forward again to the file as it is, which was opened as a picture:
+    // a picture again, not held to the check a past one is.
+    app_state.viewer_step_history(false);
+    app_state.viewer_step_history(false);
+    let state = app_state.viewer().unwrap();
+    assert_eq!((state.mode, state.image.is_some(), at(&app_state)), (crate::viewer::ViewMode::Image, true, None));
 
     // A version past F11's limit is not read at all, as a file that size
     // would be asked about before it opened; the view stays as it was.
