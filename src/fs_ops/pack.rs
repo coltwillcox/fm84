@@ -26,14 +26,14 @@ impl PackFormat {
     pub fn of(path: &Path) -> Option<Self> {
         use crate::archive::Kind;
         Some(match crate::archive::kind_of(path)? {
-            Kind::Zip => PackFormat::Zip,
+            Kind::Zip if crate::archive::named_zip(path) => PackFormat::Zip,
             Kind::SevenZ => PackFormat::SevenZ,
             Kind::Tar => PackFormat::Tar,
             Kind::TarGz => PackFormat::TarGz,
             Kind::TarXz => PackFormat::TarXz,
             Kind::TarBz2 => PackFormat::TarBz2,
             Kind::TarZst => PackFormat::TarZst,
-            Kind::Git | Kind::Trash => return None,
+            Kind::Zip | Kind::Git | Kind::Trash | Kind::Deb | Kind::Iso => return None,
         })
     }
 

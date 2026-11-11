@@ -8,6 +8,7 @@
 #[cfg(test)]
 pub mod fixtures;
 mod index;
+mod iso;
 #[cfg(test)]
 mod tests;
 pub mod trash;
@@ -36,6 +37,22 @@ pub enum Kind {
     Git,
     /// The system's trash, at `~/@trash`, which is not on the disk either.
     Trash,
+    /// A Debian package: an ar of tars, each tar a folder named for it.
+    Deb,
+    /// A CD or DVD image, ISO 9660, with the long names Rock Ridge or
+    /// Joliet give it.
+    Iso,
+}
+
+/// Zips by other names: programs, books, comics and office documents. Gone
+/// into as a zip is, and read-only: rewritten, a signed .apk or .jar would
+/// lose its signature, and an .epub the order its first entry must keep.
+const ZIP_ALIKES: &[&str] = &[".jar", ".war", ".apk", ".aab", ".xpi", ".whl", ".epub", ".cbz", ".docx", ".xlsx", ".pptx", ".odt", ".ods", ".odp"];
+
+/// Whether `path` is a zip by its name, .zip itself - one that can be
+/// written into.
+pub fn named_zip(path: &Path) -> bool {
+    path.file_name().is_some_and(|name| name.to_string_lossy().to_lowercase().ends_with(".zip"))
 }
 
 /// What a git commit's folder is named with, the revision after it.
@@ -66,8 +83,12 @@ pub fn kind_of(path: &Path) -> Option<Kind> {
     }
     let name = path.file_name()?.to_string_lossy().to_lowercase();
     let named = |endings: &[&str]| endings.iter().any(|ending| name.ends_with(ending));
-    if named(&[".zip"]) {
+    if named(&[".zip"]) || named(ZIP_ALIKES) {
         Some(Kind::Zip)
+    } else if named(&[".deb", ".udeb"]) {
+        Some(Kind::Deb)
+    } else if named(&[".iso"]) {
+        Some(Kind::Iso)
     } else if named(&[".7z"]) {
         Some(Kind::SevenZ)
     } else if named(&[".tar.gz", ".tgz"]) {
@@ -422,50 +443,116 @@ pub fn read_entries(archive: &Path, kind: Kind, positions: &[usize], visit: &mut
         Kind::SevenZ => read_7z_entries(archive, positions, visit),
         Kind::Git => read_git_entries(archive, positions, visit),
         Kind::Trash => read_trash_entries(archive, positions, visit),
-        _ => {
-            let mut pending: std::collections::BTreeSet<usize> = positions.iter().copied().collect();
-            while !pending.is_empty() {
-                let mut again = std::collections::BTreeSet::new();
-                let mut tar = tar::Archive::new(tar_reader(archive, kind)?);
-                for (ordinal, entry) in tar.entries()?.enumerate() {
-                    if !pending.contains(&ordinal) {
-                        continue;
-                    }
-                    let next = match entry {
-                        Ok(mut entry) => visit(ordinal, Ok(&mut entry)),
-                        // The rest of the stream is lost with it.
-                        Err(error) => {
-                            visit(ordinal, Err(error));
-                            return Ok(());
-                        }
-                    };
-                    match next {
-                        Next::Go => {}
-                        Next::Again => {
-                            again.insert(ordinal);
-                        }
-                        Next::Stop => return Ok(()),
-                    }
-                    pending.remove(&ordinal);
-                    if pending.is_empty() {
-                        break;
-                    }
+        Kind::Deb | Kind::Iso => read_piece_entries(archive, positions, visit),
+        _ => walk_tar(&|| tar_reader(archive, kind), positions.iter().map(|&position| (position, position)).collect(), visit).map(drop),
+    }
+}
+
+/// Go through a tar from its start - `open` gives it, from the start again
+/// for what is asked to be read again - handing `visit` each entry wanted:
+/// `wanted` maps where one is in the tar to the position it is known by.
+/// True when `visit` said to stop.
+fn walk_tar(open: &dyn Fn() -> io::Result<Box<dyn Read>>, mut wanted: std::collections::BTreeMap<usize, usize>, visit: &mut dyn FnMut(usize, io::Result<&mut dyn Read>) -> Next) -> io::Result<bool> {
+    while !wanted.is_empty() {
+        let mut again = std::collections::BTreeMap::new();
+        let mut tar = tar::Archive::new(open()?);
+        for (ordinal, entry) in tar.entries()?.enumerate() {
+            let Some(&position) = wanted.get(&ordinal) else {
+                continue;
+            };
+            let next = match entry {
+                Ok(mut entry) => visit(position, Ok(&mut entry)),
+                // The rest of the stream is lost with it.
+                Err(error) => {
+                    visit(position, Err(error));
+                    return Ok(true);
                 }
-                // Asked for and never met: the archive changed under us, or
-                // is cut short. Nothing more to be had from it.
-                if !pending.is_empty() {
-                    for ordinal in std::mem::take(&mut pending) {
-                        let missing = io::Error::new(io::ErrorKind::UnexpectedEof, t!("The archive ends before it"));
-                        if let Next::Stop = visit(ordinal, Err(missing)) {
-                            return Ok(());
-                        }
-                    }
+            };
+            match next {
+                Next::Go => {}
+                Next::Again => {
+                    again.insert(ordinal, position);
                 }
-                pending = again;
+                Next::Stop => return Ok(true),
             }
-            Ok(())
+            wanted.remove(&ordinal);
+            if wanted.is_empty() {
+                break;
+            }
+        }
+        // Asked for and never met: the archive changed under us, or is cut
+        // short. Nothing more to be had from it.
+        for (_, position) in std::mem::take(&mut wanted) {
+            let missing = io::Error::new(io::ErrorKind::UnexpectedEof, t!("The archive ends before it"));
+            if let Next::Stop = visit(position, Err(missing)) {
+                return Ok(true);
+            }
+        }
+        wanted = again;
+    }
+    Ok(false)
+}
+
+/// The side of read_entries for a .deb and an .iso, whose files are pieces
+/// of the archive file where the index found them: read from there, or out
+/// of the tar in the .deb they are in - each tar gone through once for all
+/// that is wanted of it.
+fn read_piece_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(usize, io::Result<&mut dyn Read>) -> Next) -> io::Result<()> {
+    use index::Piece;
+    let index = index(archive)?;
+    // Each tar by where it is, and what is wanted of it.
+    type Wanted = std::collections::BTreeMap<usize, usize>;
+    let mut tars: Vec<((u64, u64, Kind), Wanted)> = Vec::new();
+    for &position in positions {
+        match index.piece(position) {
+            Some(Piece::Spans(spans)) => loop {
+                let next = match spans_reader(archive, spans) {
+                    Ok(mut reader) => visit(position, Ok(&mut reader)),
+                    Err(error) => visit(position, Err(error)),
+                };
+                match next {
+                    Next::Go => break,
+                    Next::Again => {}
+                    Next::Stop => return Ok(()),
+                }
+            },
+            Some(&Piece::InTar { at, length, kind, ordinal }) => match tars.iter_mut().find(|(tar, _)| *tar == (at, length, kind)) {
+                Some((_, wanted)) => {
+                    wanted.insert(ordinal, position);
+                }
+                None => tars.push(((at, length, kind), [(ordinal, position)].into())),
+            },
+            None => {
+                if let Next::Stop = visit(position, Err(io::Error::new(io::ErrorKind::NotFound, t!("The archive ends before it")))) {
+                    return Ok(());
+                }
+            }
         }
     }
+    for ((at, length, kind), wanted) in tars {
+        if walk_tar(&|| decompressed(piece_reader(archive, at, length)?, kind), wanted, visit)? {
+            return Ok(());
+        }
+    }
+    Ok(())
+}
+
+/// The `length` bytes of `archive` from `at` on.
+pub(crate) fn piece_reader(archive: &Path, at: u64, length: u64) -> io::Result<BufReader<io::Take<File>>> {
+    use io::Seek;
+    let mut file = File::open(archive)?;
+    file.seek(io::SeekFrom::Start(at))?;
+    Ok(BufReader::new(file.take(length)))
+}
+
+/// One piece after another of `archive`, as one file: a file on a disc
+/// image can be kept in more than one.
+fn spans_reader(archive: &Path, spans: &[(u64, u64)]) -> io::Result<Box<dyn Read>> {
+    let mut reader: Box<dyn Read> = Box::new(io::empty());
+    for &(at, length) in spans {
+        reader = Box::new(reader.chain(piece_reader(archive, at, length)?));
+    }
+    Ok(reader)
 }
 
 /// The git side of read_entries: each file read out of the repository by
@@ -574,7 +661,11 @@ fn read_7z_entries(archive: &Path, positions: &[usize], visit: &mut dyn FnMut(us
 /// reads on past the end of its first stream: files joined end to end, as
 /// pigz, pzstd and pbzip2 write them, are one archive.
 pub(crate) fn tar_reader(archive: &Path, kind: Kind) -> io::Result<Box<dyn Read>> {
-    let file = open(archive)?;
+    decompressed(open(archive)?, kind)
+}
+
+/// A tar's bytes, from `file`, uncompressed as `kind` says.
+pub(crate) fn decompressed<R: io::BufRead + 'static>(file: R, kind: Kind) -> io::Result<Box<dyn Read>> {
     Ok(match kind {
         Kind::TarGz => Box::new(flate2::read::MultiGzDecoder::new(file)),
         Kind::TarZst => Box::new(ZstdFrames::new(file)?),

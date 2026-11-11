@@ -1,4 +1,4 @@
-use super::fixtures::{Put, scratch, sevenz, tar, zip};
+use super::fixtures::{Put, ar, scratch, sevenz, tar, zip};
 use super::*;
 
 fn names(index: &Index, inner: &str) -> Vec<String> {
@@ -480,5 +480,178 @@ fn a_path_ending_in_a_separator_is_into_the_archive() {
         })
     );
     assert_eq!(locate(&typed(&dir)), None);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Everything under `inner`, read out in full, by path.
+fn read_all(path: &Path, inner: &str) -> Vec<(String, String)> {
+    let index = super::index(path).unwrap();
+    let files: Vec<&Entry> = index.subtree(Path::new(inner)).into_iter().map(|at| index.entry(at)).filter(|entry| entry.kind == EntryKind::File).collect();
+    let positions: Vec<usize> = files.iter().map(|entry| entry.position.unwrap()).collect();
+    let mut read = Vec::new();
+    read_entries(path, index.kind, &positions, &mut |position, contents| {
+        let mut text = String::new();
+        contents.unwrap().read_to_string(&mut text).unwrap();
+        let entry = files.iter().find(|entry| entry.position == Some(position)).unwrap();
+        read.push((entry.path.to_string_lossy().replace('\\', "/"), text));
+        Next::Go
+    })
+    .unwrap();
+    read.sort();
+    read
+}
+
+/// A jar, an epub, a docx are zips, gone into as one; but only a .zip is
+/// written into, as rewriting one of the others could spoil it.
+#[test]
+fn zips_by_other_names_go_in_read_only() {
+    let dir = scratch("zip-alikes");
+    for name in ["app.jar", "Book.EPUB", "report.docx", "comic.cbz", "sheet.xlsx", "phone.apk"] {
+        let path = dir.join(name);
+        zip(&path, &[("META-INF/MANIFEST.MF", Put::File(b"Manifest-Version: 1.0"))]);
+        let index = super::index(&path).unwrap();
+        assert_eq!((index.kind, names(&index, "")), (Kind::Zip, vec!["META-INF".to_string()]), "{name}");
+        assert!(crate::fs_ops::writable_format(&path).is_err(), "{name}");
+    }
+    assert!(crate::fs_ops::writable_format(&dir.join("a.zip")).is_ok());
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A .deb is an ar of tars: each tar a folder named for it, what it holds
+/// read out of it, and the rest - debian-binary - a file.
+#[test]
+fn a_deb_lists_its_tars_as_folders() {
+    let dir = scratch("deb");
+    let (control, data) = (dir.join("control.tar.xz"), dir.join("data.tar.zst"));
+    tar(&control, &[(b"./control", Put::File(b"Package: hello"))]);
+    tar(&data, &[(b"./usr/", Put::Dir), (b"./usr/bin/hello", Put::File(b"#!/bin/sh")), (b"./usr/bin/hi", Put::Link("hello")), (b"../evil", Put::File(b"x"))]);
+    let path = dir.join("hello_1.0_amd64.deb");
+    ar(&path, &[("debian-binary", b"2.0\n"), ("control.tar.xz", &std::fs::read(&control).unwrap()), ("data.tar.zst", &std::fs::read(&data).unwrap())]);
+
+    let index = super::index(&path).unwrap();
+    assert_eq!(index.kind, Kind::Deb);
+    assert_eq!(names(&index, ""), ["control", "data", "debian-binary"]);
+    assert_eq!(names(&index, "data/usr/bin"), ["hello", "hi"]);
+    assert_eq!(index.refused, 1);
+    let data_dir = index.entry(index.find(Path::new("data")).unwrap());
+    assert_eq!((data_dir.kind, data_dir.modified), (EntryKind::Dir, Some(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_700_000_000))));
+    assert_eq!(
+        read_all(&path, ""),
+        [
+            ("control/control".to_string(), "Package: hello".to_string()),
+            ("data/usr/bin/hello".to_string(), "#!/bin/sh".to_string()),
+            ("debian-binary".to_string(), "2.0\n".to_string())
+        ]
+    );
+    assert!(crate::fs_ops::writable_format(&path).is_err());
+
+    // Not an ar at all.
+    std::fs::write(&path, "not a package").unwrap();
+    assert!(super::index(&path).is_err());
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// A disc image with Rock Ridge: its long names, modes and links, a file
+/// kept in two pieces read as one; and what would reach outside, or loop
+/// back into a directory above, left out.
+#[test]
+fn an_iso_with_rock_ridge_lists_and_reads() {
+    use super::fixtures::Iso;
+    let dir = scratch("iso-rock");
+    let mut iso = Iso::new();
+    let notes = iso.put(b"long names");
+    let (first, second) = (iso.put(&[b'a'; 2048]), iso.put(b"bc"));
+    let script = iso.put(b"echo");
+    let nm_px = |name: &str, mode: u32| [Iso::nm(name), Iso::px(mode)].concat();
+    let loops = iso.next();
+    let docs = iso.dir(
+        b"DOCS",
+        &Iso::nm("Documents"),
+        &[
+            Iso::record(b"READ_ME_.TXT;1", notes, 10, 0, &nm_px("Read me first.txt", 0o100640)),
+            Iso::record(b"BIG.BIN;1", first, 2048, 0x80, &Iso::nm("big.bin")),
+            Iso::record(b"BIG.BIN;1", second, 2, 0, &Iso::nm("big.bin")),
+            Iso::record(b"LINK;1", 0, 0, 0, &[Iso::nm("latest"), Iso::sl("../run.sh")].concat()),
+            Iso::record(b"UP", loops, 2048, 2, &Iso::nm("loop")),
+            Iso::record(b"EVIL;1", notes, 10, 0, &Iso::nm("..")),
+            Iso::record(b"SLASH;1", notes, 10, 0, &Iso::nm("a/b")),
+        ],
+    );
+    let root = iso.dir(&[0], &[], &[docs, Iso::record(b"RUN.SH;1", script, 4, 0, &nm_px("run.sh", 0o100755))]);
+    let path = dir.join("disc.iso");
+    iso.finish(&path, &root, None);
+
+    let index = super::index(&path).unwrap();
+    assert_eq!(index.kind, Kind::Iso);
+    assert_eq!(names(&index, ""), ["Documents", "run.sh"]);
+    assert_eq!(names(&index, "Documents"), ["Read me first.txt", "big.bin", "latest"]);
+    let run = index.entry(index.find(Path::new("run.sh")).unwrap());
+    assert_eq!(run.mode, Some(0o755));
+    assert_eq!(run.modified, Some(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_700_000_000)));
+    let link = index.entry(index.find(Path::new("Documents/latest")).unwrap());
+    assert_eq!((link.kind, link.link.as_deref()), (EntryKind::Link, Some(Path::new("../run.sh"))));
+    assert_eq!(index.entry(index.find(Path::new("Documents/big.bin")).unwrap()).size, 2050);
+    let read = read_all(&path, "");
+    assert_eq!(
+        read.iter().map(|(path, text)| (path.as_str(), text.len())).collect::<Vec<_>>(),
+        [("Documents/Read me first.txt", 10), ("Documents/big.bin", 2050), ("run.sh", 4)]
+    );
+    assert!(read[1].1.ends_with("abc"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// Without Rock Ridge, Joliet's long names are shown where there are
+/// some, and the short ones as a system mounting it shows them otherwise.
+#[test]
+fn an_iso_without_rock_ridge_has_joliets_names_or_its_own() {
+    use super::fixtures::{Iso, joliet};
+    let dir = scratch("iso-joliet");
+    let mut iso = Iso::new();
+    let text = iso.put(b"plain");
+    let short = iso.dir(&[0], &[], &[Iso::record(b"README.TXT;1", text, 5, 0, &[]), Iso::record(b"NOEXT.;1", text, 5, 0, &[])]);
+    let long = iso.dir(&[0], &[], &[Iso::record(&joliet("Read Me.txt;1"), text, 5, 0, &[])]);
+    let path = dir.join("joliet.iso");
+    iso.finish(&path, &short, Some(&long));
+    let index = super::index(&path).unwrap();
+    assert_eq!(names(&index, ""), ["Read Me.txt"]);
+
+    let mut iso = Iso::new();
+    let text = iso.put(b"plain");
+    let short = iso.dir(&[0], &[], &[Iso::record(b"README.TXT;1", text, 5, 0, &[]), Iso::record(b"NOEXT.;1", text, 5, 0, &[])]);
+    let path = dir.join("short.iso");
+    iso.finish(&path, &short, None);
+    let index = super::index(&path).unwrap();
+    assert_eq!(names(&index, ""), ["noext", "readme.txt"]);
+    assert_eq!(read_all(&path, "")[1], ("readme.txt".to_string(), "plain".to_string()));
+
+    std::fs::write(&path, vec![0u8; 40_000]).unwrap();
+    assert!(super::index(&path).is_err(), "no descriptor, no image");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// An image and a package as the tools make them, where they are there to
+/// make them: bsdtar's ISO, with Rock Ridge and Joliet both, and ar's .deb.
+#[test]
+fn an_iso_and_a_deb_from_the_tools_read_as_they_were_made() {
+    let dir = scratch("iso-tools");
+    let tree = dir.join("tree");
+    std::fs::create_dir_all(tree.join("Some Folder/deeper")).unwrap();
+    std::fs::write(tree.join("Some Folder/deeper/A long file name.txt"), "deep").unwrap();
+    std::fs::write(tree.join("top.txt"), "top").unwrap();
+    let iso = dir.join("made.iso");
+    let made = std::process::Command::new("bsdtar").arg("-C").arg(&tree).args(["--format", "iso9660", "-cf"]).arg(&iso).arg(".").output();
+    if made.is_ok_and(|output| output.status.success()) {
+        let index = super::index(&iso).unwrap();
+        assert_eq!(names(&index, ""), ["Some Folder", "top.txt"]);
+        assert_eq!(read_all(&iso, ""), [("Some Folder/deeper/A long file name.txt".to_string(), "deep".to_string()), ("top.txt".to_string(), "top".to_string())]);
+    }
+    let control = dir.join("control.tar.gz");
+    tar(&control, &[(b"./control", Put::File(b"Package: x"))]);
+    std::fs::write(dir.join("debian-binary"), "2.0\n").unwrap();
+    let deb = dir.join("x.deb");
+    let made = std::process::Command::new("ar").arg("rc").arg(&deb).arg(dir.join("debian-binary")).arg(&control).output();
+    if made.is_ok_and(|output| output.status.success()) {
+        assert_eq!(read_all(&deb, ""), [("control/control".to_string(), "Package: x".to_string()), ("debian-binary".to_string(), "2.0\n".to_string())]);
+    }
     std::fs::remove_dir_all(&dir).unwrap();
 }

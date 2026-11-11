@@ -91,6 +91,18 @@ pub struct Index {
     /// For the trash, what the system knows each thing in it by, by the
     /// name it is listed under.
     trashed: HashMap<PathBuf, std::ffi::OsString>,
+    /// For a .deb or an .iso, where each file's bytes are, by its position.
+    pieces: Vec<Piece>,
+}
+
+/// Where in a .deb or an .iso a file is.
+#[derive(Debug)]
+pub enum Piece {
+    /// These pieces of the archive file, one after another.
+    Spans(Vec<(u64, u64)>),
+    /// Entry `ordinal` of the tar that is the `length` bytes from `at` -
+    /// one in a .deb - compressed as `kind` says.
+    InTar { at: u64, length: u64, kind: Kind, ordinal: usize },
 }
 
 impl Index {
@@ -104,7 +116,19 @@ impl Index {
             objects: Vec::new(),
             real: Vec::new(),
             trashed: HashMap::new(),
+            pieces: Vec::new(),
         }
+    }
+
+    /// Where the file at `position` is, in a .deb or an .iso.
+    pub fn piece(&self, position: usize) -> Option<&Piece> {
+        self.pieces.get(position)
+    }
+
+    /// A piece found, and the position it is known by.
+    fn keep_piece(&mut self, piece: Piece) -> usize {
+        self.pieces.push(piece);
+        self.pieces.len() - 1
     }
 
     /// Where the trash keeps the bytes of the file at `position`.
@@ -332,6 +356,8 @@ impl Index {
         match kind {
             Kind::Zip => Self::read_zip(archive),
             Kind::SevenZ => Self::read_7z(archive),
+            Kind::Deb => Self::read_deb(archive),
+            Kind::Iso => Self::read_iso(archive),
             _ => Self::read_tar(archive, kind),
         }
     }
@@ -425,9 +451,16 @@ impl Index {
 
     fn read_tar(archive: &Path, kind: Kind) -> io::Result<Self> {
         let mut index = Index::new(kind);
-        let mut tar = tar::Archive::new(tar_reader(archive, kind)?);
+        index.add_tar(tar_reader(archive, kind)?, Path::new(""), &mut |_, ordinal| ordinal)?;
+        Ok(index)
+    }
+
+    /// A tar's entries, put under `under`, each at the position `position`
+    /// gives for where it is in the tar.
+    fn add_tar(&mut self, reader: Box<dyn io::Read>, under: &Path, position: &mut dyn FnMut(&mut Self, usize) -> usize) -> io::Result<()> {
+        let mut tar = tar::Archive::new(reader);
         let mut read_any = false;
-        for (position, entry) in tar.entries()?.enumerate() {
+        for (ordinal, entry) in tar.entries()?.enumerate() {
             // Cut short, or damaged past some point: what came before it is
             // still worth showing. Nothing at all is an archive that is not.
             let entry = match entry {
@@ -438,12 +471,13 @@ impl Index {
             read_any = true;
             let header = entry.header();
             let Some(path) = inner_path(&entry.path_bytes()) else {
-                index.refused += 1;
+                self.refused += 1;
                 continue;
             };
             if path.as_os_str().is_empty() {
                 continue;
             }
+            let path = under.join(path);
             use tar::EntryType;
             let kind = match header.entry_type() {
                 EntryType::Directory => EntryKind::Dir,
@@ -454,23 +488,130 @@ impl Index {
             };
             let link = entry.link_name_bytes().map(|bytes| match kind {
                 // A hard link names another entry, and is only followed to one.
-                EntryKind::HardLink => inner_path(&bytes).unwrap_or_default(),
+                EntryKind::HardLink => under.join(inner_path(&bytes).unwrap_or_default()),
                 _ => path_from_bytes(&bytes),
             });
             let owner = match (header.username(), header.groupname()) {
                 (Ok(Some(user)), Ok(Some(group))) if !user.is_empty() => Some(format!("{user}:{group}")),
                 _ => None,
             };
-            index.add(Entry {
+            let (size, modified, mode) = (entry.size(), header.mtime().ok(), header.mode().ok());
+            let position = position(self, ordinal);
+            self.add(Entry {
                 path,
                 kind,
-                size: if kind == EntryKind::File { entry.size() } else { 0 },
+                size: if kind == EntryKind::File { size } else { 0 },
                 // As the header says, which can be past what the clock holds.
-                modified: header.mtime().ok().and_then(|seconds| SystemTime::UNIX_EPOCH.checked_add(Duration::from_secs(seconds))),
-                mode: header.mode().ok(),
+                modified: modified.and_then(|seconds| SystemTime::UNIX_EPOCH.checked_add(Duration::from_secs(seconds))),
+                mode,
                 owner,
                 link,
                 position: Some(position),
+                encrypted: false,
+            });
+        }
+        Ok(())
+    }
+
+    /// A Debian package: an ar archive of a `debian-binary` and two tars,
+    /// control and data. Each tar is a folder named for it - `data` for
+    /// `data.tar.xz` - with what is in it inside; anything else, a tar
+    /// compressed in a way fm84 does not read among them, a file.
+    fn read_deb(archive: &Path) -> io::Result<Self> {
+        use io::{Read, Seek};
+        let not_one = || io::Error::new(io::ErrorKind::InvalidData, t!("Not an archive: {path}", path = archive.display()));
+        let mut index = Index::new(Kind::Deb);
+        let mut file = std::fs::File::open(archive)?;
+        let total = file.metadata()?.len();
+        let mut magic = [0u8; 8];
+        file.read_exact(&mut magic).map_err(|_| not_one())?;
+        if &magic != b"!<arch>\n" {
+            return Err(not_one());
+        }
+        let mut at = 8u64;
+        while at + 60 <= total {
+            let mut header = [0u8; 60];
+            file.seek(io::SeekFrom::Start(at))?;
+            file.read_exact(&mut header)?;
+            if &header[58..60] != b"`\n" {
+                break;
+            }
+            let field = |range: std::ops::Range<usize>| String::from_utf8_lossy(&header[range]).trim().to_string();
+            let Ok(length) = field(48..58).parse::<u64>() else { break };
+            let start = at + 60;
+            // A size past the end of the file: cut short, or not an ar.
+            if start.checked_add(length).is_none_or(|end| end > total) {
+                break;
+            }
+            at = start + length + length % 2;
+            let raw = field(0..16);
+            // GNU's tables of symbols and of long names, not members.
+            if raw.starts_with('/') {
+                continue;
+            }
+            let name = raw.trim_end_matches('/');
+            let modified = field(16..28).parse::<u64>().ok().and_then(|seconds| SystemTime::UNIX_EPOCH.checked_add(Duration::from_secs(seconds)));
+            let mode = u32::from_str_radix(&field(40..48), 8).ok().map(|mode| mode & 0o7777);
+            let Some(path) = inner_path(name.as_bytes()).filter(|path| path.components().count() == 1) else {
+                index.refused += 1;
+                continue;
+            };
+            let tar = super::kind_of(&path).filter(|kind| matches!(kind, Kind::Tar | Kind::TarGz | Kind::TarXz | Kind::TarZst | Kind::TarBz2));
+            if let Some(kind) = tar
+                && let Some(folder) = name.find(".tar").map(|end| PathBuf::from(&name[..end])).filter(|folder| !folder.as_os_str().is_empty() && !index.by_path.contains_key(folder))
+            {
+                let reader = super::decompressed(super::piece_reader(archive, start, length)?, kind)?;
+                let mut position = |index: &mut Self, ordinal| index.keep_piece(Piece::InTar { at: start, length, kind, ordinal });
+                if index.add_tar(reader, &folder, &mut position).is_ok() {
+                    index.add(Entry {
+                        modified,
+                        mode: Some(0o755),
+                        ..Entry::implied(folder)
+                    });
+                    continue;
+                }
+            }
+            let position = index.keep_piece(Piece::Spans(vec![(start, length)]));
+            index.add(Entry {
+                path,
+                kind: EntryKind::File,
+                size: length,
+                modified,
+                mode,
+                owner: None,
+                link: None,
+                position: Some(position),
+                encrypted: false,
+            });
+        }
+        if index.entries.is_empty() {
+            return Err(not_one());
+        }
+        Ok(index)
+    }
+
+    /// A disc image, read by the iso module.
+    fn read_iso(archive: &Path) -> io::Result<Self> {
+        let mut index = Index::new(Kind::Iso);
+        for found in super::iso::read(archive)? {
+            let Some(path) = inner_path(&found.path) else {
+                index.refused += 1;
+                continue;
+            };
+            let (kind, link, position) = match found.kind {
+                super::iso::IsoKind::Dir => (EntryKind::Dir, None, None),
+                super::iso::IsoKind::Link(target) => (EntryKind::Link, Some(path_from_bytes(&target)), None),
+                super::iso::IsoKind::File => (EntryKind::File, None, Some(index.keep_piece(Piece::Spans(found.spans)))),
+            };
+            index.add(Entry {
+                path,
+                kind,
+                size: found.size,
+                modified: found.modified,
+                mode: found.mode,
+                owner: None,
+                link,
+                position,
                 encrypted: false,
             });
         }
