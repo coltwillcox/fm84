@@ -839,6 +839,9 @@ msgstr Још нема команди - E их додаје, као назив =
 msgid  No commits of {name} to step through
 msgstr Нема комита датотеке {name} за прегледање
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Превелика за приказ каква је била у том commit-у: {size}; ограничење се поставља у F11
+
 msgid  No config directory
 msgstr Нема директоријума за подешавања
 

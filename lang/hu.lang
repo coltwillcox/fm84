@@ -850,6 +850,9 @@ msgstr Még nincs parancs - az E hozzáadja, címke = parancs alakban, ide:
 msgid  No commits of {name} to step through
 msgstr {name} fájlnak nincsenek végiglépkedhető commitjai
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Túl nagy ahhoz, hogy úgy mutassam, ahogy az a commit tartalmazta: {size}; a korlátot az F11 állítja
+
 msgid  No config directory
 msgstr Nincs beállításmappa
 

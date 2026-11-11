@@ -848,6 +848,9 @@ msgstr Nog geen opdrachten - E voegt ze toe, als label = opdracht, in
 msgid  No commits of {name} to step through
 msgstr Geen commits van {name} om doorheen te stappen
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Te groot om te tonen zoals die commit het had: {size}; F11 stelt de grens in
+
 msgid  No config directory
 msgstr Geen configuratiemap
 

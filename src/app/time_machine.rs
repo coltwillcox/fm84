@@ -39,8 +39,23 @@ impl AppState {
             // Nothing older than the first, nothing newer than the file.
             _ => return,
         };
+        let dir = path.parent().unwrap_or(Path::new("."));
+        // Asked about before it is read, as the file is when it is opened: a
+        // version from long ago may be far bigger than the one opened.
+        if let Some(index) = going_to {
+            let limit = self.options.large_file_bytes();
+            let Some(state) = self.viewer() else { return };
+            let commit = &state.history.as_ref().expect("made above").commits[index];
+            match crate::git::file_size_at(dir, commit) {
+                Ok(size) if size > limit => return self.display_error(t!("Too large to view as that commit had it: {size}; F11 sets the limit", size = crate::utils::format_size(size))),
+                Ok(_) => {}
+                Err(e) => return self.display_error(e),
+            }
+        }
+        let Some(state) = self.viewer() else { return };
+        let history = state.history.as_ref().expect("made above");
         let bytes = match going_to {
-            Some(index) => crate::git::file_at(path.parent().unwrap_or(Path::new(".")), &history.commits[index]),
+            Some(index) => crate::git::file_at(dir, &history.commits[index]),
             None => std::fs::read(&path).map_err(|e| e.to_string()),
         };
         let bytes = match bytes {

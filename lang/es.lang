@@ -850,6 +850,9 @@ msgstr Aún no hay órdenes - E las añade, como etiqueta = orden, en
 msgid  No commits of {name} to step through
 msgstr No hay commits de {name} que recorrer
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Demasiado grande para verlo como lo tenía ese commit: {size}; el límite se fija en F11
+
 msgid  No config directory
 msgstr No hay carpeta de configuración
 

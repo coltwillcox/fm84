@@ -849,6 +849,9 @@ msgstr Noch keine Befehle - E fügt sie hinzu, als Name = Befehl, in
 msgid  No commits of {name} to step through
 msgstr Keine Commits von {name} zum Durchblättern
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Zu groß zum Anzeigen, wie dieser Commit sie hatte: {size}; die Grenze setzt F11
+
 msgid  No config directory
 msgstr Kein Konfigurationsverzeichnis
 

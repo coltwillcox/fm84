@@ -264,6 +264,18 @@ pub fn file_history(path: &Path) -> Result<Vec<FileCommit>, String> {
 /// The file `commit` is of, as it was in that commit - read in the
 /// repository `dir` is in.
 pub fn file_at(dir: &Path, commit: &FileCommit) -> Result<Vec<u8>, String> {
+    git_bytes(dir, &[OsStr::new("cat-file"), OsStr::new("blob"), blob_spec(commit).as_os_str()])
+}
+
+/// How big the file `commit` is of was in it, asked before reading it.
+pub fn file_size_at(dir: &Path, commit: &FileCommit) -> Result<u64, String> {
+    let output = git_bytes(dir, &[OsStr::new("cat-file"), OsStr::new("-s"), blob_spec(commit).as_os_str()])?;
+    let said = String::from_utf8_lossy(&output);
+    said.trim().parse().map_err(|_| said.trim().to_string())
+}
+
+/// `hash:path`, the file as `commit` had it.
+fn blob_spec(commit: &FileCommit) -> OsString {
     let mut spec = commit.hash.clone().into_bytes();
     spec.push(b':');
     spec.extend_from_slice(&commit.path);
@@ -274,7 +286,7 @@ pub fn file_at(dir: &Path, commit: &FileCommit) -> Result<Vec<u8>, String> {
     };
     #[cfg(not(unix))]
     let spec = OsString::from(String::from_utf8_lossy(&spec).into_owned());
-    git_bytes(dir, &[OsStr::new("cat-file"), OsStr::new("blob"), spec.as_os_str()])
+    spec
 }
 
 /// When each commit that changed anything under `dir` in the last `weeks`

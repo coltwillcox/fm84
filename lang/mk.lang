@@ -849,6 +849,9 @@ msgstr Сè уште нема наредби - E ги додава, како н�
 msgid  No commits of {name} to step through
 msgstr Нема комити на {name} за прелистување
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Премногу голема за приказ каква што била во тој commit: {size}; границата се поставува во F11
+
 msgid  No config directory
 msgstr Нема папка за поставки
 

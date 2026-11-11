@@ -850,6 +850,9 @@ msgstr Še ni ukazov - E jih doda, kot oznaka = ukaz, v
 msgid  No commits of {name} to step through
 msgstr Ni commitov datoteke {name} za pregledovanje
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Prevelika za prikaz, kot jo je imel tisti commit: {size}; mejo nastavite v F11
+
 msgid  No config directory
 msgstr Ni mape z nastavitvami
 

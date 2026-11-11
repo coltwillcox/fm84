@@ -849,6 +849,9 @@ msgstr Henüz komut yok - E ekler, etiket = komut olarak, şu dosyada:
 msgid  No commits of {name} to step through
 msgstr {name} için gezinilecek commit yok
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr O commit'teki hâliyle gösterilemeyecek kadar büyük: {size}; sınırı F11 belirler
+
 msgid  No config directory
 msgstr Ayar dizini yok
 

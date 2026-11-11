@@ -250,5 +250,13 @@ fn the_viewer_steps_through_a_files_history() {
     app_state.viewer_step_history(true);
     let state = app_state.viewer().unwrap();
     assert_eq!((state.mode, state.image.is_some(), state.bytes.len()), (crate::viewer::ViewMode::Hex, false, huge.len()));
+
+    // A version past F11's limit is not read at all, as a file that size
+    // would be asked about before it opened; the view stays as it was.
+    app_state.options.large_file_mib = 0;
+    app_state.open_viewer(file.clone()).unwrap();
+    app_state.viewer_step_history(true);
+    assert!(app_state.error.as_deref().is_some_and(|error| error.starts_with("Too large to view as that commit had it")), "{:?}", app_state.error);
+    assert_eq!((shown(&app_state), at(&app_state)), ("now".to_string(), None));
     std::fs::remove_dir_all(&dir).unwrap();
 }

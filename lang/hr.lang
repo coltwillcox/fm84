@@ -849,6 +849,9 @@ msgstr Još nema naredbi - E ih dodaje, kao naziv = naredba, u
 msgid  No commits of {name} to step through
 msgstr Nema commitova datoteke {name} za pregledavanje
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Prevelika za prikaz kakva je bila u tom commitu: {size}; ograničenje se postavlja u F11
+
 msgid  No config directory
 msgstr Nema mape za postavke
 

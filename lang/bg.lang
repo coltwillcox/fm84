@@ -848,6 +848,9 @@ msgstr Още няма команди - E ги добавя, като етике
 msgid  No commits of {name} to step through
 msgstr Няма къмити на {name}, през които да се мине
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Твърде голям за преглед, какъвто е бил в този commit: {size}; границата се задава в F11
+
 msgid  No config directory
 msgstr Няма директория за настройки
 

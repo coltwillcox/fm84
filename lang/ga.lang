@@ -849,6 +849,9 @@ msgstr Gan orduithe fós - cuireann E leis iad, mar lipéad = ordú, in
 msgid  No commits of {name} to step through
 msgstr Níl aon tiomantais de {name} le siúl tríd
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Rómhór le taispeáint mar a bhí sé sa commit sin: {size}; socraíonn F11 an teorainn
+
 msgid  No config directory
 msgstr Gan comhadlann chumraíochta
 

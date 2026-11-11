@@ -849,6 +849,9 @@ msgstr Zatím žádné příkazy - E je přidá, jako název = příkaz, do
 msgid  No commits of {name} to step through
 msgstr {name} nemá žádné commity k procházení
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Příliš velký k zobrazení, jak jej ten commit měl: {size}; limit nastavíte v F11
+
 msgid  No config directory
 msgstr Není složka nastavení
 

@@ -848,6 +848,9 @@ msgstr Ingen kommandoer ennå - E legger dem til, som navn = kommando, i
 msgid  No commits of {name} to step through
 msgstr Ingen commits av {name} å bla gjennom
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr For stor til å vise slik den committen hadde den: {size}; grensen settes i F11
+
 msgid  No config directory
 msgstr Ingen konfigurasjonsmappe
 

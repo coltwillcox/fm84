@@ -850,6 +850,9 @@ msgstr Pas encore de commandes - E les ajoute, comme nom = commande, dans
 msgid  No commits of {name} to step through
 msgstr Aucun commit de {name} à parcourir
 
+msgid  Too large to view as that commit had it: {size}; F11 sets the limit
+msgstr Trop gros pour être affiché tel que ce commit l'avait : {size} ; la limite se règle dans F11
+
 msgid  No config directory
 msgstr Pas de dossier de configuration
 
