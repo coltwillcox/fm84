@@ -6,6 +6,11 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.49.3] - 2026-11-11
+
+### 🐛 Fixed
+- 🪟 **Warnings in the Windows build** - three: an owner lookup re-exported to nothing, the owner and group fields of Alt+A that Windows never shows, and the hard links a directory size walk keeps, which only Unix reads. Each is now built only where it is used; nothing works differently
+
 ## [0.49.2] - 2026-11-11
 
 ### 🛠️ Changed
