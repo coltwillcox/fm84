@@ -1807,6 +1807,9 @@ msgstr Info
 msgid  Info column, from commands
 msgstr Stupac Info, iz naredbi
 
+msgid  Full-height column lines
+msgstr Crte stupaca cijelom visinom
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Pomak    Enter/←→ - Promijeni    E - Uredi naredbe    Esc - Zatvori
 

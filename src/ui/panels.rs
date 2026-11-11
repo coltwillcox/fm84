@@ -502,12 +502,14 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     }
 
     let inner_left = block_left.inner(chunks[0]);
+    let entries_left = rows_left.len() as u16;
     let table_left = Table::new(rows_left, widths.clone())
         .block(block_left)
         .header(header.clone())
         .row_highlight_style(table_style(app_state.active_side.is_left()))
         .column_spacing(1);
     f.render_stateful_widget(table_left, chunks[0], &mut state_left_view);
+    draw_full_height_lines(f, inner_left, entries_left, &widths, app_state);
     draw_space_map(f, inner_left, app_state, Side::Left, offset_left);
     drawn.tree_rows[Side::Left] = draw_tree(f, inner_left, app_state, Side::Left);
 
@@ -526,8 +528,14 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     state_right_view.select(app_state.right.state.selected().map(|s| s.saturating_sub(offset_right)));
 
     let inner_right = block_right.inner(chunks[2]);
-    let table_right = Table::new(rows_right, widths).block(block_right).header(header).row_highlight_style(table_style(!app_state.active_side.is_left())).column_spacing(1);
+    let entries_right = rows_right.len() as u16;
+    let table_right = Table::new(rows_right, widths.clone())
+        .block(block_right)
+        .header(header)
+        .row_highlight_style(table_style(!app_state.active_side.is_left()))
+        .column_spacing(1);
     f.render_stateful_widget(table_right, chunks[2], &mut state_right_view);
+    draw_full_height_lines(f, inner_right, entries_right, &widths, app_state);
     draw_space_map(f, inner_right, app_state, Side::Right, offset_right);
     drawn.tree_rows[Side::Right] = draw_tree(f, inner_right, app_state, Side::Right);
 
@@ -542,6 +550,26 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     drawn.table_starts = [offset_left, offset_right];
 
     chunks[0].height
+}
+
+/// F11's full-height column lines: the line between each pair of columns
+/// carried through the heading and the empty rows under the last entry, down
+/// to the bottom of the panel - laid out as the table lays out its columns.
+/// The `entries` rows under the heading are left as they were drawn.
+fn draw_full_height_lines(f: &mut ratatui::Frame<'_>, inner: Rect, entries: u16, widths: &[Constraint], app_state: &AppState) {
+    if !app_state.options.full_height_lines || inner.height == 0 {
+        return;
+    }
+    let cells = Layout::horizontal(widths.to_vec()).spacing(1).split(Rect { height: 1, ..inner });
+    let style = style_border();
+    let buffer = f.buffer_mut();
+    // The icon and Name, then a line and a column each.
+    for line in cells.iter().skip(2).step_by(2).filter(|cell| cell.width > 0) {
+        let below = inner.top().saturating_add(1).saturating_add(entries);
+        for y in std::iter::once(inner.top()).chain(below..inner.bottom()) {
+            buffer[(line.x, y)].set_symbol("│").set_style(style);
+        }
+    }
 }
 
 /// Alt+F10's tree, over the table just drawn in `inner`, when the panel is

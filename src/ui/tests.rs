@@ -1171,6 +1171,45 @@ fn files_are_drawn_in_the_colours_file_gives_them() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// F11's full-height column lines: off, the line between the columns stops
+/// at the last entry; on, it runs from the heading to the bottom of the
+/// panel, and the entries' rows read as they did.
+#[test]
+fn column_lines_can_run_the_whole_height() {
+    let dir = std::env::temp_dir().join(format!("fm84-full-height-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("one.txt"), "1").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Right, dir.clone(), None);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+    let mut rows = |app_state: &mut AppState| {
+        crate::display::apply(&app_state.options);
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer();
+        (0..30).map(|y| (0..60).map(|x| buffer[(x, y)].symbol()).collect::<String>()).collect::<Vec<String>>()
+    };
+    let lines = |row: &String| row.matches('│').count();
+    let off = rows(&mut app_state);
+    let entry = off.iter().position(|row| row.contains("one ")).expect("the entry drawn");
+    let heading = off.iter().position(|row| row.contains("Name")).expect("the heading drawn");
+    assert!(lines(&off[entry]) > lines(&off[entry + 2]), "the lines stop at the last entry: {off:#?}");
+
+    app_state.options.full_height_lines = true;
+    let on = rows(&mut app_state);
+    assert_eq!(on[entry], off[entry], "an entry as it was");
+    assert!((heading + 1..entry).all(|y| on[y] == off[y]), "and those above it");
+    let bottom = on.iter().rposition(|row| lines(row) == lines(&on[entry])).unwrap();
+    assert!(bottom > entry + 10, "down to the bottom: {on:#?}");
+    assert!((entry..=bottom).all(|y| lines(&on[y]) == lines(&on[entry])), "{on:#?}");
+    assert_eq!(lines(&on[heading]), lines(&on[entry]), "through the heading: {on:#?}");
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// F11's Turbo: the neon turned up, the panels in scanlines, and the logo
 /// in F1 blinking - and none of it with Turbo off.
 #[test]

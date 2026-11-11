@@ -265,6 +265,9 @@ pub struct Options {
     pub column_attributes: bool,
     /// A column filled by the commands in the `columns` file.
     pub column_info: bool,
+    /// The lines between the columns drawn the whole height of the panel,
+    /// heading and empty rows too, not only beside the entries.
+    pub full_height_lines: bool,
     /// Mark what git says of each entry - modified, staged, untracked,
     /// ignored, in conflict - at the end of its name.
     pub git_marks: bool,
@@ -347,6 +350,7 @@ impl Default for Options {
             column_modified: true,
             column_attributes: true,
             column_info: false,
+            full_height_lines: false,
             git_marks: true,
             date_format: DateFormat::Short,
             size_units: SizeUnits::Binary,

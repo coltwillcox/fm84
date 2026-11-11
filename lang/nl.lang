@@ -1768,6 +1768,9 @@ msgstr Info
 msgid  Info column, from commands
 msgstr Info-kolom, uit opdrachten
 
+msgid  Full-height column lines
+msgstr Kolomlijnen over de volle hoogte
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Verplaatsen    Enter/←→ - Wijzigen    E - Opdrachten bewerken    Esc - Sluiten
 

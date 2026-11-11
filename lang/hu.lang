@@ -1770,6 +1770,9 @@ msgstr Infó
 msgid  Info column, from commands
 msgstr Infó oszlop, parancsokból
 
+msgid  Full-height column lines
+msgstr Oszlopvonalak teljes magasságban
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Mozgás    Enter/←→ - Módosítás    E - Parancsok szerkesztése    Esc - Bezárás
 

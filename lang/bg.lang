@@ -1768,6 +1768,9 @@ msgstr Инфо
 msgid  Info column, from commands
 msgstr Колона Инфо, от команди
 
+msgid  Full-height column lines
+msgstr Линии между колоните по цялата височина
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Местене    Enter/←→ - Промяна    E - Редактирай командите    Esc - Затваряне
 

@@ -1806,6 +1806,9 @@ msgstr Info
 msgid  Info column, from commands
 msgstr Kolona Info, iz komandi
 
+msgid  Full-height column lines
+msgstr Linije kolona celom visinom
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Pomeri    Enter/←→ - Promeni    E - Uredi komande    Esc - Zatvori
 

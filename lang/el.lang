@@ -1769,6 +1769,9 @@ msgstr Πληρ.
 msgid  Info column, from commands
 msgstr Στήλη Πληρ., από εντολές
 
+msgid  Full-height column lines
+msgstr Γραμμές στηλών σε όλο το ύψος
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Μετακίνηση    Enter/←→ - Αλλαγή    E - Επεξεργασία εντολών    Esc - Κλείσιμο
 

@@ -1769,6 +1769,9 @@ msgstr Info
 msgid  Info column, from commands
 msgstr Info-kolumn, från kommandon
 
+msgid  Full-height column lines
+msgstr Kolumnlinjer i full höjd
+
 msgid  ↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close
 msgstr ↑↓ - Flytta    Enter/←→ - Ändra    E - Redigera kommandona    Esc - Stäng
 
