@@ -259,3 +259,27 @@ fn x_cycles_image_text_hex_and_text_hex() {
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// What a picture in memory costs to decode, read from its header alone -
+/// as for one a commit had, which has no file to look at.
+#[test]
+fn a_picture_in_memory_is_costed_from_its_header() {
+    let mut small = Vec::new();
+    image::DynamicImage::new_rgba8(3, 2).write_to(&mut std::io::Cursor::new(&mut small), image::ImageFormat::Png).unwrap();
+    assert_eq!(image_cost_of(&small), Some(3 * 2 * 4));
+
+    // A bitmap's header, saying 12000 by 12000, and none of the pixels.
+    let mut huge = Vec::new();
+    huge.extend_from_slice(b"BM");
+    huge.extend_from_slice(&(54u32 + 12000 * 12000 * 3).to_le_bytes());
+    huge.extend_from_slice(&[0; 4]);
+    huge.extend_from_slice(&54u32.to_le_bytes());
+    huge.extend_from_slice(&40u32.to_le_bytes());
+    huge.extend_from_slice(&12000i32.to_le_bytes());
+    huge.extend_from_slice(&12000i32.to_le_bytes());
+    huge.extend_from_slice(&1u16.to_le_bytes());
+    huge.extend_from_slice(&24u16.to_le_bytes());
+    huge.extend_from_slice(&[0; 24]);
+    assert!(image_cost_of(&huge).is_some_and(|cost| cost > IMAGE_MAX_DECODED), "{:?}", image_cost_of(&huge));
+    assert_eq!(image_cost_of(b"plain text"), None);
+}

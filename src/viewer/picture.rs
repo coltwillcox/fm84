@@ -12,6 +12,13 @@ pub fn image_cost(path: &Path) -> Option<((u32, u32), u64)> {
     Some(((width, height), u64::from(width) * u64::from(height) * 4))
 }
 
+/// `image_cost` of a picture held in memory - as a commit had it.
+pub fn image_cost_of(bytes: &[u8]) -> Option<u64> {
+    let reader = image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format().ok()?;
+    let (width, height) = reader.into_dimensions().ok()?;
+    Some(u64::from(width) * u64::from(height) * 4)
+}
+
 /// Decode a picture from a file, for reading one ahead off the main thread.
 /// None for anything that is not a picture this build can read.
 pub fn decode_image(path: &Path) -> Option<(DynamicImage, String)> {

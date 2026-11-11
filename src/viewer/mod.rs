@@ -179,13 +179,19 @@ pub fn load_file_content(path: &Path, decoded: Option<(DynamicImage, String)>) -
 /// The viewer on `bytes`, the contents of the file at `path` - as it is on
 /// the disk, or as a commit had it.
 pub fn content_of(path: &Path, bytes: Vec<u8>, decoded: Option<(DynamicImage, String)>) -> ViewerState {
+    content_as(path, bytes, decoded, true)
+}
+
+/// `content_of`, a picture decoded only when `pictures` says to - shown
+/// as the binary it is otherwise.
+pub fn content_as(path: &Path, bytes: Vec<u8>, decoded: Option<(DynamicImage, String)>, pictures: bool) -> ViewerState {
     let file_size = bytes.len() as u64;
 
     // Check binary first
     if looks_binary(&bytes) {
         // An image opens as ASCII art, drawn once the viewer width is known.
         // Anything that fails to decode is shown as the binary it is.
-        if let Some((image, syntax_name)) = decoded.or_else(|| load_image(&bytes)) {
+        if let Some((image, syntax_name)) = decoded.or_else(|| pictures.then(|| load_image(&bytes)).flatten()) {
             return ViewerState {
                 file_path: path.to_path_buf(),
                 content_lines: Vec::new(),

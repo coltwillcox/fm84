@@ -226,5 +226,29 @@ fn the_viewer_steps_through_a_files_history() {
     app_state.open_viewer(new).unwrap();
     app_state.viewer_step_history(true);
     assert_eq!(app_state.error.as_deref(), Some("No commits of new.txt to step through"));
+    app_state.error = None;
+
+    // A picture a commit had is drawn as one, when it is small enough to
+    // open without asking - and one that is not, as the binary it is,
+    // never decoded.
+    let picture = dir.join("logo.bmp");
+    let mut small = Vec::new();
+    image::DynamicImage::new_rgba8(4, 4).write_to(&mut std::io::Cursor::new(&mut small), image::ImageFormat::Bmp).unwrap();
+    let mut huge = small.clone();
+    // The same header, saying 12000 by 12000.
+    huge[18..22].copy_from_slice(&12000i32.to_le_bytes());
+    huge[22..26].copy_from_slice(&12000i32.to_le_bytes());
+    for bytes in [&huge, &small] {
+        std::fs::write(&picture, bytes).unwrap();
+        assert!(git(&["add", "logo.bmp"]) && git(&["commit", "--quiet", "-m", "logo"]));
+    }
+    app_state.open_viewer(picture).unwrap();
+    // Off the disk as it is, and as the newest commit had it: small.
+    app_state.viewer_step_history(true);
+    let state = app_state.viewer().unwrap();
+    assert_eq!((state.mode, state.image.is_some()), (crate::viewer::ViewMode::Image, true), "{:?}", app_state.error);
+    app_state.viewer_step_history(true);
+    let state = app_state.viewer().unwrap();
+    assert_eq!((state.mode, state.image.is_some(), state.bytes.len()), (crate::viewer::ViewMode::Hex, false, huge.len()));
     std::fs::remove_dir_all(&dir).unwrap();
 }

@@ -50,7 +50,11 @@ impl AppState {
         let Some(state) = self.viewer_mut() else { return };
         // A hexdump stays one, of text as of anything else.
         let raw = (state.mode == ViewMode::Hex).then(|| bytes.clone());
-        let mut fresh = crate::viewer::content_of(&path, bytes, None);
+        // A picture is decoded only to be drawn, and only within what
+        // opening one is allowed without asking: an old version can unpack
+        // to far more than the one opened did. Past that it is a hexdump.
+        let pictures = raw.is_none() && crate::viewer::image_cost_of(&bytes).is_none_or(|cost| cost <= crate::constants::IMAGE_MAX_DECODED);
+        let mut fresh = crate::viewer::content_as(&path, bytes, None, pictures);
         if let Some(raw) = raw
             && fresh.mode == ViewMode::Text
         {
