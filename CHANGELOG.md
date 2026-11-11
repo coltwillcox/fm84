@@ -6,6 +6,12 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.49.1] - 2026-11-11
+
+### 🐛 Fixed
+- 🪟 **The Windows build** - did not compile since 0.48.0, the trash folder asking for an error only the Linux and BSD trash has. the release stopped there, so 0.48.0 and 0.49.0 were never published, on any platform or crates.io; this release brings both
+- 🗑️ **A trash failure on Windows** - reads as the system says it, as "Access is denied.", not as the raw code the trash library gave
+
 ## [0.49.0] - 2026-11-11
 
 ### ✨ Added
