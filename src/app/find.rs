@@ -53,7 +53,7 @@ impl AppState {
         match &self.screen {
             Screen::Editor(_) => true,
             Screen::Viewer(state) => !state.from_edit && state.mode != ViewMode::Image,
-            Screen::Panels | Screen::Diff(_) => false,
+            Screen::Panels | Screen::Diff(_) | Screen::Treemap => false,
         }
     }
 

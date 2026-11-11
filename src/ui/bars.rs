@@ -128,6 +128,19 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
         };
         let rows = t!("Row {at}/{count}", at = state.scroll_offset + 1, count = state.rows.len());
         render_segmented_status_bar(f, area, &[&at, &rows, t!("F3/N Next"), t!("Shift+F3/P Previous"), t!("Esc Exit")], 2);
+    } else if matches!(app_state.screen, Screen::Treemap) {
+        // The block chosen: its name, and its share of the directory. Of
+        // what has a block - something, not `..` - as the blocks are drawn
+        // in this same frame.
+        let side = app_state.active_side;
+        let panel = app_state.panel(side);
+        let chosen = panel.state.selected().filter(|&index| app_state.treemap_sizes().iter().any(|&(entry, _)| entry == index));
+        let name = chosen.and_then(|index| panel.children.get(index)).map(|item| printable_name(&item.name_full)).unwrap_or_default();
+        let share = chosen
+            .zip(app_state.space_map(side))
+            .and_then(|(index, map)| map.percent(index).map(|percent| t!("{percent}% of {total}", percent, total = format_size(map.total))))
+            .unwrap_or_default();
+        render_segmented_status_bar(f, area, &[&name, &share, t!("Enter Go in"), t!("Backspace Up"), t!("Esc Exit")], 2);
     } else if let Some(viewer_state) = app_state.viewer() {
         {
             let filename = shown_name(&viewer_state.file_path);
@@ -254,6 +267,7 @@ fn fkey_labels(app_state: &AppState) -> Vec<(u8, &'static str)> {
         Screen::Viewer(_) => vec![(10, t!("Quit"))],
         Screen::Editor(_) => vec![(2, t!("Save")), (3, t!("Next")), (4, t!("Replace")), (10, t!("Quit"))],
         Screen::Diff(_) => vec![(3, t!("Next")), (10, t!("Quit"))],
+        Screen::Treemap => vec![(10, t!("Quit"))],
         Screen::Panels => vec![
             (1, t!("Help")),
             (2, t!("Rename")),

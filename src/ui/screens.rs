@@ -325,3 +325,76 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
     drawn.scroll_bars = bars;
     (viewport_height, scrolls)
 }
+
+/// Alt+U: the active panel's entries as blocks, each as big as the room it
+/// takes - outlined in its own colour, the chosen one in a heavier line and
+/// filled, its name and size inside where they fit. Gives back the blocks
+/// drawn, for the arrows and a click.
+pub(super) fn render_treemap(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> Vec<(crate::treemap::Tile, Rect)> {
+    use crate::treemap::Tile;
+    let side = app_state.active_side;
+    let panel = app_state.panel(side);
+    let total = app_state.space_map(side).map_or(0, |map| map.total);
+    let counting = !app_state.workers.dir_sizing.is_empty() || !app_state.workers.dir_size_queue.is_empty();
+    let figure = if counting { format!("{}…", format_size(total)) } else { format_size(total) };
+    let name = Some(shown_name(&panel.dir)).filter(|name| !name.is_empty()).unwrap_or_else(|| printable_name(&panel.dir.to_string_lossy()));
+    let title = format!(" {} {} · {} ", t!("Space map"), name, figure);
+    let frame = Block::default().title(Line::from(Span::styled(title, style_title())).centered()).borders(Borders::ALL).border_style(style_border());
+    let inner = frame.inner(area);
+    f.render_widget(frame, area);
+
+    let blocks = crate::treemap::layout(&app_state.treemap_sizes(), inner);
+    if blocks.is_empty() {
+        let empty = if counting { t!("Counting...") } else { t!("Nothing found") };
+        f.render_widget(Paragraph::new(empty).alignment(Alignment::Center).style(style_file()), Rect::new(inner.x, inner.y + inner.height / 2, inner.width, 1.min(inner.height)));
+        return blocks;
+    }
+    let cursor = panel.state.selected();
+    let sizes = app_state.space_map(side).map(|map| map.sizes).unwrap_or_default();
+    for &(tile, rect) in &blocks {
+        let (color, name, size) = match tile {
+            Tile::Entry(index) => {
+                let Some(item) = panel.children.get(index) else { continue };
+                let color = if item.is_dir { palette().directory } else { crate::display::file_style(item.leaf(), &item.extension).0 };
+                let name = format!("{}{}", printable_name(&item.name_full), if item.is_dir { std::path::MAIN_SEPARATOR_STR } else { "" });
+                let path = item.path_in(&panel.dir);
+                let still = item.is_dir && app_state.dir_size_so_far(&path).is_some();
+                let bytes = format_size(sizes.get(index).copied().unwrap_or(0));
+                (color, name, if still { format!("{bytes}…") } else { bytes })
+            }
+            Tile::Rest(count, bytes) => (palette().directory_dark, format!("+{count}"), format_size(bytes)),
+        };
+        let chosen = matches!(tile, Tile::Entry(index) if Some(index) == cursor);
+        let fill = if chosen { Style::default().bg(palette().selected_background) } else { Style::default() };
+        // Too small for an outline: a patch of its colour.
+        if rect.width < 3 || rect.height < 2 {
+            let patch = if chosen { "█" } else { "▒" };
+            for y in rect.top()..rect.bottom() {
+                for x in rect.left()..rect.right() {
+                    f.buffer_mut()[(x, y)].set_symbol(patch).set_style(Style::default().fg(color));
+                }
+            }
+            continue;
+        }
+        let outline = Block::default()
+            .borders(Borders::ALL)
+            .border_type(if chosen { ratatui::widgets::BorderType::Thick } else { ratatui::widgets::BorderType::Rounded })
+            .border_style(Style::default().fg(color).add_modifier(if chosen { Modifier::BOLD } else { Modifier::empty() }))
+            .style(fill);
+        let room = outline.inner(rect);
+        f.render_widget(outline, rect);
+        let width = room.width as usize;
+        let mut lines = vec![Line::from(Span::styled(tail_of(&name, width), Style::default().fg(color).add_modifier(Modifier::BOLD)))];
+        if !size.is_empty() {
+            lines.push(Line::from(Span::styled(tail_of(&size, width), style_file())));
+        }
+        if room.height > 0 {
+            f.render_widget(Paragraph::new(lines).style(fill), room);
+        } else if rect.width > 2 {
+            // Only the outline has room: the name along its top.
+            let top = Rect::new(rect.x + 1, rect.y, rect.width - 2, 1);
+            f.render_widget(Paragraph::new(Span::styled(tail_of(&name, top.width as usize), Style::default().fg(color).add_modifier(Modifier::BOLD))), top);
+        }
+    }
+    blocks
+}

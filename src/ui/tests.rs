@@ -968,6 +968,86 @@ fn the_space_map_draws_a_bar_behind_each_row() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// Alt+U: the entries as blocks by the room they take, counted as they are
+/// drawn; the arrows go between them, Enter goes into a directory and maps
+/// that, Backspace comes back out, and Esc leaves the panel's cursor on the
+/// block chosen.
+#[test]
+fn the_space_map_screen_draws_blocks_by_size_and_goes_in_and_out() {
+    let dir = std::env::temp_dir().join(format!("fm84-treemap-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("big")).unwrap();
+    std::fs::write(dir.join("big").join("inside.bin"), vec![0u8; 60_000]).unwrap();
+    std::fs::write(dir.join("medium.txt"), vec![b'x'; 30_000]).unwrap();
+    std::fs::write(dir.join("small.txt"), vec![b'x'; 10_000]).unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.active_side = Side::Left;
+    let settle = |app_state: &mut AppState| {
+        let started = std::time::Instant::now();
+        loop {
+            app_state.poll_listings();
+            app_state.keep_treemap_sized();
+            app_state.poll_dir_sizes();
+            let counting = !app_state.workers.dir_sizing.is_empty() || !app_state.workers.dir_size_queue.is_empty();
+            if !app_state.panel_busy(Side::Left) && !counting && app_state.panel(Side::Left).space_map.as_ref() == Some(&app_state.panel(Side::Left).dir) {
+                break;
+            }
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "never settled");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+    };
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    while app_state.panel_busy(Side::Left) {
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_listings();
+    }
+    app_state.open_treemap();
+    settle(&mut app_state);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    let mut draw = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer();
+        (0..30).map(|y| (0..100).map(|x| buffer[(x, y)].symbol()).collect::<String>()).collect::<Vec<_>>().join("\n")
+    };
+    let screen = draw(&mut app_state);
+    assert!(screen.contains("Space map"), "{screen}");
+    let name = |app_state: &AppState, tile: crate::treemap::Tile| match tile {
+        crate::treemap::Tile::Entry(index) => app_state.left.children[index].name_full.clone(),
+        crate::treemap::Tile::Rest(..) => String::new(),
+    };
+    let names: Vec<String> = app_state.drawn.treemap.iter().map(|&(tile, _)| name(&app_state, tile)).collect();
+    assert_eq!(names, ["big", "medium.txt", "small.txt"], "largest first, and nothing for ..");
+    let cells = |rect: ratatui::layout::Rect| u32::from(rect.width) * u32::from(rect.height);
+    assert!(cells(app_state.drawn.treemap[0].1) > cells(app_state.drawn.treemap[1].1) * 3 / 2);
+    assert!(screen.contains("big/") && screen.contains("medium.txt"), "{screen}");
+
+    // The first arrow lands on the largest; Enter goes into it.
+    app_state.treemap_move(crate::treemap::Direction::Right);
+    let chosen = |app_state: &AppState| app_state.left.state.selected().map(|index| app_state.left.children[index].name_full.clone());
+    assert_eq!(chosen(&app_state).as_deref(), Some("big"));
+    app_state.treemap_enter();
+    settle(&mut app_state);
+    assert_eq!(app_state.left.dir, dir.join("big"));
+    draw(&mut app_state);
+    assert_eq!(app_state.drawn.treemap.len(), 1);
+    assert!(matches!(app_state.screen, crate::app::Screen::Treemap), "still the map");
+
+    // Out again, onto the one come out of; a file chosen, Esc leaves the
+    // panel on it.
+    app_state.treemap_up();
+    settle(&mut app_state);
+    draw(&mut app_state);
+    assert_eq!(chosen(&app_state).as_deref(), Some("big"));
+    let medium = app_state.drawn.treemap.iter().position(|&(tile, _)| name(&app_state, tile) == "medium.txt");
+    app_state.treemap_choose(medium);
+    app_state.treemap_enter();
+    assert!(matches!(app_state.screen, crate::app::Screen::Panels), "a file is no directory to go into");
+    assert_eq!(chosen(&app_state).as_deref(), Some("medium.txt"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 /// F1 draws the README's logo between the keys and the high scores, centred, its
 /// blocks in the directories' colour and the lines shading them in the
 /// border's - whichever theme is on.

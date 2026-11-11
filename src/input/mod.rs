@@ -104,6 +104,7 @@ fn handle_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         Screen::Viewer(_) => viewer_key(app_state, key),
         Screen::Editor(_) => editor_key(app_state, key),
         Screen::Diff(_) => diff_key(app_state, key),
+        Screen::Treemap => treemap_key(app_state, key),
     }
     true
 }
@@ -189,6 +190,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         // Alt+D, the files the same as another.
         if in_panel && c == 'd' {
             app_state.find_duplicates();
+        }
+        // Alt+U, the space map as a screen: what takes the room, at a glance.
+        if in_panel && c == 'u' {
+            app_state.open_treemap();
         }
         // Alt+J, a directory gone to before, by a few letters of it.
         if in_panel && c == 'j' {

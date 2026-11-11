@@ -389,6 +389,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
                 drawn.diff_viewport_width = width;
                 settled.diff_scroll = Some(scroll);
             }
+            Screen::Treemap => drawn.treemap = render_treemap(f, chunks_main[2], app_state),
             Screen::Panels => {
                 drawn.page_size = render_file_tables(f, chunks_main[2], app_state, drawn);
                 if app_state.options.turbo {

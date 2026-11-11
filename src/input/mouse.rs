@@ -70,6 +70,21 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     }
     // Over the diff, the wheel scrolls it and nothing else answers: the
     // panels it covers would otherwise take the clicks.
+    // On the space map, a click chooses a block, and one on the block
+    // chosen goes into it, as Enter does.
+    if matches!(app_state.screen, Screen::Treemap) {
+        if mouse_event.kind == MouseEventKind::Down(MouseButton::Left)
+            && let Some(at) = app_state.drawn.treemap.iter().position(|(_, rect)| rect.contains(Position::new(column, row)))
+        {
+            let cursor = app_state.panel(app_state.active_side).state.selected();
+            if matches!(app_state.drawn.treemap[at].0, crate::treemap::Tile::Entry(index) if Some(index) == cursor) {
+                app_state.treemap_enter();
+            } else {
+                app_state.treemap_choose(Some(at));
+            }
+        }
+        return true;
+    }
     if matches!(app_state.screen, Screen::Diff(_)) {
         match mouse_event.kind {
             MouseEventKind::ScrollDown => app_state.diff_scroll(3, 0),

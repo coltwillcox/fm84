@@ -22,6 +22,7 @@ mod scroll_bar;
 mod search;
 mod strip;
 mod sync;
+mod treemap;
 mod ui;
 mod utils;
 mod viewer;
@@ -259,6 +260,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
             render_ui(terminal, &mut app_state);
         }
         app_state.refresh_stale_panels();
+        app_state.keep_treemap_sized();
         if !handle_input(&mut app_state)? {
             break;
         }

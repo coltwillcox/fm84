@@ -144,3 +144,19 @@ pub(super) fn editor_key(app_state: &mut AppState, key: KeyEvent) {
         _ => {}
     }
 }
+
+/// Alt+U's space map: the arrows from block to block, Enter into a
+/// directory or back to the panel on a file, Backspace up.
+pub(super) fn treemap_key(app_state: &mut AppState, key: KeyEvent) {
+    use crate::treemap::Direction;
+    match key.code {
+        KeyCode::Esc => app_state.close_treemap(),
+        KeyCode::Left => app_state.treemap_move(Direction::Left),
+        KeyCode::Right => app_state.treemap_move(Direction::Right),
+        KeyCode::Up => app_state.treemap_move(Direction::Up),
+        KeyCode::Down => app_state.treemap_move(Direction::Down),
+        KeyCode::Enter => app_state.treemap_enter(),
+        KeyCode::Backspace => app_state.treemap_up(),
+        _ => {}
+    }
+}

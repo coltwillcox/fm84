@@ -58,6 +58,7 @@ mod text_input;
 mod time_machine;
 mod trash_folder;
 mod tree;
+mod treemap;
 mod undo;
 mod user_menu;
 mod viewing;
@@ -96,6 +97,8 @@ pub enum Screen {
     Editor(EditorState),
     /// Shift+F3: two files side by side.
     Diff(crate::diff::DiffState),
+    /// Alt+U: the active panel's entries as blocks by the room they take.
+    Treemap,
 }
 
 /// The rows of the pack dialog, in the order Up and Down go through them.
@@ -525,6 +528,8 @@ pub struct Drawn {
     pub find_files_page: usize,
     /// Each side's table, for a click to find its row.
     pub table_areas: [Rect; 2],
+    /// Alt+U's blocks as last drawn, for the arrows and a click.
+    pub treemap: Vec<(crate::treemap::Tile, Rect)>,
     /// The entry each side's table starts at - the offset it was drawn
     /// with, which a click is counted from.
     pub table_starts: [usize; 2],
