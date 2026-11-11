@@ -246,6 +246,13 @@ pub fn new_name_with(old: &str, index: usize, pattern: &str, find: &str, replace
             rest = "";
             break;
         };
+        // A bracket of the name's own just before a token, as `[[N]]` has,
+        // is kept as written, and the token after it read.
+        if let Some(inner) = after[..close].rfind('[') {
+            out.push_str(&rest[open..=open + inner]);
+            rest = &after[inner..];
+            continue;
+        }
         let token = &after[..close];
         match expand(token, name, extension.unwrap_or_default(), index, metadata) {
             Some(text) => {
@@ -558,6 +565,9 @@ mod tests {
         assert_eq!(named("a.txt", 0, "[C:99999999999]"), "[C:99999999999]");
         // What is not a token is kept as written.
         assert_eq!(named("a.txt", 0, "[N] [x] [N0] [C+] [unclosed"), "a [x] [N0] [C+] [unclosed");
+        // A bracket of the name's own around a token.
+        assert_eq!(named("a.txt", 2, "[[C]] [N]"), "[3] a");
+        assert_eq!(named("a.txt", 0, "[x[N]]"), "[xa]");
     }
 
     /// What the file says of itself goes where its token is, made fit for
