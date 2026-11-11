@@ -657,11 +657,7 @@ fn build_viewport_rows(app_state: &AppState, side: Side, viewport_height: usize,
             row_icon(child.is_dir, app_state.options.icon_style)
         };
         // A directory keeps its own colour, whatever its name ends in.
-        let (file_color, modifiers) = if child.is_dir {
-            (palette().directory, Modifier::empty())
-        } else {
-            crate::display::file_style(&child.name_full, &child.extension)
-        };
+        let (file_color, modifiers) = if child.is_dir { (palette().directory, Modifier::empty()) } else { crate::display::file_style(child.leaf(), &child.extension) };
         let text_color = if is_selected { palette().selected_marker } else { file_color };
         let text_style = if ghosts && !child.is_parent() {
             Style::default().fg(text_color).add_modifier(modifiers | Modifier::DIM)

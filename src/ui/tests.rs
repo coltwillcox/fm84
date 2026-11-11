@@ -1167,6 +1167,20 @@ fn files_are_drawn_in_the_colours_file_gives_them() {
     assert_eq!(light("pack.tar.gz", "gz"), Color::Rgb(255, 0, 0), "or the one there is");
     assert_eq!(light("plain.txt", "txt"), crate::utils::extension_color("txt", true), "and the hashed one its own");
 
+    // Ctrl+B names each file by its path from the panel: a whole name is
+    // still the file's own.
+    std::fs::create_dir_all(dir.join("deep")).unwrap();
+    std::fs::write(dir.join("deep").join("GNUmakefile"), "").unwrap();
+    crate::display::set_file_colors(crate::options::parse_colors("gnumakefile = #0000ff\n"));
+    app_state.toggle_flat();
+    let started = std::time::Instant::now();
+    while app_state.panel_busy(Side::Left) {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "the flat listing never came");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_listings();
+    }
+    assert_eq!(drawn(&mut app_state, "GNUmakefile").0, Color::Rgb(0, 0, 255), "a whole name, flat");
+
     crate::display::set_file_colors(Vec::new());
     std::fs::remove_dir_all(&dir).unwrap();
 }
