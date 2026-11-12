@@ -197,6 +197,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `F3` / `Shift+F3` | Next / previous match |
 | `Alt+R` | Text or regular expression, in the Find and Replace prompts |
 | `Ctrl+G` | Go to line |
+| `Alt+]` / `Alt+[` | Next / previous change against git's HEAD, in the gutter (`Alt+↓` / `Alt+↑` too, for a terminal that cannot send `Alt+[`) |
 
 ## ⚖️ Compare files
 

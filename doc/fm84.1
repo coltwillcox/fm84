@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-12" "fm84 0.51.0" "User Commands"
+.TH FM84 1 "2026-11-12" "fm84 0.52.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -997,6 +997,13 @@ Next or previous match.
 .TP
 .B Ctrl+G
 Go to line.
+.TP
+.B Alt+] Alt+[
+Next or previous change against git's HEAD, as the gutter marks them;
+.B Alt+Down
+and
+.B Alt+Up
+too, for a terminal that sends Alt+[ as the start of another key.
 .PP
 Scroll bars are drawn in the frame's border, down the right and along the
 bottom, when there is more than fits.
@@ -1012,6 +1019,19 @@ A click puts the rows there in the middle of the view, and a drag follows
 the pointer; in the editor the cursor stays where it is.
 .B Minimap width
 in F11 makes it 2 or 4 columns wide, or turns it off.
+.PP
+In a git repository, the gutter beside the line numbers marks what has
+changed against what HEAD has of the file: a bar on a line added or changed,
+and a line on the edge of one where lines were taken away; the editor marks
+each edit as it is made.
+The status bar says who last changed the top line in the viewer, or the
+cursor's in the editor, how long ago and why, or that it is not committed
+yet.
+HEAD's version is read as the file is opened and again when a commit moves
+it; a file opened through a link is compared as the file it leads to.
+Not on a picture, a hexdump or an older version from Alt+Left.
+.B Git changes beside the line numbers
+in F11 turns it off.
 .SH OPTIONS DIALOG
 F11 opens the options, changed in place with Enter, Space, Left or Right and
 saved as they change.
@@ -1019,7 +1039,7 @@ Among them: hidden files, sort order, columns, git marks, date format and size u
 confirmations, delete to trash, what to do when a destination exists,
 verifying copies, the terminal and editor commands, remembering directories; the theme, icons,
 clock, and the cursor's shape and whether it blinks; tab width, line numbers,
-the minimap's width, what the scroll bars are drawn with, highlighting and
+the git gutter, the minimap's width, what the scroll bars are drawn with, highlighting and
 image settings.
 .PP
 .B Info column, from commands

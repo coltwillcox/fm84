@@ -6,6 +6,20 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.52.0] - 2026-11-12
+
+### ✨ Added
+- 🌿 **A git gutter** - in the viewer and the editor, beside the line numbers, what has changed against what the last commit has of the file: a bar on each line added or changed, coloured as the panels' git marks are, and a line on the edge of one where lines were taken away - a column of its own with the line numbers off. **Alt+]** and **Alt+[** go to the next run of changes and the one before, or **Alt+Down** and **Alt+Up**, as most terminals send Alt+[ as the start of another key. The status bar says who last changed the cursor's line - the top line in the viewer - how long ago and the commit's subject, or that it is not committed yet. The editor marks each edit as it is made. HEAD's version and who changed what are read on a thread as the file opens, and again when a commit moves HEAD; a file opened through a link is compared as the file it leads to. Not on a picture, a hexdump or an older version from Alt+Left. An F11 option, **Git changes beside the line numbers**, on by default
+
+### 🐛 Fixed
+- 🌿 **Alt+G on a file named like a pattern** - git read a name as a pattern, so staging a file called `*` staged every file beside it, and discarding its changes threw away those of the whole directory. A name is the file of that name, for the time machine too
+- 👯 **Alt+D on a file reached twice** - chosen in what Find found, and inside a directory chosen beside it, a file was found to be a copy of itself, and one of the two chosen for deleting: the only copy there was. A file met again, by any way, is not counted again
+- 🕐 **Alt+A's modified time** - was set by opening the file, so a file its owner may not read was refused, a named pipe waited for good for something to write to it, and on Windows the time was not set at all. It is set by the name, as `touch` sets it
+- 📂 **Overwrite all older** - replaced a file whose time only a filesystem's rounding had made older - FAT keeps times to two seconds, NTFS to a tenth of a microsecond - so a copy made there before was made again every time. Older is by more than two seconds, as Shift+F2 and Alt+S have it
+- 🔎 **Typing in a flat view** - Ctrl+B's files, and Find's, are named by their path below the directory, and a name typed found only those at the top; the file's own name finds it, wherever it is
+- ⌨️ **Keys cut off in popups** - on an 80-column terminal, or in a language that says more, the keys under a popup ran off its right edge: Alt+J lost Enter and Esc, the bookmarks Remove, F11 Esc - Close. They are broken onto as many rows as they need, between one key and the next, the list leaving them room
+- 📖 **F1's long lines** - were cut off at the right on an 80-column terminal, and in several languages on any; they are broken onto another row, and F1 scrolls by the rows it has
+
 ## [0.51.0] - 2026-11-12
 
 ### ✨ Added
