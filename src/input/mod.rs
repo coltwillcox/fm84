@@ -356,6 +356,10 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Esc | KeyCode::F(11) => app_state.dialog = None,
             KeyCode::Up => app_state.options_move(false),
             KeyCode::Down => app_state.options_move(true),
+            KeyCode::PageUp => app_state.options_page(false),
+            KeyCode::PageDown => app_state.options_page(true),
+            KeyCode::Home => app_state.options_move_by(isize::MIN),
+            KeyCode::End => app_state.options_move_by(isize::MAX),
             KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Right => app_state.options_change(true),
             KeyCode::Left => app_state.options_change(false),
             // E on the Info row: the commands that fill it.

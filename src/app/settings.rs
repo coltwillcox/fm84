@@ -9,7 +9,21 @@ impl AppState {
 
     /// Move the highlight a row, stopping at the first and the last.
     pub fn options_move(&mut self, down: bool) {
-        self.options_cursor = if down { (self.options_cursor + 1).min(OPTION_ROWS.len() - 1) } else { self.options_cursor.saturating_sub(1) };
+        self.options_move_by(if down { 1 } else { -1 });
+    }
+
+    /// Move the highlight `rows` down, or up for fewer than none, stopping
+    /// at the first and the last.
+    pub fn options_move_by(&mut self, rows: isize) {
+        self.options_cursor = self.options_cursor.saturating_add_signed(rows).min(OPTION_ROWS.len() - 1);
+    }
+
+    /// PageUp and PageDown: as many rows as F11 last had room for, less one
+    /// kept in sight from the page before. The headings take room too, so a
+    /// page never goes past what was on screen.
+    pub fn options_page(&mut self, down: bool) {
+        let page = self.drawn.options_room.saturating_sub(1).max(1) as isize;
+        self.options_move_by(if down { page } else { -page });
     }
 
     /// Step the highlighted option, or start typing into it if it is text.

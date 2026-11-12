@@ -3,8 +3,9 @@
 use super::*;
 
 /// F11, as wide as every popup and no taller than the panels it sits over:
-/// it scrolls instead, keeping the top and bottom bars in view.
-pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, editing: Option<&TextInput>) {
+/// it scrolls instead, keeping the top and bottom bars in view. Gives back
+/// how many lines of the list it had room for.
+pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, editing: Option<&TextInput>) -> usize {
     let popup_width = (area.width * POPUP_WIDTH / 100).max(1) as usize;
     let inner_width = popup_width.saturating_sub(4);
     let cursor_style = Style::new().fg(palette().selected_foreground).bg(palette().selected_background).add_modifier(Modifier::BOLD);
@@ -68,6 +69,7 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
     lines.push(key_hints(hint).centered());
 
     f.render_widget(Paragraph::new(lines), inner);
+    room
 }
 
 /// One row of the options list, padded out to the full width so the cursor
