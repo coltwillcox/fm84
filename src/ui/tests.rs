@@ -1802,3 +1802,47 @@ fn the_minimap_draws_the_whole_text_beside_it() {
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// F11 on a screen too short for all of it: from the last option, Up moves
+/// the cursor up through what is on show, the list staying where it is,
+/// and the list moves only once the cursor reaches the top of it.
+#[test]
+fn f11_scrolls_only_when_the_cursor_reaches_an_end() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    app_state.dialog = Some(Dialog::Options { editing: None });
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    let mut draw = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        terminal.backend().buffer().clone()
+    };
+    let label_row = |buffer: &ratatui::buffer::Buffer, label: &str| (0..30).find(|&y| (0..100).map(|x| buffer[(x, y)].symbol()).collect::<String>().contains(label));
+    // The row the cursor's option is on, drawn as the cursor.
+    let cursor_row = |buffer: &ratatui::buffer::Buffer, app_state: &AppState| {
+        let y = label_row(buffer, OPTION_ROWS[app_state.options_cursor].label()).unwrap();
+        assert!((0..100).any(|x| buffer[(x, y)].bg == palette().selected_background), "drawn as the cursor");
+        y
+    };
+
+    let last = OPTION_ROWS.len() - 1;
+    app_state.options_move_by(isize::MAX);
+    let end = draw(&mut app_state);
+    let bottom = cursor_row(&end, &app_state);
+    let last_label = OPTION_ROWS[last].label();
+    assert_eq!(label_row(&end, last_label), Some(bottom));
+
+    app_state.options_move(false);
+    let up = draw(&mut app_state);
+    assert_eq!(cursor_row(&up, &app_state), bottom - 1, "the cursor moved up");
+    assert_eq!(label_row(&up, last_label), Some(bottom), "the list stayed where it was");
+
+    // On up to the top of what shows, and one more: only then does it move.
+    let room = app_state.drawn.options_room;
+    for _ in 0..room {
+        app_state.options_move(false);
+        draw(&mut app_state);
+    }
+    assert!(label_row(&draw(&mut app_state), last_label).is_none(), "scrolled once past the top");
+    assert!(app_state.options_cursor < last - 1);
+}

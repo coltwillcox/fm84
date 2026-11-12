@@ -3,9 +3,10 @@
 use super::*;
 
 /// F11, as wide as every popup and no taller than the panels it sits over:
-/// it scrolls instead, keeping the top and bottom bars in view. Gives back
-/// how many lines of the list it had room for.
-pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, editing: Option<&TextInput>) -> usize {
+/// it scrolls instead, keeping the top and bottom bars in view. `first` is
+/// the line of the list it last started at, and is kept to where it starts
+/// now. Gives back how many lines of the list it had room for.
+pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, editing: Option<&TextInput>, first: &mut usize) -> usize {
     let popup_width = (area.width * POPUP_WIDTH / 100).max(1) as usize;
     let inner_width = popup_width.saturating_sub(4);
     let cursor_style = Style::new().fg(palette().selected_foreground).bg(palette().selected_background).add_modifier(Modifier::BOLD);
@@ -13,7 +14,7 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
     // Every line of the list, headings among the rows, and which one the
     // cursor is on - the scrolling below works in lines, not rows.
     let mut list: Vec<Line> = Vec::with_capacity(OPTION_ROWS.len() * 2);
-    let mut cursor_line = 0;
+    let (mut cursor_line, mut cursor_top) = (0, 0);
     for (index, &row) in OPTION_ROWS.iter().enumerate() {
         if let Some(section) = row.section() {
             if !list.is_empty() {
@@ -23,6 +24,8 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
         }
         if index == app_state.options_cursor {
             cursor_line = list.len();
+            // The first row of a group brings its heading into view with it.
+            cursor_top = if row.section().is_some() { cursor_line - 1 } else { cursor_line };
         }
         list.push(option_line(app_state, row, index == app_state.options_cursor, inner_width, cursor_style, editing));
     }
@@ -40,7 +43,8 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
     // The blank rows and the hint around it take three.
     let inner = popup_inner(popup_area);
     let room = (inner.height as usize).saturating_sub(3).max(1);
-    let first = (cursor_line + 1).saturating_sub(room);
+    *first = scroll_to_show(*first, cursor_top, cursor_line, room, list.len());
+    let first = *first;
     if room < list.len() {
         // Where the cursor is in the whole list, since some of it is hidden.
         let position = format!(" {}/{} ", app_state.options_cursor + 1, OPTION_ROWS.len());
@@ -72,6 +76,23 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
     room
 }
 
+/// Where a list of `total` lines, `room` of them on show, starts so that
+/// lines `top` to `bottom` are on show: where it started, `first`, unless
+/// that leaves them above or below the room - then just as far as brings
+/// them in. The cursor moves through the lines on show, and the list only
+/// when the cursor would go past either end of them.
+fn scroll_to_show(first: usize, top: usize, bottom: usize, room: usize, total: usize) -> usize {
+    let furthest = total.saturating_sub(room);
+    let first = first.min(furthest);
+    if top < first {
+        top
+    } else if bottom >= first + room {
+        (bottom + 1).saturating_sub(room)
+    } else {
+        first
+    }
+}
+
 /// One row of the options list, padded out to the full width so the cursor
 /// reads as a bar, as it does in the panels.
 fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: bool, row_width: usize, cursor_style: Style, editing: Option<&TextInput>) -> Line<'static> {
@@ -101,5 +122,29 @@ fn option_line(app_state: &AppState, row: crate::options::OptionRow, is_cursor: 
         Line::from(Span::styled(format!("{}{}{} ", label, " ".repeat(gap), value), cursor_style))
     } else {
         Line::from(vec![Span::styled(format!("{}{}", label, " ".repeat(gap)), style_dir()), Span::styled(format!("{} ", value), style_columns())])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_list_scrolls_only_when_the_cursor_would_leave_it() {
+        // Ten on show of fifty, at the end.
+        assert_eq!(scroll_to_show(40, 49, 49, 10, 50), 40);
+        // Up from the end: the cursor moves, the list stays.
+        assert_eq!(scroll_to_show(40, 45, 45, 10, 50), 40);
+        assert_eq!(scroll_to_show(40, 40, 40, 10, 50), 40);
+        // Past the top line: a line at a time.
+        assert_eq!(scroll_to_show(40, 39, 39, 10, 50), 39);
+        // Down past the bottom: as far as brings it in.
+        assert_eq!(scroll_to_show(0, 10, 10, 10, 50), 1);
+        // A heading above the cursor's row comes in with it.
+        assert_eq!(scroll_to_show(20, 18, 19, 10, 50), 18);
+        // A screen grown since: no further than the list allows.
+        assert_eq!(scroll_to_show(45, 47, 47, 20, 50), 30);
+        // All of it fits.
+        assert_eq!(scroll_to_show(3, 5, 5, 60, 50), 0);
     }
 }

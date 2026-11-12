@@ -518,6 +518,9 @@ pub struct Drawn {
     /// How many lines F11's list had room for, headings among them - what
     /// PageUp and PageDown move by.
     pub options_room: usize,
+    /// The line F11's list was last drawn from, for it to stay there while
+    /// the cursor moves through what is on show.
+    pub options_first: usize,
     /// Rows a panel had room for - how far PageUp and PageDown go.
     pub page_size: u16,
     /// The clock in the top border, as last drawn.
