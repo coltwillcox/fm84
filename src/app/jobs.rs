@@ -523,9 +523,12 @@ fn short_of_room_message(short: &Shortfall) -> String {
 /// Overwrite older: write over what is there only when it is older than what
 /// would replace it. When either time cannot be read, it is left alone - it
 /// cannot be shown to be older, and what is left can still be copied again.
+/// Older by more than a filesystem rounds a time off: FAT to two seconds,
+/// NTFS to a tenth of a microsecond. A file copied there and back is the
+/// same age, not older, and is not copied again.
 fn replace_if_older(source: Option<SystemTime>, dest: Option<SystemTime>) -> Clash {
     match (source, dest) {
-        (Some(source), Some(dest)) if dest < source => Clash::Replace,
+        (Some(source), Some(dest)) if source.duration_since(dest).is_ok_and(|gap| gap > crate::sync::SAME_TIME) => Clash::Replace,
         _ => Clash::Keep,
     }
 }
@@ -1116,6 +1119,22 @@ impl AppState {
 #[cfg(test)]
 mod job_tests {
     use super::AppState;
+    use super::{Clash, replace_if_older};
+    use std::time::{Duration, SystemTime};
+
+    /// "Overwrite all older" takes times within two seconds for the same, as
+    /// Shift+F2 and Alt+S do: FAT keeps them to two seconds and NTFS to a
+    /// tenth of a microsecond, so a file copied there and back would always
+    /// look older, and be copied again for nothing.
+    #[test]
+    fn older_is_older_by_more_than_a_filesystem_rounds_off() {
+        let at = SystemTime::UNIX_EPOCH + Duration::from_secs(1_700_000_000);
+        assert_eq!(replace_if_older(Some(at + Duration::from_millis(1_900)), Some(at)), Clash::Keep, "FAT's rounding");
+        assert_eq!(replace_if_older(Some(at + Duration::from_nanos(99)), Some(at)), Clash::Keep, "NTFS's");
+        assert_eq!(replace_if_older(Some(at + Duration::from_secs(3)), Some(at)), Clash::Replace, "older indeed");
+        assert_eq!(replace_if_older(Some(at), Some(at + Duration::from_secs(3))), Clash::Keep, "newer");
+        assert_eq!(replace_if_older(None, Some(at)), Clash::Keep, "not known");
+    }
 
     #[test]
     fn a_finished_job_forgets_directory_sizes() {

@@ -4,8 +4,9 @@ use super::*;
 
 /// Modified times this close count as the same. FAT and exFAT keep them only
 /// to two seconds, so a file copied there and back would otherwise always
-/// read as newer on one side.
-const SAME_TIME: Duration = Duration::from_secs(2);
+/// read as newer on one side. Alt+S and a copy's "overwrite all older" go by
+/// the same.
+use crate::sync::SAME_TIME;
 
 /// What Shift+F2 selects on each side, by name: an entry only that side has;
 /// a file and a directory under one name, on both; and of a file both have,

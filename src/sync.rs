@@ -10,9 +10,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant, SystemTime};
 
-/// Modified times this close count as the same, as for Shift+F2: FAT keeps
-/// them only to two seconds.
-const SAME_TIME: Duration = Duration::from_secs(2);
+/// Modified times this close count as the same, as for Shift+F2 and for a
+/// copy's "overwrite all older": FAT keeps them only to two seconds.
+pub const SAME_TIME: Duration = Duration::from_secs(2);
 
 /// An entry on one side, as it was when compared.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
