@@ -144,8 +144,18 @@ pub(super) fn glow_active_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_stat
     for y in top + 1..bottom {
         for x in other.0..other.1 {
             let cell = &mut buffer[(x, y)];
-            let fg = if matches!(cell.fg, Color::Reset) { palette().file } else { cell.fg };
-            cell.set_fg(blend(fg, behind, 0.45));
+            // A colour of the terminal's own - named or numbered in the
+            // colors file - has nothing to mix: the terminal dims it.
+            match cell.fg {
+                Color::Reset => {
+                    cell.set_fg(blend(palette().file, behind, 0.45));
+                }
+                Color::Rgb(..) => {
+                    let fg = cell.fg;
+                    cell.set_fg(blend(fg, behind, 0.45));
+                }
+                _ => cell.modifier.insert(Modifier::DIM),
+            }
             if !matches!(cell.bg, Color::Reset) && cell.bg != behind {
                 let bg = cell.bg;
                 cell.set_bg(blend(bg, behind, 0.3));

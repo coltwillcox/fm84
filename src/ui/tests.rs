@@ -1846,3 +1846,41 @@ fn f11_scrolls_only_when_the_cursor_reaches_an_end() {
     assert!(label_row(&draw(&mut app_state), last_label).is_none(), "scrolled once past the top");
     assert!(app_state.options_cursor < last - 1);
 }
+
+/// The glow dims the other panel whatever its files are coloured in: a
+/// colour named in the `colors` file, as `bright-red`, or numbered, cannot
+/// be mixed with the background as red, green and blue are, and is dimmed
+/// all the same.
+#[test]
+fn the_glow_dims_files_in_named_colours_too() {
+    let dir = std::env::temp_dir().join(format!("fm84-glow-named-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("alpha.txt"), "x").unwrap();
+    std::fs::write(dir.join("beta.log"), "x").unwrap();
+    crate::display::set_file_colors(crate::options::parse_colors("txt = bright-red\nlog = 208\n"));
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.options.focus_glow = true;
+    crate::display::apply(&app_state.options);
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Right, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 16)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer().clone();
+    crate::display::set_file_colors(Vec::new());
+    std::fs::remove_dir_all(&dir).unwrap();
+
+    let find = |from: u16, first: &str, second: &str| {
+        (from..from + 38)
+            .flat_map(|x| (4..12).map(move |y| (x, y)))
+            .find(|&(x, y)| buffer[(x, y)].symbol() == first && buffer[(x + 1, y)].symbol() == second)
+            .unwrap()
+    };
+    for (first, second, colour) in [("a", "l", ratatui::style::Color::LightRed), ("b", "e", ratatui::style::Color::Indexed(208))] {
+        let (active, other) = (find(1, first, second), find(41, first, second));
+        assert_eq!(buffer[active].fg, colour, "drawn in its own colour where the panel is in use");
+        assert!(buffer[other].fg != colour || buffer[other].modifier.contains(Modifier::DIM), "{colour:?} dimmed in the other panel");
+    }
+}
