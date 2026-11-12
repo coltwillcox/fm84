@@ -83,6 +83,7 @@ fn main() -> Result<()> {
     let mut terminal = init_terminal()?;
     let run_result = run(&mut terminal, left, right, choosedir);
     let restore_result = restore_terminal();
+    report_worker_panics();
 
     // Report what went wrong in the app before any trouble tearing the terminal down.
     run_result?;
@@ -188,16 +189,47 @@ fn restore_terminal() -> io::Result<()> {
     disable_raw_mode()
 }
 
+/// The thread the UI runs on, whose panic ends fm84.
+static MAIN_THREAD: std::sync::OnceLock<std::thread::ThreadId> = std::sync::OnceLock::new();
+
+/// What panicked on threads of fm84's own while it ran, said once the terminal
+/// is back.
+static WORKER_PANICS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
 /// Put the terminal back before the panic report prints. Without this the report
 /// is written in raw mode onto the alternate screen, which the terminal discards
 /// on exit - the user sees a mangled shell and no message at all.
+///
+/// Only for the UI's own thread. A job's thread that panics ends that job alone:
+/// fm84 says it stopped unexpectedly, and goes on. The terminal taken away under
+/// it, and the report written over the screen, would leave fm84 running on a
+/// terminal it can no longer draw on or read keys from. What such a thread said
+/// is kept, and printed when fm84 quits.
 fn install_panic_hook() {
+    let _ = MAIN_THREAD.set(std::thread::current().id());
     // color_eyre::install() has already set its hook; chain onto it.
     let hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic_info| {
+        if MAIN_THREAD.get() != Some(&std::thread::current().id()) {
+            // try_lock, as one panicking while it is held would wait for ever.
+            if let Ok(mut said) = WORKER_PANICS.try_lock() {
+                let thread = std::thread::current().name().map_or_else(|| "a background thread".to_string(), |name| format!("thread '{name}'"));
+                said.push(format!("fm84: {thread} panicked: {panic_info}"));
+            }
+            return;
+        }
         let _ = restore_terminal();
         hook(panic_info);
     }));
+}
+
+/// Say what panicked on fm84's other threads, with the terminal given back.
+fn report_worker_panics() {
+    if let Ok(said) = WORKER_PANICS.lock() {
+        for report in said.iter() {
+            eprintln!("{report}");
+        }
+    }
 }
 
 /// `left` and `right` are the directories the command line named, which win
