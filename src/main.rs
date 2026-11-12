@@ -83,6 +83,11 @@ fn main() -> Result<()> {
     let mut terminal = init_terminal()?;
     let run_result = run(&mut terminal, left, right, choosedir);
     let restore_result = restore_terminal();
+    // What was copied out of archives to be looked at goes however the run
+    // ended - an error too, which would otherwise leave it in the temporary
+    // directory for good, the decrypted insides of a password's archive
+    // among it.
+    crate::archive::clean_scratch();
     report_worker_panics();
 
     // Report what went wrong in the app before any trouble tearing the terminal down.
@@ -219,6 +224,9 @@ fn install_panic_hook() {
             return;
         }
         let _ = restore_terminal();
+        // As on any way out, nothing copied out of an archive left behind. Not
+        // for a job's thread above, with fm84 going on and using what is there.
+        crate::archive::clean_scratch();
         hook(panic_info);
     }));
 }
@@ -313,7 +321,6 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
     }
 
     let _ = app_state.jumps.save();
-    crate::archive::clean_scratch();
     // Shift+F10 leaves the shell where it was: nothing written, and cd84
     // finds the file empty.
     if let Some(file) = choosedir
