@@ -789,6 +789,21 @@ msgstr Imagem grande
 msgid  Line numbers
 msgstr Números de linha
 
+msgid  Git changes beside the line numbers
+msgstr Alterações do git junto aos números de linha
+
+msgid  No changes against HEAD
+msgstr Sem alterações em relação a HEAD
+
+msgid  No change below
+msgstr Nenhuma alteração abaixo
+
+msgid  No change above
+msgstr Nenhuma alteração acima
+
+msgid  Not committed yet
+msgstr Ainda sem commit
+
 msgid  Minimap width
 msgstr Largura do minimapa
 

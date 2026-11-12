@@ -788,6 +788,21 @@ msgstr Grote afbeelding
 msgid  Line numbers
 msgstr Regelnummers
 
+msgid  Git changes beside the line numbers
+msgstr Git-wijzigingen naast de regelnummers
+
+msgid  No changes against HEAD
+msgstr Geen wijzigingen ten opzichte van HEAD
+
+msgid  No change below
+msgstr Geen wijziging verderop
+
+msgid  No change above
+msgstr Geen wijziging hogerop
+
+msgid  Not committed yet
+msgstr Nog niet gecommit
+
 msgid  Minimap width
 msgstr Breedte van de minikaart
 

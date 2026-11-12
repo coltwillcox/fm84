@@ -790,6 +790,21 @@ msgstr Nagy kép
 msgid  Line numbers
 msgstr Sorszámok
 
+msgid  Git changes beside the line numbers
+msgstr Git-módosítások a sorszámok mellett
+
+msgid  No changes against HEAD
+msgstr Nincs módosítás a HEAD-hez képest
+
+msgid  No change below
+msgstr Lejjebb nincs módosítás
+
+msgid  No change above
+msgstr Feljebb nincs módosítás
+
+msgid  Not committed yet
+msgstr Még nincs commitolva
+
 msgid  Minimap width
 msgstr Minitérkép szélessége
 

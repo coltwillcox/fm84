@@ -790,6 +790,21 @@ msgstr Velika slika
 msgid  Line numbers
 msgstr Številke vrstic
 
+msgid  Git changes beside the line numbers
+msgstr Spremembe gita ob številkah vrstic
+
+msgid  No changes against HEAD
+msgstr Ni sprememb glede na HEAD
+
+msgid  No change below
+msgstr Nižje ni spremembe
+
+msgid  No change above
+msgstr Višje ni spremembe
+
+msgid  Not committed yet
+msgstr Še ni v commitu
+
 msgid  Minimap width
 msgstr Širina minizemljevida
 

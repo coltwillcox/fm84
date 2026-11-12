@@ -788,6 +788,21 @@ msgstr Stort billede
 msgid  Line numbers
 msgstr Linjenumre
 
+msgid  Git changes beside the line numbers
+msgstr Git-ændringer ved linjenumrene
+
+msgid  No changes against HEAD
+msgstr Ingen ændringer i forhold til HEAD
+
+msgid  No change below
+msgstr Ingen ændring længere nede
+
+msgid  No change above
+msgstr Ingen ændring længere oppe
+
+msgid  Not committed yet
+msgstr Ikke committet endnu
+
 msgid  Minimap width
 msgstr Minikortets bredde
 

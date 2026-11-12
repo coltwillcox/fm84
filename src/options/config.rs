@@ -177,6 +177,7 @@ impl Options {
                 "night_drive" => options.night_drive_minutes = number(0..=1440).unwrap_or(options.night_drive_minutes),
                 "tab_width" => options.tab_width = number(1..=16).map_or(options.tab_width, |n| n as usize),
                 "line_numbers" => options.line_numbers = flag(options.line_numbers),
+                "git_gutter" => options.git_gutter = flag(options.git_gutter),
                 "minimap" => {
                     options.minimap_width = match value {
                         "off" | "0" => 0,
@@ -310,6 +311,8 @@ impl Options {
              # Viewer and editor\n\
              tab_width = {}\n\
              line_numbers = {}\n\
+             # Beside the line numbers, what has changed against HEAD; who changed a line.\n\
+             git_gutter = {}\n\
              # The whole text drawn small beside it, matches and differences lit:\n\
              # off, 2 or 4 columns wide.\n\
              minimap = {}\n\
@@ -369,6 +372,7 @@ impl Options {
             self.night_drive_minutes,
             self.tab_width,
             self.line_numbers,
+            self.git_gutter,
             if self.minimap_width == 0 { "off".to_string() } else { self.minimap_width.to_string() },
             self.scroll_bar.key(),
             self.highlight_limit_kib,

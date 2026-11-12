@@ -29,6 +29,12 @@ pub(crate) use self::launch::{detach, open_with_default};
 pub(crate) fn handle_mouse_for_tests(app_state: &mut AppState, event: MouseEvent) -> bool {
     mouse_to(app_state, event)
 }
+
+/// A key, as the terminal would send it, for the drawing's tests.
+#[cfg(test)]
+pub(crate) fn handle_key_for_tests(app_state: &mut AppState, key: KeyEvent) -> bool {
+    handle_key(app_state, key)
+}
 use self::{file_ops::*, launch::*, mouse::*, panel::*, screens::*};
 
 pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
@@ -129,6 +135,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         app_state.invert_selection(true);
     } else if finding && modifiers.contains(KeyModifiers::ALT) && matches!(c, 'r' | 'R') {
         app_state.recall.find_regex = !app_state.recall.find_regex;
+    } else if modifiers.contains(KeyModifiers::ALT) && (in_editor || in_viewer) && matches!(c, '[' | ']') {
+        // The git gutter's changes, from one run of them to the next.
+        app_state.git_change_step(c == ']');
     } else if modifiers.contains(KeyModifiers::ALT) {
         // Alt+1 to Alt+8 go to that tab, and Alt+9 to the last, however
         // many there are - as browsers have it.

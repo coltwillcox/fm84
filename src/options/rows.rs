@@ -45,6 +45,7 @@ pub enum OptionRow {
     NightDrive,
     TabWidth,
     LineNumbers,
+    GitGutter,
     Minimap,
     ScrollBars,
     HighlightLimit,
@@ -54,7 +55,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 47] = [
+pub const OPTION_ROWS: [OptionRow; 48] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -95,6 +96,7 @@ pub const OPTION_ROWS: [OptionRow; 47] = [
     OptionRow::NightDrive,
     OptionRow::TabWidth,
     OptionRow::LineNumbers,
+    OptionRow::GitGutter,
     OptionRow::Minimap,
     OptionRow::ScrollBars,
     OptionRow::HighlightLimit,
@@ -147,6 +149,7 @@ impl OptionRow {
             OptionRow::NightDrive => t!("Night drive when left alone"),
             OptionRow::TabWidth => t!("Tab width"),
             OptionRow::LineNumbers => t!("Line numbers"),
+            OptionRow::GitGutter => t!("Git changes beside the line numbers"),
             OptionRow::Minimap => t!("Minimap width"),
             OptionRow::ScrollBars => t!("Scroll bars"),
             OptionRow::HighlightLimit => t!("Highlight files up to"),
@@ -278,6 +281,7 @@ impl Options {
             },
             OptionRow::TabWidth => self.tab_width.to_string(),
             OptionRow::LineNumbers => on_off(self.line_numbers),
+            OptionRow::GitGutter => on_off(self.git_gutter),
             OptionRow::Minimap => match self.minimap_width {
                 0 => t!("Off").to_string(),
                 width => width.to_string(),
@@ -392,6 +396,7 @@ impl Options {
             OptionRow::NightDrive => self.night_drive_minutes = step(&NIGHT_DRIVE_MINUTES, self.night_drive_minutes, forward),
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,
+            OptionRow::GitGutter => self.git_gutter = !self.git_gutter,
             OptionRow::Minimap => self.minimap_width = step(&MINIMAP_WIDTHS, self.minimap_width, forward),
             OptionRow::ScrollBars => self.scroll_bar = step(&ScrollBarStyle::ALL, self.scroll_bar, forward),
             OptionRow::HighlightLimit => self.highlight_limit_kib = step(&HIGHLIGHT_LIMITS_KIB, self.highlight_limit_kib, forward),

@@ -179,6 +179,7 @@ impl AppState {
             disk_stamp: None,
             line_widths,
             dir_edit: Some(Box::new(edit)),
+            edits: 0,
         });
     }
 

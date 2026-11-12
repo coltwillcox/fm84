@@ -789,6 +789,21 @@ msgstr Pictiúr Mór
 msgid  Line numbers
 msgstr Uimhreacha líne
 
+msgid  Git changes beside the line numbers
+msgstr Athruithe git in aice le huimhreacha na línte
+
+msgid  No changes against HEAD
+msgstr Gan athruithe i gcomparáid le HEAD
+
+msgid  No change below
+msgstr Gan athrú níos faide síos
+
+msgid  No change above
+msgstr Gan athrú níos faide suas
+
+msgid  Not committed yet
+msgstr Gan commit go fóill
+
 msgid  Minimap width
 msgstr Leithead na mionléarscáile
 

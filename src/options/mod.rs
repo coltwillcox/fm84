@@ -339,6 +339,9 @@ pub struct Options {
     /// The whole of the text drawn small beside it, in the viewer, the
     /// editor and the diff, this many columns wide. Zero, and there is none.
     pub minimap_width: u16,
+    /// Beside the line numbers, what has changed against HEAD, and in the
+    /// status bar who last changed the line.
+    pub git_gutter: bool,
     /// What the scroll bars' thumbs are drawn with.
     pub scroll_bar: ScrollBarStyle,
     /// The editor highlights files up to this size, in KiB; zero never does.
@@ -403,6 +406,7 @@ impl Default for Options {
             tab_width: 4,
             line_numbers: true,
             minimap_width: 2,
+            git_gutter: true,
             scroll_bar: ScrollBarStyle::Heavy,
             highlight_limit_kib: 512,
             large_file_mib: 64,

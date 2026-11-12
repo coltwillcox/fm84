@@ -789,6 +789,21 @@ msgstr Imagine mare
 msgid  Line numbers
 msgstr Numere de linie
 
+msgid  Git changes beside the line numbers
+msgstr Modificări git lângă numerele de rând
+
+msgid  No changes against HEAD
+msgstr Nicio modificare față de HEAD
+
+msgid  No change below
+msgstr Nicio modificare mai jos
+
+msgid  No change above
+msgstr Nicio modificare mai sus
+
+msgid  Not committed yet
+msgstr Încă nu e în commit
+
 msgid  Minimap width
 msgstr Lățimea minihărții
 

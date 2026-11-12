@@ -20,6 +20,10 @@ pub(super) fn viewer_key(app_state: &mut AppState, key: KeyEvent) {
         // either way on a numeric keypad or a main row.
         KeyCode::Char('+') | KeyCode::Char('=') => app_state.viewer_zoom(true),
         KeyCode::Char('-') | KeyCode::Char('_') => app_state.viewer_zoom(false),
+        // The git gutter's changes, as Alt+] and Alt+[ go - for a terminal
+        // that sends Alt+[ as the start of another key.
+        KeyCode::Down if key.modifiers.contains(KeyModifiers::ALT) => app_state.git_change_step(true),
+        KeyCode::Up if key.modifiers.contains(KeyModifiers::ALT) => app_state.git_change_step(false),
         KeyCode::Down => app_state.viewer_scroll_down(),
         KeyCode::Up => app_state.viewer_scroll_up(),
         // Back and on through the file's git history.
@@ -96,6 +100,8 @@ pub(super) fn editor_key(app_state: &mut AppState, key: KeyEvent) {
         KeyCode::F(3) => app_state.find(!extend, false),
         // F4 replaces, as in MC's editor; Ctrl+R does too.
         KeyCode::F(4) => app_state.open_replace(),
+        KeyCode::Down if key.modifiers.contains(KeyModifiers::ALT) => app_state.git_change_step(true),
+        KeyCode::Up if key.modifiers.contains(KeyModifiers::ALT) => app_state.git_change_step(false),
         KeyCode::Up => {
             app_state.editor_prepare_move(extend);
             app_state.editor_cursor_up();

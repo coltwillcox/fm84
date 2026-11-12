@@ -790,6 +790,21 @@ msgstr Grande image
 msgid  Line numbers
 msgstr Numéros de ligne
 
+msgid  Git changes beside the line numbers
+msgstr Modifications git à côté des numéros de ligne
+
+msgid  No changes against HEAD
+msgstr Aucune modification par rapport à HEAD
+
+msgid  No change below
+msgstr Aucune modification plus bas
+
+msgid  No change above
+msgstr Aucune modification plus haut
+
+msgid  Not committed yet
+msgstr Pas encore commité
+
 msgid  Minimap width
 msgstr Largeur de la minicarte
 

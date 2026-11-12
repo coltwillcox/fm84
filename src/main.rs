@@ -290,6 +290,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.poll_dir_sizes();
         app_state.poll_git_marks();
         app_state.poll_info();
+        app_state.poll_git_gutter();
         app_state.image_cache.collect();
         send_cursor_shape(&app_state.options);
         render_ui(terminal, &mut app_state);

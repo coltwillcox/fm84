@@ -24,9 +24,12 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         // and line numbers mean nothing down the side of a picture. F11 can
         // turn it off for text too.
         let no_gutter = viewer_state.mode != ViewMode::Text || !app_state.options.line_numbers;
+        // What has changed against HEAD, marked in the gutter's last column -
+        // a column of its own with the numbers off.
+        let marks = app_state.git_marks();
         // Wide enough for the last line's number - lines, not the rows a
         // wrapped one is broken into.
-        let line_num_width = if no_gutter { 0 } else { (viewer_state.line_count().to_string().len() as u16).max(3) + 2 };
+        let line_num_width = if no_gutter { u16::from(marks.is_some()) } else { (viewer_state.line_count().to_string().len() as u16).max(3) + 2 };
 
         let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Length(line_num_width), Constraint::Min(0)]).split(inner_area);
 
@@ -50,6 +53,20 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
                 .collect();
             let line_number_para = Paragraph::new(line_numbers).style(Style::default().bg(crate::display::gutter()));
             f.render_widget(line_number_para, chunks[0]);
+        }
+        if let Some(marks) = marks {
+            // A run of changes down every row of a wrapped line; a line taken
+            // away above or below on the row nearest it.
+            let rows = (start..end).map(|index| {
+                let (line, from, to) = viewer_state.row(index);
+                let last_row = viewer_state.row(index + 1).0 != line || index + 1 >= viewer_state.total_lines;
+                marks.get(line).copied().flatten().filter(|change| match change {
+                    crate::app::Change::RemovedAbove => from == 0,
+                    crate::app::Change::RemovedBelow => last_row || to == usize::MAX,
+                    _ => true,
+                })
+            });
+            draw_changes(f, chunks[0], rows);
         }
 
         // An image sits in the middle of the viewer when it is smaller than it -
@@ -276,7 +293,8 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         // zero wide, and the click mapping follows, since it reads the content
         // area as drawn.
         let total_lines = editor_state.lines.len();
-        let line_num_width = if line_numbers { (total_lines.to_string().len() as u16).max(3) + 2 } else { 0 };
+        let marks = app_state.git_marks();
+        let line_num_width = if line_numbers { (total_lines.to_string().len() as u16).max(3) + 2 } else { u16::from(marks.is_some()) };
 
         let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Length(line_num_width), Constraint::Min(0)]).split(inner_area);
 
@@ -297,6 +315,9 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         if line_numbers {
             let line_number_para = Paragraph::new(numbers).style(Style::default().bg(crate::display::gutter()));
             f.render_widget(line_number_para, chunks[0]);
+        }
+        if let Some(marks) = marks {
+            draw_changes(f, chunks[0], (start..end).map(|line| marks.get(line).copied().flatten()));
         }
 
         // Auto-scroll to keep cursor visible (disabled during mouse scrolling)
@@ -385,6 +406,29 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
     drawn.editor_content_area = content_area;
     drawn.scroll_bars = bars;
     (viewport_height, scrolls)
+}
+
+/// The git gutter's marks, one a row from the top of `gutter`, in its last
+/// column - the space after a line's number, or a column of its own: a bar
+/// beside a line added or changed, and a line on the edge of one where lines
+/// were taken away, as the git marks in the panels are coloured.
+fn draw_changes(f: &mut ratatui::Frame<'_>, gutter: Rect, rows: impl Iterator<Item = Option<crate::app::Change>>) {
+    use crate::app::Change;
+    if gutter.width == 0 {
+        return;
+    }
+    let x = gutter.right() - 1;
+    let buffer = f.buffer_mut();
+    for (y, change) in (gutter.top()..gutter.bottom()).zip(rows) {
+        let (glyph, colour) = match change {
+            Some(Change::Added) => ("▎", palette().directory),
+            Some(Change::Changed) => ("▎", palette().title),
+            Some(Change::RemovedAbove) => ("▔", palette().rename_background),
+            Some(Change::RemovedBelow) => ("▁", palette().rename_background),
+            None => continue,
+        };
+        buffer[(x, y)].set_symbol(glyph).set_fg(colour).set_bg(crate::display::gutter());
+    }
 }
 
 /// Alt+U: the active panel's entries as blocks, each as big as the room it

@@ -789,6 +789,21 @@ msgstr Μεγάλη εικόνα
 msgid  Line numbers
 msgstr Αριθμοί γραμμών
 
+msgid  Git changes beside the line numbers
+msgstr Αλλαγές git δίπλα στους αριθμούς γραμμών
+
+msgid  No changes against HEAD
+msgstr Καμία αλλαγή σε σχέση με το HEAD
+
+msgid  No change below
+msgstr Καμία αλλαγή πιο κάτω
+
+msgid  No change above
+msgstr Καμία αλλαγή πιο πάνω
+
+msgid  Not committed yet
+msgstr Δεν έχει γίνει commit ακόμη
+
 msgid  Minimap width
 msgstr Πλάτος μικρού χάρτη
 

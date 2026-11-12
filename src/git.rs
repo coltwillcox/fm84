@@ -275,6 +275,70 @@ pub fn file_history(path: &Path) -> Result<Vec<FileCommit>, String> {
     Ok(commits)
 }
 
+/// Who last changed a line, as `git blame` says: the commit's author, when
+/// it was made, in seconds since the epoch, and its subject.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Blamed {
+    pub author: String,
+    pub when: i64,
+    pub summary: String,
+}
+
+/// Each line of the file at `path` as HEAD has it, by the commit that last
+/// changed it: an index into the commits given back beside them, each told
+/// once however many lines it changed.
+pub fn blame(path: &Path) -> Result<(Vec<usize>, Vec<Blamed>), String> {
+    let (dir, name) = where_and_name(path)?;
+    let output = git_bytes(dir, &[OsStr::new("blame"), OsStr::new("--porcelain"), OsStr::new("HEAD"), OsStr::new("--"), name])?;
+    Ok(parse_blame(&output))
+}
+
+/// `git blame --porcelain`: a line of the commit's hash and where the line
+/// is, then - the first time a commit is met - lines of what it is, then
+/// the line itself after a tab.
+fn parse_blame(output: &[u8]) -> (Vec<usize>, Vec<Blamed>) {
+    let mut lines = Vec::new();
+    let mut commits: Vec<Blamed> = Vec::new();
+    let mut by_hash: HashMap<Vec<u8>, usize> = HashMap::new();
+    let mut current = None;
+    for line in output.split(|&byte| byte == b'\n') {
+        if line.first() == Some(&b'\t') {
+            if let Some(at) = current {
+                lines.push(at);
+            }
+            continue;
+        }
+        let (key, value) = match line.iter().position(|&byte| byte == b' ') {
+            Some(space) => (&line[..space], &line[space + 1..]),
+            None => (line, &line[line.len()..]),
+        };
+        if key.len() == 40 && key.iter().all(u8::is_ascii_hexdigit) {
+            let next = commits.len();
+            let at = *by_hash.entry(key.to_vec()).or_insert(next);
+            if at == next {
+                commits.push(Blamed {
+                    author: String::new(),
+                    when: 0,
+                    summary: String::new(),
+                });
+            }
+            current = Some(at);
+            continue;
+        }
+        let Some(commit) = current.and_then(|at| commits.get_mut(at)) else {
+            continue;
+        };
+        let text = || String::from_utf8_lossy(value).into_owned();
+        match key {
+            b"author" => commit.author = text(),
+            b"author-time" => commit.when = text().trim().parse().unwrap_or(0),
+            b"summary" => commit.summary = text(),
+            _ => {}
+        }
+    }
+    (lines, commits)
+}
+
 /// The file `commit` is of, as it was in that commit - read in the
 /// repository `dir` is in.
 pub fn file_at(dir: &Path, commit: &FileCommit) -> Result<Vec<u8>, String> {
@@ -683,6 +747,34 @@ mod tests {
         unstage(&new).unwrap();
         assert_eq!(mark(&dir.join("sub"), "new.txt"), Some(Mark::Untracked));
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Blame's porcelain read: each line by its commit, a commit's author,
+    /// time and subject from the first of its lines, and the same commit met
+    /// again further down - where git does not say them again - the same one.
+    #[test]
+    fn blame_is_read_line_by_line() {
+        let a = "a".repeat(40);
+        let b = "b".repeat(40);
+        let output = format!("{a} 1 1 2\nauthor Ann\nauthor-mail <ann@x>\nauthor-time 100\nsummary First\nfilename f\n\tone\n{a} 2 2\n\ttwo\n{b} 3 3 1\nauthor Bob\nauthor-time 200\nsummary Second\nfilename f\n\tthree\n{a} 3 4 1\n\tfour\n");
+        let (lines, commits) = parse_blame(output.as_bytes());
+        assert_eq!(lines, [0, 0, 1, 0]);
+        assert_eq!(
+            commits[0],
+            Blamed {
+                author: "Ann".to_string(),
+                when: 100,
+                summary: "First".to_string()
+            }
+        );
+        assert_eq!(
+            commits[1],
+            Blamed {
+                author: "Bob".to_string(),
+                when: 200,
+                summary: "Second".to_string()
+            }
+        );
     }
 
     /// A name is the file of that name, never a pattern: staging or throwing

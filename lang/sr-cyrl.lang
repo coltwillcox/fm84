@@ -779,6 +779,21 @@ msgstr Велика слика
 msgid  Line numbers
 msgstr Бројеви редова
 
+msgid  Git changes beside the line numbers
+msgstr Git измене поред бројева редова
+
+msgid  No changes against HEAD
+msgstr Нема измена у односу на HEAD
+
+msgid  No change below
+msgstr Нема измене ниже
+
+msgid  No change above
+msgstr Нема измене више
+
+msgid  Not committed yet
+msgstr Још није у комиту
+
 msgid  Minimap width
 msgstr Ширина мини-мапе
 

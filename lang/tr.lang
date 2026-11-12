@@ -789,6 +789,21 @@ msgstr Büyük Resim
 msgid  Line numbers
 msgstr Satır numaraları
 
+msgid  Git changes beside the line numbers
+msgstr Satır numaralarının yanında git değişiklikleri
+
+msgid  No changes against HEAD
+msgstr HEAD'e göre değişiklik yok
+
+msgid  No change below
+msgstr Aşağıda değişiklik yok
+
+msgid  No change above
+msgstr Yukarıda değişiklik yok
+
+msgid  Not committed yet
+msgstr Henüz commit edilmedi
+
 msgid  Minimap width
 msgstr Mini harita genişliği
 

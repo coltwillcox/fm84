@@ -82,6 +82,9 @@ pub struct EditorState {
     /// Ctrl+E: the lines are a directory's names, not a file, and saving
     /// makes a plan of them rather than writing anything.
     pub dir_edit: Option<Box<DirEdit>>,
+    /// How many edits the text has had: what tells the git gutter it has
+    /// changed since its marks were worked out.
+    pub edits: u64,
 }
 
 /// One undoable edit: the lines it replaced, and where the cursor was. The
@@ -299,6 +302,7 @@ impl AppState {
             disk_stamp,
             line_widths,
             dir_edit: None,
+            edits: 0,
         });
         Ok(())
     }
@@ -335,6 +339,7 @@ impl AppState {
     /// Every edit comes this way, so the lines' widths are kept here too.
     pub(super) fn editor_rehighlight_through(&mut self, from: usize, through: usize) {
         if let Screen::Editor(state) = &mut self.screen {
+            state.edits += 1;
             state.measure_lines(from, through);
             if state.line_states.is_empty() {
                 return; // highlighting disabled for this file

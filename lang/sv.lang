@@ -789,6 +789,21 @@ msgstr Stor bild
 msgid  Line numbers
 msgstr Radnummer
 
+msgid  Git changes beside the line numbers
+msgstr Git-ändringar bredvid radnumren
+
+msgid  No changes against HEAD
+msgstr Inga ändringar mot HEAD
+
+msgid  No change below
+msgstr Ingen ändring längre ner
+
+msgid  No change above
+msgstr Ingen ändring längre upp
+
+msgid  Not committed yet
+msgstr Inte committad än
+
 msgid  Minimap width
 msgstr Minikartans bredd
 

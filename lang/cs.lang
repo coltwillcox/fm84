@@ -789,6 +789,21 @@ msgstr Velký obrázek
 msgid  Line numbers
 msgstr Čísla řádků
 
+msgid  Git changes beside the line numbers
+msgstr Změny gitu vedle čísel řádků
+
+msgid  No changes against HEAD
+msgstr Žádné změny oproti HEAD
+
+msgid  No change below
+msgstr Níže žádná změna
+
+msgid  No change above
+msgstr Výše žádná změna
+
+msgid  Not committed yet
+msgstr Zatím necommitováno
+
 msgid  Minimap width
 msgstr Šířka minimapy
 

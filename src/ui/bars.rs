@@ -35,6 +35,25 @@ fn render_segmented_status_bar(f: &mut ratatui::Frame<'_>, area: Rect, segments:
     f.render_widget(Paragraph::new(Line::from(spans)), area);
 }
 
+/// Who last changed a line, cut to what a status bar can give it beside the
+/// rest: a long subject would otherwise push everything after it off.
+fn cut_blame(blame: &str) -> String {
+    const MOST: usize = 48;
+    if display_width(blame) <= MOST {
+        return blame.to_string();
+    }
+    let mut used = 0;
+    let mut cut: String = blame
+        .chars()
+        .take_while(|&character| {
+            used += char_display_width(character);
+            used < MOST
+        })
+        .collect();
+    cut.push('…');
+    cut
+}
+
 /// The find, go-to-line and select prompt, in the status bar's place: the
 /// label, what has been typed with the cursor in it, and the border run on to
 /// the corner.
@@ -119,7 +138,13 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
             let pos_seg = t!("Ln {line}, Col {column}", line, column);
             let count = editor_state.lines.len();
             let lines_seg = tn!(count, "{count} line", "{count} lines", count);
-            render_segmented_status_bar(f, area, &[&name_seg, &pos_seg, &lines_seg, t!("F2/Ctrl+S Save"), t!("Ctrl+F Find"), t!("Ctrl+Z/Y Undo"), t!("Esc Exit")], 3);
+            // Who last changed the cursor's line, ahead of the keys.
+            let blame = app_state.git_blame_line().map(|blame| cut_blame(&blame));
+            let mut segments = vec![name_seg.as_str(), pos_seg.as_str(), lines_seg.as_str()];
+            segments.extend(blame.as_deref());
+            let hints_from = segments.len();
+            segments.extend([t!("F2/Ctrl+S Save"), t!("Ctrl+F Find"), t!("Ctrl+Z/Y Undo"), t!("Esc Exit")]);
+            render_segmented_status_bar(f, area, &segments, hints_from);
         }
     } else if let Screen::Diff(state) = &app_state.screen {
         let at = match (state.current, state.hunks.len()) {
@@ -159,7 +184,11 @@ pub(super) fn render_bottom_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_st
                 Some([t!("Commit {at}/{count}", at = history.commits.len() - at, count = history.commits.len()), ago, printable_name(&commit.subject)])
             });
             segments.extend(commit.iter().flatten().map(String::as_str));
-            segments.extend([line_seg.as_str(), size_seg.as_str(), viewer_state.syntax_name.as_str()]);
+            // Who last changed the top line, beside where it is.
+            let blame = app_state.git_blame_line().map(|blame| cut_blame(&blame));
+            segments.push(line_seg.as_str());
+            segments.extend(blame.as_deref());
+            segments.extend([size_seg.as_str(), viewer_state.syntax_name.as_str()]);
             let hints_from = segments.len();
             // Bracketed half is the view you are in. Omitted on the notice F4
             // raises for a binary, where there is nothing to toggle.

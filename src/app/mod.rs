@@ -38,6 +38,7 @@ mod find;
 mod find_files;
 mod flat;
 mod ghosts;
+mod git_gutter;
 mod git_marks;
 mod git_stage;
 mod history;
@@ -65,8 +66,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    animation::*, archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*,
-    listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
+    animation::*, archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_gutter::*, git_marks::*, git_stage::*, history::*,
+    info_column::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -364,6 +365,8 @@ pub struct AppState {
     /// The rows the last copy or move made, glowing a moment, with F11's
     /// Animation on.
     pub flash: Option<Flash>,
+    /// F11's git gutter of the file in the viewer or the editor.
+    pub git_gutter: Option<GitGutter>,
     /// When a key, a paste or the mouse last came in, for the night drive.
     pub last_input: Instant,
     /// When the night drive began, while the screen is given over to it.
@@ -772,6 +775,7 @@ impl AppState {
             info_cache: HashMap::new(),
             explosion: None,
             flash: None,
+            git_gutter: None,
             last_input: Instant::now(),
             night_drive: None,
             scores: if cfg!(test) { crate::options::Scores::default() } else { crate::options::Scores::load() },

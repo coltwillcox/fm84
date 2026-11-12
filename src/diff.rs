@@ -163,7 +163,7 @@ enum Edit {
 /// The rows the two columns are drawn from. Within each run of differences,
 /// lines removed and lines added are paired off side by side, as changed;
 /// whichever side has more carries on alone.
-fn rows(left: &[String], right: &[String]) -> Vec<Row> {
+pub(crate) fn rows(left: &[String], right: &[String]) -> Vec<Row> {
     let mut rows = Vec::with_capacity(left.len().max(right.len()));
     let (mut x, mut y) = (0, 0);
     let (mut deleted, mut inserted) = (Vec::new(), Vec::new());

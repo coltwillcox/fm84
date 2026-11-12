@@ -789,6 +789,21 @@ msgstr Duży obraz
 msgid  Line numbers
 msgstr Numery wierszy
 
+msgid  Git changes beside the line numbers
+msgstr Zmiany git obok numerów wierszy
+
+msgid  No changes against HEAD
+msgstr Brak zmian względem HEAD
+
+msgid  No change below
+msgstr Brak zmian niżej
+
+msgid  No change above
+msgstr Brak zmian wyżej
+
+msgid  Not committed yet
+msgstr Jeszcze nie w commicie
+
 msgid  Minimap width
 msgstr Szerokość minimapy
 

@@ -1974,3 +1974,120 @@ fn f1_breaks_a_line_too_wide_for_it() {
     crate::i18n::set_language(crate::i18n::Language::English);
     assert!(cut.is_empty(), "cut off: {cut:#?}");
 }
+
+/// F11's git gutter, on to begin with: in the editor and the viewer, a bar in
+/// the gutter beside each line changed or added against HEAD; Alt+] and
+/// Alt+[ - Alt+Down and Alt+Up too - from one change to the next; who last
+/// changed the cursor's line in the status bar, or that it is not committed
+/// yet; an edit marked as it is made; and nothing with the option off.
+#[test]
+fn the_git_gutter_marks_what_changed_against_head() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    let dir = std::env::temp_dir().join(format!("fm84-git-gutter-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let run = |arguments: &[&str]| {
+        std::process::Command::new("git")
+            .arg("-C")
+            .arg(&dir)
+            .args(["-c", "user.name=Ann Author", "-c", "user.email=ann@localhost", "-c", "commit.gpgsign=false"])
+            .args(arguments)
+            .output()
+            .is_ok_and(|output| output.status.success())
+    };
+    if !run(&["init", "--quiet"]) {
+        let _ = std::fs::remove_dir_all(&dir);
+        return;
+    }
+    let file = dir.join("file.txt");
+    std::fs::write(&file, "one\ntwo\nthree\nfour\n").unwrap();
+    assert!(run(&["add", "."]) && run(&["commit", "--quiet", "-m", "The first lines"]));
+    std::fs::write(&file, "one\nTWO\nthree\nfour\nadded\n").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    assert!(app_state.options.git_gutter, "on to begin with");
+    crate::display::apply(&app_state.options);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 24)).unwrap();
+    // HEAD's version comes on a thread: drawn again until the marks are there.
+    let mut settle = |app_state: &mut AppState| {
+        let started = std::time::Instant::now();
+        loop {
+            app_state.poll_git_gutter();
+            render_ui(&mut terminal, app_state);
+            if app_state.git_marks().is_some() || started.elapsed() > std::time::Duration::from_secs(10) {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        terminal.backend().buffer().clone()
+    };
+    // The gutter's last column on the rows of a line's number, by line.
+    let marks_shown = |buffer: &ratatui::buffer::Buffer| -> Vec<(String, String)> {
+        // The number's cell, inside the frame and before the text: the mark
+        // is in the cell after it.
+        let cell_of = |number: &str| (2..24).flat_map(|y| (1..7).map(move |x| (x, y))).find(|&(x, y)| buffer[(x, y)].symbol() == number);
+        (1..=5)
+            .map(|line| {
+                let (x, y) = cell_of(&line.to_string()).unwrap();
+                (buffer[(x + 1, y)].symbol().to_string(), format!("{:?}", buffer[(x + 1, y)].fg))
+            })
+            .collect()
+    };
+    let screen = |buffer: &ratatui::buffer::Buffer| (0..24).map(|y| (0..100).map(|x| buffer[(x, y)].symbol()).collect::<String>()).collect::<Vec<_>>().join("\n");
+    let key = |app_state: &mut AppState, code: KeyCode, modifiers: KeyModifiers| {
+        crate::input::handle_key_for_tests(app_state, KeyEvent::new(code, modifiers));
+    };
+
+    app_state.open_editor(file.clone()).unwrap();
+    let editor = settle(&mut app_state);
+    let shown = marks_shown(&editor);
+    let (changed, added) = (format!("{:?}", palette().title), format!("{:?}", palette().directory));
+    let outcome = (
+        shown.clone(),
+        screen(&editor),
+        {
+            // From the first line on to the change, the addition, and back.
+            key(&mut app_state, KeyCode::Char(']'), KeyModifiers::ALT);
+            let first = app_state.editor_mut().unwrap().cursor_line;
+            key(&mut app_state, KeyCode::Down, KeyModifiers::ALT);
+            let second = app_state.editor_mut().unwrap().cursor_line;
+            key(&mut app_state, KeyCode::Char('['), KeyModifiers::ALT);
+            let back = app_state.editor_mut().unwrap().cursor_line;
+            (first, second, back)
+        },
+        {
+            app_state.poll_git_gutter();
+            let on_change = screen(&settle(&mut app_state));
+            app_state.editor_mut().unwrap().cursor_line = 2;
+            let on_kept = screen(&settle(&mut app_state));
+            (on_change, on_kept)
+        },
+        {
+            // An edit to the first line: marked as soon as it is made.
+            app_state.editor_mut().unwrap().cursor_line = 0;
+            app_state.editor_mut().unwrap().cursor_col = 0;
+            app_state.editor_insert_char('X');
+            marks_shown(&settle(&mut app_state))[0].0.clone()
+        },
+    );
+    app_state.close_editor();
+    app_state.open_viewer(file.clone()).unwrap();
+    let viewer = marks_shown(&settle(&mut app_state));
+    app_state.options.git_gutter = false;
+    app_state.poll_git_gutter();
+    let off = app_state.git_marks().is_none();
+    std::fs::remove_dir_all(&dir).unwrap();
+
+    let (shown, editor_screen, (first, second, back), (on_change, on_kept), edited) = outcome;
+    assert_eq!(shown[0].0, " ", "line 1 as HEAD has it: {editor_screen}");
+    assert_eq!(shown[1], ("▎".to_string(), changed.clone()), "line 2 changed");
+    assert_eq!(shown[2].0, " ");
+    assert_eq!(shown[4], ("▎".to_string(), added), "line 5 added");
+    assert_eq!((first, second, back), (1, 4, 1), "from change to change");
+    assert!(on_change.contains("Not committed yet"), "{on_change}");
+    assert!(on_kept.contains("Ann Author") && on_kept.contains("The first lines"), "{on_kept}");
+    assert_eq!(edited, "▎", "an edit marked as made");
+    assert_eq!(viewer[1], ("▎".to_string(), changed), "the viewer marks it too");
+    assert!(off, "nothing with the option off");
+}
