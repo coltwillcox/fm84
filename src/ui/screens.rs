@@ -141,9 +141,17 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
                 bars.extend(horizontal_bar(f, area, text_area, columns, bar_style));
             }
             if let Some(map) = map {
+                // A wrapped line fills row after row, and a minified one can
+                // be megabytes: it is laid out once for all the rows the map
+                // samples from it, as the text above is.
+                let mut held: Option<(usize, Vec<char>)> = None;
                 draw_minimap(f, &map, start, |index| {
                     let (line, from, to) = viewer_state.row(index);
-                    let piece: String = viewer_state.line_text(line).chars().skip(from).take(to.saturating_sub(from)).collect();
+                    if held.as_ref().is_none_or(|(held_line, _)| *held_line != line) {
+                        held = Some((line, viewer_state.line_text(line).chars().collect()));
+                    }
+                    let (_, characters) = held.as_ref().expect("held just above");
+                    let piece: String = characters[from.min(characters.len())..to.min(characters.len())].iter().collect();
                     let marked = needle.as_ref().is_some_and(|needle| !needle.find_all(&piece).is_empty());
                     MapRow::of(&piece, usize::from(map.area.width), marked)
                 });
