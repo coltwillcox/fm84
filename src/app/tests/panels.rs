@@ -593,3 +593,43 @@ fn a_flat_listing_given_up_on_leaves_the_panel_as_it_was() {
     }
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Quick search in Ctrl+B's flat view, whose entries are named by their path
+/// below the directory: typing a file's own name finds it, wherever it is -
+/// and the start of its path still does, as before.
+#[test]
+fn quick_search_in_a_flat_view_finds_a_file_by_its_own_name() {
+    let dir = std::env::temp_dir().join(format!("fm84-flat-search-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    std::fs::create_dir_all(dir.join("other")).unwrap();
+    std::fs::write(dir.join("sub").join("zebra.txt"), "z").unwrap();
+    std::fs::write(dir.join("other").join("apple.txt"), "a").unwrap();
+    let mut app_state = AppState::new();
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.toggle_flat();
+    let started = std::time::Instant::now();
+    while app_state.panel_busy(Side::Left) && started.elapsed() < std::time::Duration::from_secs(5) {
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_listings();
+    }
+    let on = |app_state: &AppState| app_state.left.state.selected().map(|at| app_state.left.children[at].name_full.clone());
+    let names: Vec<String> = app_state.left.children.iter().map(|item| item.name_full.clone()).collect();
+
+    for c in "zeb".chars() {
+        app_state.search_add_char(c);
+    }
+    let by_name = on(&app_state);
+    app_state.search_clear();
+    for c in "oth".chars() {
+        app_state.search_add_char(c);
+    }
+    let by_path = on(&app_state);
+    std::fs::remove_dir_all(&dir).unwrap();
+
+    let zebra = format!("sub{}zebra.txt", std::path::MAIN_SEPARATOR);
+    assert!(names.contains(&zebra), "named by the path below: {names:?}");
+    assert_eq!(by_name, Some(zebra), "found by its own name");
+    assert_eq!(by_path, Some(format!("other{}apple.txt", std::path::MAIN_SEPARATOR)), "and by the start of its path");
+}

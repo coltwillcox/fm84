@@ -24,6 +24,13 @@ enum SizeUpdate {
     Finished(Result<Option<u64>, String>),
 }
 
+/// Whether quick search's `typed`, in lower case, finds `item`: its name
+/// starting with it - its own name, in a flat view or a fed list, where
+/// entries are named by their path below the directory - or that path.
+fn quick_matches(item: &Item, typed: &str) -> bool {
+    item.leaf().to_lowercase().starts_with(typed) || item.name_full.to_lowercase().starts_with(typed)
+}
+
 impl AppState {
     // Quick search methods
     pub fn search_add_char(&mut self, c: char) {
@@ -48,7 +55,7 @@ impl AppState {
         }
         let search_lower = self.search_input.to_lowercase();
         let (children, state) = self.active_panel_mut();
-        if let Some(index) = children.iter().position(|item| item.name_full.to_lowercase().starts_with(&search_lower)) {
+        if let Some(index) = children.iter().position(|item| quick_matches(item, &search_lower)) {
             state.select(Some(index));
         }
     }
@@ -65,7 +72,7 @@ impl AppState {
         // Search forward from current+1, wrapping around
         for offset in 1..=len {
             let i = (current + offset) % len;
-            if children[i].name_full.to_lowercase().starts_with(&search_lower) {
+            if quick_matches(&children[i], &search_lower) {
                 state.select(Some(i));
                 return;
             }
@@ -84,7 +91,7 @@ impl AppState {
         // Search backward from current-1, wrapping around
         for offset in 1..=len {
             let i = (current + len - offset) % len;
-            if children[i].name_full.to_lowercase().starts_with(&search_lower) {
+            if quick_matches(&children[i], &search_lower) {
                 state.select(Some(i));
                 return;
             }
