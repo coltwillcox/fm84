@@ -62,3 +62,42 @@ fn duplicates_are_fed_with_all_but_the_first_selected() {
     assert!(app_state.left.flat.is_none());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A file reached twice - chosen itself in a list of what Find found, and
+/// inside a directory chosen beside it - is one file, not two the same:
+/// nothing is offered for deleting, which would delete the only copy.
+#[test]
+fn a_file_reached_twice_is_not_its_own_duplicate() {
+    let dir = std::env::temp_dir().join(format!("fm84-duplicates-twice-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    std::fs::write(dir.join("sub").join("only.txt"), "the only copy").unwrap();
+    let inner = std::path::Path::new("sub").join("only.txt");
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.left.flat = Some(crate::app::Flat {
+        dir: dir.clone(),
+        feed: Some(std::sync::Arc::new(vec![(std::path::PathBuf::from("sub"), true), (inner.clone(), false)])),
+        kind: crate::app::FeedKind::Found,
+    });
+    app_state.workers.listing_wait = Duration::from_secs(5);
+    app_state.reload_panel(Side::Left, None);
+    app_state.left.selected = [OsString::from("sub"), inner.clone().into_os_string()].into();
+    let chosen = app_state.left.children.iter().filter(|item| app_state.left.selected.contains(&item.name_os)).count();
+
+    app_state.find_duplicates();
+    let started = Instant::now();
+    while app_state.workers.job.is_some() && started.elapsed() < Duration::from_secs(10) {
+        std::thread::sleep(Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    let (note, feed) = (app_state.find_note.clone(), app_state.left.flat.as_ref().and_then(|flat| flat.feed.as_ref()).map(|feed| feed.len()));
+    std::fs::remove_dir_all(&dir).unwrap();
+
+    assert_eq!(chosen, 2, "both rows chosen");
+    assert_eq!(note.as_deref(), Some("No duplicates found"));
+    assert_eq!(feed, Some(2), "the panel left as Find left it, not fed the file as a copy of itself");
+}

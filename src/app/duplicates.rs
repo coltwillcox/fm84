@@ -72,6 +72,29 @@ pub(super) fn first_name(_metadata: &std::fs::Metadata, _seen: &mut HashSet<(u64
     true
 }
 
+/// Every file the duplicate walk has met, told apart however it was reached:
+/// by device and inode on Unix, by path elsewhere.
+#[cfg(unix)]
+type Met = HashSet<(u64, u64)>;
+#[cfg(not(unix))]
+type Met = HashSet<PathBuf>;
+
+/// True the first time the walk meets a file. Not only a second name by a
+/// hard link: the same name again - a file chosen in a list of what Find
+/// found, and inside a directory chosen beside it - or the same file under a
+/// bind mount. Met twice it would be the same as itself, one of it chosen
+/// for deleting, and that the only copy there is.
+#[cfg(unix)]
+fn first_meeting(_path: &Path, metadata: &std::fs::Metadata, met: &mut Met) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    met.insert((metadata.dev(), metadata.ino()))
+}
+
+#[cfg(not(unix))]
+fn first_meeting(path: &Path, _metadata: &std::fs::Metadata, met: &mut Met) -> bool {
+    met.insert(path.to_path_buf())
+}
+
 /// Of files by their size, those of a size another has too: only they can
 /// be the same as another.
 pub(super) fn shared_sizes(by_size: HashMap<u64, Vec<PathBuf>>) -> Vec<(u64, Vec<PathBuf>)> {
@@ -115,7 +138,7 @@ fn run_duplicates(sources: Vec<PathBuf>, base: PathBuf, mut progress: JobProgres
     // files: deleting what one points at would leave it pointing at nothing.
     // Empty files are all the same and take no room.
     let mut by_size: HashMap<u64, Vec<PathBuf>> = HashMap::new();
-    let mut seen = HashSet::new();
+    let mut met = Met::new();
     let mut stack = sources;
     while let Some(path) = stack.pop() {
         let Ok(metadata) = path.symlink_metadata() else { continue };
@@ -129,7 +152,7 @@ fn run_duplicates(sources: Vec<PathBuf>, base: PathBuf, mut progress: JobProgres
                     let _ = progress.updates.send(JobUpdate::Skipped);
                 }
             }
-        } else if metadata.is_file() && metadata.len() > 0 && first_name(&metadata, &mut seen) {
+        } else if metadata.is_file() && metadata.len() > 0 && first_meeting(&path, &metadata, &mut met) {
             by_size.entry(metadata.len()).or_default().push(path);
         }
     }
