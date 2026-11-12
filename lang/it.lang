@@ -789,8 +789,8 @@ msgstr Immagine grande
 msgid  Line numbers
 msgstr Numeri di riga
 
-msgid  Minimap beside the text
-msgstr Minimappa accanto al testo
+msgid  Minimap width
+msgstr Larghezza della minimappa
 
 msgid  Line {at}/{count}
 msgstr Riga {at}/{count}

@@ -1705,7 +1705,7 @@ fn the_minimap_draws_the_whole_text_beside_it() {
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
     let mut app_state = AppState::new();
     app_state.options = Options::default();
-    assert!(app_state.options.minimap, "on to begin with");
+    assert_eq!(app_state.options.minimap_width, 2, "two columns to begin with");
     crate::display::apply(&app_state.options);
     let mut draw = |app_state: &mut AppState| {
         render_ui(&mut terminal, app_state);
@@ -1774,11 +1774,21 @@ fn the_minimap_draws_the_whole_text_beside_it() {
     }
 
     // Off, there is none, and the text has the room.
-    app_state.options.minimap = false;
+    app_state.options.minimap_width = 0;
     app_state.open_viewer(tall.clone()).unwrap();
     draw(&mut app_state);
     assert!(app_state.drawn.minimap.is_none());
-    app_state.options.minimap = true;
+
+    // Four wide, against the border just the same, every column drawn.
+    app_state.options.minimap_width = 4;
+    let buffer = draw(&mut app_state);
+    let map = app_state.drawn.minimap.expect("a map four wide");
+    assert_eq!((map.area.width, map.area.right()), (4, width - 1));
+    assert!((map.area.left()..map.area.right()).all(|x| buffer[(x, map.area.y)].symbol() == "▀"));
+    // The lines are short: only the first of the four columns has text.
+    let lit = |x: u16| buffer[(x, map.area.y + 3)].fg;
+    assert_ne!(lit(map.area.x), lit(map.area.x + 3), "the text in the first column, not the last");
+    app_state.options.minimap_width = 2;
 
     // The diff lights what differs.
     app_state.screen = Screen::Panels;

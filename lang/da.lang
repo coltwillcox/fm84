@@ -788,8 +788,8 @@ msgstr Stort billede
 msgid  Line numbers
 msgstr Linjenumre
 
-msgid  Minimap beside the text
-msgstr Minikort ved siden af teksten
+msgid  Minimap width
+msgstr Minikortets bredde
 
 msgid  Line {at}/{count}
 msgstr Linje {at}/{count}

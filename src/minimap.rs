@@ -1,13 +1,14 @@
-//! F11's minimap: the whole of a text drawn small beside it, two columns of
-//! half blocks, each half a cell a run of rows. Here is what each half
+//! F11's minimap: the whole of a text drawn small beside it, two or four
+//! columns of half blocks, each half a cell a run of rows. Here is what each half
 //! stands for and what a click on it comes to; the UI paints it.
 
 use ratatui::layout::{Position, Rect};
 use std::ops::Range;
 
-/// The columns of text each of the map's two columns stands for: the first
-/// half of a line in the left, the rest in the right.
-pub const BAND: usize = 40;
+/// The columns of text the map's columns stand for between them, shared
+/// out: with two, the first forty of a line in the left and the next forty
+/// in the right; with four, twenty each.
+pub const SPAN: usize = 80;
 /// The most rows a half cell looks at to tell how full its run is - a
 /// long log squeezed into a few cells would otherwise be read whole every
 /// frame. Those it looks at are spread through the run.
@@ -82,25 +83,27 @@ impl Minimap {
     }
 }
 
-/// How full each of the two bands of `text` is, from 0 to 1: what is not
-/// space, against the band's width. A tab counts as the spaces it is.
-pub fn fullness(text: &str) -> [f64; 2] {
-    let mut filled = [0usize; 2];
+/// How full each of `bands` bands across `text` is, from 0 to 1: what is
+/// not space, against the band's width. A tab counts as the spaces it is.
+pub fn fullness(text: &str, bands: usize) -> Vec<f64> {
+    let bands = bands.max(1);
+    let band = SPAN / bands;
+    let mut filled = vec![0usize; bands];
     let mut column = 0;
     for character in text.chars() {
-        if column >= BAND * 2 {
+        if column >= band * bands {
             break;
         }
         match character {
             '\t' => column += 4 - column % 4,
             ' ' => column += 1,
             _ => {
-                filled[column / BAND] += 1;
+                filled[column / band] += 1;
                 column += 1;
             }
         }
     }
-    filled.map(|count| count as f64 / BAND as f64)
+    filled.into_iter().map(|count| count as f64 / band as f64).collect()
 }
 
 #[cfg(test)]
@@ -154,12 +157,11 @@ mod tests {
 
     #[test]
     fn fullness_is_counted_by_band() {
-        assert_eq!(fullness(""), [0.0, 0.0]);
-        let [left, right] = fullness(&"x".repeat(60));
-        assert_eq!(left, 1.0);
-        assert_eq!(right, 0.5);
-        assert_eq!(fullness("    "), [0.0, 0.0], "spaces are not text");
-        assert_eq!(fullness("\tx")[0], 1.0 / BAND as f64);
-        assert_eq!(fullness(&"x".repeat(500)), [1.0, 1.0], "past both bands, left off");
+        assert_eq!(fullness("", 2), [0.0, 0.0]);
+        assert_eq!(fullness(&"x".repeat(60), 2), [1.0, 0.5]);
+        assert_eq!(fullness("    ", 2), [0.0, 0.0], "spaces are not text");
+        assert_eq!(fullness("\tx", 2)[0], 1.0 / 40.0);
+        assert_eq!(fullness(&"x".repeat(500), 2), [1.0, 1.0], "past both bands, left off");
+        assert_eq!(fullness(&"x".repeat(50), 4), [1.0, 1.0, 0.5, 0.0], "four of twenty each");
     }
 }

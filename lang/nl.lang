@@ -788,8 +788,8 @@ msgstr Grote afbeelding
 msgid  Line numbers
 msgstr Regelnummers
 
-msgid  Minimap beside the text
-msgstr Minikaart naast de tekst
+msgid  Minimap width
+msgstr Breedte van de minikaart
 
 msgid  Line {at}/{count}
 msgstr Regel {at}/{count}

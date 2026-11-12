@@ -789,8 +789,8 @@ msgstr Velký obrázek
 msgid  Line numbers
 msgstr Čísla řádků
 
-msgid  Minimap beside the text
-msgstr Minimapa vedle textu
+msgid  Minimap width
+msgstr Šířka minimapy
 
 msgid  Line {at}/{count}
 msgstr Řádek {at}/{count}

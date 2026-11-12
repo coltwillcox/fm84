@@ -789,8 +789,8 @@ msgstr Büyük Resim
 msgid  Line numbers
 msgstr Satır numaraları
 
-msgid  Minimap beside the text
-msgstr Metnin yanında mini harita
+msgid  Minimap width
+msgstr Mini harita genişliği
 
 msgid  Line {at}/{count}
 msgstr Satır {at}/{count}

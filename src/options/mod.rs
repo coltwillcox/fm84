@@ -253,6 +253,8 @@ impl ScrollBarStyle {
 // The values the stepped numeric options offer. A hand-edited config may hold
 // something else; it is kept, and the first step from it lands on the list.
 const TAB_WIDTHS: [usize; 3] = [2, 4, 8];
+/// The minimap's widths F11 steps through, in columns; none is off.
+const MINIMAP_WIDTHS: [u16; 3] = [0, 2, 4];
 /// Zero turns highlighting off.
 const HIGHLIGHT_LIMITS_KIB: [u64; 4] = [0, 256, 512, 2048];
 const LARGE_FILE_LIMITS_MIB: [u64; 3] = [16, 64, 256];
@@ -335,8 +337,8 @@ pub struct Options {
     /// The gutter in the viewer and the editor.
     pub line_numbers: bool,
     /// The whole of the text drawn small beside it, in the viewer, the
-    /// editor and the diff.
-    pub minimap: bool,
+    /// editor and the diff, this many columns wide. Zero, and there is none.
+    pub minimap_width: u16,
     /// What the scroll bars' thumbs are drawn with.
     pub scroll_bar: ScrollBarStyle,
     /// The editor highlights files up to this size, in KiB; zero never does.
@@ -400,7 +402,7 @@ impl Default for Options {
             night_drive_minutes: 0,
             tab_width: 4,
             line_numbers: true,
-            minimap: true,
+            minimap_width: 2,
             scroll_bar: ScrollBarStyle::Heavy,
             highlight_limit_kib: 512,
             large_file_mib: 64,

@@ -7,44 +7,39 @@ use super::*;
 use crate::minimap::{Minimap, fullness};
 use ratatui::style::Color;
 
-/// Columns the map takes from the text: a gap, then its two.
-const MAP_WIDTH: u16 = 3;
 /// The narrowest the text is left beside a map; narrower, there is none.
 const LEAST_TEXT: u16 = 30;
 
-/// What one row of text shows on the map: how full each band of it is, and
-/// a colour to light it in instead - a match, or a difference.
+/// What one row of text shows on the map: how full each band of it is, one
+/// to a column, and a colour to light it in instead - a match, or a
+/// difference.
 pub(super) struct MapRow {
-    pub fill: [f64; 2],
+    pub fill: Vec<f64>,
     pub mark: Option<Color>,
 }
 
 impl MapRow {
-    /// A row of text as it reads, lit when `marked`.
-    pub(super) fn of(text: &str, marked: bool) -> MapRow {
+    /// A row of text as it reads across the map's `columns`, lit when
+    /// `marked`.
+    pub(super) fn of(text: &str, columns: usize, marked: bool) -> MapRow {
         MapRow {
-            fill: fullness(text),
+            fill: fullness(text, columns),
             mark: marked.then(|| palette().title),
         }
     }
 }
 
-/// How full a line is across both bands, from 0 to 1: one column of the
-/// map for each file, beside each other, as the diff has them.
-pub(super) fn fullness_of(text: &str) -> f64 {
-    let [left, right] = fullness(text);
-    (left + right) / 2.0
-}
-
 /// The text's `area` with room taken off its right for a map, when F11 has
 /// one, there is more than the view shows, and the text is left room
 /// enough: the text's area, and the map's.
+/// The map is as wide as F11 has it, with a column's gap before it.
 pub(super) fn make_room(area: Rect, content: usize, view: usize, options: &Options) -> (Rect, Option<Minimap>) {
-    if !options.minimap || content <= view || area.width < LEAST_TEXT + MAP_WIDTH || area.height == 0 {
+    let width = options.minimap_width;
+    if width == 0 || content <= view || area.width < LEAST_TEXT + width + 1 || area.height == 0 {
         return (area, None);
     }
-    let text = Rect { width: area.width - MAP_WIDTH, ..area };
-    let map = Rect::new(area.right() - 2, area.y, 2, area.height);
+    let text = Rect { width: area.width - width - 1, ..area };
+    let map = Rect::new(area.right() - width, area.y, width, area.height);
     (text, Some(Minimap::new(map, content, view)))
 }
 
@@ -53,25 +48,27 @@ pub(super) fn make_room(area: Rect, content: usize, view: usize, options: &Optio
 pub(super) fn draw_minimap(f: &mut ratatui::Frame<'_>, map: &Minimap, offset: usize, mut row: impl FnMut(usize) -> MapRow) {
     let behind = crate::display::background().unwrap_or(palette().background);
     let shaded = blend(behind, palette().border, 0.35);
-    let mut half = |half: usize| -> [Color; 2] {
+    let columns = usize::from(map.area.width);
+    let mut half = |half: usize| -> Vec<Color> {
         let base = if map.in_view(half, offset) { shaded } else { behind };
-        let (mut fill, mut mark, mut count) = ([0.0; 2], None, 0);
+        let (mut fill, mut mark, mut count) = (vec![0.0; columns], None, 0);
         for at in map.sampled(half) {
-            let MapRow { fill: [left, right], mark: lit } = row(at);
-            fill[0] += left;
-            fill[1] += right;
-            mark = mark.or(lit);
+            let read = row(at);
+            for (sum, band) in fill.iter_mut().zip(read.fill) {
+                *sum += band;
+            }
+            mark = mark.or(read.mark);
             count += 1;
         }
         if let Some(mark) = mark {
-            return [mark; 2];
+            return vec![mark; columns];
         }
-        fill.map(|sum| shade(base, sum / count.max(1) as f64))
+        fill.into_iter().map(|sum| shade(base, sum / count.max(1) as f64)).collect()
     };
     let buffer = f.buffer_mut();
     for cell in 0..map.area.height {
-        let ([upper_left, upper_right], [lower_left, lower_right]) = (half(usize::from(cell) * 2), half(usize::from(cell) * 2 + 1));
-        for (x, upper, lower) in [(map.area.x, upper_left, lower_left), (map.area.x + 1, upper_right, lower_right)] {
+        let (upper, lower) = (half(usize::from(cell) * 2), half(usize::from(cell) * 2 + 1));
+        for (x, (upper, lower)) in (map.area.x..).zip(upper.into_iter().zip(lower)) {
             let at = &mut buffer[(x, map.area.y + cell)];
             at.reset();
             at.set_symbol("▀").set_fg(upper).set_bg(lower);

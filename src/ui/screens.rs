@@ -145,7 +145,7 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
                     let (line, from, to) = viewer_state.row(index);
                     let piece: String = viewer_state.line_text(line).chars().skip(from).take(to.saturating_sub(from)).collect();
                     let marked = needle.as_ref().is_some_and(|needle| !needle.find_all(&piece).is_empty());
-                    MapRow::of(&piece, marked)
+                    MapRow::of(&piece, usize::from(map.area.width), marked)
                 });
                 minimap = Some(map);
             }
@@ -181,7 +181,7 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
     f.render_widget(block, area);
 
     // The map beside both, under the paths' row: the left file down its
-    // left column, the right down its right, and the differences lit.
+    // left half, the right down its right, and the differences lit.
     let body = Rect {
         y: inner.y + 1,
         height: inner.height.saturating_sub(1),
@@ -230,8 +230,11 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
     if let Some(map) = map {
         draw_minimap(f, &map, scroll, |index| {
             let row = &state.rows[index];
-            let full = |lines: &[String], line: Option<usize>| line.and_then(|line| lines.get(line)).map_or(0.0, |text| fullness_of(text));
-            let fill = [full(&state.left, row.left), full(&state.right, row.right)];
+            // Each file half the map's columns.
+            let bands = usize::from(map.area.width / 2);
+            let full = |lines: &[String], line: Option<usize>| line.and_then(|line| lines.get(line)).map_or_else(|| vec![0.0; bands], |text| crate::minimap::fullness(text, bands));
+            let mut fill = full(&state.left, row.left);
+            fill.extend(full(&state.right, row.right));
             MapRow {
                 fill,
                 mark: (!row.same).then(|| palette().selected_marker),
@@ -361,7 +364,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         if let Some(map) = map {
             draw_minimap(f, &map, start, |index| {
                 let line = &editor_state.lines[index];
-                MapRow::of(line, needle.as_ref().is_some_and(|needle| !needle.find_all(line).is_empty()))
+                MapRow::of(line, usize::from(map.area.width), needle.as_ref().is_some_and(|needle| !needle.find_all(line).is_empty()))
             });
             drawn.minimap = Some(map);
         }

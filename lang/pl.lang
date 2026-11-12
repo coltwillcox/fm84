@@ -789,8 +789,8 @@ msgstr Duży obraz
 msgid  Line numbers
 msgstr Numery wierszy
 
-msgid  Minimap beside the text
-msgstr Minimapa obok tekstu
+msgid  Minimap width
+msgstr Szerokość minimapy
 
 msgid  Line {at}/{count}
 msgstr Wiersz {at}/{count}

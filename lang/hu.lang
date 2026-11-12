@@ -790,8 +790,8 @@ msgstr Nagy kép
 msgid  Line numbers
 msgstr Sorszámok
 
-msgid  Minimap beside the text
-msgstr Minitérkép a szöveg mellett
+msgid  Minimap width
+msgstr Minitérkép szélessége
 
 msgid  Line {at}/{count}
 msgstr Sor {at}/{count}

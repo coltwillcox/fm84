@@ -790,8 +790,8 @@ msgstr Velika slika
 msgid  Line numbers
 msgstr Številke vrstic
 
-msgid  Minimap beside the text
-msgstr Minizemljevid ob besedilu
+msgid  Minimap width
+msgstr Širina minizemljevida
 
 msgid  Line {at}/{count}
 msgstr Vrstica {at}/{count}

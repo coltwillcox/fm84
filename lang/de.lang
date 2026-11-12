@@ -789,8 +789,8 @@ msgstr Großes Bild
 msgid  Line numbers
 msgstr Zeilennummern
 
-msgid  Minimap beside the text
-msgstr Minimap neben dem Text
+msgid  Minimap width
+msgstr Breite der Minimap
 
 msgid  Line {at}/{count}
 msgstr Zeile {at}/{count}

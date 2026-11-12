@@ -788,8 +788,8 @@ msgstr Голяма картина
 msgid  Line numbers
 msgstr Номера на редовете
 
-msgid  Minimap beside the text
-msgstr Миникарта до текста
+msgid  Minimap width
+msgstr Ширина на миникартата
 
 msgid  Line {at}/{count}
 msgstr Ред {at}/{count}

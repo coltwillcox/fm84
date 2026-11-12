@@ -37,7 +37,7 @@ fn a_saved_file_reads_back_the_same() {
         cursor_blink: false,
         tab_width: 8,
         line_numbers: false,
-        minimap: false,
+        minimap_width: 4,
         scroll_bar: ScrollBarStyle::Ascii,
         highlight_limit_kib: 0,
         large_file_mib: 256,
@@ -274,4 +274,24 @@ fn the_colors_file_reads_colours_pairs_and_styles() {
     assert!(tar.applies("x.tar.gz") && !tar.applies("x.gz"));
     assert!(line("makefile").unwrap().applies("Makefile") && rs.applies("rs"));
     assert!(parse_colors("* = red")[0].applies("anything"));
+}
+
+/// F11's minimap is off, two columns or four, two to begin with, and round
+/// again; the config names it as F11 shows it.
+#[test]
+fn the_minimap_is_off_or_two_or_four_columns_wide() {
+    let mut options = Options::default();
+    assert_eq!(options.minimap_width, 2, "two to begin with");
+    assert_eq!(options.value(OptionRow::Minimap), "2");
+    options.cycle(OptionRow::Minimap, true);
+    assert_eq!(options.minimap_width, 4);
+    options.cycle(OptionRow::Minimap, true);
+    assert_eq!(options.minimap_width, 0);
+    assert_eq!(options.value(OptionRow::Minimap), t!("Off"));
+    options.cycle(OptionRow::Minimap, false);
+    assert_eq!(options.minimap_width, 4, "back round");
+    assert_eq!(Options::parse("minimap = off\n").minimap_width, 0);
+    assert_eq!(Options::parse("minimap = 4\n").minimap_width, 4);
+    assert_eq!(Options::parse("minimap = 3\n").minimap_width, 2, "not one F11 has: the default");
+    assert!(Options { minimap_width: 0, ..Options::default() }.serialize().contains("minimap = off"));
 }
