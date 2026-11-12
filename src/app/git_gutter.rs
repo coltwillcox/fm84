@@ -3,9 +3,10 @@
 //! a mark where lines were taken away; Alt+] and Alt+[ - or Alt+Down and
 //! Alt+Up, where the terminal cannot send the brackets - go from one run of
 //! changes to the next; and the status bar says who last changed the line
-//! the cursor is on. What HEAD has, and who changed what, is read once, on a
-//! thread, when a file is opened; the marks are worked out again whenever
-//! the text changes.
+//! the cursor is on. What HEAD has, and who changed what, is read on a
+//! thread when a file is opened, and again when HEAD moves - a commit made
+//! while it is open; the marks are worked out again whenever the text
+//! changes.
 
 use super::*;
 use crate::git::Blamed;
@@ -31,12 +32,27 @@ struct Head {
     commits: Vec<Blamed>,
 }
 
+/// What a read of HEAD brings: its version of the file, and what tells when
+/// HEAD moves again - the file git writes to then, and its time now.
+struct Loaded {
+    head: Option<Head>,
+    moved: Option<(PathBuf, Option<SystemTime>)>,
+}
+
+/// How often the gutter looks whether HEAD has moved.
+const HEAD_CHECK: Duration = Duration::from_secs(1);
+
 /// The gutter of the file open in the viewer or the editor.
 pub struct GitGutter {
     pub path: PathBuf,
     /// HEAD's version on its way; None once it is here, or nothing is coming.
-    loading: Option<Receiver<Option<Head>>>,
+    loading: Option<Receiver<Loaded>>,
     head: Option<Head>,
+    /// The file git writes to as HEAD moves, and its time when HEAD's
+    /// version was read: a time since then, and it is read again.
+    moved: Option<(PathBuf, Option<SystemTime>)>,
+    /// When it was last looked whether HEAD has moved.
+    checked: Instant,
     /// What the text was when the marks were worked out, to tell when it
     /// has changed since.
     shown: Option<(u64, usize, usize)>,
@@ -56,6 +72,22 @@ pub fn shown_lines(text: &str) -> Vec<String> {
         lines.push(String::new());
     }
     lines
+}
+
+/// HEAD's version of the file at `path`, read on a thread of its own, and
+/// what tells when HEAD moves again - looked at first, so a commit made while
+/// it is read is not missed.
+fn load(path: &Path, limit: u64) -> Receiver<Loaded> {
+    let (sender, receiver) = mpsc::channel();
+    let path = path.to_path_buf();
+    std::thread::spawn(move || {
+        let moved = crate::git::head_log(&path).map(|log| {
+            let time = std::fs::metadata(&log).and_then(|metadata| metadata.modified()).ok();
+            (log, time)
+        });
+        let _ = sender.send(Loaded { head: read_head(&path, limit), moved });
+    });
+    receiver
 }
 
 /// HEAD's version of the file at `path`, and who changed what in it. None for
@@ -123,24 +155,24 @@ fn text_key(app_state: &AppState) -> Option<(PathBuf, (u64, usize, usize))> {
 impl AppState {
     /// Once a loop: HEAD's version asked for as a file opens, taken in once
     /// it comes, and the marks worked out again whenever the text changes.
+    /// Nothing is kept once the viewer and the editor are closed: a file
+    /// opened again is read again, as HEAD has it then.
     pub fn poll_git_gutter(&mut self) {
-        if !self.options.git_gutter {
+        if !self.options.git_gutter || !matches!(self.screen, Screen::Viewer(_) | Screen::Editor(_)) {
             self.git_gutter = None;
             return;
         }
         let Some((path, key)) = text_key(self) else {
             return;
         };
+        let limit = self.options.large_file_bytes();
         if self.git_gutter.as_ref().is_none_or(|gutter| gutter.path != path) {
-            let (sender, receiver) = mpsc::channel();
-            let (worker_path, limit) = (path.clone(), self.options.large_file_bytes());
-            std::thread::spawn(move || {
-                let _ = sender.send(read_head(&worker_path, limit));
-            });
             self.git_gutter = Some(GitGutter {
+                loading: Some(load(&path, limit)),
                 path,
-                loading: Some(receiver),
                 head: None,
+                moved: None,
+                checked: Instant::now(),
                 shown: None,
                 marks: Vec::new(),
                 hunks: Vec::new(),
@@ -152,13 +184,25 @@ impl AppState {
         };
         if let Some(loading) = &gutter.loading {
             match loading.try_recv() {
-                Ok(head) => {
-                    gutter.head = head;
+                Ok(loaded) => {
+                    gutter.head = loaded.head;
+                    gutter.moved = loaded.moved;
                     gutter.loading = None;
                     gutter.shown = None;
+                    gutter.checked = Instant::now();
                 }
                 Err(TryRecvError::Disconnected) => gutter.loading = None,
                 Err(TryRecvError::Empty) => {}
+            }
+        }
+        // HEAD moved since it was read - a commit made in a shell beside it:
+        // read again, the marks there are kept until the new ones come.
+        if gutter.loading.is_none() && gutter.checked.elapsed() >= HEAD_CHECK {
+            gutter.checked = Instant::now();
+            if let Some((log, then)) = &gutter.moved
+                && std::fs::metadata(log).and_then(|metadata| metadata.modified()).ok() != *then
+            {
+                gutter.loading = Some(load(&gutter.path, limit));
             }
         }
         let Some(head) = &gutter.head else {
@@ -257,6 +301,72 @@ mod tests {
 
     fn lines(text: &str) -> Vec<String> {
         shown_lines(text)
+    }
+
+    /// A line changed is marked; committed, it is not - whether the file is
+    /// opened again after the commit, or stays open while it is made.
+    #[test]
+    fn a_commit_takes_the_marks_away() {
+        let dir = std::env::temp_dir().join(format!("fm84-gutter-commit-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let run = |arguments: &[&str]| {
+            std::process::Command::new("git")
+                .arg("-C")
+                .arg(&dir)
+                .args(["-c", "user.name=fm84", "-c", "user.email=fm84@localhost", "-c", "commit.gpgsign=false"])
+                .args(arguments)
+                .output()
+                .is_ok_and(|output| output.status.success())
+        };
+        if !run(&["init", "--quiet"]) {
+            let _ = std::fs::remove_dir_all(&dir);
+            return;
+        }
+        let file = dir.join("file.txt");
+        std::fs::write(&file, "one\ntwo\n").unwrap();
+        assert!(run(&["add", "."]) && run(&["commit", "--quiet", "-m", "first"]));
+        std::fs::write(&file, "one\nTWO\n").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        // Polled until the marks have something on them, or say nothing.
+        let marked = |app_state: &mut AppState, want: bool| {
+            let started = Instant::now();
+            loop {
+                app_state.poll_git_gutter();
+                let any = app_state.git_marks().is_some_and(|marks| marks.iter().any(Option::is_some));
+                if any == want || started.elapsed() > Duration::from_secs(5) {
+                    return any;
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        };
+        let outcome = (|| {
+            app_state.open_editor(file.clone()).ok()?;
+            let before = marked(&mut app_state, true);
+            app_state.close_editor();
+            app_state.poll_git_gutter();
+            run(&["commit", "--quiet", "-am", "second"]).then_some(())?;
+            app_state.open_editor(file.clone()).ok()?;
+            let reopened = marked(&mut app_state, false);
+
+            // Changed again, open, and committed while it is.
+            std::fs::write(&file, "one\nthree\n").ok()?;
+            app_state.close_editor();
+            app_state.poll_git_gutter();
+            app_state.open_editor(file.clone()).ok()?;
+            let again = marked(&mut app_state, true);
+            run(&["commit", "--quiet", "-am", "third"]).then_some(())?;
+            let while_open = marked(&mut app_state, false);
+            Some((before, reopened, again, while_open))
+        })();
+        std::fs::remove_dir_all(&dir).unwrap();
+        let (before, reopened, again, while_open) = outcome.expect("the repository's commands");
+        assert!(before, "marked before the commit");
+        assert!(!reopened, "opened again after it: nothing marked");
+        assert!(again, "marked once changed again");
+        assert!(!while_open, "committed while open: the marks go");
     }
 
     #[test]

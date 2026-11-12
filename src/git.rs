@@ -517,6 +517,16 @@ pub fn top_and_prefix(dir: &Path) -> Result<(PathBuf, PathBuf), String> {
     Ok((top, prefix))
 }
 
+/// The file git writes to each time HEAD moves - a commit, a checkout, a
+/// reset - in the repository the file at `path` is in: its HEAD's log, or
+/// HEAD itself where no log is kept. Its time says when HEAD last changed.
+pub fn head_log(path: &Path) -> Option<PathBuf> {
+    let (dir, _) = where_and_name(path).ok()?;
+    let git_dir = PathBuf::from(git(dir, &["rev-parse", "--absolute-git-dir"]).ok()?.trim_end_matches(['\n', '\r']));
+    let log = git_dir.join("logs").join("HEAD");
+    Some(if log.is_file() { log } else { git_dir.join("HEAD") })
+}
+
 /// Run git in `dir`, giving back what it wrote, or what it said went wrong.
 /// Nothing it could ask for is answered: a prompt would wait for good on a
 /// terminal fm84 is drawing on.
