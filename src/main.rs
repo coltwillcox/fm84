@@ -16,6 +16,7 @@ mod git;
 mod glob;
 mod input;
 mod metadata;
+mod minimap;
 mod opener;
 mod options;
 mod scroll_bar;

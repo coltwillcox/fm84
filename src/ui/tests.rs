@@ -1682,3 +1682,113 @@ fn the_active_panel_glows_and_the_other_dims() {
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// F11's minimap: beside a viewer's, an editor's or a diff's text that runs
+/// past the view, two columns of half blocks, the rows on screen shaded,
+/// the matches of a search and the differences lit; a click on it moves the
+/// view there. None for a text that fits, and none with it off.
+#[test]
+fn the_minimap_draws_the_whole_text_beside_it() {
+    use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+    let dir = std::env::temp_dir().join(format!("fm84-minimap-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let tall = dir.join("tall.txt");
+    // A needle near the end, far from the first screen.
+    std::fs::write(&tall, (0..200).map(|n| if n == 180 { "needle here\n".to_string() } else { format!("line {n}\n") }).collect::<String>()).unwrap();
+    let short = dir.join("short.txt");
+    std::fs::write(&short, "one\ntwo\n").unwrap();
+    let other = dir.join("other.txt");
+    std::fs::write(&other, (0..200).map(|n| if n == 100 { "changed\n".to_string() } else { format!("line {n}\n") }).collect::<String>()).unwrap();
+
+    let (width, height) = (80u16, 24u16);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    assert!(app_state.options.minimap, "on to begin with");
+    crate::display::apply(&app_state.options);
+    let mut draw = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        terminal.backend().buffer().clone()
+    };
+    // The map's cells, by colour: what the top and bottom halves are.
+    let halves = |buffer: &ratatui::buffer::Buffer, map: &crate::minimap::Minimap| -> Vec<ratatui::style::Color> { (0..map.area.height).flat_map(|y| [buffer[(map.area.x, map.area.y + y)].fg, buffer[(map.area.x, map.area.y + y)].bg]).collect() };
+    let click = |app_state: &mut AppState, column: u16, row: u16| {
+        crate::input::handle_mouse_for_tests(
+            app_state,
+            MouseEvent {
+                kind: MouseEventKind::Down(MouseButton::Left),
+                column,
+                row,
+                modifiers: KeyModifiers::NONE,
+            },
+        );
+        crate::input::handle_mouse_for_tests(
+            app_state,
+            MouseEvent {
+                kind: MouseEventKind::Up(MouseButton::Left),
+                column,
+                row,
+                modifiers: KeyModifiers::NONE,
+            },
+        );
+    };
+
+    for edit in [false, true] {
+        let open = |app_state: &mut AppState, path: &PathBuf| {
+            if edit {
+                app_state.open_editor(path.clone()).unwrap();
+            } else {
+                app_state.open_viewer(path.clone()).unwrap();
+            }
+        };
+        open(&mut app_state, &short);
+        draw(&mut app_state);
+        assert!(app_state.drawn.minimap.is_none(), "it all fits (edit: {edit})");
+
+        open(&mut app_state, &tall);
+        let buffer = draw(&mut app_state);
+        let map = app_state.drawn.minimap.expect("a map for 200 lines");
+        assert_eq!(map.area.width, 2);
+        assert_eq!(map.area.right(), width - 1, "against the border");
+        assert!((0..map.area.height).all(|y| buffer[(map.area.x, map.area.y + y)].symbol() == "▀"));
+        let colours = halves(&buffer, &map);
+        // The view's rows are shaded: the first halves differ from the last.
+        assert_ne!(colours[0], colours[colours.len() - 6], "the view shaded (edit: {edit})");
+        assert!(!colours.contains(&palette().title), "nothing lit yet");
+
+        app_state.recall.find_term = "needle".to_string();
+        app_state.find_shown = true;
+        let buffer = draw(&mut app_state);
+        let lit = halves(&buffer, &map).iter().position(|&colour| colour == palette().title).expect("the match lit");
+        assert!(map.rows(lit).contains(&180), "where the match is: {lit}");
+        app_state.find_shown = false;
+
+        // A click on the map's bottom: the view to the end.
+        click(&mut app_state, map.area.x, map.area.bottom() - 1);
+        let offset = if edit { app_state.editor_mut().unwrap().scroll_offset } else { app_state.viewer_mut().unwrap().scroll_offset };
+        assert!(offset > 150, "moved down to {offset} (edit: {edit})");
+        click(&mut app_state, map.area.x, map.area.y);
+        let offset = if edit { app_state.editor_mut().unwrap().scroll_offset } else { app_state.viewer_mut().unwrap().scroll_offset };
+        assert_eq!(offset, 0, "and back to the top (edit: {edit})");
+    }
+
+    // Off, there is none, and the text has the room.
+    app_state.options.minimap = false;
+    app_state.open_viewer(tall.clone()).unwrap();
+    draw(&mut app_state);
+    assert!(app_state.drawn.minimap.is_none());
+    app_state.options.minimap = true;
+
+    // The diff lights what differs.
+    app_state.screen = Screen::Panels;
+    app_state.compare_files(tall.clone(), other.clone());
+    assert!(matches!(app_state.screen, Screen::Diff(_)));
+    let buffer = draw(&mut app_state);
+    let map = app_state.drawn.minimap.expect("a map beside the diff");
+    let colours = halves(&buffer, &map);
+    let lit: Vec<usize> = colours.iter().enumerate().filter(|&(_, &colour)| colour == palette().selected_marker).map(|(at, _)| at).collect();
+    assert!(!lit.is_empty() && lit.iter().all(|&half| map.rows(half).any(|row| (99..=182).contains(&row))), "the differences: {lit:?}");
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}

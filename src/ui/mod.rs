@@ -25,6 +25,7 @@ mod bars;
 mod checksums;
 mod dossier;
 mod help;
+mod minimap;
 mod options_popup;
 mod outrun;
 mod panels;
@@ -38,7 +39,7 @@ mod tree;
 
 pub use self::help::*;
 pub use self::tree::tree_prefix;
-use self::{animation::*, bars::*, checksums::*, dossier::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*, tree::*};
+use self::{animation::*, bars::*, checksums::*, dossier::*, minimap::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*, tree::*};
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style {
@@ -375,9 +376,11 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
         drawn.path_bar_area = chunks_main[1];
         // Only the viewer and the editor have bars, and they put theirs back.
         drawn.scroll_bars.clear();
+        drawn.minimap = None;
         match app_state.screen {
             Screen::Viewer(_) => {
-                let (height, width, content_area, bars) = render_viewer(f, chunks_main[2], app_state);
+                let (height, width, content_area, bars, minimap) = render_viewer(f, chunks_main[2], app_state);
+                drawn.minimap = minimap;
                 drawn.viewer_viewport_height = height;
                 drawn.viewer_viewport_width = width;
                 drawn.viewer_content_area = content_area;
@@ -385,7 +388,8 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             }
             Screen::Editor(_) => (drawn.editor_viewport_height, settled.editor_scroll) = render_editor(f, chunks_main[2], app_state, drawn),
             Screen::Diff(_) => {
-                let (height, width, scroll) = render_diff(f, chunks_main[2], app_state);
+                let (height, width, scroll, minimap) = render_diff(f, chunks_main[2], app_state);
+                drawn.minimap = minimap;
                 drawn.diff_viewport_height = height;
                 drawn.diff_viewport_width = width;
                 settled.diff_scroll = Some(scroll);

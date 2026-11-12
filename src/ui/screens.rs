@@ -2,8 +2,9 @@
 
 use super::*;
 
-pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect, Vec<ScrollBar>) {
+pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, Rect, Vec<ScrollBar>, Option<crate::minimap::Minimap>) {
     let mut bars = Vec::new();
+    let mut minimap = None;
     let bar_style = app_state.options.scroll_bar;
     if let Some(viewer_state) = app_state.viewer() {
         let filename = shown_name(&viewer_state.file_path);
@@ -30,6 +31,9 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Length(line_num_width), Constraint::Min(0)]).split(inner_area);
 
         let viewport_height = inner_area.height as usize;
+        // A picture has nothing to map, nor a file refused as binary.
+        let mappable = viewer_state.mode != ViewMode::Image && !viewer_state.from_edit;
+        let (text_area, map) = if mappable { make_room(chunks[1], viewer_state.total_lines, viewport_height, &app_state.options) } else { (chunks[1], None) };
         let start = viewer_state.scroll_offset;
         let end = (start + viewport_height).min(viewer_state.total_lines);
         // Line numbers, unless the gutter is zero-width - it must not be
@@ -54,7 +58,7 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         let content_area = if viewer_state.mode == ViewMode::Image {
             centered(chunks[1], viewer_state.image_columns, viewer_state.total_lines)
         } else {
-            chunks[1]
+            text_area
         };
 
         // Render content
@@ -131,18 +135,27 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
             if !viewer_state.wrapping() {
                 let columns = Extent {
                     content: viewer_state.content_width(),
-                    view: chunks[1].width as usize,
+                    view: text_area.width as usize,
                     offset: viewer_state.horizontal_offset,
                 };
-                bars.extend(horizontal_bar(f, area, chunks[1], columns, bar_style));
+                bars.extend(horizontal_bar(f, area, text_area, columns, bar_style));
+            }
+            if let Some(map) = map {
+                draw_minimap(f, &map, start, |index| {
+                    let (line, from, to) = viewer_state.row(index);
+                    let piece: String = viewer_state.line_text(line).chars().skip(from).take(to.saturating_sub(from)).collect();
+                    let marked = needle.as_ref().is_some_and(|needle| !needle.find_all(&piece).is_empty());
+                    MapRow::of(&piece, marked)
+                });
+                minimap = Some(map);
             }
         }
 
         // The viewport is the whole pane even when an image is centred in part
         // of it: fit and fill are worked out from the space available.
-        (viewport_height, chunks[1].width as usize, content_area, bars)
+        (viewport_height, text_area.width as usize, content_area, bars, minimap)
     } else {
-        (0, 0, Rect::default(), bars)
+        (0, 0, Rect::default(), bars, minimap)
     }
 }
 
@@ -152,7 +165,7 @@ pub(super) fn render_viewer(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
 /// back the rows shown and the width of each side's text, for scrolling.
 /// Returns the rows and the width each side's text had, and the scroll kept
 /// to them.
-pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, usize) {
+pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) -> (usize, usize, usize, Option<crate::minimap::Minimap>) {
     let block = Block::default()
         .title(Line::from(Span::styled(format!(" {} ", t!("Compare")), style_title())).centered())
         .borders(Borders::ALL)
@@ -160,13 +173,22 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
         .border_style(style_border());
     let inner = block.inner(area);
     let Screen::Diff(state) = &app_state.screen else {
-        return (0, 0, 0);
+        return (0, 0, 0, None);
     };
     // A difference near the end is jumped to with the rows after it, not past
     // them: the last row stays at the bottom, as scrolling keeps it.
     let scroll = state.scroll_offset.min(state.rows.len().saturating_sub((inner.height as usize).saturating_sub(1)));
     f.render_widget(block, area);
 
+    // The map beside both, under the paths' row: the left file down its
+    // left column, the right down its right, and the differences lit.
+    let body = Rect {
+        y: inner.y + 1,
+        height: inner.height.saturating_sub(1),
+        ..inner
+    };
+    let (body, map) = make_room(body, state.rows.len(), body.height as usize, &app_state.options);
+    let inner = Rect { width: body.width, ..inner };
     let [left_area, marker_area, right_area] = Layout::horizontal([Constraint::Fill(1), Constraint::Length(3), Constraint::Fill(1)]).areas(inner);
     let [_, marker_area] = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).areas(marker_area);
     let height = inner.height.saturating_sub(1) as usize;
@@ -205,7 +227,18 @@ pub(super) fn render_diff(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &Ap
         }
         f.render_widget(Paragraph::new(texts), text_area);
     }
-    (height, text_width, scroll)
+    if let Some(map) = map {
+        draw_minimap(f, &map, scroll, |index| {
+            let row = &state.rows[index];
+            let full = |lines: &[String], line: Option<usize>| line.and_then(|line| lines.get(line)).map_or(0.0, |text| fullness_of(text));
+            let fill = [full(&state.left, row.left), full(&state.right, row.right)];
+            MapRow {
+                fill,
+                mark: (!row.same).then(|| palette().selected_marker),
+            }
+        });
+    }
+    (height, text_width, scroll, map)
 }
 
 /// Returns the rows the text had room for, and the scroll down and across
@@ -237,6 +270,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         let chunks = Layout::default().direction(Direction::Horizontal).constraints([Constraint::Length(line_num_width), Constraint::Min(0)]).split(inner_area);
 
         let viewport_height = inner_area.height as usize;
+        let (text_area, map) = make_room(chunks[1], total_lines, viewport_height, &app_state.options);
         let start = editor_state.scroll_in_view(viewport_height);
         let end = (start + viewport_height).min(total_lines);
         let num_width = (line_num_width as usize).saturating_sub(1);
@@ -259,7 +293,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         if editor_state.auto_scroll {
             // In columns, as skip_columns scrolls: a wide character takes two.
             let visual_cursor_col = crate::utils::display_column(&editor_state.lines[editor_state.cursor_line], editor_state.cursor_col);
-            let viewport_width = chunks[1].width as usize;
+            let viewport_width = text_area.width as usize;
             if visual_cursor_col < h_offset {
                 h_offset = visual_cursor_col;
             }
@@ -306,7 +340,7 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         }
 
         let content_para = Paragraph::new(content_lines);
-        f.render_widget(content_para, chunks[1]);
+        f.render_widget(content_para, text_area);
 
         let rows = Extent {
             content: editor_state.lines.len(),
@@ -317,15 +351,22 @@ pub(super) fn render_editor(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &
         // A column more than the widest line, for the cursor at its end; and
         // never less than what shows, since the editor scrolls right as far
         // as it is asked to.
-        let view = chunks[1].width as usize;
+        let view = text_area.width as usize;
         let columns = Extent {
             content: (editor_state.widest_line() + 1).max(h_offset + view),
             view,
             offset: h_offset,
         };
-        bars.extend(horizontal_bar(f, area, chunks[1], columns, bar_style));
+        bars.extend(horizontal_bar(f, area, text_area, columns, bar_style));
+        if let Some(map) = map {
+            draw_minimap(f, &map, start, |index| {
+                let line = &editor_state.lines[index];
+                MapRow::of(line, needle.as_ref().is_some_and(|needle| !needle.find_all(line).is_empty()))
+            });
+            drawn.minimap = Some(map);
+        }
 
-        (viewport_height, chunks[1], Some((start, h_offset)))
+        (viewport_height, text_area, Some((start, h_offset)))
     } else {
         (0, Rect::default(), None)
     };

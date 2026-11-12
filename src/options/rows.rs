@@ -45,6 +45,7 @@ pub enum OptionRow {
     NightDrive,
     TabWidth,
     LineNumbers,
+    Minimap,
     ScrollBars,
     HighlightLimit,
     LargeFile,
@@ -53,7 +54,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 46] = [
+pub const OPTION_ROWS: [OptionRow; 47] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -94,6 +95,7 @@ pub const OPTION_ROWS: [OptionRow; 46] = [
     OptionRow::NightDrive,
     OptionRow::TabWidth,
     OptionRow::LineNumbers,
+    OptionRow::Minimap,
     OptionRow::ScrollBars,
     OptionRow::HighlightLimit,
     OptionRow::LargeFile,
@@ -145,6 +147,7 @@ impl OptionRow {
             OptionRow::NightDrive => t!("Night drive when left alone"),
             OptionRow::TabWidth => t!("Tab width"),
             OptionRow::LineNumbers => t!("Line numbers"),
+            OptionRow::Minimap => t!("Minimap beside the text"),
             OptionRow::ScrollBars => t!("Scroll bars"),
             OptionRow::HighlightLimit => t!("Highlight files up to"),
             OptionRow::LargeFile => t!("Ask before opening over"),
@@ -275,6 +278,7 @@ impl Options {
             },
             OptionRow::TabWidth => self.tab_width.to_string(),
             OptionRow::LineNumbers => on_off(self.line_numbers),
+            OptionRow::Minimap => on_off(self.minimap),
             // Shown as it is drawn, both ways.
             OptionRow::ScrollBars => {
                 let (down, along) = self.scroll_bar.thumbs();
@@ -385,6 +389,7 @@ impl Options {
             OptionRow::NightDrive => self.night_drive_minutes = step(&NIGHT_DRIVE_MINUTES, self.night_drive_minutes, forward),
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,
+            OptionRow::Minimap => self.minimap = !self.minimap,
             OptionRow::ScrollBars => self.scroll_bar = step(&ScrollBarStyle::ALL, self.scroll_bar, forward),
             OptionRow::HighlightLimit => self.highlight_limit_kib = step(&HIGHLIGHT_LIMITS_KIB, self.highlight_limit_kib, forward),
             OptionRow::LargeFile => self.large_file_mib = step(&LARGE_FILE_LIMITS_MIB, self.large_file_mib, forward),

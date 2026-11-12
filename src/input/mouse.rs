@@ -85,6 +85,9 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
         }
         return true;
     }
+    if (viewing || editing || matches!(app_state.screen, Screen::Diff(_))) && minimap_mouse(app_state, mouse_event.kind, column, row) {
+        return true;
+    }
     if matches!(app_state.screen, Screen::Diff(_)) {
         match mouse_event.kind {
             MouseEventKind::ScrollDown => app_state.diff_scroll(3, 0),
@@ -217,6 +220,46 @@ fn tree_click(app_state: &mut AppState, side: Side, column: u16, row: u16) {
     let on_mark = (mark_at..mark_at + 2).contains(&(column as usize));
     // A double click on the mark is two clicks on it, not Enter.
     app_state.tree_click(side, index, on_mark, double && !on_mark);
+}
+
+/// The left button on the minimap beside the viewer's, the editor's or the
+/// diff's text: pressed there, the view goes to the rows under it, those
+/// in its middle, and follows the pointer until the button comes up -
+/// past the map's ends too. True when the event was the map's.
+fn minimap_mouse(app_state: &mut AppState, kind: MouseEventKind, column: u16, row: u16) -> bool {
+    let Some(map) = app_state.drawn.minimap else {
+        app_state.map_drag = false;
+        return false;
+    };
+    let follow = |app_state: &mut AppState| {
+        let offset = map.offset_at(row);
+        if app_state.is_editing() {
+            app_state.editor_scroll_to(true, offset);
+        } else if app_state.is_viewing() {
+            app_state.viewer_scroll_to(true, offset);
+        } else if let Screen::Diff(state) = &app_state.screen {
+            let rows = offset as isize - state.scroll_offset as isize;
+            app_state.diff_scroll(rows, 0);
+        }
+    };
+    match kind {
+        MouseEventKind::Down(MouseButton::Left) => {
+            app_state.map_drag = map.contains(column, row);
+            if app_state.map_drag {
+                follow(app_state);
+            }
+            app_state.map_drag
+        }
+        MouseEventKind::Drag(MouseButton::Left) if app_state.map_drag => {
+            follow(app_state);
+            true
+        }
+        MouseEventKind::Up(MouseButton::Left) if app_state.map_drag => {
+            app_state.map_drag = false;
+            true
+        }
+        _ => false,
+    }
 }
 
 /// The left button on the viewer's or the editor's scroll bars: pressed on a

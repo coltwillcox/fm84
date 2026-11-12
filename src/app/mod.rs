@@ -330,6 +330,9 @@ pub struct AppState {
     /// how many cells from the thumb's start it was taken - followed until
     /// the button comes up.
     pub bar_drag: Option<(crate::scroll_bar::ScrollBar, usize)>,
+    /// Whether the left button went down on the minimap and is still down,
+    /// the view following the pointer.
+    pub map_drag: bool,
     /// Each side's drive strip as drawn, and which of the drives it shows.
     pub drive_strips: [Strip; 2],
     /// `user@host`, for the top border, and whether that is root.
@@ -562,6 +565,9 @@ pub struct Drawn {
     pub viewer_content_area: Rect,
     /// The viewer's or the editor's scroll bars, as last drawn.
     pub scroll_bars: Vec<crate::scroll_bar::ScrollBar>,
+    /// The minimap beside the viewer's, the editor's or the diff's text, as
+    /// last drawn, for a click or a drag on it.
+    pub minimap: Option<crate::minimap::Minimap>,
     /// What F11's Animation last drew, for the next frame to carry on from.
     pub motion: Motion,
 }
@@ -745,6 +751,7 @@ impl AppState {
             visited: Vec::new(),
             last_click: None,
             bar_drag: None,
+            map_drag: false,
             user_at_host: crate::fs_ops::user_at_host(),
             image_cache: ImageCache::default(),
             cursor_detail: None,

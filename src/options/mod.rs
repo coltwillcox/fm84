@@ -334,6 +334,9 @@ pub struct Options {
     pub tab_width: usize,
     /// The gutter in the viewer and the editor.
     pub line_numbers: bool,
+    /// The whole of the text drawn small beside it, in the viewer, the
+    /// editor and the diff.
+    pub minimap: bool,
     /// What the scroll bars' thumbs are drawn with.
     pub scroll_bar: ScrollBarStyle,
     /// The editor highlights files up to this size, in KiB; zero never does.
@@ -397,6 +400,7 @@ impl Default for Options {
             night_drive_minutes: 0,
             tab_width: 4,
             line_numbers: true,
+            minimap: true,
             scroll_bar: ScrollBarStyle::Heavy,
             highlight_limit_kib: 512,
             large_file_mib: 64,
