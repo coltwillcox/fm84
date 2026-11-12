@@ -467,6 +467,10 @@ fn git_bytes<S: AsRef<OsStr>>(dir: &Path, arguments: &[S]) -> Result<Vec<u8>, St
         .arg(dir)
         .args(arguments)
         .env("GIT_TERMINAL_PROMPT", "0")
+        // A name is the file of that name: `*` or `[ab].rs` matching others
+        // instead, or `:(top)` read as git's own, would stage or throw away
+        // the changes of files no one chose.
+        .env("GIT_LITERAL_PATHSPECS", "1")
         // Locks nothing: a status that refreshed the index could get in the
         // way of a commit being made in the shell beside it.
         .env("GIT_OPTIONAL_LOCKS", "0")
@@ -679,6 +683,43 @@ mod tests {
         unstage(&new).unwrap();
         assert_eq!(mark(&dir.join("sub"), "new.txt"), Some(Mark::Untracked));
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A name is the file of that name, never a pattern: staging or throwing
+    /// away the changes of a file called `*` touches it alone, not every
+    /// file beside it.
+    #[test]
+    fn a_name_like_a_pattern_is_only_itself() {
+        let Some(dir) = repository("pattern") else {
+            return;
+        };
+        let star = dir.join("*");
+        std::fs::write(&star, "star\n").unwrap();
+        let mut committed = Command::new("git");
+        committed
+            .arg("-C")
+            .arg(&dir)
+            .args(["-c", "user.name=fm84", "-c", "user.email=fm84@localhost", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "star"])
+            .env("GIT_LITERAL_PATHSPECS", "1");
+        let file = dir.join("file.txt");
+        let outcome = (|| {
+            stage(&star)?;
+            if !committed.output().is_ok_and(|output| output.status.success()) {
+                return Err("could not commit".to_string());
+            }
+            std::fs::write(&star, "star changed\n").unwrap();
+            std::fs::write(&file, "file changed\n").unwrap();
+            stage(&star)?;
+            let staged_beside = status(&dir)?.mark(OsStr::new("file.txt"), false);
+            unstage(&star)?;
+            discard(&star)?;
+            Ok((staged_beside, std::fs::read_to_string(&star).unwrap(), std::fs::read_to_string(&file).unwrap()))
+        })();
+        std::fs::remove_dir_all(&dir).unwrap();
+        let (staged_beside, star_now, file_now) = outcome.unwrap();
+        assert_eq!(staged_beside, Some(Mark::Modified), "file.txt not staged with *");
+        assert_eq!(star_now, "star\n", "* back as committed");
+        assert_eq!(file_now, "file changed\n", "file.txt's changes kept");
     }
 
     /// Before the first commit there is no HEAD to unstage back to: what is
