@@ -512,8 +512,8 @@ pub struct Panel {
 /// work the layout out again.
 #[derive(Default)]
 pub struct Drawn {
-    /// How many lines F1's list had room for - what the keys scroll it by,
-    /// and up to.
+    /// How many rows F1's list had room for - what the keys scroll it by,
+    /// and short of its end, as help_rows counts it, as far as they go.
     pub help_room: usize,
     /// How many rows F1's lines came to, a line too wide for it broken onto
     /// more - what the keys scroll up to. None before it is drawn.

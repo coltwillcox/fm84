@@ -114,8 +114,9 @@ pub enum PopupKind {
 
 impl Motion {
     /// The row to draw `side`'s cursor on, now it is at `to`: on its way
-    /// there from where it was last drawn, or there. None for it not to
-    /// slide - a panel new to the directory, or nothing drawn before.
+    /// there from where it was last drawn, part of the way between two rows,
+    /// or `to` itself - with nothing drawn before to slide from, as in a
+    /// panel new to its directory.
     pub fn cursor_row(&mut self, side: Side, to: u16, now: Instant) -> f64 {
         let last = self.cursor_rows[side].replace(to);
         match (last, self.slides[side]) {

@@ -60,7 +60,10 @@ impl AppState {
 }
 
 /// True for the first name met of a file - a file with more than one, by
-/// hard links, is there once, and deleting one name would free nothing.
+/// hard links, is counted once, as what it takes on the disk is: for the
+/// dossier and the ghost hunt. Only a file with more than one name is
+/// remembered, to keep a walk of a large tree small; the duplicate walk,
+/// which must not meet one file twice by any way, has first_meeting.
 #[cfg(unix)]
 pub(super) fn first_name(metadata: &std::fs::Metadata, seen: &mut HashSet<(u64, u64)>) -> bool {
     use std::os::unix::fs::MetadataExt;

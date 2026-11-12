@@ -68,8 +68,6 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     {
         return handle_key(app_state, KeyEvent::new(KeyCode::F(key), KeyModifiers::NONE));
     }
-    // Over the diff, the wheel scrolls it and nothing else answers: the
-    // panels it covers would otherwise take the clicks.
     // On the space map, a click chooses a block, and one on the block
     // chosen goes into it, as Enter does.
     if matches!(app_state.screen, Screen::Treemap) {
@@ -85,9 +83,13 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
         }
         return true;
     }
+    // The minimap beside the viewer's, the editor's or the diff's text takes
+    // a click or a drag on it first.
     if (viewing || editing || matches!(app_state.screen, Screen::Diff(_))) && minimap_mouse(app_state, mouse_event.kind, column, row) {
         return true;
     }
+    // Over the diff, the wheel scrolls it and nothing else answers: the
+    // panels it covers would otherwise take the clicks.
     if matches!(app_state.screen, Screen::Diff(_)) {
         match mouse_event.kind {
             MouseEventKind::ScrollDown => app_state.diff_scroll(3, 0),

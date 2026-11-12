@@ -18,10 +18,11 @@ pub(super) fn popup_inner(area: Rect) -> Rect {
 /// the prompt - so the dialog would ask a question with no way to see the
 /// answer. Here the blank rows go before any content does.
 ///
-/// A line wider than the popup is wrapped at its spaces rather than cut off at
-/// the border - an error naming a long path, or the names of a dozen files
-/// being copied. When that comes to more rows than there is room for, the
-/// longest is shortened, so the line naming the keys still shows.
+/// A line wider than the popup is wrapped rather than cut off at the border -
+/// an error naming a long path, or the names of a dozen files being copied, at
+/// its spaces; a row of keys between one key and the next. When that comes to
+/// more rows than there is room for, the longest is shortened, so the line
+/// naming the keys still shows.
 ///
 /// Gives back the row each line starts on, or None for one past the bottom.
 fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>) -> Vec<Option<u16>> {

@@ -113,12 +113,6 @@ impl Drop for Watch {
     }
 }
 
-/// Watch the directory a panel shows: its modified time, which moves when an
-/// entry is added, removed or renamed, and the space left on its filesystem,
-/// which moves with any write anywhere on it. `stamp` and `usage` are what
-/// the listing it is watching saw, so a change made while it was being read
-/// is still reported. `probe` is what is asked: the directory itself, or the
-/// archive file for a directory inside one, which has no time of its own.
 /// When `probe` last changed: its modified time - or, for the trash
 /// folder, which is not on the disk, the trash's own.
 pub fn modified(probe: &Path) -> Option<SystemTime> {
@@ -128,6 +122,12 @@ pub fn modified(probe: &Path) -> Option<SystemTime> {
     std::fs::metadata(probe).and_then(|metadata| metadata.modified()).ok()
 }
 
+/// Watch the directory a panel shows: its modified time, which moves when an
+/// entry is added, removed or renamed, and the space left on its filesystem,
+/// which moves with any write anywhere on it. `stamp` and `usage` are what
+/// the listing it is watching saw, so a change made while it was being read
+/// is still reported. `probe` is what is asked: the directory itself, or the
+/// archive file for a directory inside one, which has no time of its own.
 pub fn watch_dir(dir: PathBuf, probe: PathBuf, mut stamp: Option<SystemTime>, mut usage: Option<(u64, u64)>, interval: Duration, events: Sender<WatchEvent>) -> Watch {
     let stop = Arc::new(AtomicBool::new(false));
     let (watched, worker_stop) = (dir.clone(), Arc::clone(&stop));
