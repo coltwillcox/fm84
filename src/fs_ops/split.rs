@@ -152,9 +152,12 @@ pub fn split_file(source: &Path, dest: &Path, piece: u64, report: Report<'_>) ->
     let count = metadata.len().div_ceil(piece).max(1) as usize;
     let parts = |whole: &Path| -> Vec<PathBuf> { (1..=count).map(|number| piece_path(whole, number)).chain([sums_path(whole)]).collect() };
     let mut whole = dest.to_path_buf();
+    // Only pieces of a split written over are known to be pieces: what
+    // follows its last is taken away then, and left alone otherwise.
+    let mut replacing = false;
     if let Some(taken) = parts(dest).into_iter().find(|part| path_exists(part)) {
         match report.exists(source, &taken) {
-            Clash::Replace => {}
+            Clash::Replace => replacing = true,
             Clash::KeepBoth => whole = free_name_among(dest, |candidate| parts(candidate).iter().any(|part| path_exists(part))),
             Clash::Keep => {
                 let carry_on = report.step(Step::Starting(source)) && report.step(Step::Advanced(metadata.len()));
@@ -194,8 +197,10 @@ pub fn split_file(source: &Path, dest: &Path, piece: u64, report: Report<'_>) ->
     write_whole(&sums_file, &sums, path_exists(&sums_file))?;
     written.push(sums_file);
     // Pieces of an earlier split into more, past the last of this one.
-    for stale in (count + 1..).map(|number| piece_path(&whole, number)).take_while(|piece| path_exists(piece)) {
-        let _ = remove_file(stale);
+    if replacing {
+        for stale in (count + 1..).map(|number| piece_path(&whole, number)).take_while(|piece| path_exists(piece)) {
+            let _ = remove_file(stale);
+        }
     }
     Ok((Transfer::Done, written))
 }

@@ -372,3 +372,37 @@ fn a_move_split_takes_the_file_away_and_old_pieces_with_it() {
     assert!(!crate::fs_ops::piece_path(&whole, 3).exists(), "old pieces gone");
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// A split that writes over nothing leaves alone what comes after its last
+/// piece: a `.003` beside two new pieces is not one of an earlier split it
+/// was told to write over, and may be anything.
+#[test]
+fn a_split_onto_nothing_leaves_the_names_after_its_pieces_alone() {
+    let dir = std::env::temp_dir().join(format!("fm84-split-alone-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let stick = dir.join("stick");
+    std::fs::create_dir_all(&stick).unwrap();
+    crate::fs_ops::test_limits::set(&stick, 10);
+    let source = dir.join("big.bin");
+    std::fs::write(&source, vec![7u8; 15]).unwrap();
+    let whole = stick.join("big.bin");
+    let unrelated = crate::fs_ops::piece_path(&whole, 3);
+    std::fs::write(&unrelated, "mine").unwrap();
+
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.start_transfer(vec![(source.clone(), whole.clone(), false)], true, crate::app::Clashes::Ask);
+    let started = std::time::Instant::now();
+    while app_state.workers.job.is_some() {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never finished");
+        if let Some(job) = app_state.workers.job.as_mut().filter(|job| job.too_big.is_some()) {
+            job.answer(crate::app::Answer::Split);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert_eq!(app_state.error, None);
+    assert!(crate::fs_ops::piece_path(&whole, 2).exists(), "split in two");
+    assert_eq!(std::fs::read(&unrelated).unwrap(), b"mine", "nothing was written over: the .003 is left as it was");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
