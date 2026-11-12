@@ -2000,6 +2000,9 @@ msgstr Turbo: svetlejši neon, črte skeniranja
 msgid  Animation: sliding cursor, rows booting up
 msgstr Animacija: drseč kazalec, vrstice, ki se prižgejo
 
+msgid  Glow around the active panel
+msgstr Sij okoli dejavnega podokna
+
 msgid  [Exif:date] [Tag:artist] [Pdf:title] too
 msgstr [Exif:date] [Tag:artist] [Pdf:title] tudi
 

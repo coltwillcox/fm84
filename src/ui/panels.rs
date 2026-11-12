@@ -2,6 +2,7 @@
 //! strips, the path bar, the file tables, and the preview F12 puts in one.
 
 use super::*;
+use ratatui::style::Color;
 
 /// The columns beside Name. Name is never dropped, so it is not one of them.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -106,6 +107,51 @@ fn name_width(options: &Options, panel_width: u16) -> u16 {
 /// that line up with the panels all derive their columns the same way.
 fn panel_split(area: Rect) -> std::rc::Rc<[Rect]> {
     Layout::default().direction(Direction::Horizontal).constraints([Constraint::Percentage(50), Constraint::Length(1), Constraint::Percentage(50)]).split(area)
+}
+
+/// F11's glow, over the panels as drawn in `area` - from the path bar over
+/// them down to the status bar under them: the lines around the panel in
+/// use drawn brighter, and the other panel dimmed a shade. Not a preview in
+/// the other's place, which is there to be read.
+pub(super) fn glow_active_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState) {
+    if !app_state.options.focus_glow || area.height < 3 {
+        return;
+    }
+    let halves = panel_split(area);
+    let (left, separator, right) = (halves[0].x, halves[1].x, halves[2].right().saturating_sub(1));
+    let (top, bottom) = (area.top(), area.bottom() - 1);
+    let (from, to, other) = if app_state.active_side.is_left() {
+        (left, separator, (separator + 1, right))
+    } else {
+        (separator, right, (left + 1, separator))
+    };
+    let buffer = f.buffer_mut();
+
+    // Only the lines: the path and the counts along them keep their colours.
+    let lit = Style::new().fg(palette().title).add_modifier(Modifier::BOLD).remove_modifier(Modifier::DIM);
+    let edges = (from..=to).flat_map(|x| [(x, top), (x, bottom)]).chain((top + 1..bottom).flat_map(|y| [(from, y), (to, y)]));
+    for (x, y) in edges {
+        let cell = &mut buffer[(x, y)];
+        if cell.symbol().chars().next().is_some_and(|c| ('\u{2500}'..='\u{257F}').contains(&c)) {
+            cell.set_style(lit);
+        }
+    }
+
+    if app_state.preview.is_some() {
+        return;
+    }
+    let behind = crate::display::background().unwrap_or(palette().background);
+    for y in top + 1..bottom {
+        for x in other.0..other.1 {
+            let cell = &mut buffer[(x, y)];
+            let fg = if matches!(cell.fg, Color::Reset) { palette().file } else { cell.fg };
+            cell.set_fg(blend(fg, behind, 0.45));
+            if !matches!(cell.bg, Color::Reset) && cell.bg != behind {
+                let bg = cell.bg;
+                cell.set_bg(blend(bg, behind, 0.3));
+            }
+        }
+    }
 }
 
 fn mount_icon(kind: crate::fs_ops::MountKind, style: IconStyle) -> &'static str {

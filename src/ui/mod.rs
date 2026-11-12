@@ -399,6 +399,9 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             }
         }
         render_bottom_panel(f, chunks_main[3], app_state);
+        if matches!(app_state.screen, Screen::Panels) {
+            glow_active_panel(f, chunks_main[1].union(chunks_main[3]), app_state);
+        }
         render_fkey_bar(f, chunks_main[4], app_state, drawn);
         render_detail(f, chunks_main[4].inner(Margin { vertical: 0, horizontal: 2 }), app_state);
 

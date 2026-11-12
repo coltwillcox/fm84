@@ -1632,3 +1632,53 @@ fn animation_moves_the_panels_and_opens_the_popups() {
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// F11's glow: the lines around the panel in use lit in the title's colour
+/// and the other panel's text dimmed - the side following Tab - and
+/// nothing of it with the option off, as it starts.
+#[test]
+fn the_active_panel_glows_and_the_other_dims() {
+    let dir = std::env::temp_dir().join(format!("fm84-glow-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("alpha.txt"), "x").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    assert!(!app_state.options.focus_glow, "off to begin with");
+    crate::display::apply(&app_state.options);
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Right, dir.clone(), None);
+    app_state.active_side = Side::Left;
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 16)).unwrap();
+    let mut draw = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        terminal.backend().buffer().clone()
+    };
+    // The left edge, the line between the panels and the right edge, on a
+    // row in the middle of them; and where each panel's alpha.txt is.
+    let (left_edge, middle, right_edge, row) = (0, 39, 79, 8);
+    let alpha = |buffer: &ratatui::buffer::Buffer, from: u16| (from..from + 39).flat_map(|x| (4..12).map(move |y| (x, y))).find(|&(x, y)| buffer[(x, y)].symbol() == "a" && buffer[(x + 1, y)].symbol() == "l").unwrap();
+
+    let off = draw(&mut app_state);
+    assert_eq!(off[(left_edge, row)].fg, palette().border);
+    let (left_alpha, right_alpha) = (alpha(&off, 1), alpha(&off, 41));
+    assert_eq!(off[left_alpha].fg, off[right_alpha].fg, "both panels alike");
+
+    app_state.options.focus_glow = true;
+    let on = draw(&mut app_state);
+    assert_eq!(on[(left_edge, row)].symbol(), "│", "the lines as they were, only lit");
+    for x in [left_edge, middle] {
+        assert_eq!(on[(x, row)].fg, palette().title, "the left panel's lines lit at {x}");
+    }
+    assert_eq!(on[(right_edge, row)].fg, palette().border, "not the other's own edge");
+    assert_eq!(on[left_alpha].fg, off[left_alpha].fg, "the panel in use as it was");
+    assert_ne!(on[right_alpha].fg, off[right_alpha].fg, "the other dimmed");
+
+    app_state.active_side = Side::Right;
+    let tabbed = draw(&mut app_state);
+    assert_eq!(tabbed[(right_edge, row)].fg, palette().title);
+    assert_eq!(tabbed[(left_edge, row)].fg, palette().border);
+    assert_ne!(tabbed[left_alpha].fg, off[left_alpha].fg, "now the left one dimmed");
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}

@@ -325,6 +325,9 @@ pub struct Options {
     /// The cursor sliding, rows coming up, popups wiping open and what a
     /// copy made flashing.
     pub animation: bool,
+    /// The panel not in use dimmed a shade, and the lines around the one in
+    /// use drawn brighter.
+    pub focus_glow: bool,
     /// Left alone this many minutes, the panels give way to a drive down
     /// the Outrun grid until the next key. Zero, and they never do.
     pub night_drive_minutes: u64,
@@ -390,6 +393,7 @@ impl Default for Options {
             burst_delete: false,
             turbo: false,
             animation: false,
+            focus_glow: false,
             night_drive_minutes: 0,
             tab_width: 4,
             line_numbers: true,

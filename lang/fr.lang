@@ -1924,6 +1924,9 @@ msgstr Turbo : néon plus vif, lignes de balayage
 msgid  Animation: sliding cursor, rows booting up
 msgstr Animation : curseur qui glisse, lignes qui s'allument
 
+msgid  Glow around the active panel
+msgstr Halo autour du panneau actif
+
 msgid  [Exif:date] [Tag:artist] [Pdf:title] too
 msgstr [Exif:date] [Tag:artist] [Pdf:title] aussi
 

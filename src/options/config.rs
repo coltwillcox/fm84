@@ -173,6 +173,7 @@ impl Options {
                 "burst_delete" => options.burst_delete = flag(options.burst_delete),
                 "turbo" => options.turbo = flag(options.turbo),
                 "animation" => options.animation = flag(options.animation),
+                "focus_glow" => options.focus_glow = flag(options.focus_glow),
                 "night_drive" => options.night_drive_minutes = number(0..=1440).unwrap_or(options.night_drive_minutes),
                 "tab_width" => options.tab_width = number(1..=16).map_or(options.tab_width, |n| n as usize),
                 "line_numbers" => options.line_numbers = flag(options.line_numbers),
@@ -292,6 +293,8 @@ impl Options {
              turbo = {}\n\
              # The cursor sliding, rows coming up, popups wiping open, copies flashing.\n\
              animation = {}\n\
+             # The panel in use outlined brighter, the other dimmed a shade.\n\
+             focus_glow = {}\n\
              # Left alone this many minutes, a drive down the neon grid until a\n\
              # key. 0 for never.\n\
              night_drive = {}\n\
@@ -351,6 +354,7 @@ impl Options {
             self.burst_delete,
             self.turbo,
             self.animation,
+            self.focus_glow,
             self.night_drive_minutes,
             self.tab_width,
             self.line_numbers,
