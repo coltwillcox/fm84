@@ -165,12 +165,58 @@ impl Change {
         #[cfg(not(unix))]
         let _ = is_dir;
         if let Some(modified) = self.modified {
-            // Setting a time needs only to own the file, not to write it, so
-            // opening it to read is enough - a directory too, on Unix.
-            fs::File::open(path)?.set_modified(modified)?;
+            set_modified(path, modified)?;
         }
         Ok(())
     }
+}
+
+/// Set `path`'s modified time, following a link, its access time left as it
+/// is. Setting a time needs only to own the entry. On Unix it is set by name,
+/// never opened - opening one its owner may not read is refused, and opening
+/// a named pipe waits for a writer, for ever if none comes.
+#[cfg(unix)]
+fn set_modified(path: &Path, modified: SystemTime) -> io::Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+    let name = std::ffi::CString::new(path.as_os_str().as_bytes()).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // Before 1970 the seconds go below none, and the nanoseconds stay above.
+    let (seconds, nanoseconds) = match modified.duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(since) => (since.as_secs() as i64, since.subsec_nanos() as i64),
+        Err(before) => {
+            let before = before.duration();
+            let (seconds, nanoseconds) = (before.as_secs() as i64, before.subsec_nanos() as i64);
+            if nanoseconds == 0 { (-seconds, 0) } else { (-seconds - 1, 1_000_000_000 - nanoseconds) }
+        }
+    };
+    let times = [
+        libc::timespec { tv_sec: 0, tv_nsec: libc::UTIME_OMIT },
+        libc::timespec {
+            tv_sec: seconds as libc::time_t,
+            tv_nsec: nanoseconds as _,
+        },
+    ];
+    // SAFETY: a name ended by its nul, and the two times utimensat reads.
+    if unsafe { libc::utimensat(libc::AT_FDCWD, name.as_ptr(), times.as_ptr(), 0) } == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+/// On Windows, opened asking only to write its attributes, which is what a
+/// time is - opened to read, the system refuses the time - and with backup
+/// semantics, without which a directory cannot be opened at all.
+#[cfg(windows)]
+fn set_modified(path: &Path, modified: SystemTime) -> io::Result<()> {
+    use std::os::windows::fs::OpenOptionsExt;
+    const FILE_WRITE_ATTRIBUTES: u32 = 0x0100;
+    const FILE_FLAG_BACKUP_SEMANTICS: u32 = 0x0200_0000;
+    fs::OpenOptions::new().access_mode(FILE_WRITE_ATTRIBUTES).custom_flags(FILE_FLAG_BACKUP_SEMANTICS).open(path)?.set_modified(modified)
+}
+
+#[cfg(not(any(unix, windows)))]
+fn set_modified(path: &Path, modified: SystemTime) -> io::Result<()> {
+    fs::File::open(path)?.set_modified(modified)
 }
 
 #[cfg(test)]
@@ -276,6 +322,55 @@ mod tests {
         }
         .apply(&file, false)
         .unwrap();
+        fs::remove_dir_all(&dir).unwrap();
+    }
+}
+
+#[cfg(all(test, unix))]
+mod time_tests {
+    use super::*;
+    use std::time::Duration;
+
+    /// A modified time is set on what can be neither read nor opened without
+    /// waiting: a file its owner may not read, as `touch` sets it, and a named
+    /// pipe, which opening to read would wait on for a writer for ever.
+    #[test]
+    fn a_time_is_set_without_opening_what_it_is_set_on() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("fm84-attr-time-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let when = SystemTime::UNIX_EPOCH + Duration::from_secs(1_600_000_000);
+        let change = Change { modified: Some(when), ..Change::default() };
+
+        let locked = dir.join("locked");
+        fs::write(&locked, "x").unwrap();
+        fs::set_permissions(&locked, fs::Permissions::from_mode(0o200)).unwrap();
+        let result = change.apply(&locked, false);
+        fs::set_permissions(&locked, fs::Permissions::from_mode(0o600)).unwrap();
+        result.expect("set on a file its owner may not read");
+        assert_eq!(fs::metadata(&locked).unwrap().modified().unwrap(), when);
+        // Before 1970, part of a second in.
+        let early = SystemTime::UNIX_EPOCH - Duration::from_millis(1_500);
+        Change { modified: Some(early), ..Change::default() }.apply(&locked, false).unwrap();
+        assert_eq!(fs::metadata(&locked).unwrap().modified().unwrap(), early);
+
+        let pipe = dir.join("pipe");
+        let name = std::ffi::CString::new(pipe.as_os_str().as_encoded_bytes()).unwrap();
+        assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+        let (sent, got) = std::sync::mpsc::channel();
+        let path = pipe.clone();
+        std::thread::spawn(move || {
+            let change = Change { modified: Some(when), ..Change::default() };
+            let _ = sent.send(change.apply(&path, false).map_err(|e| e.to_string()));
+        });
+        let result = got.recv_timeout(Duration::from_secs(3));
+        // Let a thread still waiting on the pipe go, before anything fails.
+        if result.is_err() {
+            let _ = fs::OpenOptions::new().write(true).open(&pipe);
+        }
+        result.expect("not waiting on the pipe").expect("set on a named pipe");
+        assert_eq!(fs::metadata(&pipe).unwrap().modified().unwrap(), when);
         fs::remove_dir_all(&dir).unwrap();
     }
 }
