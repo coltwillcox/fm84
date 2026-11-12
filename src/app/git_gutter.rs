@@ -81,6 +81,10 @@ fn load(path: &Path, limit: u64) -> Receiver<Loaded> {
     let (sender, receiver) = mpsc::channel();
     let path = path.to_path_buf();
     std::thread::spawn(move || {
+        // Through a link, the file it leads to - what is shown, and saved -
+        // in whichever repository that is in: HEAD holds of a link only the
+        // name it points at, which every line would read as changed against.
+        let path = std::fs::canonicalize(&path).unwrap_or(path);
         let moved = crate::git::head_log(&path).map(|log| {
             let time = std::fs::metadata(&log).and_then(|metadata| metadata.modified()).ok();
             (log, time)
@@ -367,6 +371,53 @@ mod tests {
         assert!(!reopened, "opened again after it: nothing marked");
         assert!(again, "marked once changed again");
         assert!(!while_open, "committed while open: the marks go");
+    }
+
+    /// A file opened through a link is marked against what HEAD has of the
+    /// file it leads to: the link in HEAD is only the name it points at, and
+    /// against that every line would read as changed.
+    #[cfg(unix)]
+    #[test]
+    fn a_file_opened_through_a_link_is_marked_against_the_file() {
+        let dir = std::env::temp_dir().join(format!("fm84-gutter-link-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let run = |arguments: &[&str]| {
+            std::process::Command::new("git")
+                .arg("-C")
+                .arg(&dir)
+                .args(["-c", "user.name=fm84", "-c", "user.email=fm84@localhost", "-c", "commit.gpgsign=false"])
+                .args(arguments)
+                .output()
+                .is_ok_and(|output| output.status.success())
+        };
+        if !run(&["init", "--quiet"]) {
+            let _ = std::fs::remove_dir_all(&dir);
+            return;
+        }
+        std::fs::write(dir.join("real.txt"), "one\ntwo\n").unwrap();
+        std::os::unix::fs::symlink("real.txt", dir.join("link.txt")).unwrap();
+        let committed = run(&["add", "."]) && run(&["commit", "--quiet", "-m", "first"]);
+        std::fs::write(dir.join("real.txt"), "one\nTWO\n").unwrap();
+
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        let marks = app_state.open_editor(dir.join("link.txt")).ok().and_then(|()| {
+            let started = Instant::now();
+            loop {
+                app_state.poll_git_gutter();
+                if let Some(marks) = app_state.git_marks() {
+                    return Some(marks.to_vec());
+                }
+                if started.elapsed() > Duration::from_secs(5) {
+                    return None;
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        });
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert!(committed);
+        assert_eq!(marks, Some(vec![None, Some(Change::Changed), None]), "only the line changed in the file itself");
     }
 
     #[test]
