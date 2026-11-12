@@ -176,6 +176,7 @@ Everything fm84 does, in full. The [README](../README.md) has the short version,
 - ❓ **Large file prompt** - asks before pulling anything over 64 MiB into memory (16 or 256 under F11), and before decoding a picture that needs over 256 MiB of it - a few hundred KB of PNG can unpack to hundreds of MB
 - ↔️ **Horizontal scrolling** - Left/Right keys and mouse scroll wheel, stopping at the longest line
 - ┃ **Scroll bars** - drawn into the frame's border, down the right for the lines and along the bottom for the columns, each only when there is more than fits; the text keeps every column it had. Click the track for a page that way, or drag the thumb, which follows the pointer until the button comes up. F11 sets what the thumbs are drawn with
+- 🗺️ **Minimap** - beside the text, when there is more than fits and the text keeps 30 columns: the whole of it drawn small in half blocks, each half a cell a run of rows, brighter as its rows are fuller - the left column a line's first 40 characters, the right the next 40, or 20 each four columns wide. The rows on screen are shaded behind, and the matches of a search lit in the title's colour. A click puts the rows there in the middle of the view, the top and bottom cells going all the way to the start and the end; a drag follows the pointer. F11 sets it 2 or 4 columns wide, or off. A long file is sampled, eight rows to a half cell at most, so a match on a row not sampled may not show on it
 - 📜 **Wrap** - `W` breaks long lines onto as many rows as they need, after a space where there is one; scrolling goes by rows, so a line longer than the screen can be read to its end. Finding, selecting and copying go on by whole lines, so a copy never gains a break that was only on screen, and line numbers and Go to line count lines, not rows. The next file opened wraps or not as the last was left
 - 📡 **Follow** - `F` on text follows the file as it grows, as `tail -f`: what is written to it comes onto the end a few times a second, and the view goes there - only when something comes, so a search stays put until then. A log cut short, or turned over for a new one, is read again from its start. Matches stay marked. Scrolling up, Home and PageUp stop it; the status bar says `F [Follow]`
 - 🕰️ **Through git history** - **Alt+Left** shows the file as the last commit that changed it had it, again for the one before, and on back to the first; **Alt+Right** comes forward, and past the newest is the file as it is on the disk. Renames are followed, as `git log --follow` follows them, and merges passed over. The line at the top stays, as far as the other version goes, and so do wrap, hex, fit and zoom; the status bar says `Commit 3/12`, how long ago it was made and its subject. Follow waits for the file as it is, and a file not in a repository, or in none of its commits, says so
@@ -204,6 +205,7 @@ Everything fm84 does, in full. The [README](../README.md) has the short version,
 - 🔤 **UTF-8 only** - a file that is not UTF-8 text is refused rather than opened with its odd bytes replaced, which saving would make permanent; F3 shows it
 - ↔️ **Horizontal auto-scroll** - viewport follows cursor past the right edge
 - ┃ **Scroll bars** - as in the Viewer: click the track for a page, drag the thumb; like the wheel they move the view and leave the cursor where it is
+- 🗺️ **Minimap** - as in the Viewer; a click or a drag moves the view, and the cursor stays where it is
 - 🖱️ **Mouse scroll** - vertical and horizontal scrolling with the scroll wheel
 - 🖱️ **Mouse click and drag** - click to position the cursor, drag to select
 
@@ -211,6 +213,7 @@ Everything fm84 does, in full. The [README](../README.md) has the short version,
 - 🎯 **Which two** - two files selected in the panel you are in; otherwise the file under the cursor against the one of the same name in the other panel, or failing that the one under the cursor there. The left panel's file is always on the left
 - 🪞 **Side by side** - each file under its path, numbered as F11 numbers lines, with the mark `diff -y` uses between them: `|` changed, `<` only on the left, `>` only on the right. Lines that differ are shaded. Lines removed and added in one place are paired off, and whichever side has more carries on alone
 - ⏭️ **From one difference to the next** - it opens on the first; **F3** or **N** goes to the next, **Shift+F3** or **P** to the previous, and the status bar says which it is on. Arrows, PageUp/PageDown, Home/End and the wheel scroll both sides together; **Esc** closes it
+- 🗺️ **Minimap** - as in the Viewer, under the paths: the left file down its half, the right down its own, and what differs lit
 - 🧮 **The diff `diff` and git use** - Myers', on lines, after the lines both files start and end with are set aside. Two files that differ in more than 2,048 lines between those are shown as one block replaced
 - 💬 **Nothing to show** - files that are the same, that differ only in line endings (CRLF against LF, or a missing newline at the end), or that are not text are only spoken of, in the status bar - for binaries, the first byte that differs. Either file over the size F11 asks before opening is refused
 - ⌨️ **Shift+F3 needs a terminal that can send it** - most send F3 with a modifier as they report where their cursor is, and fm84 cannot tell the two apart. fm84 asks for kitty's keyboard protocol, which settles it, where the terminal has it - kitty, foot, WezTerm, Ghostty, Alacritty. Elsewhere, `=` (Ctrl+F3 sort and the Viewer's Shift+F3 have the same trouble there)
@@ -222,7 +225,7 @@ Everything fm84 does, in full. The [README](../README.md) has the short version,
 - 🪶 **Bounded** - reads at most 64 KiB of a text file and 4 KiB of a binary, never prompts, never loads a whole file, and never opens a pipe or a device
 
 ## ⚙️ Options (F11)
-Grouped under four headings, in a popup no taller than the panels: the list scrolls within it, with ↑/↓ or the mouse wheel, which stop at its first and last row, and the corner says which row of how many the cursor is on.
+Grouped under four headings, in a popup no taller than the panels: the list scrolls within it, with ↑/↓, PageUp/PageDown a page at a time, Home/End to either end, or the mouse wheel, all stopping at its first and last row. The list stays where it is while the cursor moves through what is on show, and moves only once the cursor goes past its top or bottom, a group's heading coming in with its first row; the corner says which row of how many the cursor is on.
 
 **Panels**
 - 🙈 **Show hidden files** - dotfiles, or on Windows anything with the hidden attribute
@@ -264,11 +267,14 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 🚗 **Outrun progress bar** - a job drawn as a car driving down a neon grid towards the sun, in the theme's colours: the further it has got, the more is done, and the bigger the sun. Esc swerves it off the road. Off by default
 - 💥 **Burst what is deleted for good** - the rows burst into pixels for a moment before a delete for good takes them; never for the trash. Off by default
 - ⚡ **Turbo** - every theme's neon turned up - on a light one, only stronger - scanlines over the panels, and the logo blinking in F1. Off by default
+- 🎞️ **Animation** - the cursor sliding to its row rather than jumping there; a directory's rows coming up one after another as a CRT warms, a beam along the newest, the first time a panel comes to it; every popup wiped open from its middle; and the rows a copy, a move or a join made glowing a moment in the title's colour. Each over in a fraction of a second, drawn at about 60 frames a second only while something moves. Off by default
+- ✨ **Glow around the active panel** - the lines around the panel in use drawn brighter, in the title's colour, and the other panel dimmed a shade, to tell them apart at a glance. Not a preview in the other's place, which is there to be read. Off by default
 - 🌃 **Night drive when left alone** - left alone on the panels for 1, 3, 5, 10, 15 or 30 minutes, fm84 drives down the Outrun grid: palms going by, the sun on the horizon and the logo over it, as Turbo draws when it is on. Any key or the mouse, and the panels are back as they were - that key doing nothing else. Not over a dialog, a job, the Viewer or the Editor. Off by default
 
 **Viewer and editor**
 - ⇥ **Tab width** - 2, 4 or 8 columns, in the Viewer, the Editor and the preview
 - 📊 **Line numbers** - on or off, in the Viewer and the Editor
+- 🗺️ **Minimap width** - 2 or 4 columns, or off: the whole text drawn small beside it in the Viewer, the Editor and Compare. 2 by default
 - ┃ **Scroll bars** - what their thumbs are drawn with: **Heavy** `┃━`, the border's own line drawn thicker, **Double** `║═`, **Dashed** `╏╍`, **Block** `█`, **Shade** `▓`, or **ASCII** `#` for a font without box drawing
 - 🌈 **Highlight files up to** 256 KiB, 512 KiB or 2 MiB, or never
 - ❓ **Ask before opening over** 16, 64 or 256 MiB
@@ -276,7 +282,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 🎨 **Image backgrounds** - on or off. On, each character sits on its own colour, so the dark parts of a picture keep theirs instead of showing the terminal through the gaps in the glyphs. Off costs less to send, which matters over a slow link
 - ⚡ **Read pictures ahead** - decode the pictures either side of the one open, so PageUp and PageDown do not wait for each. Costs a few megabytes and a thread that wakes only while a picture is open
 
-- ⌨️ **Up/Down** to move, **Enter**, **Space** or **Left/Right** to change, Enter again to save a typed command
+- ⌨️ **Up/Down** to move, **PageUp/PageDown** a page, **Home/End** to the first and the last, **Enter**, **Space** or **Left/Right** to change, Enter again to save a typed command
 - 💾 **Saved as you go** to `~/.config/fm84/config` (`$XDG_CONFIG_HOME` if set, `%APPDATA%\fm84\config` on Windows) - plain `key = value` lines, fine to edit by hand. Remembered directories go in `session` beside it, bookmarks in `bookmarks`, Alt+M's commands in `menu`, the programs files open with in `open`, the Info column's commands in `columns`, the colours files are drawn in in `colors`, F1's high scores in `scores`, Alt+B's mixtapes in `mixtapes`, and Alt+J's directories in `jumps`
 
 ## 📦 Archives

@@ -6,6 +6,24 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.51.0] - 2026-11-12
+
+### ✨ Added
+- 🗺️ **A minimap** - beside the viewer's, the editor's and Compare's text, when there is more than fits: the whole of it drawn small in half blocks, each half a cell a run of rows, brighter as its rows are fuller. The rows on screen are shaded behind it and the matches of a search lit; in Compare, the left file runs down its left half and the right down its right, what differs lit. A click puts the rows there in the middle of the view, the top and bottom cells going to the very start and end, and a drag follows the pointer; in the editor the cursor stays where it is. F11's **Minimap width** has it 2 or 4 columns wide - each column the next 40 or 20 characters of a line - or off. 2 by default
+- 🎞️ **Animation** - an F11 option: the cursor slides to its row rather than jumping there; a directory's rows come up one after another as a CRT warms, a beam along the newest, the first time a panel comes to it; every popup wipes open from its middle; and the rows a copy, a move or a join made glow a moment in the title's colour. Each is over in a fraction of a second, drawn at about 60 frames a second only while something moves. Off by default
+- ✨ **Glow around the active panel** - an F11 option: the lines around the panel in use drawn brighter, in the title's colour, and the other panel dimmed a shade - files in colours of the terminal's own, named or numbered in the `colors` file, as well. Not a preview in the other's place. Off by default
+- 📜 **Paging through F11** - **PageUp** and **PageDown** a page at a time, **Home** and **End** to the first option and the last
+
+### 🐛 Fixed
+- 📜 **F11's list on a short screen** - from the last option, Up moved the whole list and kept the cursor at the bottom of it; the cursor moves through what is on show, and the list only once it goes past the top or the bottom, a group's heading coming in with its first row
+- ✂️ **Splitting beside a file of the same name** - a split into two pieces deleted a `name.003` already there, and any after it, though nothing was written over and nobody asked; what follows the last piece is taken away only when an earlier split is written over, as it was meant to be
+- 💥 **A job's thread that failed** - put the terminal back and printed its report over the screen while fm84 went on, on a terminal it could no longer draw on or read keys from. Only a failure of fm84 itself does that now; a job's says it stopped unexpectedly, as before, and its report is printed once fm84 quits
+- 🧹 **What was copied out of archives** - to be viewed or opened, it was cleaned away only on quitting normally; after an error or a crash it was left in the temporary directory for good, decrypted where the archive had a password. It goes however fm84 ends
+- ✍️ **Backspace after Shift+Down on the last line** - Shift+Down there goes nowhere and selects nothing, but left a selection's start behind it; Backspace joining the line to the one above then cut a selection out of lines no longer there, and could crash the editor. Nothing selected is let go of at the first edit
+- 📏 **End or Page Down in a viewer not drawn yet** - opened while the terminal was too small to draw it, End and Page Down went a row past the end, to a page of nothing once there was room; they stop on the last row
+- 🔢 **Down after End in a popup's list** - in the checksums, Ctrl+E's plan and Alt+R's dossier, End goes as far as it can and the next drawing brings it back; with no drawing between, while the terminal was too small, Down went past the largest number there is, and round to the top in a release build. It stays at the end
+- 🧱 **The space map's arrows while too small to draw** - chose among the blocks last drawn, which could be another directory's, and put the panel's cursor on an entry that was not there; one past the panel's entries is passed over
+
 ## [0.50.0] - 2026-11-11
 
 ### ✨ Added

@@ -137,6 +137,18 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Enter` | Open the one chosen as a read-only folder; with nothing listed, the revision as typed |
 | `Esc` | Close |
 
+## ⚙️ Options (F11)
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Move |
+| `PageUp` / `PageDown` | A page up / down |
+| `Home` / `End` | The first / the last option |
+| `Enter` / `Space` / `→` | Change the option, or start typing into it |
+| `←` | Change it the other way |
+| `E` | On Info, edit the commands; on Theme, the file colours |
+| `Esc` / `F11` | Close |
+
 ## ⏳ While a job runs
 
 | Key | Action |
@@ -199,6 +211,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 |--------|--------|
 | Scroll | Scroll content (panels, Viewer, Editor) |
 | Click / drag a scroll bar | A page that way / follow the pointer (Viewer, Editor) |
+| Click / drag the minimap | The rows there in the middle of the view / follow the pointer (Viewer, Editor, Compare) |
 | Double-click | Open directories and archives, or open files as Enter does |
 | Click a column heading | Sort by it, again to reverse |
 | Click the path | Edit it in place, as Ctrl+L |

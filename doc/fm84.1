@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-11" "fm84 0.50.0" "User Commands"
+.TH FM84 1 "2026-11-12" "fm84 0.51.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -1002,6 +1002,16 @@ Scroll bars are drawn in the frame's border, down the right and along the
 bottom, when there is more than fits.
 A click on the track scrolls a page that way; the thumb can be dragged.
 In the editor they move the view and leave the cursor where it is.
+.PP
+A minimap is drawn beside the text, the viewer's, the editor's and the
+comparison's, when there is more than fits: the whole of it small in half
+blocks, brighter as the rows are fuller, the rows on screen shaded and the
+matches of a search lit; in a comparison, the left file down its left half,
+the right down its right, and what differs lit.
+A click puts the rows there in the middle of the view, and a drag follows
+the pointer; in the editor the cursor stays where it is.
+.B Minimap width
+in F11 makes it 2 or 4 columns wide, or turns it off.
 .SH OPTIONS DIALOG
 F11 opens the options, changed in place with Enter, Space, Left or Right and
 saved as they change.
@@ -1009,7 +1019,8 @@ Among them: hidden files, sort order, columns, git marks, date format and size u
 confirmations, delete to trash, what to do when a destination exists,
 verifying copies, the terminal and editor commands, remembering directories; the theme, icons,
 clock, and the cursor's shape and whether it blinks; tab width, line numbers,
-what the scroll bars are drawn with, highlighting and image settings.
+the minimap's width, what the scroll bars are drawn with, highlighting and
+image settings.
 .PP
 .B Info column, from commands
 adds a column filled by the commands in the
@@ -1030,14 +1041,19 @@ row edits the
 file.
 .BR "Outrun progress bar" ,
 .BR "Burst what is deleted for good" ,
-.B Turbo
+.BR Turbo ,
+.BR Animation ,
+.B Glow around the active panel
 and
 .B Night drive when left alone
 are for fun, all off to start with: a job drawn as a car driving towards the
 sun, the rows of a delete for good bursting first, the neon turned up
-with scanlines over the panels, and, left alone on the panels for the minutes
-it says, the screen given to a drive down the neon grid until the next key
-or touch of the mouse, which does nothing else.
+with scanlines over the panels; the cursor sliding to its row, a directory's
+rows coming up one after another, popups wiped open from the middle and the
+rows a copy made glowing a moment; the lines around the panel in use lit and
+the other dimmed; and, left alone on the panels for the minutes it says, the
+screen given to a drive down the neon grid until the next key or touch of the
+mouse, which does nothing else.
 .B Language
 is Automatic, which follows the environment (see
 .BR ENVIRONMENT ),
@@ -1047,8 +1063,9 @@ Bokm\(oal, Polish, Brazilian Portuguese, Romanian, Slovak, Slovenian, Serbian
 in the Cyrillic alphabet, Serbian in the Latin alphabet, Swedish and Turkish,
 in that order - by each one's own name; the keys stay the same in any of
 them.
-The list scrolls within the panels when it does not fit, with Up and Down or
-the mouse wheel.
+The list scrolls within the panels when it does not fit, with Up and Down,
+PageUp and PageDown a page at a time, Home and End to either end, or the
+mouse wheel; it stays put while the cursor moves through what is on show.
 .PP
 .B Verify copies
 reads each file a copy, a move to another disk or a synchronize writes back
