@@ -21,6 +21,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::time::{Duration, Instant, SystemTime};
 
+mod animation;
 mod archives;
 mod attribute_form;
 mod basket;
@@ -64,8 +65,8 @@ mod user_menu;
 mod viewing;
 
 pub use self::{
-    archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*, listing::*,
-    multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
+    animation::*, archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_marks::*, git_stage::*, history::*, info_column::*, jobs::*,
+    listing::*, multi_rename::*, open_with::*, preview::*, selection::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -273,7 +274,7 @@ impl Dialog {
     /// behind may answer for - not even the mouse. The rename field sits in
     /// the panel, where a click cancels it; the prompt at the foot and the
     /// drive strip leave the panels to be clicked.
-    fn is_popup(&self) -> bool {
+    pub(crate) fn is_popup(&self) -> bool {
         !matches!(self, Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. })
     }
 }
@@ -357,6 +358,9 @@ pub struct AppState {
     pub scores: crate::options::Scores,
     /// Rows bursting before a delete for good takes them.
     pub explosion: Option<Explosion>,
+    /// The rows the last copy or move made, glowing a moment, with F11's
+    /// Animation on.
+    pub flash: Option<Flash>,
     /// When a key, a paste or the mouse last came in, for the night drive.
     pub last_input: Instant,
     /// When the night drive began, while the screen is given over to it.
@@ -558,6 +562,8 @@ pub struct Drawn {
     pub viewer_content_area: Rect,
     /// The viewer's or the editor's scroll bars, as last drawn.
     pub scroll_bars: Vec<crate::scroll_bar::ScrollBar>,
+    /// What F11's Animation last drew, for the next frame to carry on from.
+    pub motion: Motion,
 }
 
 impl Drawn {
@@ -749,6 +755,7 @@ impl AppState {
             jumps: if cfg!(test) { crate::options::Jumps::default() } else { crate::options::Jumps::load() },
             info_cache: HashMap::new(),
             explosion: None,
+            flash: None,
             last_input: Instant::now(),
             night_drive: None,
             scores: if cfg!(test) { crate::options::Scores::default() } else { crate::options::Scores::load() },

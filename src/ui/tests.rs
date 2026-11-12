@@ -1558,3 +1558,77 @@ fn corners_can_be_rounded_everywhere() {
     app_state.options = Options::default();
     crate::display::apply(&app_state.options);
 }
+
+/// F11's Animation: a directory's rows coming up one after another, the
+/// cursor sliding to its row rather than jumping there, a popup wiping
+/// open, and what a copy made glowing - and none of it with it off.
+#[test]
+fn animation_moves_the_panels_and_opens_the_popups() {
+    use crate::app::{BOOT, FLASH, Flash, SLIDE, WIPE};
+    let dir = std::env::temp_dir().join(format!("fm84-animation-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    for n in 0..10 {
+        std::fs::write(dir.join(format!("file{n:02}")), "x").unwrap();
+    }
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    app_state.open_dir(Side::Right, dir.clone(), None);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    // The row of the left panel a name is on, and whether it is drawn as
+    // the cursor.
+    let mut draw = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        terminal.backend().buffer().clone()
+    };
+    let row_of = |buffer: &ratatui::buffer::Buffer, name: &str| (0..30).find(|&y| (0..50).map(|x| buffer[(x, y)].symbol()).collect::<String>().contains(name));
+    let cursor_on = |buffer: &ratatui::buffer::Buffer, y: u16| buffer[(10, y)].bg == palette().selected_background;
+    let wait = |length: std::time::Duration| std::thread::sleep(length + std::time::Duration::from_millis(30));
+
+    // Off: everything where it is, at once.
+    let off = draw(&mut app_state);
+    assert!(row_of(&off, "file09").is_some());
+    assert!(!format!("{:?}", off.content()).contains('━'));
+
+    app_state.options.animation = true;
+    let booting = draw(&mut app_state);
+    assert!(row_of(&booting, "file09").is_none(), "the last row not up yet");
+    wait(BOOT);
+    let up = draw(&mut app_state);
+    let (first, last) = (row_of(&up, "file00").unwrap(), row_of(&up, "file09").unwrap());
+    assert!(cursor_on(&up, first - 1), "the cursor on .. to begin with");
+
+    // The cursor from .. to the last: on its way, then there.
+    app_state.left.state.select(Some(10));
+    let sliding = draw(&mut app_state);
+    assert!(!cursor_on(&sliding, last), "not there at once");
+    assert!((first - 1..last).any(|y| cursor_on(&sliding, y)), "somewhere on the way");
+    wait(SLIDE);
+    let there = draw(&mut app_state);
+    assert!(cursor_on(&there, last) && !cursor_on(&there, first - 1));
+
+    // A popup opens from its middle, a beam along its edges.
+    app_state.dialog = Some(Dialog::Help);
+    let opening = draw(&mut app_state);
+    assert!(opening.content().iter().any(|cell| cell.symbol() == "━"), "a beam on the way open");
+    wait(WIPE);
+    let open = draw(&mut app_state);
+    assert!(!open.content().iter().any(|cell| cell.symbol() == "━"), "open, the beam gone");
+    app_state.dialog = None;
+
+    // What a copy made glows a moment.
+    app_state.flash = Some(Flash {
+        paths: std::collections::HashSet::from([dir.join("file03")]),
+        started: std::time::Instant::now(),
+    });
+    let glowing = draw(&mut app_state);
+    let copied = row_of(&glowing, "file03").unwrap();
+    assert_ne!(glowing[(20, copied)].bg, glowing[(20, copied + 1)].bg, "the copy's row lit");
+    wait(FLASH);
+    let faded = draw(&mut app_state);
+    assert_eq!(faded[(20, copied)].bg, faded[(20, copied + 1)].bg, "and faded out");
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}

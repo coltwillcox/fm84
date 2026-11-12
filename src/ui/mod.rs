@@ -20,6 +20,7 @@ use ratatui::{
 use std::path::{Path, PathBuf};
 use unicode_width::UnicodeWidthChar;
 
+mod animation;
 mod bars;
 mod checksums;
 mod dossier;
@@ -37,7 +38,7 @@ mod tree;
 
 pub use self::help::*;
 pub use self::tree::tree_prefix;
-use self::{bars::*, checksums::*, dossier::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*, tree::*};
+use self::{animation::*, bars::*, checksums::*, dossier::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*, tree::*};
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style {
@@ -404,6 +405,8 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
         // The rename field, the prompt and the drive picker are drawn where
         // they sit, in the panel, the status bar and the drive strip - and so
         // is the replace question, under the match it is asking about.
+        // What is under the popups, for one opening to be wiped in over it.
+        let under_popups = app_state.options.animation.then(|| f.buffer_mut().clone());
         let mut find_files_page = None;
         let mut attribute_rows = Vec::new();
         let mut branch_rows = Vec::new();
@@ -467,6 +470,9 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             render_transfer_popup(f, area, app_state);
         } else if let Some(message) = &app_state.error {
             render_error_popup(f, area, message);
+        }
+        if let Some(before) = under_popups {
+            wipe_popup(f, &before, app_state, &mut drawn.motion, std::time::Instant::now());
         }
     }
     settled

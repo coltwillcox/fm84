@@ -46,6 +46,7 @@ fn a_saved_file_reads_back_the_same() {
         outrun_bar: true,
         burst_delete: true,
         turbo: true,
+        animation: true,
         night_drive_minutes: 5,
     };
     assert_eq!(Options::parse(&options.serialize()), options);

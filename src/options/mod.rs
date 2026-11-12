@@ -322,6 +322,9 @@ pub struct Options {
     /// Turbo: the theme's neon turned up, scanlines over the panels, and
     /// the logo blinking in F1.
     pub turbo: bool,
+    /// The cursor sliding, rows coming up, popups wiping open and what a
+    /// copy made flashing.
+    pub animation: bool,
     /// Left alone this many minutes, the panels give way to a drive down
     /// the Outrun grid until the next key. Zero, and they never do.
     pub night_drive_minutes: u64,
@@ -386,6 +389,7 @@ impl Default for Options {
             outrun_bar: false,
             burst_delete: false,
             turbo: false,
+            animation: false,
             night_drive_minutes: 0,
             tab_width: 4,
             line_numbers: true,

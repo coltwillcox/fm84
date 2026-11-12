@@ -32,7 +32,7 @@ pub(crate) fn handle_mouse_for_tests(app_state: &mut AppState, event: MouseEvent
 use self::{file_ops::*, launch::*, mouse::*, panel::*, screens::*};
 
 pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
-    if !event::poll(Duration::from_millis(100))? {
+    if !event::poll(app_state.frame_wait())? {
         return Ok(true);
     }
     let event = event::read()?;

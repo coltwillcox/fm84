@@ -477,9 +477,11 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 
     // Build only visible rows for left panel
     let field = name_width(&app_state.options, chunks[0].width);
+    let now = std::time::Instant::now();
     let (rows_left, offset_left) = build_viewport_rows(app_state, Side::Left, viewport_height, &columns, field);
+    let moving_left = panel_motion(app_state, Side::Left, offset_left, rows_left.len(), &mut drawn.motion, now);
     let mut state_left_view = TableState::default();
-    state_left_view.select(app_state.left.state.selected().map(|s| s.saturating_sub(offset_left)));
+    state_left_view.select(app_state.left.state.selected().map(|s| s.saturating_sub(offset_left)).filter(|_| moving_left.table_cursor()));
 
     let block_left = Block::default().borders(Borders::LEFT).border_type(crate::display::border_type()).border_style(style_border());
     let block_right = Block::default().borders(Borders::RIGHT).border_type(crate::display::border_type()).border_style(style_border());
@@ -513,6 +515,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     draw_full_height_lines(f, inner_left, entries_left, &widths, app_state);
     draw_space_map(f, inner_left, app_state, Side::Left, offset_left);
     drawn.tree_rows[Side::Left] = draw_tree(f, inner_left, app_state, Side::Left);
+    animate_panel(f, inner_left, app_state, Side::Left, &moving_left, table_style(app_state.active_side.is_left()), now);
 
     // Cache the separator string based on height
     let separator_height = chunks[0].height;
@@ -525,8 +528,9 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
 
     // Build only visible rows for right panel
     let (rows_right, offset_right) = build_viewport_rows(app_state, Side::Right, viewport_height, &columns, field);
+    let moving_right = panel_motion(app_state, Side::Right, offset_right, rows_right.len(), &mut drawn.motion, now);
     let mut state_right_view = TableState::default();
-    state_right_view.select(app_state.right.state.selected().map(|s| s.saturating_sub(offset_right)));
+    state_right_view.select(app_state.right.state.selected().map(|s| s.saturating_sub(offset_right)).filter(|_| moving_right.table_cursor()));
 
     let inner_right = block_right.inner(chunks[2]);
     let entries_right = rows_right.len() as u16;
@@ -539,6 +543,7 @@ pub(super) fn render_file_tables(f: &mut ratatui::Frame<'_>, chunk: Rect, app_st
     draw_full_height_lines(f, inner_right, entries_right, &widths, app_state);
     draw_space_map(f, inner_right, app_state, Side::Right, offset_right);
     drawn.tree_rows[Side::Right] = draw_tree(f, inner_right, app_state, Side::Right);
+    animate_panel(f, inner_right, app_state, Side::Right, &moving_right, table_style(!app_state.active_side.is_left()), now);
 
     // Preview takes over the panel the cursor is not in.
     if let Some(preview) = &app_state.preview {

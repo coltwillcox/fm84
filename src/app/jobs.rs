@@ -1022,6 +1022,9 @@ impl AppState {
             TransferKind::DirEdit => Some(UndoKind::Edit),
             _ => None,
         };
+        if matches!(job.kind, TransferKind::Copy | TransferKind::Join | TransferKind::Move) {
+            self.flash_done(&job.did);
+        }
         if let Some(kind) = undo_kind {
             self.journal(kind, std::mem::take(&mut job.did));
         }
