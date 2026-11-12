@@ -1884,3 +1884,58 @@ fn the_glow_dims_files_in_named_colours_too() {
         assert!(buffer[other].fg != colour || buffer[other].modifier.contains(Modifier::DIM), "{colour:?} dimmed in the other panel");
     }
 }
+
+/// A row of keys too wide for its popup is broken between one key and the
+/// next, never inside one, each row as narrow as the popup; the keys all
+/// there, in their colours.
+#[test]
+fn a_row_of_keys_breaks_between_keys() {
+    let text = "A - Overwrite all    S - Skip all    B - Keep both all";
+    let rows = wrap_line(key_hints(text), 34);
+    let shown: Vec<String> = rows.iter().map(|row| row.spans.iter().map(|span| span.content.as_ref()).collect()).collect();
+    assert_eq!(shown, ["A - Overwrite all    S - Skip all", "B - Keep both all"]);
+    assert!(rows.iter().all(|row| row.width() <= 34));
+    assert!(rows.iter().all(|row| row.spans.first().is_some_and(|span| span.style == style_key())), "each row starts with a key");
+    assert_eq!(wrap_line(key_hints(text), 80).len(), 1, "one row where it fits");
+    // A key and what it does wider than the row by itself has a row to itself.
+    assert_eq!(wrap_line(key_hints("Esc - Close    Enter - Something far too long to fit"), 20).len(), 2);
+}
+
+/// On an 80-column terminal, a popup's keys reach the bottom of it whole,
+/// on as many rows as they need: Alt+J's and the bookmarks', whose lists
+/// leave the room, and F11's - on the Theme row too, with a key more.
+#[test]
+fn every_key_a_popup_has_shows_on_a_narrow_terminal() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 30)).unwrap();
+    let mut screen = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer();
+        (0..30).map(|y| (0..80).map(|x| buffer[(x, y)].symbol()).collect::<String>()).collect::<Vec<_>>().join("\n")
+    };
+    let theme = OPTION_ROWS.iter().position(|&row| row == crate::options::OptionRow::Theme).unwrap();
+    type Opens = Box<dyn Fn(&mut AppState)>;
+    let cases: Vec<(&str, Opens, Vec<&str>)> = vec![
+        ("Alt+J", Box::new(|a: &mut AppState| a.open_jumps()), vec!["Type to narrow", "Up/Down - Choose", "Enter - Go", "Esc - Close"]),
+        ("bookmarks", Box::new(|a: &mut AppState| a.open_bookmarks()), vec!["Enter/1-9 - Go", "A/Ins - Add here", "D/Del - Remove", "Esc - Close"]),
+        ("F11", Box::new(|a: &mut AppState| a.dialog = Some(Dialog::Options { editing: None })), vec!["↑↓ - Move", "Enter/←→ - Change", "Esc - Close"]),
+        (
+            "F11 on Theme",
+            Box::new(move |a: &mut AppState| {
+                a.dialog = Some(Dialog::Options { editing: None });
+                a.options_move_by(theme as isize);
+            }),
+            vec!["E - Edit the file colours", "Esc - Close"],
+        ),
+    ];
+    for (name, open, keys) in cases {
+        app_state.dialog = None;
+        open(&mut app_state);
+        let shown = screen(&mut app_state);
+        for key in keys {
+            assert!(shown.contains(key), "{name}: {key} not shown\n{shown}");
+        }
+    }
+}

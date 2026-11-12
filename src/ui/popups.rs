@@ -49,12 +49,16 @@ fn popup_body(f: &mut ratatui::Frame<'_>, area: Rect, lines: Vec<Line<'static>>)
     starts.into_iter().map(|start| (padding + start < room).then(|| inner.y + (padding + start) as u16)).collect()
 }
 
-/// The rows a popup line takes at `width`. Only a line in one style is
-/// wrapped, which is every long one a popup has; a line built from several -
-/// a text field with its cursor - keeps to its own width already.
+/// The rows a popup line takes at `width`. A line in one style is wrapped
+/// at its spaces; a row of keys, as key_hints makes it, between one key and
+/// the next. Any other built from several - a text field with its cursor -
+/// keeps to its own width already.
 pub(super) fn wrap_line(line: Line<'static>, width: usize) -> Vec<Line<'static>> {
-    if width == 0 || line.width() <= width || line.spans.len() != 1 {
+    if width == 0 || line.width() <= width {
         return vec![line];
+    }
+    if line.spans.len() != 1 {
+        return wrap_at_gaps(line, width);
     }
     let style = line.spans[0].style;
     wrap_text(&line.spans[0].content, width)
@@ -65,6 +69,65 @@ pub(super) fn wrap_line(line: Line<'static>, width: usize) -> Vec<Line<'static>>
             alignment: line.alignment,
         })
         .collect()
+}
+
+/// A row of keys broken into rows of at most `width` columns, between one
+/// key and what it does and the next - at the gaps key_hints leaves, two
+/// spaces or more in no style of their own, which go at a break. A pair too
+/// wide by itself has a row to itself. A line with no such gap is left as
+/// it is.
+fn wrap_at_gaps(line: Line<'static>, width: usize) -> Vec<Line<'static>> {
+    let is_gap = |span: &Span<'_>| span.style == Style::default() && span.content.len() >= 2 && span.content.chars().all(|c| c == ' ');
+    if !line.spans.iter().any(is_gap) {
+        return vec![line];
+    }
+    let row = |spans: Vec<Span<'static>>| Line {
+        spans,
+        style: line.style,
+        alignment: line.alignment,
+    };
+    let mut rows = Vec::new();
+    let (mut current, mut used): (Vec<Span<'static>>, usize) = (Vec::new(), 0);
+    let mut gap: Option<Span<'static>> = None;
+    let mut part: Vec<Span<'static>> = Vec::new();
+    let flush = |part: &mut Vec<Span<'static>>, gap: &mut Option<Span<'static>>, current: &mut Vec<Span<'static>>, used: &mut usize, rows: &mut Vec<Line<'static>>| {
+        if part.is_empty() {
+            return;
+        }
+        let part_width: usize = part.iter().map(Span::width).sum();
+        let gap_width = gap.as_ref().map_or(0, Span::width);
+        if !current.is_empty() && *used + gap_width + part_width > width {
+            rows.push(row(std::mem::take(current)));
+            *used = 0;
+        } else if !current.is_empty()
+            && let Some(gap) = gap.take()
+        {
+            *used += gap.width();
+            current.push(gap);
+        }
+        *gap = None;
+        *used += part_width;
+        current.append(part);
+    };
+    for span in line.spans.iter().cloned() {
+        if is_gap(&span) {
+            flush(&mut part, &mut gap, &mut current, &mut used, &mut rows);
+            gap = Some(span);
+        } else {
+            part.push(span);
+        }
+    }
+    flush(&mut part, &mut gap, &mut current, &mut used, &mut rows);
+    if !current.is_empty() {
+        rows.push(row(current));
+    }
+    rows
+}
+
+/// Rows of keys, each broken to `width` as it needs, and centred: what a list
+/// popup puts under its list.
+pub(super) fn hint_rows(hints: &[&str], width: usize) -> Vec<Line<'static>> {
+    hints.iter().flat_map(|hint| wrap_line(key_hints(hint).centered(), width)).collect()
 }
 
 /// Text broken into rows of at most `width` columns, at the spaces between
@@ -156,7 +219,8 @@ pub(super) fn render_revision_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     let width = inner.width as usize;
     // The field, the hint and a blank row above the list; a blank row and
     // the keys under it.
-    let rows = (inner.height as usize).saturating_sub(5);
+    let hints = hint_rows(&[t!("Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close")], width);
+    let rows = (inner.height as usize).saturating_sub(4 + hints.len());
 
     let label = format!("{} ", t!("Filter:"));
     let label_width = display_width(&label);
@@ -216,7 +280,7 @@ pub(super) fn render_revision_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     while lines.len() < rows + 4 {
         lines.push(Line::from(""));
     }
-    lines.push(key_hints(t!("Type to narrow    Up/Down - Choose    Enter - Open    Esc - Close")).centered());
+    lines.extend(hints);
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -722,7 +786,13 @@ pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, 
     let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
     let width = inner.width as usize;
     // A row for how it is going, one blank under it, and one for the keys.
-    let rows = (inner.height as usize).saturating_sub(3);
+    let hint = if search.done {
+        t!("Enter - Go to    F - Feed to panel    Esc - Close")
+    } else {
+        t!("Enter - Go to    F - Feed to panel    Esc - Stop and close")
+    };
+    let hints = hint_rows(&[hint], width);
+    let rows = (inner.height as usize).saturating_sub(2 + hints.len());
 
     let found = search.results.len();
     let status = match &search.looking_in {
@@ -762,12 +832,7 @@ pub(super) fn render_find_files_results(f: &mut ratatui::Frame<'_>, area: Rect, 
     while lines.len() < rows + 2 {
         lines.push(Line::from(""));
     }
-    let hint = if search.done {
-        t!("Enter - Go to    F - Feed to panel    Esc - Close")
-    } else {
-        t!("Enter - Go to    F - Feed to panel    Esc - Stop and close")
-    };
-    lines.push(key_hints(hint).centered());
+    lines.extend(hints);
     f.render_widget(Paragraph::new(lines), inner);
     rows
 }
@@ -860,7 +925,8 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
     let width = inner.width as usize;
     // One blank row and two of keys under the list.
-    let rows = (inner.height as usize).saturating_sub(3);
+    let hints = hint_rows(&[t!("Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove"), t!("Shift+Up/Down - Move    Esc - Close")], width);
+    let rows = (inner.height as usize).saturating_sub(1 + hints.len());
 
     let mut lines = Vec::new();
     if list.is_empty() {
@@ -880,8 +946,7 @@ pub(super) fn render_bookmarks_popup(f: &mut ratatui::Frame<'_>, area: Rect, lis
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(key_hints(t!("Enter/1-9 - Go    A/Ins - Add here    D/Del - Remove")).centered());
-    lines.push(key_hints(t!("Shift+Up/Down - Move    Esc - Close")).centered());
+    lines.extend(hints);
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -901,7 +966,17 @@ pub(super) fn render_mixtapes_popup(f: &mut ratatui::Frame<'_>, area: Rect, tape
     let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
     let width = inner.width as usize;
     // One blank row and two of keys under the list.
-    let rows = (inner.height as usize).saturating_sub(3);
+    // Naming one, the keys of the name, and a row kept as the list's keys
+    // would take it, so the list does not jump.
+    let mut hints = if list.naming.is_some() {
+        hint_rows(&[t!("Enter - OK    Esc - Cancel")], width)
+    } else {
+        hint_rows(&[t!("Enter/1-9 - Show    Space - Play    N/Ins - New"), t!("R/F2 - Rename    D/Del - Remove    Esc - Close")], width)
+    };
+    if list.naming.is_some() {
+        hints.push(Line::from(""));
+    }
+    let rows = (inner.height as usize).saturating_sub(1 + hints.len());
 
     // The rows as listed, a new tape being named among them.
     let new_at = list.naming.as_ref().filter(|naming| !naming.renaming).map(|_| if tapes.tapes.is_empty() { 0 } else { list.index + 1 });
@@ -939,13 +1014,7 @@ pub(super) fn render_mixtapes_popup(f: &mut ratatui::Frame<'_>, area: Rect, tape
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    if list.naming.is_some() {
-        lines.push(key_hints(t!("Enter - OK    Esc - Cancel")).centered());
-        lines.push(Line::from(""));
-    } else {
-        lines.push(key_hints(t!("Enter/1-9 - Show    Space - Play    N/Ins - New")).centered());
-        lines.push(key_hints(t!("R/F2 - Rename    D/Del - Remove    Esc - Close")).centered());
-    }
+    lines.extend(hints);
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -964,7 +1033,8 @@ pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
     let width = inner.width as usize;
     // One blank row and one of keys under the list.
-    let rows = (inner.height as usize).saturating_sub(2);
+    let hints = hint_rows(&[t!("Enter/1-9 - Run    E - Edit the menu    Esc - Close")], width);
+    let rows = (inner.height as usize).saturating_sub(1 + hints.len());
 
     let mut lines = Vec::new();
     if menu.entries.is_empty() {
@@ -994,7 +1064,7 @@ pub(super) fn render_user_menu_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(key_hints(t!("Enter/1-9 - Run    E - Edit the menu    Esc - Close")).centered());
+    lines.extend(hints);
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -1014,7 +1084,8 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
 
     let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
     let width = inner.width as usize;
-    let rows = (inner.height as usize).saturating_sub(2);
+    let hints = hint_rows(&[t!("Enter/1-9 - Open    E - Edit associations    Esc - Close")], width);
+    let rows = (inner.height as usize).saturating_sub(1 + hints.len());
 
     let mut lines = Vec::new();
     let label_width = menu.openers.iter().map(|opener| display_width(&printable_name(&opener.label))).max().unwrap_or(0).min(width / 2);
@@ -1038,7 +1109,7 @@ pub(super) fn render_open_with_popup(f: &mut ratatui::Frame<'_>, area: Rect, men
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(key_hints(t!("Enter/1-9 - Open    E - Edit associations    Esc - Close")).centered());
+    lines.extend(hints);
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -1304,7 +1375,8 @@ pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list:
     let width = inner.width as usize;
     // The field and a blank row above the list; a blank row and the keys
     // under it.
-    let rows = (inner.height as usize).saturating_sub(4);
+    let hints = hint_rows(&[t!("Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close")], width);
+    let rows = (inner.height as usize).saturating_sub(3 + hints.len());
 
     let label = format!("{} ", t!("Filter:"));
     let label_width = display_width(&label);
@@ -1329,7 +1401,7 @@ pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list:
     while lines.len() < rows + 3 {
         lines.push(Line::from(""));
     }
-    lines.push(key_hints(t!("Type to narrow    Up/Down - Choose    Enter - Go    Esc - Close")).centered());
+    lines.extend(hints);
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -1353,7 +1425,8 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
     let width = inner.width as usize;
     // One blank row and one of keys under the list.
-    let rows = (inner.height as usize).saturating_sub(2);
+    let hints = hint_rows(&[t!("Enter/Click - Switch    Esc - Close")], width);
+    let rows = (inner.height as usize).saturating_sub(1 + hints.len());
     let first = if rows > 0 && list.index >= rows { list.index + 1 - rows } else { 0 };
 
     let mut lines = Vec::new();
@@ -1369,7 +1442,7 @@ pub(super) fn render_branches_popup(f: &mut ratatui::Frame<'_>, area: Rect, list
     while lines.len() < rows + 1 {
         lines.push(Line::from(""));
     }
-    lines.push(key_hints(t!("Enter/Click - Switch    Esc - Close")).centered());
+    lines.extend(hints);
     f.render_widget(Paragraph::new(lines), inner);
     hits
 }

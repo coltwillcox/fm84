@@ -30,34 +30,6 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
         list.push(option_line(app_state, row, index == app_state.options_cursor, inner_width, cursor_style, editing));
     }
 
-    // A border row each side, a blank row above and below the list, and two
-    // for the key hint under it.
-    let popup_area = centered(screen_layout(area)[2], popup_width, list.len() + 6);
-    let mut popup_block = Block::default()
-        .title(Line::from(Span::styled(format!(" {} ", t!("Options")), style_title())).centered())
-        .borders(Borders::ALL)
-        .border_type(crate::display::border_type())
-        .style(style_border());
-
-    // On a short terminal the list scrolls, keeping the cursor row in view.
-    // The blank rows and the hint around it take three.
-    let inner = popup_inner(popup_area);
-    let room = (inner.height as usize).saturating_sub(3).max(1);
-    *first = scroll_to_show(*first, cursor_top, cursor_line, room, list.len());
-    let first = *first;
-    if room < list.len() {
-        // Where the cursor is in the whole list, since some of it is hidden.
-        let position = format!(" {}/{} ", app_state.options_cursor + 1, OPTION_ROWS.len());
-        popup_block = popup_block.title_bottom(Line::from(Span::styled(position, style_columns())).right_aligned());
-    }
-
-    clear(f, popup_area);
-    f.render_widget(popup_block, popup_area);
-
-    let mut lines = Vec::with_capacity(room + 3);
-    lines.push(Line::from(""));
-    lines.extend(list.into_iter().skip(first).take(room));
-
     let hint = if editing.is_none() && OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::ColumnInfo {
         t!("↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close")
     } else if editing.is_none() && OPTION_ROWS[app_state.options_cursor] == crate::options::OptionRow::Theme {
@@ -69,8 +41,51 @@ pub(super) fn render_options_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_s
     } else {
         t!("Enter - Save    Esc - Cancel    {} - directory")
     };
+    // The keys, broken onto as many rows as the popup's width needs - as many
+    // as the longest of them takes, whichever row the cursor is on, so the
+    // list does not jump as it goes by the rows with keys of their own.
+    let mut hints = hint_rows(&[hint], inner_width);
+    let hint_height = [
+        t!("↑↓ - Move    Enter/←→ - Change    E - Edit the commands    Esc - Close"),
+        t!("↑↓ - Move    Enter/←→ - Change    E - Edit the file colours    Esc - Close"),
+    ]
+    .iter()
+    .map(|hint| hint_rows(&[hint], inner_width).len())
+    .max()
+    .unwrap_or(1)
+    .max(hints.len());
+    hints.resize(hint_height, Line::from(""));
+
+    // A border row each side, a blank row above and below the list, and the
+    // keys under it.
+    let popup_area = centered(screen_layout(area)[2], popup_width, list.len() + 5 + hint_height);
+    let mut popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Options")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
+
+    // On a short terminal the list scrolls, keeping the cursor row in view.
+    // The blank rows and the keys around it take the rest.
+    let inner = popup_inner(popup_area);
+    let room = (inner.height as usize).saturating_sub(2 + hint_height).max(1);
+    *first = scroll_to_show(*first, cursor_top, cursor_line, room, list.len());
+    let first = *first;
+    if room < list.len() {
+        // Where the cursor is in the whole list, since some of it is hidden.
+        let position = format!(" {}/{} ", app_state.options_cursor + 1, OPTION_ROWS.len());
+        popup_block = popup_block.title_bottom(Line::from(Span::styled(position, style_columns())).right_aligned());
+    }
+
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let mut lines = Vec::with_capacity(room + 2 + hint_height);
     lines.push(Line::from(""));
-    lines.push(key_hints(hint).centered());
+    lines.extend(list.into_iter().skip(first).take(room));
+
+    lines.push(Line::from(""));
+    lines.extend(hints);
 
     f.render_widget(Paragraph::new(lines), inner);
     room
