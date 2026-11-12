@@ -288,10 +288,15 @@ fn logo_row(row: &str, width: usize, lit: bool) -> Line<'static> {
 /// F1: the keys, over the panels and no taller than them. What does not fit
 /// scrolls, from `scroll` lines down, and the corner says which lines show.
 /// Gives back how many lines there is room for, for the keys to scroll by.
-pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: usize, scores: &crate::options::Scores) -> usize {
-    // A border and a blank row above and below the lines.
+/// Gives back how many rows it had room for, and how many its lines came to.
+pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: usize, scores: &crate::options::Scores) -> (usize, usize) {
+    // A border and a blank row above and below the lines, as wide as every
+    // popup. A line wider than that - at 80 columns, or in a language that
+    // says more - is broken onto more at its spaces, each row after the first
+    // indented a step further, as the lines under a key are, rather than cut
+    // off at the right.
     let popup_width = area.width as usize * POPUP_WIDTH as usize / 100;
-    let help = help_lines(scores);
+    let help = wrap_help(help_lines(scores), popup_width.saturating_sub(4));
     let popup_area = centered(screen_layout(area)[2], popup_width.max(1), help.len() + 4);
     let inner = popup_area.inner(Margin { vertical: 2, horizontal: 2 });
     let room = (inner.height as usize).max(1);
@@ -348,5 +353,28 @@ pub(super) fn render_help_popup(f: &mut ratatui::Frame<'_>, area: Rect, scroll: 
         })
         .collect();
     f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), inner);
-    room
+    (room, help.len())
+}
+
+/// F1's lines, those wider than `width` broken onto as many rows as they
+/// need. The rows after the first are plain text: a word in the middle of a
+/// sentence is not a key, however it looks.
+fn wrap_help(help: Vec<(String, HelpLine)>, width: usize) -> Vec<(String, HelpLine)> {
+    let mut rows = Vec::with_capacity(help.len());
+    for (text, kind) in help {
+        if !matches!(kind, HelpLine::Item | HelpLine::Key) || width == 0 || text.chars().count() <= width {
+            rows.push((text, kind));
+            continue;
+        }
+        let indent = text.len() - text.trim_start().len();
+        let room = width.saturating_sub(indent + 2).max(1);
+        for (at, row) in wrap_text(text.trim_start(), room).into_iter().enumerate() {
+            if at == 0 {
+                rows.push((format!("{}{row}", &text[..indent]), kind));
+            } else {
+                rows.push((format!("{}  {row}", &text[..indent]), HelpLine::Item));
+            }
+        }
+    }
+    rows
 }

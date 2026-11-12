@@ -515,6 +515,9 @@ pub struct Drawn {
     /// How many lines F1's list had room for - what the keys scroll it by,
     /// and up to.
     pub help_room: usize,
+    /// How many rows F1's lines came to, a line too wide for it broken onto
+    /// more - what the keys scroll up to. None before it is drawn.
+    pub help_rows: Option<usize>,
     /// How many lines F11's list had room for, headings among them - what
     /// PageUp and PageDown move by.
     pub options_room: usize,

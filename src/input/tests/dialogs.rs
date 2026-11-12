@@ -30,7 +30,8 @@ fn a_key_reaches_only_what_is_on_top() {
     // its last line and no further.
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
     crate::ui::render_ui(&mut terminal, &mut app_state);
-    let last = crate::ui::help_lines(&app_state.scores).len() - app_state.drawn.help_room;
+    // Counted in the rows drawn: a line too wide for the popup takes more.
+    let last = app_state.drawn.help_rows.unwrap() - app_state.drawn.help_room;
     press(&mut app_state, KeyCode::End);
     assert_eq!(app_state.help_scroll, last);
     press(&mut app_state, KeyCode::Down);

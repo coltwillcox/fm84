@@ -765,7 +765,8 @@ fn handle_paste(app_state: &mut AppState, text: &str) {
 /// Scroll F1's list by `lines`, no further than its last line coming into
 /// view at the bottom.
 fn scroll_help(app_state: &mut AppState, lines: isize) {
-    let last = crate::ui::help_lines(&app_state.scores).len().saturating_sub(app_state.drawn.help_room);
+    let rows = app_state.drawn.help_rows.unwrap_or_else(|| crate::ui::help_lines(&app_state.scores).len());
+    let last = rows.saturating_sub(app_state.drawn.help_room);
     app_state.help_scroll = app_state.help_scroll.saturating_add_signed(lines).min(last);
 }
 

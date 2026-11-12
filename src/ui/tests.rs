@@ -394,7 +394,10 @@ fn popups_share_a_width_and_keep_to_the_panels() {
     assert!(screen.contains(last.0.trim()), "F1's last line");
     assert!(screen.contains(" About "), "the About heading");
     assert!(screen.contains(&format!("v{}", env!("CARGO_PKG_VERSION"))), "F1's About");
-    assert!(screen.contains(&format!("-{}/{} ", help.len(), help.len())), "F1's corner");
+    // Counted in rows: a line too wide for the popup is broken onto more.
+    let rows = app_state.drawn.help_rows.unwrap();
+    assert!(rows >= help.len());
+    assert!(screen.contains(&format!("-{rows}/{rows} ")), "F1's corner");
 }
 
 /// With the cursor at the end, a directory being renamed reads `[doc]`
@@ -665,7 +668,7 @@ fn scrolling_keeps_to_the_room_there_is() {
     render_ui(&mut terminal, &mut app_state);
     let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 50)).unwrap();
     render_ui(&mut terminal, &mut app_state);
-    assert_eq!(app_state.help_scroll, help_lines(&Default::default()).len() - app_state.drawn.help_room, "F1 past its end");
+    assert_eq!(app_state.help_scroll, app_state.drawn.help_rows.unwrap() - app_state.drawn.help_room, "F1 past its end");
 
     // A diff whose last difference is near the end: jumping to it stops
     // with the last row at the bottom, not past it.
@@ -1938,4 +1941,36 @@ fn every_key_a_popup_has_shows_on_a_narrow_terminal() {
             assert!(shown.contains(key), "{name}: {key} not shown\n{shown}");
         }
     }
+}
+
+/// F1 at 80 columns, in every language: its longest line, wider than the
+/// popup there, is broken onto more rows rather than cut off at the right -
+/// every word of it on screen, the rows inside the popup.
+#[test]
+fn f1_breaks_a_line_too_wide_for_it() {
+    let mut cut = Vec::new();
+    for language in crate::i18n::Language::ALL {
+        crate::i18n::set_language(language);
+        let mut app_state = AppState::new();
+        app_state.options = Options::default();
+        crate::display::apply(&app_state.options);
+        app_state.dialog = Some(Dialog::Help);
+        let lines = help_lines(&app_state.scores);
+        let widest = lines
+            .iter()
+            .filter(|(_, kind)| *kind == HelpLine::Item || *kind == HelpLine::Key)
+            .map(|(text, _)| text.trim().to_string())
+            .max_by_key(|text| text.chars().count())
+            .unwrap();
+        // Tall enough for all of it, wrapped or not.
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 300)).unwrap();
+        render_ui(&mut terminal, &mut app_state);
+        let buffer = terminal.backend().buffer();
+        let screen: String = (0..300).map(|y| (0..80).map(|x| buffer[(x, y)].symbol()).collect::<String>()).collect::<Vec<_>>().join("\n");
+        if let Some(word) = widest.split_whitespace().find(|word| !screen.contains(word)) {
+            cut.push(format!("{language:?}: {word} of {widest}"));
+        }
+    }
+    crate::i18n::set_language(crate::i18n::Language::English);
+    assert!(cut.is_empty(), "cut off: {cut:#?}");
 }
