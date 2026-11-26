@@ -32,6 +32,7 @@ mod panels;
 mod popups;
 mod screens;
 mod scroll_bars;
+mod share;
 mod spans;
 #[cfg(test)]
 mod tests;
@@ -39,7 +40,7 @@ mod tree;
 
 pub use self::help::*;
 pub use self::tree::tree_prefix;
-use self::{animation::*, bars::*, checksums::*, dossier::*, minimap::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, spans::*, tree::*};
+use self::{animation::*, bars::*, checksums::*, dossier::*, minimap::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, share::*, spans::*, tree::*};
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style {
@@ -465,6 +466,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             Some(Dialog::History(list)) => render_history_popup(f, area, list, &app_state.panel_dir(app_state.active_side)),
             Some(Dialog::UserMenu(menu)) => render_user_menu_popup(f, area, menu),
             Some(Dialog::OpenWith(menu)) => render_open_with_popup(f, area, menu),
+            Some(Dialog::Share(view)) => render_share_popup(f, area, view),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {

@@ -1331,7 +1331,7 @@ pub(super) fn render_sync_popup(f: &mut ratatui::Frame<'_>, area: Rect, plan: &c
 }
 
 /// `text` no wider than `room` columns, cut from the end with an ellipsis.
-fn cut_to(text: &str, room: usize) -> String {
+pub(super) fn cut_to(text: &str, room: usize) -> String {
     if display_width(text) <= room {
         return text.to_string();
     }

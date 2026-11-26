@@ -585,6 +585,39 @@ msgstr Esc - Άκυρο    Ξανά F10 - Έξοδος
 msgid  Esc - Close
 msgstr Esc - Κλείσιμο
 
+msgid  Share over the network
+msgstr Κοινή χρήση μέσω δικτύου
+
+msgid  Scan to download {name}
+msgstr Σαρώστε για λήψη του {name}
+
+msgid  Waiting for the download…
+msgstr Αναμονή για τη λήψη…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Αποστολή στο {to}: {sent} από {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Αποστολή στο {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Στάλθηκε στο {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Διακοπή κοινής χρήσης
+
+msgid  Tab - Another address
+msgstr Tab - Άλλη διεύθυνση
+
+msgid  Cannot share: {e}
+msgstr Αδύνατη η κοινή χρήση: {e}
+
+msgid  No network to share on
+msgstr Δεν υπάρχει δίκτυο για κοινή χρήση
+
+msgid  Too small for the code: type the address on the phone
+msgstr Πολύ μικρό για τον κωδικό: πληκτρολογήστε τη διεύθυνση στο τηλέφωνο
+
 msgid  Esc Exit
 msgstr Esc Έξοδος
 

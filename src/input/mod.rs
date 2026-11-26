@@ -167,6 +167,11 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'p' {
             open_pack(app_state);
         }
+        // Alt+Q shares what is chosen with a phone, by a code to scan.
+        if in_panel && c == 'q' {
+            let items = chosen_items(app_state);
+            app_state.open_share(items);
+        }
         // Alt+B puts what is chosen on the mixtape playing, or takes it off
         // the tape on show; Alt+Shift+B lists the tapes, or puts the one on
         // show away.
@@ -409,6 +414,19 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         Some(Dialog::Checksums(_)) => checksums_key(app_state, code),
         Some(Dialog::DirEdit(_)) => dir_edit_key(app_state, code),
         Some(Dialog::Dossier(_)) => dossier_key(app_state, code),
+        // Put away, the share stops.
+        Some(Dialog::Share(_)) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            // Another of the machine's addresses, for a phone on another of
+            // its networks.
+            KeyCode::Tab | KeyCode::BackTab => {
+                let forward = code == KeyCode::Tab;
+                if let Some(Dialog::Share(view)) = &mut app_state.dialog {
+                    view.step_address(forward);
+                }
+            }
+            _ => {}
+        },
         Some(Dialog::Git { discarding: true, .. }) if yes => app_state.git_act(crate::app::GitAction::Discard),
         Some(Dialog::Git { discarding: true, .. }) if no => app_state.dialog = None,
         Some(Dialog::Git { discarding: false, .. }) => match code {

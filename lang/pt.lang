@@ -585,6 +585,39 @@ msgstr Esc - Cancelar    F10 de novo - Sair
 msgid  Esc - Close
 msgstr Esc - Fechar
 
+msgid  Share over the network
+msgstr Compartilhar pela rede
+
+msgid  Scan to download {name}
+msgstr Escaneie para baixar {name}
+
+msgid  Waiting for the download…
+msgstr Aguardando o download…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Enviando para {to}: {sent} de {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Enviando para {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Enviado para {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Parar de compartilhar
+
+msgid  Tab - Another address
+msgstr Tab - Outro endereço
+
+msgid  Cannot share: {e}
+msgstr Não é possível compartilhar: {e}
+
+msgid  No network to share on
+msgstr Nenhuma rede para compartilhar
+
+msgid  Too small for the code: type the address on the phone
+msgstr Pequeno demais para o código: digite o endereço no telefone
+
 msgid  Esc Exit
 msgstr Esc Sair
 

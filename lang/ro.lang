@@ -585,6 +585,39 @@ msgstr Esc - Anulează    F10 din nou - Ieșire
 msgid  Esc - Close
 msgstr Esc - Închide
 
+msgid  Share over the network
+msgstr Partajează în rețea
+
+msgid  Scan to download {name}
+msgstr Scanează pentru a descărca {name}
+
+msgid  Waiting for the download…
+msgstr Se așteaptă descărcarea…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Se trimite către {to}: {sent} din {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Se trimite către {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Trimis către {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Oprește partajarea
+
+msgid  Tab - Another address
+msgstr Tab - Altă adresă
+
+msgid  Cannot share: {e}
+msgstr Nu se poate partaja: {e}
+
+msgid  No network to share on
+msgstr Nicio rețea pentru partajare
+
+msgid  Too small for the code: type the address on the phone
+msgstr Prea mic pentru cod: tastează adresa pe telefon
+
 msgid  Esc Exit
 msgstr Esc Ieșire
 

@@ -585,6 +585,39 @@ msgstr Esc - Zrušiť    Znova F10 - Koniec
 msgid  Esc - Close
 msgstr Esc - Zavrieť
 
+msgid  Share over the network
+msgstr Zdieľať po sieti
+
+msgid  Scan to download {name}
+msgstr Naskenujte a stiahnite {name}
+
+msgid  Waiting for the download…
+msgstr Čaká sa na stiahnutie…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Odosielanie do {to}: {sent} z {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Odosielanie do {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Odoslané do {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Prestať zdieľať
+
+msgid  Tab - Another address
+msgstr Tab - Iná adresa
+
+msgid  Cannot share: {e}
+msgstr Nedá sa zdieľať: {e}
+
+msgid  No network to share on
+msgstr Žiadna sieť na zdieľanie
+
+msgid  Too small for the code: type the address on the phone
+msgstr Na kód nie je miesto: zadajte adresu v telefóne
+
 msgid  Esc Exit
 msgstr Esc Koniec
 

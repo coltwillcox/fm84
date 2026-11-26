@@ -585,6 +585,39 @@ msgstr Esc - İptal    Yine F10 - Çıkış
 msgid  Esc - Close
 msgstr Esc - Kapat
 
+msgid  Share over the network
+msgstr Ağ üzerinden paylaş
+
+msgid  Scan to download {name}
+msgstr {name} dosyasını indirmek için tara
+
+msgid  Waiting for the download…
+msgstr İndirme bekleniyor…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr {to} adresine gönderiliyor: {sent} / {total}
+
+msgid  Sending to {to}: {sent}
+msgstr {to} adresine gönderiliyor: {sent}
+
+msgid  Sent to {to}
+msgstr {to} adresine gönderildi
+
+msgid  Esc - Stop sharing
+msgstr Esc - Paylaşımı durdur
+
+msgid  Tab - Another address
+msgstr Tab - Başka adres
+
+msgid  Cannot share: {e}
+msgstr Paylaşılamıyor: {e}
+
+msgid  No network to share on
+msgstr Paylaşacak ağ yok
+
+msgid  Too small for the code: type the address on the phone
+msgstr Kod için çok küçük: adresi telefona yazın
+
 msgid  Esc Exit
 msgstr Esc Çık
 

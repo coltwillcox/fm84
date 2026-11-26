@@ -578,6 +578,39 @@ msgstr Esc - Otkaži    Ponovo F10 - Izlaz
 msgid  Esc - Close
 msgstr Esc - Zatvori
 
+msgid  Share over the network
+msgstr Deli preko mreže
+
+msgid  Scan to download {name}
+msgstr Skeniraj da preuzmeš {name}
+
+msgid  Waiting for the download…
+msgstr Čeka se preuzimanje…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Šalje se na {to}: {sent} od {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Šalje se na {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Poslato na {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Prestani da deliš
+
+msgid  Tab - Another address
+msgstr Tab - Druga adresa
+
+msgid  Cannot share: {e}
+msgstr Ne može da se deli: {e}
+
+msgid  No network to share on
+msgstr Nema mreže za deljenje
+
+msgid  Too small for the code: type the address on the phone
+msgstr Premalo za kod: ukucaj adresu na telefonu
+
 msgid  Esc Exit
 msgstr Esc Izlaz
 

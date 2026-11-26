@@ -26,6 +26,8 @@ lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", 
 md-5 = "0.11.0"
 regex = { version = "1.12", default-features = false, features = ["std", "perf", "unicode"] }
 ratatui = "0.29.0"
+# Alt+Q's code for a phone to scan; the matrix only - no pictures, no SVG.
+qrcode = { version = "0.15.0", default-features = false, features = ["std"] }
 ruzstd = "0.9.1"
 sevenz-rust2 = { version = "0.24.1", default-features = false, features = ["bzip2", "ppmd", "deflate", "compress", "aes256"] }
 sha2 = "0.11.1"

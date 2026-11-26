@@ -586,6 +586,39 @@ msgstr Esc - Mégse    Újra F10 - Kilépés
 msgid  Esc - Close
 msgstr Esc - Bezárás
 
+msgid  Share over the network
+msgstr Megosztás a hálózaton
+
+msgid  Scan to download {name}
+msgstr Olvasd be a(z) {name} letöltéséhez
+
+msgid  Waiting for the download…
+msgstr Várakozás a letöltésre…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Küldés ide: {to}: {sent} / {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Küldés ide: {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Elküldve ide: {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Megosztás leállítása
+
+msgid  Tab - Another address
+msgstr Tab - Másik cím
+
+msgid  Cannot share: {e}
+msgstr Nem osztható meg: {e}
+
+msgid  No network to share on
+msgstr Nincs hálózat a megosztáshoz
+
+msgid  Too small for the code: type the address on the phone
+msgstr Túl kicsi a kódhoz: írd be a címet a telefonon
+
 msgid  Esc Exit
 msgstr Esc Kilépés
 

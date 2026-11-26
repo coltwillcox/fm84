@@ -584,6 +584,39 @@ msgstr Esc - Avbryt    F10 igjen - Avslutt
 msgid  Esc - Close
 msgstr Esc - Lukk
 
+msgid  Share over the network
+msgstr Del over nettverket
+
+msgid  Scan to download {name}
+msgstr Skann for å laste ned {name}
+
+msgid  Waiting for the download…
+msgstr Venter på nedlastingen…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Sender til {to}: {sent} av {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Sender til {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Sendt til {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Slutt å dele
+
+msgid  Tab - Another address
+msgstr Tab - En annen adresse
+
+msgid  Cannot share: {e}
+msgstr Kan ikke dele: {e}
+
+msgid  No network to share on
+msgstr Ikke noe nettverk å dele på
+
+msgid  Too small for the code: type the address on the phone
+msgstr For lite for koden: skriv adressen på telefonen
+
 msgid  Esc Exit
 msgstr Esc Lukk
 

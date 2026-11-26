@@ -585,6 +585,39 @@ msgstr Esc - Annulla    Ancora F10 - Esci
 msgid  Esc - Close
 msgstr Esc - Chiudi
 
+msgid  Share over the network
+msgstr Condividi in rete
+
+msgid  Scan to download {name}
+msgstr Scansiona per scaricare {name}
+
+msgid  Waiting for the download…
+msgstr In attesa del download…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Invio a {to}: {sent} di {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Invio a {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Inviato a {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Smetti di condividere
+
+msgid  Tab - Another address
+msgstr Tab - Altro indirizzo
+
+msgid  Cannot share: {e}
+msgstr Impossibile condividere: {e}
+
+msgid  No network to share on
+msgstr Nessuna rete su cui condividere
+
+msgid  Too small for the code: type the address on the phone
+msgstr Troppo piccolo per il codice: digita l'indirizzo sul telefono
+
 msgid  Esc Exit
 msgstr Esc Esci
 

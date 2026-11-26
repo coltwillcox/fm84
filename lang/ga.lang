@@ -585,6 +585,39 @@ msgstr Esc - Cealaigh    F10 arís - Scoir
 msgid  Esc - Close
 msgstr Esc - Dún
 
+msgid  Share over the network
+msgstr Comhroinn thar an líonra
+
+msgid  Scan to download {name}
+msgstr Scanáil chun {name} a íoslódáil
+
+msgid  Waiting for the download…
+msgstr Ag fanacht leis an íoslódáil…
+
+msgid  Sending to {to}: {sent} of {total}
+msgstr Á sheoladh chuig {to}: {sent} as {total}
+
+msgid  Sending to {to}: {sent}
+msgstr Á sheoladh chuig {to}: {sent}
+
+msgid  Sent to {to}
+msgstr Seolta chuig {to}
+
+msgid  Esc - Stop sharing
+msgstr Esc - Stop ag comhroinnt
+
+msgid  Tab - Another address
+msgstr Tab - Seoladh eile
+
+msgid  Cannot share: {e}
+msgstr Ní féidir comhroinnt: {e}
+
+msgid  No network to share on
+msgstr Níl líonra ann le comhroinnt air
+
+msgid  Too small for the code: type the address on the phone
+msgstr Róbheag don chód: clóscríobh an seoladh ar an bhfón
+
 msgid  Esc Exit
 msgstr Esc Dún
 

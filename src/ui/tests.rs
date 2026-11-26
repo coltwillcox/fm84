@@ -2094,3 +2094,102 @@ fn the_git_gutter_marks_what_changed_against_head() {
     assert_eq!(viewer[1], ("▎".to_string(), changed), "the viewer marks it too");
     assert!(off, "nothing with the option off");
 }
+
+/// Alt+Q's popup: the code drawn module for module as the address encodes
+/// it, black on white with its margin, in half blocks - on an 80 by 24
+/// terminal too - the address and how it is going under it; the download
+/// said to be done; Esc stopping the server. A terminal too small for the
+/// code shows the address to type in.
+#[test]
+fn the_share_popup_draws_the_code_of_its_address() {
+    use std::io::{Read, Write};
+    let path = std::env::temp_dir().join(format!("fm84-share-popup-{}.txt", std::process::id()));
+    std::fs::write(&path, "for the phone").unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    // Listening everywhere, as a share does, with two addresses to show.
+    let serving = crate::share::serve(crate::share::What::File(path.clone()), "notes.txt".to_string(), std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED)).unwrap();
+    let (first, second) = (std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST), std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 0, 35)));
+    let view = crate::app::ShareView::new(serving, vec![first, second]).unwrap();
+    let url = view.url();
+    let code = view.code.clone();
+    app_state.dialog = Some(Dialog::Share(Box::new(view)));
+
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer().clone();
+    let text: String = (0..24).map(|y| (0..80).map(|x| buffer[(x, y)].symbol()).collect::<String>()).collect::<Vec<_>>().join("\n");
+    // The code's top left: the first cell of black on white, white above it.
+    let black = ratatui::style::Color::Rgb(0, 0, 0);
+    let side = code.0 + 4;
+    let (x0, y0) = (0..24u16)
+        .flat_map(|y| (0..80u16).map(move |x| (x, y)))
+        .find(|&(x, y)| buffer[(x, y)].symbol() == "▀" && buffer[(x, y)].bg == ratatui::style::Color::Rgb(255, 255, 255) && buffer[(x, y)].fg != black)
+        .unwrap_or_else(|| panic!("the code drawn\n{text}"));
+    let shown = |row: usize, column: usize| {
+        let cell = &buffer[(x0 + column as u16, y0 + (row / 2) as u16)];
+        if row.is_multiple_of(2) { cell.fg == black } else { cell.bg == black }
+    };
+    let wanted = |row: usize, column: usize| {
+        let (row, column) = (row.wrapping_sub(2), column.wrapping_sub(2));
+        row < code.0 && column < code.0 && code.1[row * code.0 + column]
+    };
+    let mismatched = (0..side)
+        .flat_map(|row| (0..side).map(move |column| (row, column)))
+        .filter(|&(row, column)| row < side && shown(row, column) != wanted(row, column))
+        .count();
+    assert_eq!(mismatched, 0, "every module as the code has it\n{text}");
+    // A blank row between the title and the code.
+    let title_row = (0..24u16).find(|&y| (0..80u16).map(|x| buffer[(x, y)].symbol()).collect::<String>().contains("Share over the network")).unwrap();
+    assert_eq!(y0, title_row + 2, "one row between the title and the code\n{text}");
+    assert!((x0..x0 + side as u16).all(|x| buffer[(x, title_row + 1)].symbol() == " "), "and it empty\n{text}");
+    assert!(text.contains(&format!("{url}  1/2")), "the address under it, the first of two\n{text}");
+    assert!(text.contains("Waiting for the download"), "{text}");
+    assert!(text.contains("Esc - Stop sharing") && text.contains("Tab - Another address"), "{text}");
+
+    // Tab: the other address, and its code; Shift+Tab back.
+    let key = |app_state: &mut AppState, code: crossterm::event::KeyCode| {
+        crate::input::handle_key_for_tests(app_state, crossterm::event::KeyEvent::new(code, crossterm::event::KeyModifiers::NONE));
+    };
+    key(&mut app_state, crossterm::event::KeyCode::Tab);
+    let Some(Dialog::Share(view)) = &app_state.dialog else { panic!("still open") };
+    assert!(view.url().starts_with("http://192.168.0.35:"));
+    assert_ne!(view.code, code, "the code of the other address");
+    render_ui(&mut terminal, &mut app_state);
+    let other: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+    assert!(other.contains("192.168.0.35") && other.contains("2/2"), "{other}");
+    key(&mut app_state, crossterm::event::KeyCode::BackTab);
+    let Some(Dialog::Share(view)) = &app_state.dialog else { panic!("still open") };
+    assert_eq!(view.url(), url, "and back");
+
+    // The phone downloads it: said to be done.
+    let rest = url.strip_prefix("http://").unwrap();
+    let (host, token) = rest.split_at(rest.find('/').unwrap());
+    let mut stream = std::net::TcpStream::connect(host).unwrap();
+    stream.write_all(format!("GET {token} HTTP/1.1\r\n\r\n").as_bytes()).unwrap();
+    let mut got = Vec::new();
+    stream.read_to_end(&mut got).unwrap();
+    // Read to its end and let go of, as a browser does.
+    drop(stream);
+    assert!(got.ends_with(b"for the phone"));
+    let started = std::time::Instant::now();
+    while !matches!(&app_state.dialog, Some(Dialog::Share(view)) if matches!(view.status, crate::app::ShareStatus::Done(_))) && started.elapsed() < std::time::Duration::from_secs(5) {
+        app_state.poll_share();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    render_ui(&mut terminal, &mut app_state);
+    let done: String = terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect();
+    assert!(done.contains("Sent to 127.0.0.1") && done.contains("Esc - Stop sharing"), "sent, and still shared until Esc\n{done}");
+
+    // Too small for the code: the address alone.
+    let mut small = Terminal::new(ratatui::backend::TestBackend::new(70, 16)).unwrap();
+    render_ui(&mut small, &mut app_state);
+    let shown_small: String = (0..16).map(|y| (0..70).map(|x| small.backend().buffer()[(x, y)].symbol()).collect::<String>()).collect::<Vec<_>>().join("\n");
+    assert!(shown_small.contains("Too small for the code") && shown_small.contains(&url), "{shown_small}");
+
+    // Esc: the popup goes, and so does the server.
+    crate::input::handle_key_for_tests(&mut app_state, crossterm::event::KeyEvent::new(crossterm::event::KeyCode::Esc, crossterm::event::KeyModifiers::NONE));
+    assert!(app_state.dialog.is_none());
+    std::fs::remove_file(&path).unwrap();
+}
