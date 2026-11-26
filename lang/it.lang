@@ -2015,6 +2015,9 @@ msgstr Prima copialo fuori dall'archivio: ciò che entra in un archivio deve ess
 msgid  Encrypted: it needs its password
 msgstr Cifrato: serve la sua password
 
+msgid  encrypted
+msgstr cifrato
+
 msgid  Wrong password
 msgstr Password errata
 

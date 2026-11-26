@@ -2052,6 +2052,9 @@ msgstr Prvo je kopiraj iz arhive: ono što ide u arhivu mora da bude na disku
 msgid  Encrypted: it needs its password
 msgstr Šifrovano: treba mu lozinka
 
+msgid  encrypted
+msgstr šifrovano
+
 msgid  Wrong password
 msgstr Pogrešna lozinka
 

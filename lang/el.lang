@@ -2015,6 +2015,9 @@ msgstr Αντιγράψτε το πρώτα έξω από την αρχειοθ�
 msgid  Encrypted: it needs its password
 msgstr Κρυπτογραφημένο: χρειάζεται τον κωδικό του
 
+msgid  encrypted
+msgstr κρυπτογραφημένο
+
 msgid  Wrong password
 msgstr Λάθος κωδικός
 

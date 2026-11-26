@@ -2015,6 +2015,9 @@ msgstr Önce arşivden dışarı kopyalayın: arşive girecek olan diskte olmal�
 msgid  Encrypted: it needs its password
 msgstr Şifreli: parolası gerekiyor
 
+msgid  encrypted
+msgstr şifreli
+
 msgid  Wrong password
 msgstr Yanlış parola
 

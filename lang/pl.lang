@@ -2053,6 +2053,9 @@ msgstr Najpierw skopiuj to z archiwum: to, co trafia do archiwum, musi być na d
 msgid  Encrypted: it needs its password
 msgstr Zaszyfrowane: potrzebuje swojego hasła
 
+msgid  encrypted
+msgstr zaszyfrowane
+
 msgid  Wrong password
 msgstr Złe hasło
 

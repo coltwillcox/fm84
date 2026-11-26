@@ -2016,6 +2016,9 @@ msgstr Copiez-le d'abord hors de l'archive : ce qui entre dans une archive doit 
 msgid  Encrypted: it needs its password
 msgstr Chiffré : il lui faut son mot de passe
 
+msgid  encrypted
+msgstr chiffré
+
 msgid  Wrong password
 msgstr Mot de passe incorrect
 

@@ -2016,6 +2016,9 @@ msgstr Előbb másold ki az archívumból: aminek archívumba kell kerülnie, an
 msgid  Encrypted: it needs its password
 msgstr Titkosítva: kell hozzá a jelszava
 
+msgid  encrypted
+msgstr titkosítva
+
 msgid  Wrong password
 msgstr Rossz jelszó
 

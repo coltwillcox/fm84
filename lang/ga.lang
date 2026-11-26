@@ -2129,6 +2129,9 @@ msgstr Cóipeáil amach as an gcartlann é ar dtús: caithfidh a dtéann isteach
 msgid  Encrypted: it needs its password
 msgstr Criptithe: teastaíonn a phasfhocal uaidh
 
+msgid  encrypted
+msgstr criptithe
+
 msgid  Wrong password
 msgstr Pasfhocal mícheart
 

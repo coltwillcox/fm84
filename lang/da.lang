@@ -2014,6 +2014,9 @@ msgstr Kopiér den ud af arkivet først: det, der skal i et arkiv, skal ligge p�
 msgid  Encrypted: it needs its password
 msgstr Krypteret: den skal have sin adgangskode
 
+msgid  encrypted
+msgstr krypteret
+
 msgid  Wrong password
 msgstr Forkert adgangskode
 

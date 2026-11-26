@@ -2052,6 +2052,9 @@ msgstr Прво је копирај из архиве: оно што иде у �
 msgid  Encrypted: it needs its password
 msgstr Шифровано: треба му лозинка
 
+msgid  encrypted
+msgstr шифровано
+
 msgid  Wrong password
 msgstr Погрешна лозинка
 

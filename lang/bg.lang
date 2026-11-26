@@ -2014,6 +2014,9 @@ msgstr Първо го копирайте от архива: каквото вл
 msgid  Encrypted: it needs its password
 msgstr Шифрован: трябва му паролата
 
+msgid  encrypted
+msgstr шифрован
+
 msgid  Wrong password
 msgstr Грешна парола
 

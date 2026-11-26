@@ -2015,6 +2015,9 @@ msgstr Erst aus dem Archiv kopieren: was in ein Archiv kommt, muss auf der Platt
 msgid  Encrypted: it needs its password
 msgstr Verschlüsselt: es braucht sein Passwort
 
+msgid  encrypted
+msgstr verschlüsselt
+
 msgid  Wrong password
 msgstr Falsches Passwort
 

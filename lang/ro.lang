@@ -2053,6 +2053,9 @@ msgstr Copiați-l mai întâi din arhivă: ce intră într-o arhivă trebuie să
 msgid  Encrypted: it needs its password
 msgstr Criptat: îi trebuie parola
 
+msgid  encrypted
+msgstr criptat
+
 msgid  Wrong password
 msgstr Parolă greșită
 

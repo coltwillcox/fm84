@@ -2016,6 +2016,9 @@ msgstr Cópialo fuera del archivo comprimido primero: lo que entra en un archivo
 msgid  Encrypted: it needs its password
 msgstr Cifrado: necesita su contraseña
 
+msgid  encrypted
+msgstr cifrado
+
 msgid  Wrong password
 msgstr Contraseña incorrecta
 

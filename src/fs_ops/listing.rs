@@ -460,7 +460,7 @@ fn describe_in_archive(path: &Path) -> Option<Description> {
         modified: entry.modified,
         owner: entry.owner.clone().unwrap_or_default(),
         // The one thing that stops it coming out, said where it is looked at.
-        attributes: [entry.mode.map(|mode| format!("{kind}{}", mode_string(mode))), entry.encrypted.then(|| "encrypted".to_string())]
+        attributes: [entry.mode.map(|mode| format!("{kind}{}", mode_string(mode))), entry.encrypted.then(|| t!("encrypted").to_string())]
             .into_iter()
             .flatten()
             .collect::<Vec<_>>()

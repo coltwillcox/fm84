@@ -2015,6 +2015,9 @@ msgstr Прво копирај ја од архивата: тоа што вле�
 msgid  Encrypted: it needs its password
 msgstr Шифрирано: му треба лозинката
 
+msgid  encrypted
+msgstr шифрирано
+
 msgid  Wrong password
 msgstr Погрешна лозинка
 

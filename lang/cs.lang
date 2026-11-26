@@ -2053,6 +2053,9 @@ msgstr Nejdřív ho zkopírujte z archivu: co jde do archivu, musí být na disk
 msgid  Encrypted: it needs its password
 msgstr Zašifrováno: potřebuje své heslo
 
+msgid  encrypted
+msgstr zašifrováno
+
 msgid  Wrong password
 msgstr Špatné heslo
 

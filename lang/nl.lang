@@ -2014,6 +2014,9 @@ msgstr Haal het eerst uit het archief: wat in een archief komt, moet op de schij
 msgid  Encrypted: it needs its password
 msgstr Versleuteld: het heeft zijn wachtwoord nodig
 
+msgid  encrypted
+msgstr versleuteld
+
 msgid  Wrong password
 msgstr Verkeerd wachtwoord
 

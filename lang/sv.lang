@@ -2015,6 +2015,9 @@ msgstr Kopiera ut det ur arkivet först: det som ska in i ett arkiv måste ligga
 msgid  Encrypted: it needs its password
 msgstr Krypterad: den behöver sitt lösenord
 
+msgid  encrypted
+msgstr krypterad
+
 msgid  Wrong password
 msgstr Fel lösenord
 
