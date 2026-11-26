@@ -1385,6 +1385,9 @@ fn turbo_turns_the_neon_up() {
 fn left_alone_fm84_drives_until_a_key() {
     let mut app_state = AppState::new();
     app_state.options = Options::default();
+    // The screens before and after are compared whole: with the clock on, a
+    // second ticking over between them told them apart now and then.
+    app_state.options.clock = crate::options::Clock::Off;
     crate::display::apply(&app_state.options);
     let minutes = |count: u64| std::time::Instant::now().checked_sub(std::time::Duration::from_secs(count * 60)).unwrap();
     let long_ago = minutes(5);
