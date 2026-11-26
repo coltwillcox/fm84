@@ -740,9 +740,15 @@ pub(super) fn append_zip<W: Write + io::Seek>(zip: &mut zip::ZipWriter<W>, membe
     Ok(())
 }
 
+/// zip_time, for the tests of the times written elsewhere.
+#[cfg(test)]
+pub fn zip_time_for_tests(time: std::time::SystemTime) -> Option<zip::DateTime> {
+    zip_time(time)
+}
+
 pub(super) fn zip_time(time: std::time::SystemTime) -> Option<zip::DateTime> {
     use chrono::{Datelike, Timelike};
-    let local = chrono::DateTime::<chrono::Local>::from(time);
+    let local = crate::utils::local_time(time)?;
     zip::DateTime::from_date_and_time(u16::try_from(local.year()).ok()?, local.month() as u8, local.day() as u8, local.hour() as u8, local.minute() as u8, local.second() as u8).ok()
 }
 

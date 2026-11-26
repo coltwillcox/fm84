@@ -129,8 +129,8 @@ pub fn parse_time(text: &str) -> Result<SystemTime, String> {
 }
 
 pub fn format_time(time: SystemTime) -> String {
-    let local: chrono::DateTime<chrono::Local> = time.into();
-    local.format("%Y-%m-%d %H:%M:%S").to_string()
+    // One no calendar holds is left empty, which leaves the time as it is.
+    crate::utils::local_time(time).map(|local| local.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()
 }
 
 /// What the dialog changes. None leaves that alone.

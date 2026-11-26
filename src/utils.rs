@@ -28,15 +28,36 @@ pub fn format_size(bytes: u64) -> String {
     format!("{:.0} {}", size, units[unit_index])
 }
 
+/// A time on the local clock, or None for one so far off that a calendar
+/// cannot hold it: before the year 1 or after 9999. A file can carry one -
+/// tmpfs keeps any second there is - and the date library gives up on it,
+/// ending fm84, where nothing could be said of it anyway.
+pub fn local_time(time: std::time::SystemTime) -> Option<chrono::DateTime<chrono::Local>> {
+    // From 0001-01-01 to the end of 9999, in seconds from 1970.
+    const RANGE: std::ops::RangeInclusive<i64> = -62_135_596_800..=253_402_300_799;
+    let (seconds, nanoseconds) = match time.duration_since(std::time::UNIX_EPOCH) {
+        Ok(since) => (i64::try_from(since.as_secs()).ok()?, since.subsec_nanos()),
+        Err(before) => {
+            let before = before.duration();
+            let seconds = i64::try_from(before.as_secs()).ok()?;
+            if before.subsec_nanos() == 0 { (-seconds, 0) } else { (-seconds - 1, 1_000_000_000 - before.subsec_nanos()) }
+        }
+    };
+    if !RANGE.contains(&seconds) {
+        return None;
+    }
+    chrono::DateTime::from_timestamp(seconds, nanoseconds).map(|utc| utc.with_timezone(&chrono::Local))
+}
+
 /// A modification time as the Modified column writes it. `now` is passed in
 /// so a relative date can be tested, and so one frame measures every row from
 /// the same moment.
 pub fn format_modified(time: std::time::SystemTime, format: crate::options::DateFormat, now: std::time::SystemTime) -> String {
     use crate::options::DateFormat;
-    let local: chrono::DateTime<chrono::Local> = time.into();
     match format {
-        DateFormat::Short => local.format("%d/%m/%y %H:%M").to_string(),
-        DateFormat::Iso => local.format("%Y-%m-%d %H:%M").to_string(),
+        // A time no calendar holds is not known.
+        DateFormat::Short => local_time(time).map_or_else(|| "?".to_string(), |local| local.format("%d/%m/%y %H:%M").to_string()),
+        DateFormat::Iso => local_time(time).map_or_else(|| "?".to_string(), |local| local.format("%Y-%m-%d %H:%M").to_string()),
         DateFormat::Relative => {
             // A time ahead of the clock - a file from a machine set a little
             // fast - reads as just now rather than as a negative age.
@@ -62,7 +83,9 @@ pub fn format_modified(time: std::time::SystemTime, format: crate::options::Date
 /// gives the time itself, as the short form does.
 pub fn format_exact(time: std::time::SystemTime, format: crate::options::DateFormat) -> String {
     use crate::options::DateFormat;
-    let local: chrono::DateTime<chrono::Local> = time.into();
+    let Some(local) = local_time(time) else {
+        return "?".to_string();
+    };
     match format {
         DateFormat::Short | DateFormat::Relative => local.format("%d/%m/%y %H:%M:%S").to_string(),
         DateFormat::Iso => local.format("%Y-%m-%d %H:%M:%S").to_string(),
@@ -249,6 +272,27 @@ pub fn limit_path_string(path: &Path, n: usize) -> String {
 #[cfg(test)]
 mod text_tests {
     use super::*;
+
+    /// A time so far off the clock cannot write it - a file on tmpfs, which
+    /// keeps any second there is, touched to the year 318857 - is written
+    /// as not known, in every way a time is written, rather than ending fm84.
+    #[test]
+    fn a_time_past_what_the_clock_can_write_is_not_known() {
+        use crate::options::DateFormat;
+        let now = std::time::SystemTime::now();
+        let far = std::time::UNIX_EPOCH + std::time::Duration::from_secs(9_999_999_999_999);
+        for format in [DateFormat::Short, DateFormat::Iso, DateFormat::Relative] {
+            let _ = format_modified(far, format, now);
+            let _ = format_exact(far, format);
+        }
+        let _ = crate::attributes::format_time(far);
+        assert_eq!(crate::fs_ops::zip_time_for_tests(far), None, "no zip time for it");
+        // Before the clock's start, as far the other way.
+        if let Some(long_ago) = std::time::UNIX_EPOCH.checked_sub(std::time::Duration::from_secs(9_999_999_999_999)) {
+            let _ = format_modified(long_ago, DateFormat::Short, now);
+            let _ = format_exact(long_ago, DateFormat::Iso);
+        }
+    }
 
     #[test]
     fn a_size_is_rounded_to_the_largest_unit_under_it() {
