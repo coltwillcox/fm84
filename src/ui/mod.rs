@@ -467,6 +467,7 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             Some(Dialog::UserMenu(menu)) => render_user_menu_popup(f, area, menu),
             Some(Dialog::OpenWith(menu)) => render_open_with_popup(f, area, menu),
             Some(Dialog::Share(view)) => render_share_popup(f, area, view),
+            Some(Dialog::Receive(view)) => render_receive_popup(f, area, view),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {

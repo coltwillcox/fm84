@@ -49,6 +49,7 @@ mod multi_rename;
 mod night_drive;
 mod open_with;
 mod preview;
+mod receive;
 mod selection;
 mod settings;
 mod share;
@@ -68,7 +69,7 @@ mod viewing;
 
 pub use self::{
     animation::*, archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_gutter::*, git_marks::*, git_stage::*, history::*,
-    info_column::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
+    info_column::*, jobs::*, listing::*, multi_rename::*, open_with::*, preview::*, receive::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -261,6 +262,8 @@ pub enum Dialog {
     OpenWith(Box<OpenWith>),
     /// Alt+Q: what is chosen, served for a phone to scan and download.
     Share(Box<ShareView>),
+    /// Alt+Shift+Q: the active panel's directory, taking files a phone sends.
+    Receive(Box<ReceiveView>),
     /// A click on a panel's git branch: the repository's branches, to change
     /// to another.
     Branches(Box<BranchList>),

@@ -163,7 +163,7 @@ pub fn write_whole(dest: &Path, content: &[u8], replacing: bool) -> Result<(), E
 /// carry a name already near the filesystem's limit past it, and every copy
 /// goes through one of these now. Shortened in bytes, which is what the limit
 /// counts - 64 characters of emoji are 256 of them.
-pub(super) fn temp_beside(dest: &Path) -> Result<(PathBuf, File), Error> {
+pub(crate) fn temp_beside(dest: &Path) -> Result<(PathBuf, File), Error> {
     const NAME_BYTES: usize = 64;
     let mut name = String::new();
     for character in dest.file_name().unwrap_or_default().to_string_lossy().chars() {

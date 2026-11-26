@@ -609,6 +609,63 @@ msgstr Esc - Stop ag comhroinnt
 msgid  Tab - Another address
 msgstr Tab - Seoladh eile
 
+msgid  Receive from a phone
+msgstr Faigh ó fhón
+
+msgid  Scan to send files into {dir}
+msgstr Scanáil chun comhaid a sheoladh chuig {dir}
+
+msgid  Waiting for files…
+msgstr Ag fanacht le comhaid…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr {name} á fháil: {got} as {size}
+
+msgid  Files received: {count} ({size})
+msgstr Comhaid faighte: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Níor faightear {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Ní féidir fáil: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Stop ag fáil
+
+msgid  Send files to fm84
+msgstr Seol comhaid chuig fm84
+
+msgid  Into {dir}
+msgstr Isteach in {dir}
+
+msgid  Choose files
+msgstr Roghnaigh comhaid
+
+msgid  Sent
+msgstr Seolta
+
+msgid  Not sent
+msgstr Gan seoladh
+
+msgid  No name to save it under
+msgstr Níl ainm lena shábháil
+
+msgid  No size given
+msgstr Níor tugadh méid
+
+msgid  Not enough room: {free} free
+msgstr Níl dóthain spáis: {free} saor
+
+msgid  Too many at once
+msgstr An iomarca le chéile
+
+msgid  Stopped
+msgstr Stoptha
+
+msgid  It stopped coming before its end
+msgstr Stop sé ag teacht roimh an deireadh
+
 msgid  Cannot share: {e}
 msgstr Ní féidir comhroinnt: {e}
 

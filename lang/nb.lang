@@ -608,6 +608,63 @@ msgstr Esc - Slutt å dele
 msgid  Tab - Another address
 msgstr Tab - En annen adresse
 
+msgid  Receive from a phone
+msgstr Motta fra en telefon
+
+msgid  Scan to send files into {dir}
+msgstr Skann for å sende filer til {dir}
+
+msgid  Waiting for files…
+msgstr Venter på filer…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Mottar {name}: {got} av {size}
+
+msgid  Files received: {count} ({size})
+msgstr Mottatte filer: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Ikke mottatt {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Kan ikke motta: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Slutt å motta
+
+msgid  Send files to fm84
+msgstr Send filer til fm84
+
+msgid  Into {dir}
+msgstr Til {dir}
+
+msgid  Choose files
+msgstr Velg filer
+
+msgid  Sent
+msgstr Sendt
+
+msgid  Not sent
+msgstr Ikke sendt
+
+msgid  No name to save it under
+msgstr Ikke noe navn å lagre den under
+
+msgid  No size given
+msgstr Ingen størrelse oppgitt
+
+msgid  Not enough room: {free} free
+msgstr Ikke nok plass: {free} ledig
+
+msgid  Too many at once
+msgstr For mange på en gang
+
+msgid  Stopped
+msgstr Stoppet
+
+msgid  It stopped coming before its end
+msgstr Den sluttet å komme før slutten
+
 msgid  Cannot share: {e}
 msgstr Kan ikke dele: {e}
 

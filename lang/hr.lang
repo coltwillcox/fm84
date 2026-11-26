@@ -609,6 +609,63 @@ msgstr Esc - Prestani dijeliti
 msgid  Tab - Another address
 msgstr Tab - Druga adresa
 
+msgid  Receive from a phone
+msgstr Primi s telefona
+
+msgid  Scan to send files into {dir}
+msgstr Skeniraj za slanje datoteka u {dir}
+
+msgid  Waiting for files…
+msgstr Čeka se na datoteke…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Prima se {name}: {got} od {size}
+
+msgid  Files received: {count} ({size})
+msgstr Primljene datoteke: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Nije primljeno {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Ne može se primiti: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Prestani primati
+
+msgid  Send files to fm84
+msgstr Pošalji datoteke u fm84
+
+msgid  Into {dir}
+msgstr U {dir}
+
+msgid  Choose files
+msgstr Odaberi datoteke
+
+msgid  Sent
+msgstr Poslano
+
+msgid  Not sent
+msgstr Nije poslano
+
+msgid  No name to save it under
+msgstr Nema imena pod kojim bi se spremilo
+
+msgid  No size given
+msgstr Veličina nije dana
+
+msgid  Not enough room: {free} free
+msgstr Nema dovoljno mjesta: slobodno {free}
+
+msgid  Too many at once
+msgstr Previše odjednom
+
+msgid  Stopped
+msgstr Zaustavljeno
+
+msgid  It stopped coming before its end
+msgstr Prestalo je stizati prije kraja
+
 msgid  Cannot share: {e}
 msgstr Ne može se dijeliti: {e}
 

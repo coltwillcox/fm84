@@ -609,6 +609,63 @@ msgstr Esc - Oprește partajarea
 msgid  Tab - Another address
 msgstr Tab - Altă adresă
 
+msgid  Receive from a phone
+msgstr Primește de pe telefon
+
+msgid  Scan to send files into {dir}
+msgstr Scanează pentru a trimite fișiere în {dir}
+
+msgid  Waiting for files…
+msgstr Se așteaptă fișiere…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Se primește {name}: {got} din {size}
+
+msgid  Files received: {count} ({size})
+msgstr Fișiere primite: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Nu s-a primit {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Nu se poate primi: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Oprește primirea
+
+msgid  Send files to fm84
+msgstr Trimite fișiere la fm84
+
+msgid  Into {dir}
+msgstr În {dir}
+
+msgid  Choose files
+msgstr Alege fișiere
+
+msgid  Sent
+msgstr Trimis
+
+msgid  Not sent
+msgstr Netrimis
+
+msgid  No name to save it under
+msgstr Niciun nume sub care să fie salvat
+
+msgid  No size given
+msgstr Nu s-a dat dimensiunea
+
+msgid  Not enough room: {free} free
+msgstr Spațiu insuficient: {free} liber
+
+msgid  Too many at once
+msgstr Prea multe deodată
+
+msgid  Stopped
+msgstr Oprit
+
+msgid  It stopped coming before its end
+msgstr S-a oprit înainte de sfârșit
+
 msgid  Cannot share: {e}
 msgstr Nu se poate partaja: {e}
 

@@ -610,6 +610,63 @@ msgstr Esc - Megosztás leállítása
 msgid  Tab - Another address
 msgstr Tab - Másik cím
 
+msgid  Receive from a phone
+msgstr Fogadás telefonról
+
+msgid  Scan to send files into {dir}
+msgstr Olvasd be, és küldj fájlokat ide: {dir}
+
+msgid  Waiting for files…
+msgstr Várakozás fájlokra…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Fogadás: {name}: {got} / {size}
+
+msgid  Files received: {count} ({size})
+msgstr Fogadott fájlok: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Nem érkezett meg: {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Nem fogadható: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Fogadás leállítása
+
+msgid  Send files to fm84
+msgstr Fájlok küldése az fm84-nek
+
+msgid  Into {dir}
+msgstr Ide: {dir}
+
+msgid  Choose files
+msgstr Fájlok kiválasztása
+
+msgid  Sent
+msgstr Elküldve
+
+msgid  Not sent
+msgstr Nincs elküldve
+
+msgid  No name to save it under
+msgstr Nincs név a mentéshez
+
+msgid  No size given
+msgstr Nincs megadva méret
+
+msgid  Not enough room: {free} free
+msgstr Nincs elég hely: {free} szabad
+
+msgid  Too many at once
+msgstr Túl sok egyszerre
+
+msgid  Stopped
+msgstr Leállítva
+
+msgid  It stopped coming before its end
+msgstr A vége előtt abbamaradt
+
 msgid  Cannot share: {e}
 msgstr Nem osztható meg: {e}
 

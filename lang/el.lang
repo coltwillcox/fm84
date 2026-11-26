@@ -609,6 +609,63 @@ msgstr Esc - Διακοπή κοινής χρήσης
 msgid  Tab - Another address
 msgstr Tab - Άλλη διεύθυνση
 
+msgid  Receive from a phone
+msgstr Λήψη από τηλέφωνο
+
+msgid  Scan to send files into {dir}
+msgstr Σαρώστε για αποστολή αρχείων στο {dir}
+
+msgid  Waiting for files…
+msgstr Αναμονή για αρχεία…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Λήψη του {name}: {got} από {size}
+
+msgid  Files received: {count} ({size})
+msgstr Ληφθέντα αρχεία: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Δεν ελήφθη το {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Αδύνατη η λήψη: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Διακοπή λήψης
+
+msgid  Send files to fm84
+msgstr Αποστολή αρχείων στο fm84
+
+msgid  Into {dir}
+msgstr Στο {dir}
+
+msgid  Choose files
+msgstr Επιλογή αρχείων
+
+msgid  Sent
+msgstr Στάλθηκε
+
+msgid  Not sent
+msgstr Δεν στάλθηκε
+
+msgid  No name to save it under
+msgstr Κανένα όνομα για αποθήκευση
+
+msgid  No size given
+msgstr Δεν δόθηκε μέγεθος
+
+msgid  Not enough room: {free} free
+msgstr Δεν υπάρχει αρκετός χώρος: {free} ελεύθερα
+
+msgid  Too many at once
+msgstr Πάρα πολλά μαζί
+
+msgid  Stopped
+msgstr Διακόπηκε
+
+msgid  It stopped coming before its end
+msgstr Σταμάτησε να έρχεται πριν το τέλος
+
 msgid  Cannot share: {e}
 msgstr Αδύνατη η κοινή χρήση: {e}
 

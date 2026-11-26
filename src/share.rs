@@ -242,7 +242,7 @@ struct Shared {
 
 /// A path no one on the network could guess: ten hex digits from the hash
 /// the standard library seeds afresh for each process and each hasher.
-fn token() -> String {
+pub(crate) fn token() -> String {
     use std::hash::{BuildHasher, Hasher};
     let mut hasher = std::collections::hash_map::RandomState::new().build_hasher();
     hasher.write_u128(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |since| since.as_nanos()));
@@ -274,10 +274,9 @@ fn answer(mut stream: TcpStream, peer: IpAddr, shared: &Shared) {
     let _ = stream.set_nonblocking(false);
     let _ = stream.set_read_timeout(Some(Duration::from_secs(10)));
     let _ = stream.set_write_timeout(Some(Duration::from_secs(30)));
-    let Some((method, path)) = read_request(&mut stream) else {
+    let Some(Request { method, path, .. }) = read_request(&mut stream) else {
         return;
     };
-    let path = path.split(['?', '#']).next().unwrap_or_default();
     if path != format!("/{}", shared.token) || !matches!(method.as_str(), "GET" | "HEAD") {
         let _ = stream.write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
         return;
@@ -342,21 +341,46 @@ fn received(stream: &mut TcpStream) -> io::Result<()> {
     }
 }
 
-/// The request's method and path, from a head no longer than a few
-/// kilobytes - what a browser asks with - or None for anything else.
-fn read_request(stream: &mut TcpStream) -> Option<(String, String)> {
+/// A request as a browser makes it: what it asks to do, to which path - its
+/// query left off - its headers, and the start of its body, read along with
+/// the head.
+pub(crate) struct Request {
+    pub method: String,
+    pub path: String,
+    headers: Vec<(String, String)>,
+    pub body_start: Vec<u8>,
+}
+
+impl Request {
+    /// A header's value, whatever case its name is written in.
+    pub fn header(&self, name: &str) -> Option<&str> {
+        self.headers.iter().find(|(key, _)| key.eq_ignore_ascii_case(name)).map(|(_, value)| value.as_str())
+    }
+}
+
+/// The request on `stream`, from a head no longer than a few kilobytes -
+/// what a browser asks with - or None for anything else.
+pub(crate) fn read_request(stream: &mut TcpStream) -> Option<Request> {
     let mut head = Vec::new();
     let mut buffer = [0; 1024];
-    while !head.windows(4).any(|window| window == b"\r\n\r\n") {
+    let end = loop {
+        if let Some(at) = head.windows(4).position(|window| window == b"\r\n\r\n") {
+            break at;
+        }
         if head.len() > 16 * 1024 {
             return None;
         }
         let read = stream.read(&mut buffer).ok().filter(|&read| read > 0)?;
         head.extend_from_slice(&buffer[..read]);
-    }
-    let line = String::from_utf8_lossy(&head[..head.iter().position(|&byte| byte == b'\r')?]).into_owned();
-    let mut parts = line.split(' ');
-    Some((parts.next()?.to_string(), parts.next()?.to_string()))
+    };
+    let body_start = head[end + 4..].to_vec();
+    let text = String::from_utf8_lossy(&head[..end]).into_owned();
+    let mut lines = text.split("\r\n");
+    let mut first = lines.next()?.split(' ');
+    let (method, path) = (first.next()?.to_string(), first.next()?.to_string());
+    let path = path.split(['?', '#']).next().unwrap_or_default().to_string();
+    let headers = lines.filter_map(|line| line.split_once(':')).map(|(key, value)| (key.trim().to_string(), value.trim().to_string())).collect();
+    Some(Request { method, path, headers, body_start })
 }
 
 /// The header that saves the download under `name`: plain, with what is

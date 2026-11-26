@@ -610,6 +610,63 @@ msgstr Échap - Arrêter le partage
 msgid  Tab - Another address
 msgstr Tab - Autre adresse
 
+msgid  Receive from a phone
+msgstr Recevoir d'un téléphone
+
+msgid  Scan to send files into {dir}
+msgstr Scanner pour envoyer des fichiers dans {dir}
+
+msgid  Waiting for files…
+msgstr En attente de fichiers…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Réception de {name} : {got} sur {size}
+
+msgid  Files received: {count} ({size})
+msgstr Fichiers reçus : {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Non reçu {name} : {reason}
+
+msgid  Cannot receive: {e}
+msgstr Impossible de recevoir : {e}
+
+msgid  Esc - Stop receiving
+msgstr Échap - Arrêter la réception
+
+msgid  Send files to fm84
+msgstr Envoyer des fichiers à fm84
+
+msgid  Into {dir}
+msgstr Dans {dir}
+
+msgid  Choose files
+msgstr Choisir des fichiers
+
+msgid  Sent
+msgstr Envoyé
+
+msgid  Not sent
+msgstr Non envoyé
+
+msgid  No name to save it under
+msgstr Aucun nom sous lequel l'enregistrer
+
+msgid  No size given
+msgstr Aucune taille indiquée
+
+msgid  Not enough room: {free} free
+msgstr Pas assez de place : {free} libres
+
+msgid  Too many at once
+msgstr Trop à la fois
+
+msgid  Stopped
+msgstr Arrêté
+
+msgid  It stopped coming before its end
+msgstr Il s'est arrêté avant la fin
+
 msgid  Cannot share: {e}
 msgstr Impossible de partager : {e}
 

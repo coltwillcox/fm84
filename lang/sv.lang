@@ -609,6 +609,63 @@ msgstr Esc - Sluta dela
 msgid  Tab - Another address
 msgstr Tab - En annan adress
 
+msgid  Receive from a phone
+msgstr Ta emot från en telefon
+
+msgid  Scan to send files into {dir}
+msgstr Skanna för att skicka filer till {dir}
+
+msgid  Waiting for files…
+msgstr Väntar på filer…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Tar emot {name}: {got} av {size}
+
+msgid  Files received: {count} ({size})
+msgstr Mottagna filer: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Inte mottagen {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Kan inte ta emot: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Sluta ta emot
+
+msgid  Send files to fm84
+msgstr Skicka filer till fm84
+
+msgid  Into {dir}
+msgstr Till {dir}
+
+msgid  Choose files
+msgstr Välj filer
+
+msgid  Sent
+msgstr Skickad
+
+msgid  Not sent
+msgstr Inte skickad
+
+msgid  No name to save it under
+msgstr Inget namn att spara den under
+
+msgid  No size given
+msgstr Ingen storlek angiven
+
+msgid  Not enough room: {free} free
+msgstr Inte tillräckligt med utrymme: {free} ledigt
+
+msgid  Too many at once
+msgstr För många på en gång
+
+msgid  Stopped
+msgstr Stoppad
+
+msgid  It stopped coming before its end
+msgstr Den slutade komma före slutet
+
 msgid  Cannot share: {e}
 msgstr Kan inte dela: {e}
 

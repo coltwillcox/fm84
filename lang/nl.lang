@@ -608,6 +608,63 @@ msgstr Esc - Stoppen met delen
 msgid  Tab - Another address
 msgstr Tab - Ander adres
 
+msgid  Receive from a phone
+msgstr Ontvangen van een telefoon
+
+msgid  Scan to send files into {dir}
+msgstr Scan om bestanden naar {dir} te sturen
+
+msgid  Waiting for files…
+msgstr Wachten op bestanden…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Ontvangen van {name}: {got} van {size}
+
+msgid  Files received: {count} ({size})
+msgstr Ontvangen bestanden: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Niet ontvangen {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Kan niet ontvangen: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Stoppen met ontvangen
+
+msgid  Send files to fm84
+msgstr Bestanden naar fm84 sturen
+
+msgid  Into {dir}
+msgstr Naar {dir}
+
+msgid  Choose files
+msgstr Bestanden kiezen
+
+msgid  Sent
+msgstr Verzonden
+
+msgid  Not sent
+msgstr Niet verzonden
+
+msgid  No name to save it under
+msgstr Geen naam om onder op te slaan
+
+msgid  No size given
+msgstr Geen grootte opgegeven
+
+msgid  Not enough room: {free} free
+msgstr Niet genoeg ruimte: {free} vrij
+
+msgid  Too many at once
+msgstr Te veel tegelijk
+
+msgid  Stopped
+msgstr Gestopt
+
+msgid  It stopped coming before its end
+msgstr Het hield op voor het einde
+
 msgid  Cannot share: {e}
 msgstr Kan niet delen: {e}
 

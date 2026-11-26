@@ -608,6 +608,63 @@ msgstr Esc - Спиране на споделянето
 msgid  Tab - Another address
 msgstr Tab - Друг адрес
 
+msgid  Receive from a phone
+msgstr Получаване от телефон
+
+msgid  Scan to send files into {dir}
+msgstr Сканирайте, за да изпратите файлове в {dir}
+
+msgid  Waiting for files…
+msgstr Изчакване на файлове…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Получаване на {name}: {got} от {size}
+
+msgid  Files received: {count} ({size})
+msgstr Получени файлове: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Не е получен {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Не може да се получи: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Спиране на получаването
+
+msgid  Send files to fm84
+msgstr Изпращане на файлове към fm84
+
+msgid  Into {dir}
+msgstr В {dir}
+
+msgid  Choose files
+msgstr Изберете файлове
+
+msgid  Sent
+msgstr Изпратено
+
+msgid  Not sent
+msgstr Не е изпратено
+
+msgid  No name to save it under
+msgstr Няма име, под което да се запази
+
+msgid  No size given
+msgstr Не е посочен размер
+
+msgid  Not enough room: {free} free
+msgstr Няма достатъчно място: свободни {free}
+
+msgid  Too many at once
+msgstr Твърде много наведнъж
+
+msgid  Stopped
+msgstr Спряно
+
+msgid  It stopped coming before its end
+msgstr Спря да пристига преди края
+
 msgid  Cannot share: {e}
 msgstr Не може да се сподели: {e}
 

@@ -609,6 +609,63 @@ msgstr Esc - Paylaşımı durdur
 msgid  Tab - Another address
 msgstr Tab - Başka adres
 
+msgid  Receive from a phone
+msgstr Telefondan al
+
+msgid  Scan to send files into {dir}
+msgstr {dir} klasörüne dosya göndermek için tara
+
+msgid  Waiting for files…
+msgstr Dosyalar bekleniyor…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr {name} alınıyor: {got} / {size}
+
+msgid  Files received: {count} ({size})
+msgstr Alınan dosyalar: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Alınamadı {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Alınamıyor: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Almayı durdur
+
+msgid  Send files to fm84
+msgstr fm84'e dosya gönder
+
+msgid  Into {dir}
+msgstr {dir} içine
+
+msgid  Choose files
+msgstr Dosya seç
+
+msgid  Sent
+msgstr Gönderildi
+
+msgid  Not sent
+msgstr Gönderilmedi
+
+msgid  No name to save it under
+msgstr Kaydedilecek ad yok
+
+msgid  No size given
+msgstr Boyut verilmedi
+
+msgid  Not enough room: {free} free
+msgstr Yeterli yer yok: {free} boş
+
+msgid  Too many at once
+msgstr Aynı anda çok fazla
+
+msgid  Stopped
+msgstr Durduruldu
+
+msgid  It stopped coming before its end
+msgstr Sonuna gelmeden kesildi
+
 msgid  Cannot share: {e}
 msgstr Paylaşılamıyor: {e}
 

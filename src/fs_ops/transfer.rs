@@ -509,7 +509,7 @@ pub(super) fn write_beside<R: Read + ?Sized>(dest: &Path, reader: &mut R, report
 /// destination changes, and it changes all at once - anything reading it sees
 /// the old bytes or the new ones. `replacing` says something was there when
 /// the writing began and may be written over. The temporary goes either way.
-pub(super) fn place(temp: &Path, dest: &Path, replacing: bool) -> Result<(), Error> {
+pub(crate) fn place(temp: &Path, dest: &Path, replacing: bool) -> Result<(), Error> {
     let placed = if replacing {
         // A rename takes a link's place without following it, and in one
         // step. Cleared first, the link was lost whenever the rename then

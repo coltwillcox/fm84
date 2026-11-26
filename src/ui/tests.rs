@@ -2193,3 +2193,64 @@ fn the_share_popup_draws_the_code_of_its_address() {
     assert!(app_state.dialog.is_none());
     std::fs::remove_file(&path).unwrap();
 }
+
+/// Alt+Shift+Q's popup: the code of the address, what it is for and the
+/// directory, waiting for files; a file sent as the phone's page sends one
+/// counted in, there in the directory; put away, Ctrl+Z takes it back.
+#[test]
+fn the_receive_popup_takes_a_file_and_ctrl_z_takes_it_back() {
+    use std::io::{Read, Write};
+    let base = std::env::temp_dir().join(format!("fm84-receive-popup-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&base);
+    let dir = base.join("inbox");
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    let receiving = crate::receive::receive(dir.clone(), std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)).unwrap();
+    let view = crate::app::ReceiveView::new(receiving, vec![std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)]).unwrap();
+    let url = view.url();
+    app_state.dialog = Some(Dialog::Receive(Box::new(view)));
+
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+    let mut screen = |app_state: &mut AppState| {
+        render_ui(&mut terminal, app_state);
+        terminal.backend().buffer().content().iter().map(|cell| cell.symbol()).collect::<String>()
+    };
+    let waiting = screen(&mut app_state);
+    let name = dir.file_name().unwrap().to_string_lossy().into_owned();
+    assert!(waiting.contains("Receive from a phone") && waiting.contains(&format!("into {name}")), "{waiting}");
+    assert!(waiting.contains(&url) && waiting.contains("Waiting for files") && waiting.contains("Esc - Stop receiving"), "{waiting}");
+    assert!(waiting.matches('▀').count() > 300, "the code drawn");
+
+    // Sent as the page sends it.
+    let rest = url.strip_prefix("http://").unwrap();
+    let (host, token) = rest.split_at(rest.find('/').unwrap());
+    let mut stream = std::net::TcpStream::connect(host).unwrap();
+    stream.write_all(format!("PUT {token}/photo.jpg HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello").as_bytes()).unwrap();
+    let mut reply = String::new();
+    stream.read_to_string(&mut reply).unwrap();
+    assert!(reply.starts_with("HTTP/1.1 201"), "{reply}");
+    let started = std::time::Instant::now();
+    while !matches!(&app_state.dialog, Some(Dialog::Receive(view)) if view.received == 1) && started.elapsed() < std::time::Duration::from_secs(5) {
+        app_state.poll_receive();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let received = screen(&mut app_state);
+    assert!(received.contains("Files received: 1 (5 B)"), "{received}");
+    assert_eq!(std::fs::read(dir.join("photo.jpg")).unwrap(), b"hello");
+
+    // Put away, and Ctrl+Z: gone, as a copy undone is.
+    crate::input::handle_key_for_tests(&mut app_state, crossterm::event::KeyEvent::new(crossterm::event::KeyCode::Esc, crossterm::event::KeyModifiers::NONE));
+    assert!(app_state.dialog.is_none());
+    app_state.undo_last();
+    let started = std::time::Instant::now();
+    while app_state.workers.job.is_some() && started.elapsed() < std::time::Duration::from_secs(5) {
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    let gone = !dir.join("photo.jpg").exists();
+    std::fs::remove_dir_all(&base).unwrap();
+    assert!(gone, "taken back by Ctrl+Z");
+}

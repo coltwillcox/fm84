@@ -172,6 +172,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             let items = chosen_items(app_state);
             app_state.open_share(items);
         }
+        // Alt+Shift+Q takes files a phone sends, into the panel's directory.
+        if in_panel && c == 'Q' {
+            app_state.open_receive();
+        }
         // Alt+B puts what is chosen on the mixtape playing, or takes it off
         // the tape on show; Alt+Shift+B lists the tapes, or puts the one on
         // show away.
@@ -414,6 +418,17 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
         Some(Dialog::Checksums(_)) => checksums_key(app_state, code),
         Some(Dialog::DirEdit(_)) => dir_edit_key(app_state, code),
         Some(Dialog::Dossier(_)) => dossier_key(app_state, code),
+        // Put away, the receiving stops.
+        Some(Dialog::Receive(_)) => match code {
+            KeyCode::Esc => app_state.close_receive(),
+            KeyCode::Tab | KeyCode::BackTab => {
+                let forward = code == KeyCode::Tab;
+                if let Some(Dialog::Receive(view)) = &mut app_state.dialog {
+                    view.step_address(forward);
+                }
+            }
+            _ => {}
+        },
         // Put away, the share stops.
         Some(Dialog::Share(_)) => match code {
             KeyCode::Esc => app_state.dialog = None,

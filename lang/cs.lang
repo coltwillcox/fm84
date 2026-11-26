@@ -609,6 +609,63 @@ msgstr Esc - Přestat sdílet
 msgid  Tab - Another address
 msgstr Tab - Jiná adresa
 
+msgid  Receive from a phone
+msgstr Přijmout z telefonu
+
+msgid  Scan to send files into {dir}
+msgstr Naskenujte a pošlete soubory do {dir}
+
+msgid  Waiting for files…
+msgstr Čekání na soubory…
+
+msgid  Receiving {name}: {got} of {size}
+msgstr Přijímání {name}: {got} z {size}
+
+msgid  Files received: {count} ({size})
+msgstr Přijaté soubory: {count} ({size})
+
+msgid  Not received {name}: {reason}
+msgstr Nepřijato {name}: {reason}
+
+msgid  Cannot receive: {e}
+msgstr Nelze přijmout: {e}
+
+msgid  Esc - Stop receiving
+msgstr Esc - Přestat přijímat
+
+msgid  Send files to fm84
+msgstr Poslat soubory do fm84
+
+msgid  Into {dir}
+msgstr Do {dir}
+
+msgid  Choose files
+msgstr Vybrat soubory
+
+msgid  Sent
+msgstr Odesláno
+
+msgid  Not sent
+msgstr Neodesláno
+
+msgid  No name to save it under
+msgstr Žádné jméno pro uložení
+
+msgid  No size given
+msgstr Velikost nebyla uvedena
+
+msgid  Not enough room: {free} free
+msgstr Málo místa: volno {free}
+
+msgid  Too many at once
+msgstr Příliš mnoho najednou
+
+msgid  Stopped
+msgstr Zastaveno
+
+msgid  It stopped coming before its end
+msgstr Přestalo přicházet před koncem
+
 msgid  Cannot share: {e}
 msgstr Nelze sdílet: {e}
 
