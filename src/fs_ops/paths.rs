@@ -41,12 +41,17 @@ pub fn tidy_path(path: &Path) -> PathBuf {
     for component in path.components() {
         match component {
             Component::CurDir => {}
-            // Never above the root, or past the start of a relative path.
-            Component::ParentDir => {
-                if !tidy.pop() {
-                    tidy.push(component);
+            // A name before it goes with it. Right after the root there is
+            // nothing above to go to, and it is dropped; at the start of a
+            // relative path, or after another `..`, it is kept, as it reaches
+            // further up than the path itself says.
+            Component::ParentDir => match tidy.components().next_back() {
+                Some(Component::Normal(_)) => {
+                    tidy.pop();
                 }
-            }
+                Some(Component::RootDir | Component::Prefix(_)) => {}
+                _ => tidy.push(component),
+            },
             _ => tidy.push(component),
         }
     }
@@ -201,6 +206,10 @@ mod path_tests {
         // Never above the root.
         assert_eq!(tidy("/../.."), Path::new("/"));
         assert_eq!(tidy("../x"), Path::new("../x"));
+        assert_eq!(tidy("/a/../../b"), Path::new("/b"), "past the root, from below it");
+        // A relative path keeps every step above where it starts.
+        assert_eq!(tidy("../../x"), Path::new("../../x"));
+        assert_eq!(tidy("a/../../x"), Path::new("../x"));
     }
 
     #[test]
