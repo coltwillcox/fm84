@@ -313,55 +313,119 @@ fn script_string(text: &str) -> String {
 
 /// The page a phone opens: a button to choose files with, each sent in turn
 /// as it is chosen, with a bar of how far it has got and what came of it -
-/// in fm84's own language.
+/// in fm84's own language, and drawn as fm84 is: its theme's colours, as
+/// they are when the page is made, in hard-edged pixels - notched borders,
+/// shadows with no blur, a bar in blocks, a pixel icon and scanlines.
 fn page(dir: &Path) -> String {
+    page_in(dir, crate::display::palette())
+}
+
+/// The page, in `palette`'s colours.
+fn page_in(dir: &Path, palette: &crate::display::Palette) -> String {
     let into = dir.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_else(|| dir.display().to_string());
     let title = t!("Send files to fm84");
     let heading = t!("Into {dir}", dir = crate::utils::printable_name(&into));
-    let choose = t!("Choose files");
-    let sent = t!("Sent");
-    let lost = t!("Not sent");
-    format!(
-        r#"<!doctype html>
+    let colour = |colour: ratatui::style::Color, otherwise: &str| match colour {
+        ratatui::style::Color::Rgb(red, green, blue) => format!("#{red:02x}{green:02x}{blue:02x}"),
+        _ => otherwise.to_string(),
+    };
+    let fills = [
+        ("%TITLE%", html(title)),
+        ("%HEADING%", html(&heading)),
+        ("%CHOOSE%", html(t!("Choose files"))),
+        ("%SENT%", script_string(t!("Sent"))),
+        ("%LOST%", script_string(t!("Not sent"))),
+        ("%ICON%", pixel_icon()),
+        ("%BG%", colour(palette.background, "#000000")),
+        ("%CARD%", colour(palette.gutter, "#111111")),
+        ("%TEXT%", colour(palette.file, "#cccccc")),
+        ("%HEAD%", colour(palette.title, "#ff00ff")),
+        ("%LINE%", colour(palette.border, "#7f3fd5")),
+        ("%MUTED%", colour(palette.columns, "#00ffff")),
+        ("%BUTTON%", colour(palette.selected_background, "#9400d3")),
+        ("%ON_BUTTON%", colour(palette.selected_foreground, "#00ffff")),
+        ("%BAR%", colour(palette.directory, "#ff00ff")),
+        ("%TRACK%", colour(palette.selected_background_inactive, "#2d004b")),
+        ("%OK%", colour(palette.columns, "#00ffff")),
+        ("%NO%", colour(palette.rename_background, "#ff0080")),
+    ];
+    let mut page = PAGE.to_string();
+    for (place, fill) in fills {
+        page = page.replace(place, &fill);
+    }
+    page
+}
+
+/// An arrow up into a tray, a pixel to each character, drawn as squares on
+/// a grid with no smoothing between them.
+fn pixel_icon() -> String {
+    const ICON: [&str; 10] = ["....##....", "...####...", "..######..", ".########.", "....##....", "....##....", "....##....", "#...##...#", "#........#", "##########"];
+    let squares: String = ICON
+        .iter()
+        .enumerate()
+        .flat_map(|(y, row)| row.bytes().enumerate().filter(|&(_, pixel)| pixel == b'#').map(move |(x, _)| format!(r#"<rect x="{x}" y="{y}" width="1" height="1"/>"#)))
+        .collect();
+    format!(r#"<svg class="icon" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true">{squares}</svg>"#)
+}
+
+/// The page, its colours and words filled in where it says `%THEM%`.
+const PAGE: &str = r#"<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{title}</title>
+<meta name="theme-color" content="%BG%">
+<title>%TITLE%</title>
 <style>
-body{{font-family:system-ui,sans-serif;margin:0;padding:1.5em;background:#1b1029;color:#f4e9ff}}
-h1{{font-size:1.3em;margin:0 0 .3em}}p{{opacity:.8;margin:0 0 1.5em;word-break:break-all}}
-label{{display:block;text-align:center;padding:1.2em;border-radius:.8em;background:#ff2a6d;color:#fff;font-size:1.2em;font-weight:bold}}
-ul{{list-style:none;padding:0}}li{{margin:1em 0;word-break:break-all}}progress{{width:100%;height:1em}}
-.ok{{color:#05d9e8}}.no{{color:#ff8fa3}}
+:root{--bg:%BG%;--card:%CARD%;--text:%TEXT%;--head:%HEAD%;--line:%LINE%;--muted:%MUTED%;--button:%BUTTON%;--on-button:%ON_BUTTON%;--bar:%BAR%;--track:%TRACK%;--ok:%OK%;--no:%NO%;--px:4px}
+*{box-sizing:border-box;border-radius:0}
+html{background:var(--bg)}
+body{margin:0;padding:calc(var(--px)*6) calc(var(--px)*5);min-height:100vh;background:var(--bg);color:var(--text);
+ font:bold 15px/1.5 "Press Start 2P","VT323","Courier New",ui-monospace,monospace;-webkit-font-smoothing:none;font-smooth:never;letter-spacing:.04em}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;
+ background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.14) 2px 3px)}
+/* Borders of square pixels with the corners left out, as a sprite has them. */
+.pixel{background:var(--card);box-shadow:0 calc(var(--px)*-1) 0 0 var(--line),0 var(--px) 0 0 var(--line),calc(var(--px)*-1) 0 0 0 var(--line),var(--px) 0 0 0 var(--line)}
+header{display:flex;gap:calc(var(--px)*4);align-items:center;margin-bottom:calc(var(--px)*7)}
+.icon{width:calc(var(--px)*12);height:calc(var(--px)*12);fill:var(--head);flex:none;image-rendering:pixelated}
+h1{margin:0;font-size:1.15em;line-height:1.3;text-transform:uppercase;color:var(--head);text-shadow:calc(var(--px)/2) calc(var(--px)/2) 0 var(--line)}
+p{margin:calc(var(--px)*2) 0 0;color:var(--muted);word-break:break-all}
+p::before{content:"> "}
+label{display:block;text-align:center;padding:calc(var(--px)*5);margin:0 var(--px);text-transform:uppercase;font-size:1.1em;cursor:pointer;
+ background:var(--button);color:var(--on-button);
+ box-shadow:0 calc(var(--px)*-1) 0 0 var(--line),0 var(--px) 0 0 var(--line),calc(var(--px)*-1) 0 0 0 var(--line),var(--px) 0 0 0 var(--line),calc(var(--px)*2) calc(var(--px)*3) 0 0 var(--head)}
+label:active{transform:translate(calc(var(--px)*2),calc(var(--px)*2));box-shadow:0 calc(var(--px)*-1) 0 0 var(--line),0 var(--px) 0 0 var(--line),calc(var(--px)*-1) 0 0 0 var(--line),var(--px) 0 0 0 var(--line)}
+label::before{content:"[ "}label::after{content:" ]"}
+ul{list-style:none;padding:0;margin:calc(var(--px)*9) var(--px) 0}
+li{margin:0 0 calc(var(--px)*7);padding:calc(var(--px)*3);word-break:break-all}
+.track{height:calc(var(--px)*4);margin:calc(var(--px)*3) 0 calc(var(--px)*2);background:var(--track)}
+/* A bar in blocks, a gap between each, filled as the file goes. */
+.fill{height:100%;width:0;background:repeating-linear-gradient(90deg,var(--bar) 0 calc(var(--px)*3),transparent calc(var(--px)*3) calc(var(--px)*4))}
+.ok{color:var(--ok)}.ok::before{content:"✔ "}
+.no{color:var(--no)}.no::before{content:"✘ "}
+.blink{animation:blink 1s steps(1) infinite}@keyframes blink{50%{opacity:0}}
 </style></head><body>
-<h1>{title_html}</h1><p>{heading}</p>
-<label>{choose}<input id="files" type="file" multiple hidden></label>
+<header>%ICON%<div><h1>%TITLE%</h1><p>%HEADING%</p></div></header>
+<label>%CHOOSE%<input id="files" type="file" multiple hidden></label>
 <ul id="list"></ul>
 <script>
-const sent={sent}, lost={lost};
+const sent=%SENT%, lost=%LOST%;
 const files=document.getElementById("files"), list=document.getElementById("list");
-files.onchange=async()=>{{
-  for(const file of [...files.files]){{
-    const item=document.createElement("li"), bar=document.createElement("progress"), said=document.createElement("div");
-    item.textContent=file.name; bar.max=file.size||1; item.append(bar,said); list.prepend(item);
-    await new Promise(done=>{{
+files.onchange=async()=>{
+  for(const file of [...files.files]){
+    const item=document.createElement("li"), name=document.createElement("div"), track=document.createElement("div"), fill=document.createElement("div"), said=document.createElement("div");
+    item.className="pixel"; track.className="pixel track"; fill.className="fill"; said.className="blink"; said.textContent="▮";
+    name.textContent=file.name; track.append(fill); item.append(name,track,said); list.prepend(item);
+    const shown=part=>fill.style.width=Math.floor(part*20)*5+"%";
+    await new Promise(done=>{
       const request=new XMLHttpRequest();
       request.open("PUT",location.pathname.replace(/\/$/,"")+"/"+encodeURIComponent(file.name));
-      request.upload.onprogress=e=>bar.value=e.loaded;
-      request.onload=()=>{{const ok=request.status<300;said.className=ok?"ok":"no";said.textContent=ok?sent:lost+": "+request.responseText;bar.value=ok?bar.max:bar.value;done();}};
-      request.onerror=()=>{{said.className="no";said.textContent=lost;done();}};
+      request.upload.onprogress=e=>shown(e.total?e.loaded/e.total:0);
+      request.onload=()=>{const ok=request.status<300;said.className=ok?"ok":"no";said.textContent=ok?sent:lost+": "+request.responseText;if(ok)shown(1);done();};
+      request.onerror=()=>{said.className="no";said.textContent=lost;done();};
       request.send(file);
-    }});
-  }}
+    });
+  }
   files.value="";
-}};
-</script></body></html>"#,
-        title = html(title),
-        title_html = html(title),
-        heading = html(&heading),
-        choose = html(choose),
-        sent = script_string(sent),
-        lost = script_string(lost),
-    )
-}
+};
+</script></body></html>"#;
 
 #[cfg(test)]
 mod tests {
@@ -495,6 +559,22 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
+    /// The page is in the theme's colours: a dark one's dark, a light one's
+    /// light - each colour as the theme has it.
+    #[test]
+    fn the_page_is_in_the_themes_colours() {
+        use crate::display::palette_of;
+        use crate::options::Theme;
+        let dir = Path::new("/home/me/inbox");
+        let dark = page_in(dir, palette_of(Theme::Synthwave));
+        assert!(dark.contains("--bg:#000000") && dark.contains("--head:#f222ff") && dark.contains(r##"name="theme-color" content="#000000""##), "{dark}");
+        let light = page_in(dir, palette_of(Theme::CatppuccinLatte));
+        assert!(light.contains("--bg:#eff1f5") && light.contains("--head:#8839ef"), "{light}");
+        // No place left as `%NAME%`: a % in it is the page's own, as `50%`.
+        let left = light.split('%').skip(1).step_by(2).find(|between| !between.is_empty() && between.chars().all(|c| c.is_ascii_uppercase() || c == '_'));
+        assert_eq!(left, None, "every place filled in");
+    }
+
     /// The page's text is the language fm84 is in, and a directory's name
     /// can put nothing into the page but its letters.
     #[test]
@@ -502,6 +582,7 @@ mod tests {
         let page = page(Path::new("/home/me/<img src=x onerror=alert(1)>"));
         assert!(!page.contains("<img src=x"), "{page}");
         assert!(page.contains("&lt;img src=x onerror=alert(1)&gt;"));
+        assert!(page.contains("crispEdges") && page.contains("repeating-linear-gradient"), "drawn in pixels");
         // The quote escaped, and `<` too, so `</script>` cannot end the script.
         assert_eq!(script_string("a\"b</c"), "\"a\\\"b\\u003c/c\"");
     }
