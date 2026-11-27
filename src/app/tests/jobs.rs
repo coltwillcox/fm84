@@ -228,15 +228,24 @@ fn verify_copies_reads_back_what_a_job_copies() {
     std::fs::create_dir_all(dir.join("tree")).unwrap();
     std::fs::write(dir.join("tree").join("a"), vec![7u8; 5000]).unwrap();
     std::fs::write(dir.join("tree").join("b"), vec![9u8; 3000]).unwrap();
+    // Something in the way, so the job stops at a question. A few kilobytes
+    // copy and verify between two polls, and the job ends - taking its total
+    // with it - before the loop ever sees one; held at the question, the
+    // total sent before any copying is there to read.
+    std::fs::create_dir_all(dir.join("copy")).unwrap();
+    std::fs::write(dir.join("copy").join("a"), "old").unwrap();
 
     let mut app_state = AppState::new();
     app_state.options = Options { verify_copies: true, ..Options::default() };
     app_state.start_transfer(vec![(dir.join("tree"), dir.join("copy"), true)], true, crate::app::Clashes::Ask);
     let started = std::time::Instant::now();
     let (mut total, mut done) = (None, 0);
-    while let Some(job) = &app_state.workers.job {
+    while let Some(job) = app_state.workers.job.as_mut() {
         (total, done) = (job.total, job.done);
         assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never ended");
+        if job.clash.is_some() {
+            job.answer(crate::app::Answer::OverwriteAll);
+        }
         std::thread::sleep(std::time::Duration::from_millis(5));
         app_state.poll_transfer();
     }
