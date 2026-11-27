@@ -337,6 +337,9 @@ pub struct Options {
     /// The panel not in use dimmed a shade, and the lines around the one in
     /// use drawn brighter.
     pub focus_glow: bool,
+    /// A light in the top bar, as a floppy drive's: flickering while a job
+    /// reads or writes, amber while it waits on a question.
+    pub drive_led: bool,
     /// Left alone this many minutes, the panels give way to a drive down
     /// the Outrun grid until the next key. Zero, and they never do.
     pub night_drive_minutes: u64,
@@ -411,6 +414,7 @@ impl Default for Options {
             turbo: false,
             animation: false,
             focus_glow: false,
+            drive_led: false,
             night_drive_minutes: 0,
             tab_width: 4,
             line_numbers: true,

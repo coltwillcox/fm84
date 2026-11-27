@@ -2355,3 +2355,30 @@ fn a_click_on_the_remote_mark_shows_its_code() {
     app_state.options = Options::default();
     crate::display::apply(&app_state.options);
 }
+
+/// F11's drive light: a dot beside the clock in the border's colour while
+/// nothing runs, and nowhere with the option off, as it starts.
+#[test]
+fn the_drive_light_sits_beside_the_clock() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    let top = |app_state: &mut AppState| {
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer().clone();
+        let line: String = (0..100u16).map(|x| buffer[(x, 0)].symbol().to_string()).collect();
+        (line, buffer)
+    };
+    let (line, _) = top(&mut app_state);
+    assert!(!line.contains('●'), "off by default: {line}");
+
+    app_state.options.drive_led = true;
+    let (line, buffer) = top(&mut app_state);
+    let clock = line.find(app_state.drawn.cached_clock.as_str()).expect("the clock");
+    let led = line.find('●').expect("the light");
+    assert_eq!(line[led..clock].chars().count(), 2, "just before the clock: {line}");
+    let x = line[..led].chars().count() as u16;
+    assert_eq!(buffer[(x, 0)].fg, crate::display::palette().border, "dark with nothing running");
+    assert_eq!(super::panels::drive_led_span(crate::app::DriveLed::Waiting).style.fg, Some(crate::display::drive_led_colors().1));
+}

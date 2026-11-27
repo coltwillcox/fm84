@@ -357,6 +357,18 @@ pub(super) fn tab_strip(app_state: &AppState, side: Side, area: Rect) -> (Line<'
     (line, strip)
 }
 
+/// The drive light as drawn: a dot, dark in the border's colour, lit green,
+/// or amber while a question waits.
+pub(super) fn drive_led_span(led: crate::app::DriveLed) -> Span<'static> {
+    let (lit, waiting) = crate::display::drive_led_colors();
+    let color = match led {
+        crate::app::DriveLed::Dark => crate::display::palette().border,
+        crate::app::DriveLed::Lit => lit,
+        crate::app::DriveLed::Waiting => waiting,
+    };
+    Span::styled(" ● ", Style::new().fg(color))
+}
+
 /// Gives back the drive strips and the tab strips as laid out, left then
 /// right, for the state to keep after the frame - and where the remote's
 /// mark was drawn, for a click to find.
@@ -369,7 +381,10 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
     // so a screen a phone can drive never looks like one nobody can.
     let remote = app_state.remote.as_ref().map(|_| Span::styled(format!(" {} ", tc!("phone", "Remote")), style_title().add_modifier(Modifier::REVERSED)));
     let remote_width = remote.as_ref().map_or(0, |remote| display_width(&remote.content)) as u16;
-    let clock_width = display_width(&clock.content) + remote_width as usize;
+    // F11's drive light, between the mark and the clock.
+    let led = app_state.drive_led(std::time::Instant::now()).map(drive_led_span);
+    let led_width = led.as_ref().map_or(0, |led| display_width(&led.content));
+    let clock_width = display_width(&clock.content) + remote_width as usize + led_width;
     // Right-aligned, the clock's line ends against the corner: the mark is
     // the start of it.
     let remote_hit = remote.as_ref().map(|_| Rect::new(area.right().saturating_sub(1 + clock_width as u16).max(area.x), area.y, remote_width, 1).intersection(area));
@@ -389,7 +404,7 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
     }
     let block_top = block_top
         .title_top(Line::from(title).centered())
-        .title_top(Line::from(remote.into_iter().chain([clock]).collect::<Vec<_>>()).right_aligned())
+        .title_top(Line::from(remote.into_iter().chain(led).chain([clock]).collect::<Vec<_>>()).right_aligned())
         .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT)
         .border_type(crate::display::border_type())
         .border_style(style_border());

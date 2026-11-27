@@ -2037,6 +2037,9 @@ msgstr Animering: glidande markör, rader som startar upp
 msgid  Glow around the active panel
 msgstr Glöd runt den aktiva panelen
 
+msgid  Drive light while a job runs
+msgstr Enhetslampa medan ett jobb körs
+
 msgid  [Exif:date] [Tag:artist] [Pdf:title] too
 msgstr [Exif:date] [Tag:artist] [Pdf:title] också
 

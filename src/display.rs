@@ -588,6 +588,12 @@ pub fn light_background() -> bool {
     background().is_some() && palette().light
 }
 
+/// F11's drive light, lit and waiting on a question: a floppy drive's green
+/// and amber, whatever the theme, darker where the background is light.
+pub fn drive_led_colors() -> (Color, Color) {
+    if light_background() { (rgb(0, 140, 60), rgb(190, 110, 0)) } else { (rgb(60, 240, 110), rgb(255, 176, 0)) }
+}
+
 /// Behind the line numbers. With the terminal's background showing it stays
 /// black, as it always was; the theme's own gutter is picked to sit on the
 /// theme's own background, and could clash with anything else.

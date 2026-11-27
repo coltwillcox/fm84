@@ -459,3 +459,62 @@ fn a_null_modem_job_sends_and_asks_about_what_is_in_the_way() {
     drop(listening);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// F11's drive light: amber on a question whatever else, flickering for a
+/// moment after the worker moves on - on and off, not one or the other -
+/// and lit and still while the job runs with nothing moving.
+#[test]
+fn the_drive_light_flickers_while_a_job_moves_and_goes_amber_on_a_question() {
+    use crate::app::{DRIVE_LED_BUSY, DriveLed, drive_led};
+    let started = std::time::Instant::now();
+    let now = started + std::time::Duration::from_secs(5);
+    assert_eq!(drive_led(true, Some(now), started, now), DriveLed::Waiting);
+    assert_eq!(drive_led(true, None, started, now), DriveLed::Waiting);
+    assert_eq!(drive_led(false, None, started, now), DriveLed::Lit, "running, nothing heard yet");
+    assert_eq!(drive_led(false, Some(now - DRIVE_LED_BUSY), started, now), DriveLed::Lit, "quiet a while");
+    let flicker: Vec<DriveLed> = (0..20).map(|step| now + std::time::Duration::from_millis(step * 10)).map(|at| drive_led(false, Some(now), started, at)).collect();
+    assert!(flicker.contains(&DriveLed::Lit) && flicker.contains(&DriveLed::Dark), "{flicker:?}");
+}
+
+/// The light follows the job itself: dark with none, busy once the worker
+/// says it has done something, amber while it asks - and nothing at all
+/// with the light off, as it starts.
+#[test]
+fn the_drive_light_follows_the_job() {
+    use crate::app::{DRIVE_LED_BUSY, DriveLed, JobUpdate, TransferKind};
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    assert_eq!(app_state.drive_led(std::time::Instant::now()), None, "off by default");
+    app_state.options.drive_led = true;
+    assert_eq!(app_state.drive_led(std::time::Instant::now()), Some(DriveLed::Dark));
+
+    let (go, gone) = std::sync::mpsc::channel::<()>();
+    app_state.start_job(TransferKind::Copy, crate::app::Clashes::Ask, move |progress| {
+        let _ = progress.updates.send(JobUpdate::Advanced(1));
+        let _ = gone.recv();
+        let _ = progress.updates.send(JobUpdate::Problem(crate::app::JobProblem { path: "stuck".into(), message: "no".into() }));
+        let _ = progress.answers.recv();
+    });
+    let started = std::time::Instant::now();
+    let wait = |app_state: &mut AppState, done: &dyn Fn(&AppState) -> bool| {
+        while !done(app_state) {
+            assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never got there");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            app_state.poll_transfer();
+        }
+    };
+    wait(&mut app_state, &|app_state| app_state.workers.job.as_ref().is_some_and(|job| job.done == 1));
+    let moved = std::time::Instant::now();
+    let flicker: Vec<_> = (0..20).map(|step| app_state.drive_led(moved + std::time::Duration::from_millis(step * 10)).unwrap()).collect();
+    assert!(flicker.contains(&DriveLed::Lit) && flicker.contains(&DriveLed::Dark), "{flicker:?}");
+    assert_eq!(app_state.drive_led(moved + DRIVE_LED_BUSY), Some(DriveLed::Lit), "still once quiet");
+
+    // Let it go on to its question.
+    go.send(()).unwrap();
+    wait(&mut app_state, &|app_state| app_state.workers.job.as_ref().is_some_and(|job| job.problem.is_some()));
+    assert_eq!(app_state.drive_led(std::time::Instant::now()), Some(DriveLed::Waiting));
+
+    app_state.workers.job.as_mut().unwrap().answer(crate::app::Answer::Abort);
+    wait(&mut app_state, &|app_state| app_state.workers.job.is_none());
+    assert_eq!(app_state.drive_led(std::time::Instant::now()), Some(DriveLed::Dark));
+}

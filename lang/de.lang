@@ -2037,6 +2037,9 @@ msgstr Animation: gleitender Cursor, Zeilen, die hochfahren
 msgid  Glow around the active panel
 msgstr Leuchten um das aktive Panel
 
+msgid  Drive light while a job runs
+msgstr Laufwerkslicht, während ein Auftrag läuft
+
 msgid  [Exif:date] [Tag:artist] [Pdf:title] too
 msgstr [Exif:date] [Tag:artist] [Pdf:title] auch
 

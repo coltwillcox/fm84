@@ -52,6 +52,42 @@ pub struct TransferJob {
     ghosts: Option<Ghosts>,
     /// What `*` read of a tree, taken in however the job ends.
     tree: Option<TreeFound>,
+    /// When the worker last said it had read or written something - for
+    /// F11's drive light, which flickers for a moment after.
+    busy_at: Option<Instant>,
+}
+
+/// F11's drive light in the top bar, as a floppy drive's: dark with nothing
+/// running, flickering while a job reads or writes, lit and still while one
+/// runs with nothing moving, and amber while it waits on a question.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DriveLed {
+    Dark,
+    Lit,
+    Waiting,
+}
+
+/// How long the light flickers after the worker last moved on.
+pub const DRIVE_LED_BUSY: Duration = Duration::from_millis(300);
+
+/// How long each beat of the flicker lasts.
+const DRIVE_LED_BEAT: Duration = Duration::from_millis(60);
+
+/// On and off by the beat, unevenly, as a drive's light is - an even blink
+/// reads as a warning.
+const DRIVE_LED_FLICKER: [bool; 11] = [true, true, false, true, false, false, true, true, true, false, true];
+
+/// The light for a job: asking, when it last moved, and since when it runs.
+pub fn drive_led(asking: bool, busy_at: Option<Instant>, started: Instant, now: Instant) -> DriveLed {
+    if asking {
+        return DriveLed::Waiting;
+    }
+    let busy = busy_at.is_some_and(|at| now.saturating_duration_since(at) < DRIVE_LED_BUSY);
+    if !busy {
+        return DriveLed::Lit;
+    }
+    let beat = (now.saturating_duration_since(started).as_millis() / DRIVE_LED_BEAT.as_millis()) as usize;
+    if DRIVE_LED_FLICKER[beat % DRIVE_LED_FLICKER.len()] { DriveLed::Lit } else { DriveLed::Dark }
 }
 
 /// A checksum report on screen, and how far down it is scrolled.
@@ -167,6 +203,17 @@ impl TransferJob {
 
     pub fn is_cancelling(&self) -> bool {
         self.cancel.load(Ordering::Relaxed)
+    }
+
+    /// Waiting on a question on screen, the worker sitting still until it
+    /// hears.
+    pub fn is_asking(&self) -> bool {
+        self.problem.is_some() || self.clash.is_some() || self.room.is_some() || self.too_big.is_some()
+    }
+
+    /// What the drive light shows for it now.
+    pub fn drive_led(&self, now: Instant) -> DriveLed {
+        drive_led(self.is_asking(), self.busy_at, self.started, now)
     }
 
     /// Answer the question on screen, letting the worker go on.
@@ -898,6 +945,7 @@ impl AppState {
             ghosts: None,
             tree: None,
             dossier: None,
+            busy_at: None,
         });
     }
 
@@ -983,6 +1031,15 @@ impl AppState {
         }
     }
 
+    /// F11's drive light as it is now: dark with no job, or what the job
+    /// shows. None with the light off.
+    pub fn drive_led(&self, now: Instant) -> Option<DriveLed> {
+        if !self.options.drive_led {
+            return None;
+        }
+        Some(self.workers.job.as_ref().map_or(DriveLed::Dark, |job| job.drive_led(now)))
+    }
+
     /// Take whatever the worker has sent since the last frame. Called once per
     /// frame, so the bar advances at the rate the loop already runs at.
     pub fn poll_transfer(&mut self) {
@@ -991,11 +1048,21 @@ impl AppState {
         };
 
         let mut finished = None;
+        let mut moved = false;
         loop {
             match job.updates.try_recv() {
-                Ok(JobUpdate::Total(amount)) => job.total = Some(amount),
-                Ok(JobUpdate::Starting(path)) => job.current = path,
-                Ok(JobUpdate::Advanced(amount)) => job.done += amount,
+                Ok(JobUpdate::Total(amount)) => {
+                    job.total = Some(amount);
+                    moved = true;
+                }
+                Ok(JobUpdate::Starting(path)) => {
+                    job.current = path;
+                    moved = true;
+                }
+                Ok(JobUpdate::Advanced(amount)) => {
+                    job.done += amount;
+                    moved = true;
+                }
                 // Asked after Esc, which answered nothing then: there was no
                 // question on screen yet. Esc is the answer, so it is not shown.
                 Ok(JobUpdate::Problem(_) | JobUpdate::Clash(_) | JobUpdate::Room(_) | JobUpdate::TooBig(_)) if job.is_cancelling() => {
@@ -1023,6 +1090,9 @@ impl AppState {
                     break;
                 }
             }
+        }
+        if moved {
+            job.busy_at = Some(Instant::now());
         }
 
         let Some(result) = finished else {

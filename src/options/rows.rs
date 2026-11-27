@@ -44,6 +44,7 @@ pub enum OptionRow {
     Turbo,
     Animation,
     FocusGlow,
+    DriveLed,
     NightDrive,
     TabWidth,
     LineNumbers,
@@ -57,7 +58,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 50] = [
+pub const OPTION_ROWS: [OptionRow; 51] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -97,6 +98,7 @@ pub const OPTION_ROWS: [OptionRow; 50] = [
     OptionRow::Turbo,
     OptionRow::Animation,
     OptionRow::FocusGlow,
+    OptionRow::DriveLed,
     OptionRow::NightDrive,
     OptionRow::TabWidth,
     OptionRow::LineNumbers,
@@ -152,6 +154,7 @@ impl OptionRow {
             OptionRow::Turbo => t!("Turbo: brighter neon, scanlines"),
             OptionRow::Animation => t!("Animation: sliding cursor, rows booting up"),
             OptionRow::FocusGlow => t!("Glow around the active panel"),
+            OptionRow::DriveLed => t!("Drive light while a job runs"),
             OptionRow::NightDrive => t!("Night drive when left alone"),
             OptionRow::TabWidth => t!("Tab width"),
             OptionRow::LineNumbers => t!("Line numbers"),
@@ -283,6 +286,7 @@ impl Options {
             OptionRow::Turbo => on_off(self.turbo),
             OptionRow::Animation => on_off(self.animation),
             OptionRow::FocusGlow => on_off(self.focus_glow),
+            OptionRow::DriveLed => on_off(self.drive_led),
             OptionRow::NightDrive => match self.night_drive_minutes {
                 0 => t!("Off").to_string(),
                 minutes => t!("{minutes} min", minutes),
@@ -403,6 +407,7 @@ impl Options {
             OptionRow::Turbo => self.turbo = !self.turbo,
             OptionRow::Animation => self.animation = !self.animation,
             OptionRow::FocusGlow => self.focus_glow = !self.focus_glow,
+            OptionRow::DriveLed => self.drive_led = !self.drive_led,
             OptionRow::NightDrive => self.night_drive_minutes = step(&NIGHT_DRIVE_MINUTES, self.night_drive_minutes, forward),
             OptionRow::TabWidth => self.tab_width = step(&TAB_WIDTHS, self.tab_width, forward),
             OptionRow::LineNumbers => self.line_numbers = !self.line_numbers,

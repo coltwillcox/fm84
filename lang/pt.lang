@@ -2037,6 +2037,9 @@ msgstr Animação: cursor deslizante, linhas que acendem
 msgid  Glow around the active panel
 msgstr Brilho à volta do painel ativo
 
+msgid  Drive light while a job runs
+msgstr Luz da unidade enquanto corre uma tarefa
+
 msgid  [Exif:date] [Tag:artist] [Pdf:title] too
 msgstr [Exif:date] [Tag:artist] [Pdf:title] também
 
