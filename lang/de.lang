@@ -2494,3 +2494,17 @@ msgstr Alt+N - An ein anderes fm84 senden (Null-Modem)
 
 msgid  Alt+Shift+N listens for one to send here
 msgstr Alt+Umschalt+N lauscht, damit eines hierher sendet
+
+# Alt+W's pad: the keys' names as the keyboards print them.
+
+msgid  Home
+msgstr Pos1
+
+msgid  End
+msgstr Ende
+
+msgid  PgUp
+msgstr Bild↑
+
+msgid  PgDn
+msgstr Bild↓

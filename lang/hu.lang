@@ -2495,3 +2495,17 @@ msgstr Alt+N - Küldés egy másik fm84-nek (nullmodem)
 
 msgid  Alt+Shift+N listens for one to send here
 msgstr Alt+Shift+N figyel, hogy ide küldjenek
+
+# Alt+W's pad: the keys' names as the keyboards print them.
+
+msgid  Home
+msgstr Home
+
+msgid  End
+msgstr End
+
+msgid  PgUp
+msgstr PgUp
+
+msgid  PgDn
+msgstr PgDn

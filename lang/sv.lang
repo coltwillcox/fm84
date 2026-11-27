@@ -2494,3 +2494,17 @@ msgstr Alt+N - Skicka till en annan fm84 (nollmodem)
 
 msgid  Alt+Shift+N listens for one to send here
 msgstr Alt+Shift+N lyssnar efter en som skickar hit
+
+# Alt+W's pad: the keys' names as the keyboards print them.
+
+msgid  Home
+msgstr Home
+
+msgid  End
+msgstr End
+
+msgid  PgUp
+msgstr PgUp
+
+msgid  PgDn
+msgstr PgDn

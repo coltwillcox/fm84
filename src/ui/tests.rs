@@ -2299,3 +2299,59 @@ fn the_receive_popup_takes_a_file_and_ctrl_z_takes_it_back() {
     std::fs::remove_dir_all(&base).unwrap();
     assert!(gone, "taken back by Ctrl+Z");
 }
+
+/// Alt+W's "Remote" beside the clock: drawn where the mouse is told it is,
+/// with the clock on or off and the frame or not, and a click on it shows
+/// the remote's code as Alt+W does - one on the clock beside it does not.
+#[test]
+fn a_click_on_the_remote_mark_shows_its_code() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    let localhost = std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST);
+    let remote = crate::remote::serve(localhost).unwrap();
+    let code = crate::share::qr(&remote.url(localhost)).unwrap();
+    app_state.remote = Some(Box::new(crate::app::RemoteView {
+        remote,
+        addresses: vec![localhost],
+        chosen: 0,
+        code,
+        phone: Some(localhost),
+        failed: None,
+    }));
+    let click = |app_state: &mut AppState, (x, y): (u16, u16)| {
+        let event = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: x,
+            row: y,
+            modifiers: crossterm::event::KeyModifiers::NONE,
+        };
+        crate::input::handle_mouse_for_tests(app_state, event);
+    };
+    for (clock, outer_frame) in [(crate::options::Clock::Hours24, true), (crate::options::Clock::Off, true), (crate::options::Clock::Hours12, false)] {
+        app_state.options.clock = clock;
+        app_state.options.outer_frame = outer_frame;
+        app_state.dialog = None;
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        crate::display::apply(&app_state.options);
+        render_ui(&mut terminal, &mut app_state);
+        let hit = app_state.drawn.remote_hit.expect("the mark was not placed");
+        let buffer = terminal.backend().buffer();
+        let drawn: String = (hit.x..hit.right()).map(|x| buffer[(x, hit.y)].symbol().to_string()).collect();
+        assert_eq!(drawn, format!(" {} ", tc!("phone", "Remote")), "{clock:?}");
+
+        if clock != crate::options::Clock::Off {
+            click(&mut app_state, (hit.right() + 2, hit.y));
+            assert!(app_state.dialog.is_none(), "the clock is not the mark");
+        }
+        click(&mut app_state, (hit.x + hit.width / 2, hit.y));
+        assert!(matches!(app_state.dialog, Some(Dialog::Remote)), "{clock:?}");
+    }
+    // Stopped, there is no mark to click.
+    app_state.stop_remote();
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    assert_eq!(app_state.drawn.remote_hit, None);
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+}

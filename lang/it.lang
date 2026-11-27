@@ -2494,3 +2494,17 @@ msgstr Alt+N - Invia a un altro fm84 (null modem)
 
 msgid  Alt+Shift+N listens for one to send here
 msgstr Alt+Maiusc+N ascolta per ricevere qui
+
+# Alt+W's pad: the keys' names as the keyboards print them.
+
+msgid  Home
+msgstr Inizio
+
+msgid  End
+msgstr Fine
+
+msgid  PgUp
+msgstr PagSu
+
+msgid  PgDn
+msgstr PagGiù

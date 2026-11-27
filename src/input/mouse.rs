@@ -68,6 +68,12 @@ pub(super) fn handle_mouse(app_state: &mut AppState, mouse_event: MouseEvent) ->
     {
         return handle_key(app_state, KeyEvent::new(KeyCode::F(key), KeyModifiers::NONE));
     }
+    // The remote's mark beside the clock shows its code, as Alt+W does - to
+    // stop it, or for another phone. Not over anything that has the keys.
+    if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) && app_state.dialog.is_none() && app_state.error.is_none() && app_state.workers.job.is_none() && app_state.drawn.remote_hit.is_some_and(|cell| cell.contains(Position::new(column, row))) {
+        app_state.open_remote();
+        return true;
+    }
     // On the space map, a click chooses a block, and one on the block
     // chosen goes into it, as Enter does.
     if matches!(app_state.screen, Screen::Treemap) {

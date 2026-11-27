@@ -2495,3 +2495,17 @@ msgstr Alt+N - Enviar a otro fm84 (módem nulo)
 
 msgid  Alt+Shift+N listens for one to send here
 msgstr Alt+Mayús+N escucha para que otro envíe aquí
+
+# Alt+W's pad: the keys' names as the keyboards print them.
+
+msgid  Home
+msgstr Inicio
+
+msgid  End
+msgstr Fin
+
+msgid  PgUp
+msgstr RePág
+
+msgid  PgDn
+msgstr AvPág

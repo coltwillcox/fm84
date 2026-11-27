@@ -228,6 +228,11 @@ fn page_in(palette: &crate::display::Palette) -> String {
         ("%BACK%", html(t!("Back"))),
         ("%VIEW%", html(t!("View"))),
         ("%PANEL%", html(t!("Panel"))),
+        // The keys' names as the language's keyboards print them.
+        ("%HOME%", html(t!("Home"))),
+        ("%END%", html(t!("End"))),
+        ("%PAGE_UP%", html(t!("PgUp"))),
+        ("%PAGE_DOWN%", html(t!("PgDn"))),
         ("%ICON%", crate::receive::pixel_icon()),
     ];
     let mut page = crate::receive::themed(PAGE, palette);
@@ -263,9 +268,9 @@ header{margin-bottom:calc(var(--px)*3)}
 <header>%ICON%<div><h1>%TITLE%</h1><p id="where"></p><p id="note" hidden></p></div></header>
 <ul id="list" class="pixel"></ul>
 <div id="pad">
-<button data-key="home">⇤</button><button data-key="up">▲</button><button data-key="page-up">⇞</button><button data-key="backspace">%BACK%</button>
+<button data-key="home">%HOME%</button><button data-key="up">▲</button><button data-key="page-up">%PAGE_UP%</button><button data-key="backspace">%BACK%</button>
 <button data-key="left">◀</button><button data-key="enter">OK</button><button data-key="right">▶</button><button data-key="view">%VIEW%</button>
-<button data-key="end">⇥</button><button data-key="down">▼</button><button data-key="page-down">⇟</button><button data-key="tab">%PANEL%</button>
+<button data-key="end">%END%</button><button data-key="down">▼</button><button data-key="page-down">%PAGE_DOWN%</button><button data-key="tab">%PANEL%</button>
 <button data-key="esc" style="grid-column:span 4">Esc</button>
 </div>
 <script>

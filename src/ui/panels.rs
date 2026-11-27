@@ -358,8 +358,9 @@ pub(super) fn tab_strip(app_state: &AppState, side: Side, area: Rect) -> (Line<'
 }
 
 /// Gives back the drive strips and the tab strips as laid out, left then
-/// right, for the state to keep after the frame.
-pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, drawn: &Drawn) -> ([Strip; 2], [Strip; 2]) {
+/// right, for the state to keep after the frame - and where the remote's
+/// mark was drawn, for a click to find.
+pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state: &AppState, drawn: &Drawn) -> (([Strip; 2], [Strip; 2]), Option<Rect>) {
     let cached_clock = drawn.cached_clock.as_str();
     let logo = Span::styled(format!(" {} ", logo_icon(app_state.options.icon_style)), style_title());
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), style_title());
@@ -367,7 +368,11 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
     // Alt+W's remote, running with its code put away: said beside the clock,
     // so a screen a phone can drive never looks like one nobody can.
     let remote = app_state.remote.as_ref().map(|_| Span::styled(format!(" {} ", tc!("phone", "Remote")), style_title().add_modifier(Modifier::REVERSED)));
-    let clock_width = display_width(&clock.content) + remote.as_ref().map_or(0, |remote| display_width(&remote.content));
+    let remote_width = remote.as_ref().map_or(0, |remote| display_width(&remote.content)) as u16;
+    let clock_width = display_width(&clock.content) + remote_width as usize;
+    // Right-aligned, the clock's line ends against the corner: the mark is
+    // the start of it.
+    let remote_hit = remote.as_ref().map(|_| Rect::new(area.right().saturating_sub(1 + clock_width as u16).max(area.x), area.y, remote_width, 1).intersection(area));
     // Who and where, beside the logo - reversed as root, which is worth
     // seeing before a delete. Left off where it would run into the title.
     let (user_at_host, root) = &app_state.user_at_host;
@@ -419,7 +424,7 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
             tabs[side] = strip;
         }
     }
-    (drives, tabs)
+    ((drives, tabs), remote_hit)
 }
 
 /// The directory each panel is in, along the line over them. Ctrl+L edits

@@ -2495,3 +2495,17 @@ msgstr Alt+N - Envoyer à un autre fm84 (null modem)
 
 msgid  Alt+Shift+N listens for one to send here
 msgstr Alt+Maj+N écoute pour qu'un autre envoie ici
+
+# Alt+W's pad: the keys' names as the keyboards print them.
+
+msgid  Home
+msgstr Début
+
+msgid  End
+msgstr Fin
+
+msgid  PgUp
+msgstr PgPréc
+
+msgid  PgDn
+msgstr PgSuiv

@@ -422,7 +422,9 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
 
         let chunks_main = screen_layout(area);
 
-        settled.strips = Some(render_top_panel(f, chunks_main[0], app_state, drawn));
+        let (strips, remote_hit) = render_top_panel(f, chunks_main[0], app_state, drawn);
+        settled.strips = Some(strips);
+        drawn.remote_hit = remote_hit;
         let going_to = match &app_state.dialog {
             Some(Dialog::Prompt(PromptKind::GoTo, input)) => Some(input),
             _ => None,

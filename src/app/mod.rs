@@ -587,6 +587,9 @@ pub struct Drawn {
     /// Each panel's git branch on the path bar, left then right, as last
     /// drawn - a click there lists the repository's branches.
     pub branch_hits: [Option<Rect>; 2],
+    /// Alt+W's "Remote" mark beside the clock, as last drawn - a click there
+    /// shows the remote's code, as Alt+W does.
+    pub remote_hit: Option<Rect>,
     /// The rows of the branch list as last drawn, and the branch on each.
     pub branch_rows: Vec<(Rect, usize)>,
     /// The column headings a click sorts by, both panels', as last drawn.

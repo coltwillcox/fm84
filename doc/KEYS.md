@@ -121,7 +121,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Y` / `Enter`, `N` / `Esc` | Accept / refuse another fm84 asking to send (Alt+Shift+N) |
 | `↑` / `↓`, `Enter` | Choose the fm84 to send to, and send (Alt+N) |
 
-On the phone, Alt+W's pad: `▲` `▼` `◀` `▶` the arrows, `⇞` / `⇟` PageUp / PageDown, `⇤` / `⇥` Home / End, `OK` Enter, `Back` Backspace, `View` F3, `Panel` Tab, and `Esc`. A tap on an entry puts the cursor there; a tap on the one it is on opens it.
+On the phone, Alt+W's pad: `▲` `▼` `◀` `▶` the arrows, `PgUp` / `PgDn`, `Home` / `End`, `OK` Enter, `Back` Backspace, `View` F3, `Panel` Tab, and `Esc`. A tap on an entry puts the cursor there; a tap on the one it is on opens it.
 
 ## 🌳 Directory tree (Alt+F10)
 
@@ -236,5 +236,6 @@ On the phone, Alt+W's pad: `▲` `▼` `◀` `▶` the arrows, `⇞` / `⇟` Pag
 | Click the path | Edit it in place, as Ctrl+L |
 | Click a drive icon | Send the panel to that drive |
 | Click the git branch | List the repository's branches, to switch to another |
+| Click **Remote** by the clock | Show the remote's code, as `Alt+W` does |
 | Click an F-key | Press it |
 | Click a tree's mark | Open or close that directory (double-click a name: `Enter`) |

@@ -2493,3 +2493,17 @@ msgstr Alt+N - Изпращане към друг fm84 (нулев модем)
 
 msgid  Alt+Shift+N listens for one to send here
 msgstr Alt+Shift+N слуша, за да се изпраща тук
+
+# Alt+W's pad: the keys' names as the keyboards print them.
+
+msgid  Home
+msgstr Home
+
+msgid  End
+msgstr End
+
+msgid  PgUp
+msgstr PgUp
+
+msgid  PgDn
+msgstr PgDn

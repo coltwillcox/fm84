@@ -2611,3 +2611,17 @@ msgstr Alt+N - Seol chuig fm84 eile (móideim nialasach)
 
 msgid  Alt+Shift+N listens for one to send here
 msgstr Éisteann Alt+Shift+N le go seolfar anseo
+
+# Alt+W's pad: the keys' names as the keyboards print them.
+
+msgid  Home
+msgstr Home
+
+msgid  End
+msgstr End
+
+msgid  PgUp
+msgstr PgUp
+
+msgid  PgDn
+msgstr PgDn
