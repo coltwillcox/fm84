@@ -2382,3 +2382,56 @@ msgstr Αδύνατη η αποστολή
 
 msgid  Send {what} to:
 msgstr Αποστολή {what} σε:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Πρόχειρο με κινητό
+
+msgid  Copied from fm84
+msgstr Αντιγράφηκε από το fm84
+
+msgid  fm84 clipboard
+msgstr Πρόχειρο του fm84
+
+msgid  fm84's clipboard is empty
+msgstr Το πρόχειρο του fm84 είναι άδειο
+
+msgid  Get fm84's clipboard
+msgstr Λήψη του προχείρου του fm84
+
+msgid  Not text
+msgstr Δεν είναι κείμενο
+
+msgid  On the clipboard: {text}
+msgstr Στο πρόχειρο: {text}
+
+msgid  Save as a file
+msgstr Αποθήκευση ως αρχείο
+
+msgid  Saved as
+msgstr Αποθηκεύτηκε ως
+
+msgid  Saved as {name}
+msgstr Αποθηκεύτηκε ως {name}
+
+msgid  Scan to share the clipboard
+msgstr Σαρώστε για κοινή χρήση του προχείρου
+
+msgid  Text
+msgstr Κείμενο
+
+msgid  The phone took the clipboard
+msgstr Το κινητό πήρε το πρόχειρο
+
+msgid  To fm84's clipboard
+msgstr Στο πρόχειρο του fm84
+
+msgid  Too long for a clipboard
+msgstr Πολύ μεγάλο για πρόχειρο
+
+msgid  Type or paste, then send it across
+msgstr Γράψτε ή επικολλήστε και στείλτε το
+
+msgid  Waiting for the phone…
+msgstr Αναμονή για το κινητό…

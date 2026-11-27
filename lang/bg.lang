@@ -2381,3 +2381,56 @@ msgstr Изпращането е невъзможно
 
 msgid  Send {what} to:
 msgstr Изпращане на {what} до:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Клипборд с телефон
+
+msgid  Copied from fm84
+msgstr Копирано от fm84
+
+msgid  fm84 clipboard
+msgstr Клипборд на fm84
+
+msgid  fm84's clipboard is empty
+msgstr Клипбордът на fm84 е празен
+
+msgid  Get fm84's clipboard
+msgstr Вземане на клипборда на fm84
+
+msgid  Not text
+msgstr Не е текст
+
+msgid  On the clipboard: {text}
+msgstr В клипборда: {text}
+
+msgid  Save as a file
+msgstr Запис като файл
+
+msgid  Saved as
+msgstr Записано като
+
+msgid  Saved as {name}
+msgstr Записано като {name}
+
+msgid  Scan to share the clipboard
+msgstr Сканирайте, за да споделите клипборда
+
+msgid  Text
+msgstr Текст
+
+msgid  The phone took the clipboard
+msgstr Телефонът взе клипборда
+
+msgid  To fm84's clipboard
+msgstr В клипборда на fm84
+
+msgid  Too long for a clipboard
+msgstr Твърде дълго за клипборд
+
+msgid  Type or paste, then send it across
+msgstr Напишете или поставете, после изпратете
+
+msgid  Waiting for the phone…
+msgstr Изчакване на телефона…

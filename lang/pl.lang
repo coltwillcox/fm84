@@ -2421,3 +2421,56 @@ msgstr Nie można wysłać
 
 msgid  Send {what} to:
 msgstr Wyślij {what} do:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Schowek z telefonem
+
+msgid  Copied from fm84
+msgstr Skopiowano z fm84
+
+msgid  fm84 clipboard
+msgstr Schowek fm84
+
+msgid  fm84's clipboard is empty
+msgstr Schowek fm84 jest pusty
+
+msgid  Get fm84's clipboard
+msgstr Pobierz schowek fm84
+
+msgid  Not text
+msgstr To nie jest tekst
+
+msgid  On the clipboard: {text}
+msgstr W schowku: {text}
+
+msgid  Save as a file
+msgstr Zapisz jako plik
+
+msgid  Saved as
+msgstr Zapisano jako
+
+msgid  Saved as {name}
+msgstr Zapisano jako {name}
+
+msgid  Scan to share the clipboard
+msgstr Zeskanuj, aby udostępnić schowek
+
+msgid  Text
+msgstr Tekst
+
+msgid  The phone took the clipboard
+msgstr Telefon pobrał schowek
+
+msgid  To fm84's clipboard
+msgstr Do schowka fm84
+
+msgid  Too long for a clipboard
+msgstr Za długie na schowek
+
+msgid  Type or paste, then send it across
+msgstr Wpisz lub wklej, a potem wyślij
+
+msgid  Waiting for the phone…
+msgstr Czekam na telefon…

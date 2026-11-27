@@ -2382,3 +2382,56 @@ msgstr Gönderilemiyor
 
 msgid  Send {what} to:
 msgstr {what} şuraya gönder:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Telefonla pano
+
+msgid  Copied from fm84
+msgstr fm84'ten kopyalandı
+
+msgid  fm84 clipboard
+msgstr fm84 panosu
+
+msgid  fm84's clipboard is empty
+msgstr fm84 panosu boş
+
+msgid  Get fm84's clipboard
+msgstr fm84 panosunu al
+
+msgid  Not text
+msgstr Metin değil
+
+msgid  On the clipboard: {text}
+msgstr Panoda: {text}
+
+msgid  Save as a file
+msgstr Dosya olarak kaydet
+
+msgid  Saved as
+msgstr Şu adla kaydedildi:
+
+msgid  Saved as {name}
+msgstr {name} olarak kaydedildi
+
+msgid  Scan to share the clipboard
+msgstr Panoyu paylaşmak için tarayın
+
+msgid  Text
+msgstr Metin
+
+msgid  The phone took the clipboard
+msgstr Telefon panoyu aldı
+
+msgid  To fm84's clipboard
+msgstr fm84 panosuna
+
+msgid  Too long for a clipboard
+msgstr Bir pano için çok uzun
+
+msgid  Type or paste, then send it across
+msgstr Yazın ya da yapıştırın, sonra gönderin
+
+msgid  Waiting for the phone…
+msgstr Telefon bekleniyor…

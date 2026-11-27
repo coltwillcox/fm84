@@ -106,6 +106,79 @@ pub fn grouped(value: u64) -> String {
     out
 }
 
+/// The system clipboard as text, read by whichever of the desktop's own
+/// programs for it there is - OSC 52 only writes, as most terminals will not
+/// let a program read the clipboard through them. None where none of them
+/// is, or none answers in time, or what is on the clipboard is not text, or
+/// is longer than `most` bytes: over SSH, say, or with a picture copied.
+pub fn read_system_clipboard(most: usize) -> Option<String> {
+    // Not from a test, which would read whatever its runner last copied.
+    if cfg!(test) {
+        return None;
+    }
+    let present = |name: &str| std::env::var_os(name).is_some_and(|value| !value.is_empty());
+    paste_commands(present("WAYLAND_DISPLAY"), present("DISPLAY")).into_iter().find_map(|command| run_paste(command, most, std::time::Duration::from_secs(2)))
+}
+
+/// The programs that print the system clipboard as text, likeliest first:
+/// the system's own on macOS and Windows; on Wayland its own, then X11's
+/// for a desktop running both.
+pub fn paste_commands(wayland: bool, x11: bool) -> Vec<&'static [&'static str]> {
+    let mut commands: Vec<&'static [&'static str]> = Vec::new();
+    if cfg!(target_os = "macos") {
+        commands.push(&["pbpaste"]);
+    }
+    if cfg!(windows) {
+        commands.push(&["powershell", "-NoProfile", "-NonInteractive", "-Command", "[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Clipboard -Raw"]);
+    }
+    if wayland {
+        commands.push(&["wl-paste", "--no-newline", "--type", "text"]);
+    }
+    if x11 {
+        commands.push(&["xclip", "-selection", "clipboard", "-out", "-target", "UTF8_STRING"]);
+        commands.push(&["xsel", "--clipboard", "--output"]);
+    }
+    commands
+}
+
+/// What `command` prints, as text, when it ends well within `wait` having
+/// printed no more than `most` bytes of UTF-8. One still going by then is
+/// stopped: a clipboard owner that has hung would otherwise hold this up.
+pub fn run_paste(command: &[&str], most: usize, wait: std::time::Duration) -> Option<String> {
+    use std::io::Read;
+    use std::process::{Command, Stdio};
+    let (program, args) = command.split_first()?;
+    let mut child = Command::new(program).args(args).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
+    let stdout = child.stdout.take()?;
+    // Read as it comes, so a long clipboard cannot fill the pipe and leave
+    // the program waiting on us while we wait on it.
+    let reader = std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let _ = stdout.take(most as u64 + 1).read_to_end(&mut bytes);
+        bytes
+    });
+    let started = std::time::Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                let bytes = reader.join().ok()?;
+                if !status.success() || bytes.len() > most {
+                    return None;
+                }
+                let text = String::from_utf8(bytes).ok()?;
+                // PowerShell ends what it prints with a line end of its own.
+                return Some(if cfg!(windows) { text.strip_suffix("\r\n").map(str::to_string).unwrap_or(text) } else { text });
+            }
+            Ok(None) if started.elapsed() < wait => std::thread::sleep(std::time::Duration::from_millis(10)),
+            _ => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return None;
+            }
+        }
+    }
+}
+
 /// One word of a command from F11, with each `{}` in it standing for `value`.
 /// Built as an OsString rather than with str::replace, which would need the
 /// path as text: a name that is not valid UTF-8 would come out with a
@@ -436,5 +509,38 @@ mod column_tests {
         assert_eq!(display_column("\x1bx", 1), 1);
         assert_eq!(display_column("ab", 10), 2);
         assert_eq!(line_display_width("a\x07日"), 4);
+    }
+}
+
+#[cfg(test)]
+mod paste_tests {
+    use super::{paste_commands, run_paste};
+    use std::time::{Duration, Instant};
+
+    /// Wayland's own program first, then X11's; neither without a display.
+    #[cfg(all(unix, not(target_os = "macos")))]
+    #[test]
+    fn the_desktop_says_which_program_reads_the_clipboard() {
+        let first = |wayland, x11| paste_commands(wayland, x11).iter().map(|command| command[0]).collect::<Vec<_>>();
+        assert_eq!(first(true, true), ["wl-paste", "xclip", "xsel"]);
+        assert_eq!(first(false, true), ["xclip", "xsel"]);
+        assert!(first(false, false).is_empty());
+    }
+
+    /// What a program prints, as text; nothing from one that fails, prints
+    /// too much or too little UTF-8, is not there, or does not end in time.
+    #[cfg(unix)]
+    #[test]
+    fn a_paste_is_what_was_printed_in_time() {
+        let wait = Duration::from_secs(2);
+        assert_eq!(run_paste(&["sh", "-c", "printf 'héllo\\nworld'"], 100, wait).as_deref(), Some("héllo\nworld"));
+        assert_eq!(run_paste(&["sh", "-c", "printf ''"], 100, wait).as_deref(), Some(""));
+        assert_eq!(run_paste(&["sh", "-c", "printf hi; exit 1"], 100, wait), None);
+        assert_eq!(run_paste(&["sh", "-c", "printf '\\377\\376'"], 100, wait), None);
+        assert_eq!(run_paste(&["sh", "-c", "head -c 5000 /dev/zero"], 100, wait), None);
+        assert_eq!(run_paste(&["fm84-no-such-program"], 100, wait), None);
+        let started = Instant::now();
+        assert_eq!(run_paste(&["sleep", "10"], 100, Duration::from_millis(200)), None);
+        assert!(started.elapsed() < Duration::from_secs(5), "waited past its time");
     }
 }

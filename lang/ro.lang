@@ -2421,3 +2421,56 @@ msgstr Nu se poate trimite
 
 msgid  Send {what} to:
 msgstr Trimite {what} către:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Clipboard cu un telefon
+
+msgid  Copied from fm84
+msgstr Copiat din fm84
+
+msgid  fm84 clipboard
+msgstr Clipboard fm84
+
+msgid  fm84's clipboard is empty
+msgstr Clipboardul fm84 este gol
+
+msgid  Get fm84's clipboard
+msgstr Ia clipboardul fm84
+
+msgid  Not text
+msgstr Nu este text
+
+msgid  On the clipboard: {text}
+msgstr În clipboard: {text}
+
+msgid  Save as a file
+msgstr Salvează ca fișier
+
+msgid  Saved as
+msgstr Salvat ca
+
+msgid  Saved as {name}
+msgstr Salvat ca {name}
+
+msgid  Scan to share the clipboard
+msgstr Scanează pentru a partaja clipboardul
+
+msgid  Text
+msgstr Text
+
+msgid  The phone took the clipboard
+msgstr Telefonul a luat clipboardul
+
+msgid  To fm84's clipboard
+msgstr În clipboardul fm84
+
+msgid  Too long for a clipboard
+msgstr Prea lung pentru un clipboard
+
+msgid  Type or paste, then send it across
+msgstr Scrie sau lipește, apoi trimite
+
+msgid  Waiting for the phone…
+msgstr Se așteaptă telefonul…

@@ -49,6 +49,7 @@ mod multi_rename;
 mod night_drive;
 mod null_modem;
 mod open_with;
+mod phone_clipboard;
 mod preview;
 mod receive;
 mod selection;
@@ -70,7 +71,7 @@ mod viewing;
 
 pub use self::{
     animation::*, archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_gutter::*, git_marks::*, git_stage::*, history::*,
-    info_column::*, jobs::*, listing::*, multi_rename::*, null_modem::*, open_with::*, preview::*, receive::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
+    info_column::*, jobs::*, listing::*, multi_rename::*, null_modem::*, open_with::*, phone_clipboard::*, preview::*, receive::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -265,6 +266,8 @@ pub enum Dialog {
     Share(Box<ShareView>),
     /// Alt+Shift+Q: the active panel's directory, taking files a phone sends.
     Receive(Box<ReceiveView>),
+    /// Alt+V: the clipboard shared with a phone, both ways.
+    PhoneClipboard(Box<ClipboardView>),
     /// Alt+Shift+N: the active panel's directory, taking files another fm84
     /// sends.
     NullModemListen(Box<ListenView>),

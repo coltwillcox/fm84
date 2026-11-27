@@ -2381,3 +2381,56 @@ msgstr Kan ikke sende
 
 msgid  Send {what} to:
 msgstr Send {what} til:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Utklippstavle med en telefon
+
+msgid  Copied from fm84
+msgstr Kopiert fra fm84
+
+msgid  fm84 clipboard
+msgstr fm84-utklippstavle
+
+msgid  fm84's clipboard is empty
+msgstr Utklippstavlen til fm84 er tom
+
+msgid  Get fm84's clipboard
+msgstr Hent utklippstavlen til fm84
+
+msgid  Not text
+msgstr Ikke tekst
+
+msgid  On the clipboard: {text}
+msgstr På utklippstavlen: {text}
+
+msgid  Save as a file
+msgstr Lagre som fil
+
+msgid  Saved as
+msgstr Lagret som
+
+msgid  Saved as {name}
+msgstr Lagret som {name}
+
+msgid  Scan to share the clipboard
+msgstr Skann for å dele utklippstavlen
+
+msgid  Text
+msgstr Tekst
+
+msgid  The phone took the clipboard
+msgstr Telefonen hentet utklippstavlen
+
+msgid  To fm84's clipboard
+msgstr Til utklippstavlen til fm84
+
+msgid  Too long for a clipboard
+msgstr For langt for en utklippstavle
+
+msgid  Type or paste, then send it across
+msgstr Skriv eller lim inn, og send det over
+
+msgid  Waiting for the phone…
+msgstr Venter på telefonen…

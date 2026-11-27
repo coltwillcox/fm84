@@ -2382,3 +2382,56 @@ msgstr Não é possível enviar
 
 msgid  Send {what} to:
 msgstr Enviar {what} para:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Área de transferência com um telefone
+
+msgid  Copied from fm84
+msgstr Copiado do fm84
+
+msgid  fm84 clipboard
+msgstr Área de transferência do fm84
+
+msgid  fm84's clipboard is empty
+msgstr A área de transferência do fm84 está vazia
+
+msgid  Get fm84's clipboard
+msgstr Pegar a área de transferência do fm84
+
+msgid  Not text
+msgstr Não é texto
+
+msgid  On the clipboard: {text}
+msgstr Na área de transferência: {text}
+
+msgid  Save as a file
+msgstr Salvar como arquivo
+
+msgid  Saved as
+msgstr Salvo como
+
+msgid  Saved as {name}
+msgstr Salvo como {name}
+
+msgid  Scan to share the clipboard
+msgstr Escaneie para compartilhar a área de transferência
+
+msgid  Text
+msgstr Texto
+
+msgid  The phone took the clipboard
+msgstr O telefone pegou a área de transferência
+
+msgid  To fm84's clipboard
+msgstr Para a área de transferência do fm84
+
+msgid  Too long for a clipboard
+msgstr Longo demais para a área de transferência
+
+msgid  Type or paste, then send it across
+msgstr Digite ou cole e envie
+
+msgid  Waiting for the phone…
+msgstr Aguardando o telefone…

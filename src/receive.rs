@@ -293,10 +293,10 @@ fn shortened(name: &str, most: usize) -> String {
 }
 
 /// Text as HTML takes it, and as a JavaScript string between double quotes.
-fn html(text: &str) -> String {
+pub(crate) fn html(text: &str) -> String {
     text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
-fn script_string(text: &str) -> String {
+pub(crate) fn script_string(text: &str) -> String {
     let mut out = String::from("\"");
     for c in text.chars() {
         match c {
@@ -325,10 +325,6 @@ fn page_in(dir: &Path, palette: &crate::display::Palette) -> String {
     let into = dir.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_else(|| dir.display().to_string());
     let title = t!("Send files to fm84");
     let heading = t!("Into {dir}", dir = crate::utils::printable_name(&into));
-    let colour = |colour: ratatui::style::Color, otherwise: &str| match colour {
-        ratatui::style::Color::Rgb(red, green, blue) => format!("#{red:02x}{green:02x}{blue:02x}"),
-        _ => otherwise.to_string(),
-    };
     let fills = [
         ("%TITLE%", html(title)),
         ("%HEADING%", html(&heading)),
@@ -336,6 +332,22 @@ fn page_in(dir: &Path, palette: &crate::display::Palette) -> String {
         ("%SENT%", script_string(t!("Sent"))),
         ("%LOST%", script_string(t!("Not sent"))),
         ("%ICON%", pixel_icon()),
+    ];
+    let mut page = themed(PAGE, palette);
+    for (place, fill) in fills {
+        page = page.replace(place, &fill);
+    }
+    page
+}
+
+/// A page of fm84's, its stylesheet put in where it says `%STYLE%` and
+/// `palette`'s colours where the stylesheet asks for them.
+pub(crate) fn themed(page: &str, palette: &crate::display::Palette) -> String {
+    let colour = |colour: ratatui::style::Color, otherwise: &str| match colour {
+        ratatui::style::Color::Rgb(red, green, blue) => format!("#{red:02x}{green:02x}{blue:02x}"),
+        _ => otherwise.to_string(),
+    };
+    let fills = [
         ("%BG%", colour(palette.background, "#000000")),
         ("%CARD%", colour(palette.gutter, "#111111")),
         ("%TEXT%", colour(palette.file, "#cccccc")),
@@ -349,7 +361,7 @@ fn page_in(dir: &Path, palette: &crate::display::Palette) -> String {
         ("%OK%", colour(palette.columns, "#00ffff")),
         ("%NO%", colour(palette.rename_background, "#ff0080")),
     ];
-    let mut page = PAGE.to_string();
+    let mut page = page.replace("%STYLE%", STYLE);
     for (place, fill) in fills {
         page = page.replace(place, &fill);
     }
@@ -358,7 +370,7 @@ fn page_in(dir: &Path, palette: &crate::display::Palette) -> String {
 
 /// An arrow up into a tray, a pixel to each character, drawn as squares on
 /// a grid with no smoothing between them.
-fn pixel_icon() -> String {
+pub(crate) fn pixel_icon() -> String {
     const ICON: [&str; 10] = ["....##....", "...####...", "..######..", ".########.", "....##....", "....##....", "....##....", "#...##...#", "#........#", "##########"];
     let squares: String = ICON
         .iter()
@@ -368,12 +380,10 @@ fn pixel_icon() -> String {
     format!(r#"<svg class="icon" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true">{squares}</svg>"#)
 }
 
-/// The page, its colours and words filled in where it says `%THEM%`.
-const PAGE: &str = r#"<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="%BG%">
-<title>%TITLE%</title>
-<style>
+/// The stylesheet the phone's pages share: hard-edged pixels - notched
+/// borders, shadows with no blur, a bar in blocks - and scanlines, in the
+/// theme's colours where it says `%THEM%`.
+const STYLE: &str = r#"<style>
 :root{--bg:%BG%;--card:%CARD%;--text:%TEXT%;--head:%HEAD%;--line:%LINE%;--muted:%MUTED%;--button:%BUTTON%;--on-button:%ON_BUTTON%;--bar:%BAR%;--track:%TRACK%;--ok:%OK%;--no:%NO%;--px:4px}
 *{box-sizing:border-box;border-radius:0}
 html{background:var(--bg)}
@@ -388,11 +398,11 @@ header{display:flex;gap:calc(var(--px)*4);align-items:center;margin-bottom:calc(
 h1{margin:0;font-size:1.15em;line-height:1.3;text-transform:uppercase;color:var(--head);text-shadow:calc(var(--px)/2) calc(var(--px)/2) 0 var(--line)}
 p{margin:calc(var(--px)*2) 0 0;color:var(--muted);word-break:break-all}
 p::before{content:"> "}
-label{display:block;text-align:center;padding:calc(var(--px)*5);margin:0 var(--px);text-transform:uppercase;font-size:1.1em;cursor:pointer;
+label,button{display:block;width:calc(100% - var(--px)*2);border:0;font:inherit;text-align:center;padding:calc(var(--px)*5);margin:0 var(--px);text-transform:uppercase;font-size:1.1em;cursor:pointer;
  background:var(--button);color:var(--on-button);
  box-shadow:0 calc(var(--px)*-1) 0 0 var(--line),0 var(--px) 0 0 var(--line),calc(var(--px)*-1) 0 0 0 var(--line),var(--px) 0 0 0 var(--line),calc(var(--px)*2) calc(var(--px)*3) 0 0 var(--head)}
-label:active{transform:translate(calc(var(--px)*2),calc(var(--px)*2));box-shadow:0 calc(var(--px)*-1) 0 0 var(--line),0 var(--px) 0 0 var(--line),calc(var(--px)*-1) 0 0 0 var(--line),var(--px) 0 0 0 var(--line)}
-label::before{content:"[ "}label::after{content:" ]"}
+label:active,button:active{transform:translate(calc(var(--px)*2),calc(var(--px)*2));box-shadow:0 calc(var(--px)*-1) 0 0 var(--line),0 var(--px) 0 0 var(--line),calc(var(--px)*-1) 0 0 0 var(--line),var(--px) 0 0 0 var(--line)}
+label::before,button::before{content:"[ "}label::after,button::after{content:" ]"}
 ul{list-style:none;padding:0;margin:calc(var(--px)*9) var(--px) 0}
 li{margin:0 0 calc(var(--px)*7);padding:calc(var(--px)*3);word-break:break-all}
 .track{height:calc(var(--px)*4);margin:calc(var(--px)*3) 0 calc(var(--px)*2);background:var(--track)}
@@ -401,7 +411,16 @@ li{margin:0 0 calc(var(--px)*7);padding:calc(var(--px)*3);word-break:break-all}
 .ok{color:var(--ok)}.ok::before{content:"✔ "}
 .no{color:var(--no)}.no::before{content:"✘ "}
 .blink{animation:blink 1s steps(1) infinite}@keyframes blink{50%{opacity:0}}
-</style></head><body>
+textarea{display:block;width:calc(100% - var(--px)*2);min-height:40vh;margin:0 var(--px) calc(var(--px)*7);padding:calc(var(--px)*3);border:0;resize:vertical;font:inherit;color:var(--text);outline:none}
+button+button{margin-top:calc(var(--px)*6)}
+</style>"#;
+
+/// The page, its colours and words filled in where it says `%THEM%`.
+const PAGE: &str = r#"<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="%BG%">
+<title>%TITLE%</title>
+%STYLE%</head><body>
 <header>%ICON%<div><h1>%TITLE%</h1><p>%HEADING%</p></div></header>
 <label>%CHOOSE%<input id="files" type="file" multiple hidden></label>
 <ul id="list"></ul>

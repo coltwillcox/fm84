@@ -2383,3 +2383,56 @@ msgstr Nem lehet küldeni
 
 msgid  Send {what} to:
 msgstr {what} küldése ide:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Vágólap telefonnal
+
+msgid  Copied from fm84
+msgstr Átmásolva az fm84-ből
+
+msgid  fm84 clipboard
+msgstr fm84 vágólap
+
+msgid  fm84's clipboard is empty
+msgstr Az fm84 vágólapja üres
+
+msgid  Get fm84's clipboard
+msgstr Az fm84 vágólapjának lekérése
+
+msgid  Not text
+msgstr Nem szöveg
+
+msgid  On the clipboard: {text}
+msgstr A vágólapon: {text}
+
+msgid  Save as a file
+msgstr Mentés fájlként
+
+msgid  Saved as
+msgstr Mentve ezen a néven:
+
+msgid  Saved as {name}
+msgstr Mentve: {name}
+
+msgid  Scan to share the clipboard
+msgstr Olvassa be a vágólap megosztásához
+
+msgid  Text
+msgstr Szöveg
+
+msgid  The phone took the clipboard
+msgstr A telefon elvitte a vágólapot
+
+msgid  To fm84's clipboard
+msgstr Az fm84 vágólapjára
+
+msgid  Too long for a clipboard
+msgstr Túl hosszú egy vágólaphoz
+
+msgid  Type or paste, then send it across
+msgstr Írja be vagy illessze be, majd küldje át
+
+msgid  Waiting for the phone…
+msgstr Várakozás a telefonra…

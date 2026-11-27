@@ -176,6 +176,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'Q' {
             app_state.open_receive();
         }
+        // Alt+V shares the clipboard with a phone, by a code to scan.
+        if in_panel && c == 'v' {
+            app_state.open_phone_clipboard();
+        }
         // Alt+N sends what is chosen to another fm84 on the network; Alt+Shift+N
         // listens for one to send here.
         if in_panel && c == 'n' {
@@ -433,6 +437,17 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Tab | KeyCode::BackTab => {
                 let forward = code == KeyCode::Tab;
                 if let Some(Dialog::Receive(view)) = &mut app_state.dialog {
+                    view.step_address(forward);
+                }
+            }
+            _ => {}
+        },
+        // Put away, the clipboard is no longer shared.
+        Some(Dialog::PhoneClipboard(_)) => match code {
+            KeyCode::Esc => app_state.close_phone_clipboard(),
+            KeyCode::Tab | KeyCode::BackTab => {
+                let forward = code == KeyCode::Tab;
+                if let Some(Dialog::PhoneClipboard(view)) = &mut app_state.dialog {
                     view.step_address(forward);
                 }
             }

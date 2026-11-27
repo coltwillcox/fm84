@@ -2420,3 +2420,56 @@ msgstr Ne mogu da pošaljem
 
 msgid  Send {what} to:
 msgstr Pošalji {what} na:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Klipbord sa telefonom
+
+msgid  Copied from fm84
+msgstr Kopirano iz fm84
+
+msgid  fm84 clipboard
+msgstr Klipbord fm84
+
+msgid  fm84's clipboard is empty
+msgstr Klipbord fm84 je prazan
+
+msgid  Get fm84's clipboard
+msgstr Preuzmi klipbord fm84
+
+msgid  Not text
+msgstr Nije tekst
+
+msgid  On the clipboard: {text}
+msgstr U klipbordu: {text}
+
+msgid  Save as a file
+msgstr Sačuvaj kao datoteku
+
+msgid  Saved as
+msgstr Sačuvano kao
+
+msgid  Saved as {name}
+msgstr Sačuvano kao {name}
+
+msgid  Scan to share the clipboard
+msgstr Skeniraj da podeliš klipbord
+
+msgid  Text
+msgstr Tekst
+
+msgid  The phone took the clipboard
+msgstr Telefon je uzeo klipbord
+
+msgid  To fm84's clipboard
+msgstr U klipbord fm84
+
+msgid  Too long for a clipboard
+msgstr Predugačko za klipbord
+
+msgid  Type or paste, then send it across
+msgstr Ukucaj ili nalepi, pa pošalji
+
+msgid  Waiting for the phone…
+msgstr Čekam telefon…

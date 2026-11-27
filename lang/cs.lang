@@ -2421,3 +2421,56 @@ msgstr Nelze odeslat
 
 msgid  Send {what} to:
 msgstr Poslat {what} na:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Schránka s telefonem
+
+msgid  Copied from fm84
+msgstr Zkopírováno z fm84
+
+msgid  fm84 clipboard
+msgstr Schránka fm84
+
+msgid  fm84's clipboard is empty
+msgstr Schránka fm84 je prázdná
+
+msgid  Get fm84's clipboard
+msgstr Získat schránku fm84
+
+msgid  Not text
+msgstr Není to text
+
+msgid  On the clipboard: {text}
+msgstr Ve schránce: {text}
+
+msgid  Save as a file
+msgstr Uložit jako soubor
+
+msgid  Saved as
+msgstr Uloženo jako
+
+msgid  Saved as {name}
+msgstr Uloženo jako {name}
+
+msgid  Scan to share the clipboard
+msgstr Naskenujte pro sdílení schránky
+
+msgid  Text
+msgstr Text
+
+msgid  The phone took the clipboard
+msgstr Telefon si vzal schránku
+
+msgid  To fm84's clipboard
+msgstr Do schránky fm84
+
+msgid  Too long for a clipboard
+msgstr Příliš dlouhé pro schránku
+
+msgid  Type or paste, then send it across
+msgstr Napište nebo vložte a pošlete
+
+msgid  Waiting for the phone…
+msgstr Čekám na telefon…

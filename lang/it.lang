@@ -2382,3 +2382,56 @@ msgstr Impossibile inviare
 
 msgid  Send {what} to:
 msgstr Invia {what} a:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Appunti con un telefono
+
+msgid  Copied from fm84
+msgstr Copiato da fm84
+
+msgid  fm84 clipboard
+msgstr Appunti di fm84
+
+msgid  fm84's clipboard is empty
+msgstr Gli appunti di fm84 sono vuoti
+
+msgid  Get fm84's clipboard
+msgstr Prendi gli appunti di fm84
+
+msgid  Not text
+msgstr Non è testo
+
+msgid  On the clipboard: {text}
+msgstr Negli appunti: {text}
+
+msgid  Save as a file
+msgstr Salva come file
+
+msgid  Saved as
+msgstr Salvato come
+
+msgid  Saved as {name}
+msgstr Salvato come {name}
+
+msgid  Scan to share the clipboard
+msgstr Scansiona per condividere gli appunti
+
+msgid  Text
+msgstr Testo
+
+msgid  The phone took the clipboard
+msgstr Il telefono ha preso gli appunti
+
+msgid  To fm84's clipboard
+msgstr Negli appunti di fm84
+
+msgid  Too long for a clipboard
+msgstr Troppo lungo per gli appunti
+
+msgid  Type or paste, then send it across
+msgstr Scrivi o incolla, poi invia
+
+msgid  Waiting for the phone…
+msgstr In attesa del telefono…

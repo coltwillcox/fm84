@@ -2499,3 +2499,56 @@ msgstr Ní féidir seoladh
 
 msgid  Send {what} to:
 msgstr Seol {what} chuig:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Gearrthaisce le fón
+
+msgid  Copied from fm84
+msgstr Cóipeáilte ó fm84
+
+msgid  fm84 clipboard
+msgstr Gearrthaisce fm84
+
+msgid  fm84's clipboard is empty
+msgstr Tá gearrthaisce fm84 folamh
+
+msgid  Get fm84's clipboard
+msgstr Faigh gearrthaisce fm84
+
+msgid  Not text
+msgstr Ní téacs é
+
+msgid  On the clipboard: {text}
+msgstr Sa ghearrthaisce: {text}
+
+msgid  Save as a file
+msgstr Sábháil mar chomhad
+
+msgid  Saved as
+msgstr Sábháilte mar
+
+msgid  Saved as {name}
+msgstr Sábháilte mar {name}
+
+msgid  Scan to share the clipboard
+msgstr Scan chun an ghearrthaisce a roinnt
+
+msgid  Text
+msgstr Téacs
+
+msgid  The phone took the clipboard
+msgstr Thóg an fón an ghearrthaisce
+
+msgid  To fm84's clipboard
+msgstr Chuig gearrthaisce fm84
+
+msgid  Too long for a clipboard
+msgstr Rófhada do ghearrthaisce
+
+msgid  Type or paste, then send it across
+msgstr Clóscríobh nó greamaigh, ansin seol trasna é
+
+msgid  Waiting for the phone…
+msgstr Ag fanacht leis an bhfón…

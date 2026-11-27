@@ -2382,3 +2382,56 @@ msgstr Не може да се испрати
 
 msgid  Send {what} to:
 msgstr Испрати {what} до:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Табла со исечоци со телефон
+
+msgid  Copied from fm84
+msgstr Копирано од fm84
+
+msgid  fm84 clipboard
+msgstr Табла со исечоци на fm84
+
+msgid  fm84's clipboard is empty
+msgstr Таблата со исечоци на fm84 е празна
+
+msgid  Get fm84's clipboard
+msgstr Земи ја таблата со исечоци на fm84
+
+msgid  Not text
+msgstr Не е текст
+
+msgid  On the clipboard: {text}
+msgstr Во таблата со исечоци: {text}
+
+msgid  Save as a file
+msgstr Зачувај како датотека
+
+msgid  Saved as
+msgstr Зачувано како
+
+msgid  Saved as {name}
+msgstr Зачувано како {name}
+
+msgid  Scan to share the clipboard
+msgstr Скенирај за да ја споделиш таблата со исечоци
+
+msgid  Text
+msgstr Текст
+
+msgid  The phone took the clipboard
+msgstr Телефонот ја зеде таблата со исечоци
+
+msgid  To fm84's clipboard
+msgstr Во таблата со исечоци на fm84
+
+msgid  Too long for a clipboard
+msgstr Предолго за табла со исечоци
+
+msgid  Type or paste, then send it across
+msgstr Напиши или залепи, па испрати
+
+msgid  Waiting for the phone…
+msgstr Чекам го телефонот…

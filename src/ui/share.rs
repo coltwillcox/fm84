@@ -2,7 +2,7 @@
 //! opens, and how the download, or what is being sent, is going.
 
 use super::*;
-use crate::app::{ReceiveView, ShareStatus, ShareView};
+use crate::app::{ClipboardStatus, ClipboardView, ReceiveView, ShareStatus, ShareView};
 use ratatui::style::Color;
 
 /// Light modules round the code on each side, which a camera needs to find
@@ -57,6 +57,22 @@ pub(super) fn render_receive_popup(f: &mut ratatui::Frame<'_>, area: Rect, view:
     let hint = keys(view.failed.is_some(), view.addresses.len(), t!("Esc - Stop receiving"));
     let url = numbered(view.url(), view.chosen, view.addresses.len());
     render_code_popup(f, area, t!("Receive from a phone"), &view.code, [into, url, status], &hint);
+}
+
+/// Alt+V: the code, then what it is for, the address, what last happened
+/// and the key that stops it.
+pub(super) fn render_phone_clipboard_popup(f: &mut ratatui::Frame<'_>, area: Rect, view: &ClipboardView) {
+    let status = match &view.status {
+        ClipboardStatus::Waiting => t!("Waiting for the phone…").to_string(),
+        ClipboardStatus::Received(text) => t!("On the clipboard: {text}", text = printable_name(text)),
+        ClipboardStatus::Saved(name) => t!("Saved as {name}", name = printable_name(name)),
+        ClipboardStatus::Taken => t!("The phone took the clipboard").to_string(),
+        ClipboardStatus::Failed(message) => t!("Cannot share: {e}", e = printable_name(message)),
+    };
+    let finished = matches!(view.status, ClipboardStatus::Failed(_));
+    let hint = keys(finished, view.addresses.len(), t!("Esc - Stop sharing"));
+    let url = numbered(view.url(), view.chosen, view.addresses.len());
+    render_code_popup(f, area, t!("Clipboard with a phone"), &view.code, [t!("Scan to share the clipboard").to_string(), url, status], &hint);
 }
 
 /// The keys under a code: Esc to close it once it can do no more, or to stop

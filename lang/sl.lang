@@ -2461,3 +2461,56 @@ msgstr Ne morem poslati
 
 msgid  Send {what} to:
 msgstr Pošlji {what} na:
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Odložišče s telefonom
+
+msgid  Copied from fm84
+msgstr Kopirano iz fm84
+
+msgid  fm84 clipboard
+msgstr Odložišče fm84
+
+msgid  fm84's clipboard is empty
+msgstr Odložišče fm84 je prazno
+
+msgid  Get fm84's clipboard
+msgstr Pridobi odložišče fm84
+
+msgid  Not text
+msgstr To ni besedilo
+
+msgid  On the clipboard: {text}
+msgstr V odložišču: {text}
+
+msgid  Save as a file
+msgstr Shrani kot datoteko
+
+msgid  Saved as
+msgstr Shranjeno kot
+
+msgid  Saved as {name}
+msgstr Shranjeno kot {name}
+
+msgid  Scan to share the clipboard
+msgstr Skenirajte za deljenje odložišča
+
+msgid  Text
+msgstr Besedilo
+
+msgid  The phone took the clipboard
+msgstr Telefon je vzel odložišče
+
+msgid  To fm84's clipboard
+msgstr V odložišče fm84
+
+msgid  Too long for a clipboard
+msgstr Predolgo za odložišče
+
+msgid  Type or paste, then send it across
+msgstr Vtipkajte ali prilepite, nato pošljite
+
+msgid  Waiting for the phone…
+msgstr Čakam na telefon…

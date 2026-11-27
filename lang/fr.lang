@@ -2383,3 +2383,56 @@ msgstr Impossible d'envoyer
 
 msgid  Send {what} to:
 msgstr Envoyer {what} à :
+
+# Clipboard with a phone: Alt+V.
+
+msgid  Clipboard with a phone
+msgstr Presse-papiers avec un téléphone
+
+msgid  Copied from fm84
+msgstr Copié depuis fm84
+
+msgid  fm84 clipboard
+msgstr Presse-papiers de fm84
+
+msgid  fm84's clipboard is empty
+msgstr Le presse-papiers de fm84 est vide
+
+msgid  Get fm84's clipboard
+msgstr Récupérer le presse-papiers de fm84
+
+msgid  Not text
+msgstr Ce n'est pas du texte
+
+msgid  On the clipboard: {text}
+msgstr Dans le presse-papiers : {text}
+
+msgid  Save as a file
+msgstr Enregistrer comme fichier
+
+msgid  Saved as
+msgstr Enregistré sous
+
+msgid  Saved as {name}
+msgstr Enregistré sous {name}
+
+msgid  Scan to share the clipboard
+msgstr Scannez pour partager le presse-papiers
+
+msgid  Text
+msgstr Texte
+
+msgid  The phone took the clipboard
+msgstr Le téléphone a pris le presse-papiers
+
+msgid  To fm84's clipboard
+msgstr Vers le presse-papiers de fm84
+
+msgid  Too long for a clipboard
+msgstr Trop long pour un presse-papiers
+
+msgid  Type or paste, then send it across
+msgstr Saisissez ou collez, puis envoyez
+
+msgid  Waiting for the phone…
+msgstr En attente du téléphone…
