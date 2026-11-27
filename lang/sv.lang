@@ -2292,3 +2292,93 @@ msgstr Alt+Shift+G - Spökjakt: orört i åratal
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 katalogträd, Enter skickar den andra panelen
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Nollmodem
+
+msgid  Cannot look for machines: {e}
+msgstr Kan inte leta efter datorer: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Väntar på att {name} tar emot
+
+msgid  Cannot listen: {e}
+msgstr Kan inte lyssna: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr Ett annat nollmodem lyssnar redan på den här datorn
+
+msgid  Not understood
+msgstr Inte förstått
+
+msgid  Busy with another sender
+msgstr Upptagen med en annan avsändare
+
+msgid  Refused
+msgstr Nekad
+
+msgid  Not a name to save it under
+msgstr Inget namn att spara det under
+
+msgid  The file changed while it was being sent
+msgstr Filen ändrades medan den skickades
+
+msgid  The other side hung up
+msgstr Andra sidan lade på
+
+msgid  No answer
+msgstr Inget svar
+
+msgid  Null modem asks first
+msgstr Nollmodem frågar först
+
+msgid  Null modem
+msgstr Nollmodem
+
+msgid  Listening as {name}, port {port}
+msgstr Lyssnar som {name}, port {port}
+
+msgid  Files go into {dir}
+msgstr Filer hamnar i {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr {name} vill skicka {what} ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Ta emot    N - Neka
+
+msgid  Connected to {name}
+msgstr Ansluten till {name}
+
+msgid  from {name}
+msgstr från {name}
+
+msgid  {name} went away
+msgstr {name} försvann
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Väntar på att en annan fm84 skickar (Alt+N där)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Sluta lyssna
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Skicka    Esc - Stäng
+
+msgid  Looking for fm84s listening…
+msgstr Letar efter fm84 som lyssnar…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Alt+Shift+N på den andra datorn lyssnar.
+
+msgid  Sending
+msgstr Skickar
+
+msgid  Cannot send
+msgstr Kan inte skicka
+
+msgid  Send {what} to:
+msgstr Skicka {what} till:

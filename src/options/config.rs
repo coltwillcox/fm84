@@ -170,6 +170,7 @@ impl Options {
                 }
                 "cursor_blink" => options.cursor_blink = flag(options.cursor_blink),
                 "outer_frame" => options.outer_frame = flag(options.outer_frame),
+                "null_modem_ask" => options.null_modem_ask = flag(options.null_modem_ask),
                 "outrun_bar" => options.outrun_bar = flag(options.outrun_bar),
                 "burst_delete" => options.burst_delete = flag(options.burst_delete),
                 "turbo" => options.turbo = flag(options.turbo),
@@ -274,6 +275,8 @@ impl Options {
              on_existing = {}\n\
              # Read each copied file back and compare its checksum with the original's.\n\
              verify_copies = {}\n\
+             # Alt+Shift+N asks before taking files from another fm84.\n\
+             null_modem_ask = {}\n\
              # Empty picks one automatically. {{}} stands for the directory.\n\
              terminal = {}\n\
              # Empty is the built-in editor. {{}} stands for the file, which otherwise goes last.\n\
@@ -352,6 +355,7 @@ impl Options {
                 OnExisting::KeepBoth => "keep-both",
             },
             self.verify_copies,
+            self.null_modem_ask,
             self.terminal,
             self.editor,
             self.remember_dirs,

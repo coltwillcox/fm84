@@ -2291,3 +2291,93 @@ msgstr Alt+Shift+G - Spøgelsesjagt: urørt i årevis
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 mappetræ, Enter sender det andet panel
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Nulmodem
+
+msgid  Cannot look for machines: {e}
+msgstr Kan ikke lede efter maskiner: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Venter på, at {name} tager imod
+
+msgid  Cannot listen: {e}
+msgstr Kan ikke lytte: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr Et andet nulmodem lytter allerede på denne maskine
+
+msgid  Not understood
+msgstr Ikke forstået
+
+msgid  Busy with another sender
+msgstr Optaget af en anden afsender
+
+msgid  Refused
+msgstr Afvist
+
+msgid  Not a name to save it under
+msgstr Intet navn at gemme det under
+
+msgid  The file changed while it was being sent
+msgstr Filen ændrede sig, mens den blev sendt
+
+msgid  The other side hung up
+msgstr Den anden side lagde på
+
+msgid  No answer
+msgstr Intet svar
+
+msgid  Null modem asks first
+msgstr Nulmodem spørger først
+
+msgid  Null modem
+msgstr Nulmodem
+
+msgid  Listening as {name}, port {port}
+msgstr Lytter som {name}, port {port}
+
+msgid  Files go into {dir}
+msgstr Filer kommer i {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr {name} vil sende {what} ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Tag imod    N - Afvis
+
+msgid  Connected to {name}
+msgstr Forbundet til {name}
+
+msgid  from {name}
+msgstr fra {name}
+
+msgid  {name} went away
+msgstr {name} forsvandt
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Venter på, at en anden fm84 sender (Alt+N der)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Stop med at lytte
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Send    Esc - Luk
+
+msgid  Looking for fm84s listening…
+msgstr Leder efter lyttende fm84…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Alt+Shift+N på den anden maskine lytter.
+
+msgid  Sending
+msgstr Sender
+
+msgid  Cannot send
+msgstr Kan ikke sende
+
+msgid  Send {what} to:
+msgstr Send {what} til:

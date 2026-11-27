@@ -17,6 +17,7 @@ mod glob;
 mod input;
 mod metadata;
 mod minimap;
+mod null_modem;
 mod opener;
 mod options;
 mod receive;
@@ -295,6 +296,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.poll_git_gutter();
         app_state.poll_share();
         app_state.poll_receive();
+        app_state.poll_null_modem();
         app_state.image_cache.collect();
         send_cursor_shape(&app_state.options);
         render_ui(terminal, &mut app_state);

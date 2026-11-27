@@ -2409,3 +2409,93 @@ msgstr Alt+Shift+G - Fiach taibhsí: gan bhaint le blianta
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 crann comhadlann, Enter seolann an ceann eile
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Móideim nialasach
+
+msgid  Cannot look for machines: {e}
+msgstr Ní féidir meaisíní a lorg: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Ag fanacht go nglacfaidh {name} leis
+
+msgid  Cannot listen: {e}
+msgstr Ní féidir éisteacht: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr Tá móideim nialasach eile ag éisteacht ar an meaisín seo
+
+msgid  Not understood
+msgstr Níor tuigeadh
+
+msgid  Busy with another sender
+msgstr Gnóthach le seoltóir eile
+
+msgid  Refused
+msgstr Diúltaithe
+
+msgid  Not a name to save it under
+msgstr Níl ainm ann lena shábháil faoi
+
+msgid  The file changed while it was being sent
+msgstr D'athraigh an comhad agus é á sheoladh
+
+msgid  The other side hung up
+msgstr Chroch an taobh eile suas
+
+msgid  No answer
+msgstr Gan freagra
+
+msgid  Null modem asks first
+msgstr Fiafraíonn an móideim nialasach ar dtús
+
+msgid  Null modem
+msgstr Móideim nialasach
+
+msgid  Listening as {name}, port {port}
+msgstr Ag éisteacht mar {name}, port {port}
+
+msgid  Files go into {dir}
+msgstr Téann comhaid isteach i {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr Ba mhaith le {name} {what} a sheoladh ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Glac leis    N - Diúltaigh
+
+msgid  Connected to {name}
+msgstr Ceangailte le {name}
+
+msgid  from {name}
+msgstr ó {name}
+
+msgid  {name} went away
+msgstr D'imigh {name}
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Ag fanacht go seolfaidh fm84 eile (Alt+N ansin)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Stop ag éisteacht
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Seol    Esc - Dún
+
+msgid  Looking for fm84s listening…
+msgstr Ag lorg fm84 atá ag éisteacht…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Éisteann Alt+Shift+N ar an meaisín eile.
+
+msgid  Sending
+msgstr Ag seoladh
+
+msgid  Cannot send
+msgstr Ní féidir seoladh
+
+msgid  Send {what} to:
+msgstr Seol {what} chuig:

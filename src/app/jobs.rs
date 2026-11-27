@@ -125,6 +125,8 @@ pub enum TransferKind {
     Ghosts,
     /// `*` in Alt+F10's tree, reading everything under a directory.
     Tree,
+    /// Alt+N: sent to another fm84 over the network.
+    Send,
 }
 
 impl TransferKind {
@@ -148,6 +150,7 @@ impl TransferKind {
             TransferKind::Dossier => tc!("job", "Dossier"),
             TransferKind::Ghosts => tc!("job", "Ghost hunt"),
             TransferKind::Tree => tc!("job", "Open the tree"),
+            TransferKind::Send => tc!("job", "Null modem"),
         }
     }
 }
@@ -457,18 +460,28 @@ impl Progress for JobProgress<'_> {
                 })
             })
         };
+        let size = |path: &Path| described(path).map(|(size, _)| size);
         let modified = |path: &Path| described(path).and_then(|(_, modified)| modified);
+        self.decide(JobClash {
+            source: source.to_path_buf(),
+            dest: dest.to_path_buf(),
+            source_size: size(source),
+            source_modified: modified(source),
+            dest_size: size(dest),
+            dest_modified: modified(dest),
+        })
+    }
+}
+
+impl JobProgress<'_> {
+    /// What to do about a file in the way, as described: asked on screen
+    /// under Ask, or as an earlier answer for all of them said. A file not
+    /// on this machine - one a null modem would send onto - is described by
+    /// the other end.
+    pub(super) fn decide(&mut self, question: JobClash) -> Clash {
+        let (source_modified, dest_modified) = (question.source_modified, question.dest_modified);
         let clash = match self.clashes {
             Clashes::Ask => {
-                let size = |path: &Path| described(path).map(|(size, _)| size);
-                let question = JobClash {
-                    source: source.to_path_buf(),
-                    dest: dest.to_path_buf(),
-                    source_size: size(source),
-                    source_modified: modified(source),
-                    dest_size: size(dest),
-                    dest_modified: modified(dest),
-                };
                 // Nobody left to ask, or nobody answering, is an Abort.
                 let answer = if self.updates.send(JobUpdate::Clash(question)).is_err() { Answer::Abort } else { self.answers.recv().unwrap_or(Answer::Abort) };
                 match answer {
@@ -489,7 +502,7 @@ impl Progress for JobProgress<'_> {
                     }
                     Answer::OverwriteOlder => {
                         self.clashes = Clashes::ReplaceOlder;
-                        replace_if_older(modified(source), modified(dest))
+                        replace_if_older(source_modified, dest_modified)
                     }
                     Answer::Abort | Answer::Retry | Answer::Delete | Answer::GoOn | Answer::Split => Clash::Abort,
                 }
@@ -497,7 +510,7 @@ impl Progress for JobProgress<'_> {
             Clashes::ReplaceAll => Clash::Replace,
             Clashes::KeepAll => Clash::Keep,
             Clashes::KeepBothAll => Clash::KeepBoth,
-            Clashes::ReplaceOlder => replace_if_older(modified(source), modified(dest)),
+            Clashes::ReplaceOlder => replace_if_older(source_modified, dest_modified),
         };
         if clash == Clash::Keep {
             let _ = self.updates.send(JobUpdate::Skipped);

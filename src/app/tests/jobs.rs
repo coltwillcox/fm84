@@ -415,3 +415,47 @@ fn a_split_onto_nothing_leaves_the_names_after_its_pieces_alone() {
     assert_eq!(std::fs::read(&unrelated).unwrap(), b"mine", "nothing was written over: the .003 is left as it was");
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+N's job: a tree and a file sent to another fm84, the file already
+/// there asked about here as a copy asks - with where it is over there - and
+/// kept beside on Keep both.
+#[test]
+fn a_null_modem_job_sends_and_asks_about_what_is_in_the_way() {
+    let dir = std::env::temp_dir().join(format!("fm84-null-modem-job-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let (from, onto) = (dir.join("from"), dir.join("onto"));
+    std::fs::create_dir_all(from.join("tree").join("deeper")).unwrap();
+    std::fs::create_dir_all(&onto).unwrap();
+    std::fs::write(from.join("tree").join("deeper").join("a"), vec![1u8; 5000]).unwrap();
+    std::fs::write(from.join("c"), "new").unwrap();
+    std::fs::write(onto.join("c"), "old").unwrap();
+
+    let listening = crate::null_modem::listen(onto.clone(), "far".to_string(), false, 0).unwrap();
+    let peer = crate::null_modem::Peer {
+        address: std::net::SocketAddr::from(([127, 0, 0, 1], listening.port)),
+        name: "far".to_string(),
+        dir: "onto".to_string(),
+    };
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    app_state.start_null_modem_send(peer, vec![(from.join("tree"), true), (from.join("c"), false)]);
+    let (started, mut asked, mut total) = (std::time::Instant::now(), None, None);
+    while let Some(job) = app_state.workers.job.as_mut() {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "the job never ended");
+        total = job.total.or(total);
+        if let Some(clash) = &job.clash {
+            asked = Some((clash.dest.clone(), clash.dest_size));
+            job.answer(crate::app::Answer::KeepBoth);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert_eq!(app_state.error, None);
+    assert_eq!(total, Some(5003));
+    assert_eq!(asked, Some((std::path::PathBuf::from("far:onto").join("c"), Some(3))));
+    assert_eq!(std::fs::read(onto.join("tree").join("deeper").join("a")).unwrap(), vec![1u8; 5000]);
+    assert_eq!(std::fs::read_to_string(onto.join("c")).unwrap(), "old");
+    assert_eq!(std::fs::read_to_string(onto.join("c (2)")).unwrap(), "new");
+    drop(listening);
+    std::fs::remove_dir_all(&dir).unwrap();
+}

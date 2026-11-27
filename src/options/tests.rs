@@ -33,6 +33,7 @@ fn a_saved_file_reads_back_the_same() {
         icon_style: IconStyle::Plain,
         corners: Corners::Rounded,
         outer_frame: false,
+        null_modem_ask: false,
         clock: Clock::Off,
         cursor: CursorShape::Underline,
         cursor_blink: false,

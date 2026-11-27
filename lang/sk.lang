@@ -2331,3 +2331,93 @@ msgstr Alt+Shift+G - Hon na duchov: roky nedotknuté
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 strom priečinkov, Enter pošle druhý panel
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Nulový modem
+
+msgid  Cannot look for machines: {e}
+msgstr Nemožno hľadať počítače: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Čakám, kým {name} prijme
+
+msgid  Cannot listen: {e}
+msgstr Nemožno načúvať: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr Na tomto počítači už načúva iný nulový modem
+
+msgid  Not understood
+msgstr Nezrozumiteľné
+
+msgid  Busy with another sender
+msgstr Zaneprázdnený iným odosielateľom
+
+msgid  Refused
+msgstr Odmietnuté
+
+msgid  Not a name to save it under
+msgstr Žiadny názov, pod ktorým to uložiť
+
+msgid  The file changed while it was being sent
+msgstr Súbor sa počas odosielania zmenil
+
+msgid  The other side hung up
+msgstr Druhá strana zavesila
+
+msgid  No answer
+msgstr Žiadna odpoveď
+
+msgid  Null modem asks first
+msgstr Nulový modem sa najprv spýta
+
+msgid  Null modem
+msgstr Nulový modem
+
+msgid  Listening as {name}, port {port}
+msgstr Načúva ako {name}, port {port}
+
+msgid  Files go into {dir}
+msgstr Súbory idú do {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr {name} chce poslať {what} ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Prijať    N - Odmietnuť
+
+msgid  Connected to {name}
+msgstr Spojené s {name}
+
+msgid  from {name}
+msgstr od {name}
+
+msgid  {name} went away
+msgstr {name} odišiel
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Čakám, kým iné fm84 pošle (tam Alt+N)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Prestať načúvať
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Odoslať    Esc - Zavrieť
+
+msgid  Looking for fm84s listening…
+msgstr Hľadám načúvajúce fm84…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Alt+Shift+N na druhom počítači načúva.
+
+msgid  Sending
+msgstr Odosielanie
+
+msgid  Cannot send
+msgstr Nemožno odoslať
+
+msgid  Send {what} to:
+msgstr Poslať {what} na:

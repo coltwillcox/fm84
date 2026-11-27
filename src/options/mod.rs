@@ -317,6 +317,9 @@ pub struct Options {
     /// what is written along it - the title, the clock, the F-keys - stays;
     /// the lines inside, between the panels and the bars, reach the side.
     pub outer_frame: bool,
+    /// Alt+Shift+N asks before taking files from another fm84: who, how
+    /// many and how big. Off, anyone who finds it listening may send.
+    pub null_modem_ask: bool,
     pub clock: Clock,
     pub cursor: CursorShape,
     /// Whether the terminal's cursor blinks; nothing to Classic.
@@ -399,6 +402,7 @@ impl Default for Options {
             icon_style: IconStyle::NerdFont,
             corners: Corners::Square,
             outer_frame: true,
+            null_modem_ask: true,
             clock: Clock::Hours24,
             cursor: CursorShape::Bar,
             cursor_blink: true,

@@ -2293,3 +2293,93 @@ msgstr Alt+Shift+G - Szellemvadászat: évek óta érintetlen
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 könyvtárfa, Enter a másik panelt küldi
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Nullmodem
+
+msgid  Cannot look for machines: {e}
+msgstr Nem lehet gépeket keresni: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Várakozás, hogy {name} elfogadja
+
+msgid  Cannot listen: {e}
+msgstr Nem lehet figyelni: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr Ezen a gépen már figyel egy másik nullmodem
+
+msgid  Not understood
+msgstr Nem érthető
+
+msgid  Busy with another sender
+msgstr Egy másik küldővel foglalt
+
+msgid  Refused
+msgstr Elutasítva
+
+msgid  Not a name to save it under
+msgstr Nincs név, amelyen menteni lehetne
+
+msgid  The file changed while it was being sent
+msgstr A fájl küldés közben megváltozott
+
+msgid  The other side hung up
+msgstr A másik oldal bontotta a kapcsolatot
+
+msgid  No answer
+msgstr Nincs válasz
+
+msgid  Null modem asks first
+msgstr A nullmodem előbb kérdez
+
+msgid  Null modem
+msgstr Nullmodem
+
+msgid  Listening as {name}, port {port}
+msgstr Figyel mint {name}, port {port}
+
+msgid  Files go into {dir}
+msgstr A fájlok ide kerülnek: {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr {name} küldeni szeretne: {what} ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Elfogadás    N - Elutasítás
+
+msgid  Connected to {name}
+msgstr Kapcsolódva: {name}
+
+msgid  from {name}
+msgstr feladó: {name}
+
+msgid  {name} went away
+msgstr {name} elment
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Várakozás, hogy egy másik fm84 küldjön (ott Alt+N)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Figyelés leállítása
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Küldés    Esc - Bezárás
+
+msgid  Looking for fm84s listening…
+msgstr Figyelő fm84-ek keresése…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Alt+Shift+N a másik gépen figyel.
+
+msgid  Sending
+msgstr Küldés
+
+msgid  Cannot send
+msgstr Nem lehet küldeni
+
+msgid  Send {what} to:
+msgstr {what} küldése ide:

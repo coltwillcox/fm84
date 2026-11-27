@@ -80,6 +80,24 @@ pub fn lan_addresses() -> Vec<IpAddr> {
     if ranked.is_empty() { route_address().into_iter().collect() } else { ranked }
 }
 
+/// Where a datagram reaches every machine on each of the networks the
+/// machine is on: each running interface's address with the bits past its
+/// prefix all set. Neither the loopback's nor a link to one other end only.
+pub fn broadcast_addresses() -> Vec<Ipv4Addr> {
+    let mut found: Vec<Ipv4Addr> = Vec::new();
+    for interface in interfaces() {
+        if !interface.running || interface.loopback || interface.point_to_point || interface.prefix >= 31 {
+            continue;
+        }
+        let host_bits = u32::MAX.checked_shr(interface.prefix).unwrap_or(0);
+        let broadcast = Ipv4Addr::from(u32::from(interface.address) | host_bits);
+        if !found.contains(&broadcast) {
+            found.push(broadcast);
+        }
+    }
+    found
+}
+
 /// An IPv4 address of one of the machine's interfaces, and what it says of
 /// itself.
 #[derive(Clone, Debug)]

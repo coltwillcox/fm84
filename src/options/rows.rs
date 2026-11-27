@@ -25,6 +25,7 @@ pub enum OptionRow {
     ConfirmCopyMove,
     OnExisting,
     VerifyCopies,
+    NullModemAsk,
     Terminal,
     Editor,
     RememberDirs,
@@ -56,7 +57,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 49] = [
+pub const OPTION_ROWS: [OptionRow; 50] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -77,6 +78,7 @@ pub const OPTION_ROWS: [OptionRow; 49] = [
     OptionRow::ConfirmCopyMove,
     OptionRow::OnExisting,
     OptionRow::VerifyCopies,
+    OptionRow::NullModemAsk,
     OptionRow::Terminal,
     OptionRow::Editor,
     OptionRow::RememberDirs,
@@ -131,6 +133,7 @@ impl OptionRow {
             OptionRow::ConfirmCopyMove => t!("Confirm copy and move"),
             OptionRow::OnExisting => t!("When destination exists"),
             OptionRow::VerifyCopies => t!("Verify copies"),
+            OptionRow::NullModemAsk => t!("Null modem asks first"),
             OptionRow::Terminal => t!("Terminal (F9)"),
             OptionRow::Editor => t!("Editor (F4)"),
             OptionRow::RememberDirs => t!("Remember directories"),
@@ -274,6 +277,7 @@ impl Options {
             .to_string(),
             OptionRow::CursorBlink => on_off(self.cursor_blink),
             OptionRow::OuterFrame => on_off(self.outer_frame),
+            OptionRow::NullModemAsk => on_off(self.null_modem_ask),
             OptionRow::OutrunBar => on_off(self.outrun_bar),
             OptionRow::BurstDelete => on_off(self.burst_delete),
             OptionRow::Turbo => on_off(self.turbo),
@@ -393,6 +397,7 @@ impl Options {
             }
             OptionRow::CursorBlink => self.cursor_blink = !self.cursor_blink,
             OptionRow::OuterFrame => self.outer_frame = !self.outer_frame,
+            OptionRow::NullModemAsk => self.null_modem_ask = !self.null_modem_ask,
             OptionRow::OutrunBar => self.outrun_bar = !self.outrun_bar,
             OptionRow::BurstDelete => self.burst_delete = !self.burst_delete,
             OptionRow::Turbo => self.turbo = !self.turbo,

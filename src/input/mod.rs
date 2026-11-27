@@ -176,6 +176,15 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'Q' {
             app_state.open_receive();
         }
+        // Alt+N sends what is chosen to another fm84 on the network; Alt+Shift+N
+        // listens for one to send here.
+        if in_panel && c == 'n' {
+            let items = chosen_items(app_state);
+            app_state.open_null_modem_send(items);
+        }
+        if in_panel && c == 'N' {
+            app_state.open_null_modem_listen();
+        }
         // Alt+B puts what is chosen on the mixtape playing, or takes it off
         // the tape on show; Alt+Shift+B lists the tapes, or puts the one on
         // show away.
@@ -427,6 +436,24 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                     view.step_address(forward);
                 }
             }
+            _ => {}
+        },
+        // Put away, the listening stops. Y and N answer a sender asking.
+        Some(Dialog::NullModemListen(view)) => {
+            let asking = view.asking.is_some();
+            match code {
+                KeyCode::Esc if asking => app_state.answer_null_modem(false),
+                KeyCode::Esc => app_state.close_null_modem_listen(),
+                KeyCode::Char('y' | 'Y') | KeyCode::Enter if asking => app_state.answer_null_modem(true),
+                KeyCode::Char('n' | 'N') if asking => app_state.answer_null_modem(false),
+                _ => {}
+            }
+        }
+        Some(Dialog::NullModemPick(_)) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Up => app_state.move_null_modem_cursor(-1),
+            KeyCode::Down => app_state.move_null_modem_cursor(1),
+            KeyCode::Enter => app_state.send_null_modem(),
             _ => {}
         },
         // Put away, the share stops.

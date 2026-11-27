@@ -2331,3 +2331,93 @@ msgstr Alt+Shift+G - Lov na duhove: godinama netaknuto
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 stablo direktorija, Enter šalje drugu ploču
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Null modem
+
+msgid  Cannot look for machines: {e}
+msgstr Ne mogu tražiti računala: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Čekam da {name} prihvati
+
+msgid  Cannot listen: {e}
+msgstr Ne mogu slušati: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr Na ovom računalu već sluša drugi null modem
+
+msgid  Not understood
+msgstr Nije razumljivo
+
+msgid  Busy with another sender
+msgstr Zauzet drugim pošiljateljem
+
+msgid  Refused
+msgstr Odbijeno
+
+msgid  Not a name to save it under
+msgstr Nema imena pod kojim bi se spremilo
+
+msgid  The file changed while it was being sent
+msgstr Datoteka se promijenila tijekom slanja
+
+msgid  The other side hung up
+msgstr Druga strana je prekinula
+
+msgid  No answer
+msgstr Nema odgovora
+
+msgid  Null modem asks first
+msgstr Null modem prvo pita
+
+msgid  Null modem
+msgstr Null modem
+
+msgid  Listening as {name}, port {port}
+msgstr Sluša kao {name}, port {port}
+
+msgid  Files go into {dir}
+msgstr Datoteke idu u {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr {name} želi poslati {what} ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Prihvati    N - Odbij
+
+msgid  Connected to {name}
+msgstr Povezano s {name}
+
+msgid  from {name}
+msgstr od {name}
+
+msgid  {name} went away
+msgstr {name} je otišao
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Čekam da drugi fm84 pošalje (tamo Alt+N)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Prestani slušati
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Pošalji    Esc - Zatvori
+
+msgid  Looking for fm84s listening…
+msgstr Tražim fm84 koji slušaju…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Alt+Shift+N na drugom računalu sluša.
+
+msgid  Sending
+msgstr Slanje
+
+msgid  Cannot send
+msgstr Ne mogu poslati
+
+msgid  Send {what} to:
+msgstr Pošalji {what} na:

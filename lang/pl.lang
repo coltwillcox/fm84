@@ -2331,3 +2331,93 @@ msgstr Alt+Shift+G - Polowanie na duchy: latami nieruszane
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 drzewo katalogów, Enter posyła drugi panel
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Null modem
+
+msgid  Cannot look for machines: {e}
+msgstr Nie można szukać komputerów: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Czekam, aż {name} przyjmie
+
+msgid  Cannot listen: {e}
+msgstr Nie można nasłuchiwać: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr Na tym komputerze nasłuchuje już inny null modem
+
+msgid  Not understood
+msgstr Niezrozumiałe
+
+msgid  Busy with another sender
+msgstr Zajęty innym nadawcą
+
+msgid  Refused
+msgstr Odrzucono
+
+msgid  Not a name to save it under
+msgstr Brak nazwy, pod którą można zapisać
+
+msgid  The file changed while it was being sent
+msgstr Plik zmienił się w trakcie wysyłania
+
+msgid  The other side hung up
+msgstr Druga strona się rozłączyła
+
+msgid  No answer
+msgstr Brak odpowiedzi
+
+msgid  Null modem asks first
+msgstr Null modem najpierw pyta
+
+msgid  Null modem
+msgstr Null modem
+
+msgid  Listening as {name}, port {port}
+msgstr Nasłuchuje jako {name}, port {port}
+
+msgid  Files go into {dir}
+msgstr Pliki trafiają do {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr {name} chce wysłać {what} ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Przyjmij    N - Odrzuć
+
+msgid  Connected to {name}
+msgstr Połączono z {name}
+
+msgid  from {name}
+msgstr od {name}
+
+msgid  {name} went away
+msgstr {name} odszedł
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Czekam, aż inny fm84 wyśle (tam Alt+N)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Przestań nasłuchiwać
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Wyślij    Esc - Zamknij
+
+msgid  Looking for fm84s listening…
+msgstr Szukam nasłuchujących fm84…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Alt+Shift+N na drugim komputerze nasłuchuje.
+
+msgid  Sending
+msgstr Wysyłanie
+
+msgid  Cannot send
+msgstr Nie można wysłać
+
+msgid  Send {what} to:
+msgstr Wyślij {what} do:

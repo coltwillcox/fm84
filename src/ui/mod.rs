@@ -26,6 +26,7 @@ mod checksums;
 mod dossier;
 mod help;
 mod minimap;
+mod null_modem;
 mod options_popup;
 mod outrun;
 mod panels;
@@ -40,7 +41,7 @@ mod tree;
 
 pub use self::help::*;
 pub use self::tree::tree_prefix;
-use self::{animation::*, bars::*, checksums::*, dossier::*, minimap::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, share::*, spans::*, tree::*};
+use self::{animation::*, bars::*, checksums::*, dossier::*, minimap::*, null_modem::*, options_popup::*, outrun::*, panels::*, popups::*, screens::*, scroll_bars::*, share::*, spans::*, tree::*};
 
 // The styles used throughout rendering, from whichever palette is showing.
 fn style_border() -> Style {
@@ -525,6 +526,8 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             Some(Dialog::OpenWith(menu)) => render_open_with_popup(f, area, menu),
             Some(Dialog::Share(view)) => render_share_popup(f, area, view),
             Some(Dialog::Receive(view)) => render_receive_popup(f, area, view),
+            Some(Dialog::NullModemListen(view)) => render_null_modem_listen(f, area, view),
+            Some(Dialog::NullModemPick(view)) => render_null_modem_pick(f, area, view),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}
         }
         if let Some(page) = find_files_page {

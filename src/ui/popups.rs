@@ -491,6 +491,7 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
             TransferKind::Ghosts => t!("Hunting ghosts"),
             TransferKind::Tree => t!("Reading the tree"),
             TransferKind::Dossier => t!("Summing up"),
+            TransferKind::Send => t!("Sending"),
         }
     };
     let title = format!(" {title} ");
@@ -579,6 +580,7 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Sync => t!("Cannot synchronize"),
         TransferKind::Undo => t!("Cannot undo"),
         TransferKind::DirEdit => t!("Cannot apply the edits"),
+        TransferKind::Send => t!("Cannot send"),
     };
     let title = format!(" {title} ");
     let popup_area = popup_rect(30, area);

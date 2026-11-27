@@ -2292,3 +2292,93 @@ msgstr Alt+Shift+G - Лов на духови: недопрени со годи�
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 дрво на папки, Enter го праќа другиот
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Нулти модем
+
+msgid  Cannot look for machines: {e}
+msgstr Не може да се бараат машини: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Чекам {name} да прифати
+
+msgid  Cannot listen: {e}
+msgstr Не може да се слуша: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr На оваа машина веќе слуша друг нулти модем
+
+msgid  Not understood
+msgstr Неразбрано
+
+msgid  Busy with another sender
+msgstr Зафатен со друг испраќач
+
+msgid  Refused
+msgstr Одбиено
+
+msgid  Not a name to save it under
+msgstr Нема име под кое да се зачува
+
+msgid  The file changed while it was being sent
+msgstr Датотеката се промени додека се праќаше
+
+msgid  The other side hung up
+msgstr Другата страна прекина
+
+msgid  No answer
+msgstr Нема одговор
+
+msgid  Null modem asks first
+msgstr Нултиот модем прво прашува
+
+msgid  Null modem
+msgstr Нулти модем
+
+msgid  Listening as {name}, port {port}
+msgstr Слуша како {name}, порта {port}
+
+msgid  Files go into {dir}
+msgstr Датотеките одат во {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr {name} сака да испрати {what} ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Прифати    N - Одбиј
+
+msgid  Connected to {name}
+msgstr Поврзан со {name}
+
+msgid  from {name}
+msgstr од {name}
+
+msgid  {name} went away
+msgstr {name} си отиде
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Чекам друг fm84 да испрати (таму Alt+N)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Престани да слушаш
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Испрати    Esc - Затвори
+
+msgid  Looking for fm84s listening…
+msgstr Барам fm84 што слушаат…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Alt+Shift+N на другата машина слуша.
+
+msgid  Sending
+msgstr Испраќање
+
+msgid  Cannot send
+msgstr Не може да се испрати
+
+msgid  Send {what} to:
+msgstr Испрати {what} до:

@@ -2371,3 +2371,93 @@ msgstr Alt+Shift+G - Lov na duhove: leta nedotaknjeno
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 drevo map, Enter pošlje drugo ploščo
+
+# Null modem: Alt+N and Alt+Shift+N.
+
+msgctxt job
+msgid   Null modem
+msgstr  Ničelni modem
+
+msgid  Cannot look for machines: {e}
+msgstr Ne morem iskati računalnikov: {e}
+
+msgid  Waiting for {name} to accept
+msgstr Čakam, da {name} sprejme
+
+msgid  Cannot listen: {e}
+msgstr Ne morem poslušati: {e}
+
+msgid  Another null modem is listening on this machine
+msgstr Na tem računalniku že posluša drug ničelni modem
+
+msgid  Not understood
+msgstr Ni razumljivo
+
+msgid  Busy with another sender
+msgstr Zaseden z drugim pošiljateljem
+
+msgid  Refused
+msgstr Zavrnjeno
+
+msgid  Not a name to save it under
+msgstr Ni imena, pod katerim bi se shranilo
+
+msgid  The file changed while it was being sent
+msgstr Datoteka se je med pošiljanjem spremenila
+
+msgid  The other side hung up
+msgstr Druga stran je prekinila
+
+msgid  No answer
+msgstr Ni odgovora
+
+msgid  Null modem asks first
+msgstr Ničelni modem najprej vpraša
+
+msgid  Null modem
+msgstr Ničelni modem
+
+msgid  Listening as {name}, port {port}
+msgstr Posluša kot {name}, vrata {port}
+
+msgid  Files go into {dir}
+msgstr Datoteke gredo v {dir}
+
+msgid  {name} wants to send {what} ({size})
+msgstr {name} želi poslati {what} ({size})
+
+msgid  Y - Accept    N - Refuse
+msgstr Y - Sprejmi    N - Zavrni
+
+msgid  Connected to {name}
+msgstr Povezano z {name}
+
+msgid  from {name}
+msgstr od {name}
+
+msgid  {name} went away
+msgstr {name} je odšel
+
+msgid  Waiting for another fm84 to send (Alt+N there)…
+msgstr Čakam, da drug fm84 pošlje (tam Alt+N)…
+
+msgid  Esc - Stop listening
+msgstr Esc - Nehaj poslušati
+
+msgid  Enter - Send    Esc - Close
+msgstr Enter - Pošlji    Esc - Zapri
+
+msgid  Looking for fm84s listening…
+msgstr Iščem fm84, ki poslušajo…
+
+msgid  Alt+Shift+N on the other machine listens.
+msgstr Alt+Shift+N na drugem računalniku posluša.
+
+msgid  Sending
+msgstr Pošiljanje
+
+msgid  Cannot send
+msgstr Ne morem poslati
+
+msgid  Send {what} to:
+msgstr Pošlji {what} na:
