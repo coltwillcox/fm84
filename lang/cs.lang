@@ -2474,3 +2474,42 @@ msgstr Napište nebo vložte a pošlete
 
 msgid  Waiting for the phone…
 msgstr Čekám na telefon…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Dálkové ovládání
+
+msgid  A job is running
+msgstr Běží úloha
+
+msgid  A question is open on the screen
+msgstr Na obrazovce je otevřená otázka
+
+msgid  Back
+msgstr Zpět
+
+msgid  Driven from {phone}
+msgstr Ovládáno z {phone}
+
+msgid  Editing {name}
+msgstr Úprava {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Skrýt    S - Vypnout dálkové ovládání
+
+msgid  fm84 remote
+msgstr Dálkové ovládání fm84
+
+msgid  Panel
+msgstr Panel
+
+msgid  Remote control
+msgstr Dálkové ovládání
+
+msgid  Scan to drive fm84 from the phone
+msgstr Naskenujte a ovládejte fm84 z telefonu
+
+msgid  Viewing {name}
+msgstr Prohlížení {name}

@@ -2435,3 +2435,42 @@ msgstr Scrivi o incolla, poi invia
 
 msgid  Waiting for the phone…
 msgstr In attesa del telefono…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Telecomando
+
+msgid  A job is running
+msgstr È in corso un'operazione
+
+msgid  A question is open on the screen
+msgstr C'è una domanda aperta sullo schermo
+
+msgid  Back
+msgstr Indietro
+
+msgid  Driven from {phone}
+msgstr Comandato da {phone}
+
+msgid  Editing {name}
+msgstr Modifica di {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Nascondi    S - Ferma il telecomando
+
+msgid  fm84 remote
+msgstr Telecomando fm84
+
+msgid  Panel
+msgstr Pannello
+
+msgid  Remote control
+msgstr Telecomando
+
+msgid  Scan to drive fm84 from the phone
+msgstr Scansiona per comandare fm84 dal telefono
+
+msgid  Viewing {name}
+msgstr Visualizzazione di {name}

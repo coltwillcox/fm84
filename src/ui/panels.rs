@@ -364,6 +364,10 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
     let logo = Span::styled(format!(" {} ", logo_icon(app_state.options.icon_style)), style_title());
     let title = Span::styled(format!(" {} v{} ", TITLE, VERSION), style_title());
     let clock = Span::styled(cached_clock, style_title());
+    // Alt+W's remote, running with its code put away: said beside the clock,
+    // so a screen a phone can drive never looks like one nobody can.
+    let remote = app_state.remote.as_ref().map(|_| Span::styled(format!(" {} ", tc!("phone", "Remote")), style_title().add_modifier(Modifier::REVERSED)));
+    let clock_width = display_width(&clock.content) + remote.as_ref().map_or(0, |remote| display_width(&remote.content));
     // Who and where, beside the logo - reversed as root, which is worth
     // seeing before a delete. Left off where it would run into the title.
     let (user_at_host, root) = &app_state.user_at_host;
@@ -372,7 +376,7 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
     // A title of its own, so the border runs between it and the logo as it
     // does between the F-keys.
     let left_width = display_width(&logo.content) + 1 + display_width(&user.content);
-    let fits = left_width.max(display_width(&clock.content)) * 2 + display_width(&title.content) + 4 <= area.width as usize;
+    let fits = left_width.max(clock_width) * 2 + display_width(&title.content) + 4 <= area.width as usize;
 
     let mut block_top = Block::default().title_top(Line::from(logo).left_aligned());
     if fits {
@@ -380,7 +384,7 @@ pub(super) fn render_top_panel(f: &mut ratatui::Frame<'_>, area: Rect, app_state
     }
     let block_top = block_top
         .title_top(Line::from(title).centered())
-        .title_top(Line::from(clock).right_aligned())
+        .title_top(Line::from(remote.into_iter().chain([clock]).collect::<Vec<_>>()).right_aligned())
         .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT)
         .border_type(crate::display::border_type())
         .border_style(style_border());

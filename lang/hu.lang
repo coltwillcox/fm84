@@ -2436,3 +2436,42 @@ msgstr Írja be vagy illessze be, majd küldje át
 
 msgid  Waiting for the phone…
 msgstr Várakozás a telefonra…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Távirányító
+
+msgid  A job is running
+msgstr Egy feladat fut
+
+msgid  A question is open on the screen
+msgstr Egy kérdés van nyitva a képernyőn
+
+msgid  Back
+msgstr Vissza
+
+msgid  Driven from {phone}
+msgstr Irányítja: {phone}
+
+msgid  Editing {name}
+msgstr Szerkesztés: {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Elrejtés    S - Távirányító leállítása
+
+msgid  fm84 remote
+msgstr fm84 távirányító
+
+msgid  Panel
+msgstr Panel
+
+msgid  Remote control
+msgstr Távirányítás
+
+msgid  Scan to drive fm84 from the phone
+msgstr Olvassa be, és irányítsa az fm84-et a telefonról
+
+msgid  Viewing {name}
+msgstr Megtekintés: {name}

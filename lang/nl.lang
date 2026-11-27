@@ -2434,3 +2434,42 @@ msgstr Typ of plak, en stuur het over
 
 msgid  Waiting for the phone…
 msgstr Wachten op de telefoon…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Afstandsbediening
+
+msgid  A job is running
+msgstr Er loopt een taak
+
+msgid  A question is open on the screen
+msgstr Er staat een vraag open op het scherm
+
+msgid  Back
+msgstr Terug
+
+msgid  Driven from {phone}
+msgstr Bediend vanaf {phone}
+
+msgid  Editing {name}
+msgstr {name} bewerken
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Verbergen    S - Afstandsbediening stoppen
+
+msgid  fm84 remote
+msgstr fm84-afstandsbediening
+
+msgid  Panel
+msgstr Paneel
+
+msgid  Remote control
+msgstr Afstandsbediening
+
+msgid  Scan to drive fm84 from the phone
+msgstr Scan om fm84 vanaf de telefoon te bedienen
+
+msgid  Viewing {name}
+msgstr {name} bekijken

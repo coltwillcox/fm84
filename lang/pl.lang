@@ -2474,3 +2474,42 @@ msgstr Wpisz lub wklej, a potem wyślij
 
 msgid  Waiting for the phone…
 msgstr Czekam na telefon…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Pilot
+
+msgid  A job is running
+msgstr Trwa zadanie
+
+msgid  A question is open on the screen
+msgstr Na ekranie jest otwarte pytanie
+
+msgid  Back
+msgstr Wstecz
+
+msgid  Driven from {phone}
+msgstr Sterowane z {phone}
+
+msgid  Editing {name}
+msgstr Edycja {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Ukryj    S - Wyłącz pilota
+
+msgid  fm84 remote
+msgstr Pilot fm84
+
+msgid  Panel
+msgstr Panel
+
+msgid  Remote control
+msgstr Zdalne sterowanie
+
+msgid  Scan to drive fm84 from the phone
+msgstr Zeskanuj, aby sterować fm84 z telefonu
+
+msgid  Viewing {name}
+msgstr Podgląd {name}

@@ -527,6 +527,11 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             Some(Dialog::Share(view)) => render_share_popup(f, area, view),
             Some(Dialog::Receive(view)) => render_receive_popup(f, area, view),
             Some(Dialog::PhoneClipboard(view)) => render_phone_clipboard_popup(f, area, view),
+            Some(Dialog::Remote) => {
+                if let Some(view) = &app_state.remote {
+                    render_remote_popup(f, area, view);
+                }
+            }
             Some(Dialog::NullModemListen(view)) => render_null_modem_listen(f, area, view),
             Some(Dialog::NullModemPick(view)) => render_null_modem_pick(f, area, view),
             Some(Dialog::Rename(_) | Dialog::Prompt(..) | Dialog::DrivePicker { .. } | Dialog::Replacing { .. }) | None => {}

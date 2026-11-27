@@ -2434,3 +2434,42 @@ msgstr Skriv eller lim inn, og send det over
 
 msgid  Waiting for the phone…
 msgstr Venter på telefonen…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Fjernkontroll
+
+msgid  A job is running
+msgstr En jobb kjører
+
+msgid  A question is open on the screen
+msgstr Det er et åpent spørsmål på skjermen
+
+msgid  Back
+msgstr Tilbake
+
+msgid  Driven from {phone}
+msgstr Styrt fra {phone}
+
+msgid  Editing {name}
+msgstr Redigerer {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Skjul    S - Stopp fjernkontrollen
+
+msgid  fm84 remote
+msgstr fm84-fjernkontroll
+
+msgid  Panel
+msgstr Panel
+
+msgid  Remote control
+msgstr Fjernkontroll
+
+msgid  Scan to drive fm84 from the phone
+msgstr Skann for å styre fm84 fra telefonen
+
+msgid  Viewing {name}
+msgstr Viser {name}

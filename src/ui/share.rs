@@ -2,7 +2,7 @@
 //! opens, and how the download, or what is being sent, is going.
 
 use super::*;
-use crate::app::{ClipboardStatus, ClipboardView, ReceiveView, ShareStatus, ShareView};
+use crate::app::{ClipboardStatus, ClipboardView, ReceiveView, RemoteView, ShareStatus, ShareView};
 use ratatui::style::Color;
 
 /// Light modules round the code on each side, which a camera needs to find
@@ -73,6 +73,19 @@ pub(super) fn render_phone_clipboard_popup(f: &mut ratatui::Frame<'_>, area: Rec
     let hint = keys(finished, view.addresses.len(), t!("Esc - Stop sharing"));
     let url = numbered(view.url(), view.chosen, view.addresses.len());
     render_code_popup(f, area, t!("Clipboard with a phone"), &view.code, [t!("Scan to share the clipboard").to_string(), url, status], &hint);
+}
+
+/// Alt+W: the code, then what it is for, the address, whether a phone has
+/// found it, and the keys that put it away or stop it.
+pub(super) fn render_remote_popup(f: &mut ratatui::Frame<'_>, area: Rect, view: &RemoteView) {
+    let status = match (&view.failed, view.phone) {
+        (Some(message), _) => t!("Cannot share: {e}", e = printable_name(message)),
+        (None, Some(phone)) => t!("Driven from {phone}", phone),
+        (None, None) => t!("Waiting for the phone…").to_string(),
+    };
+    let hint = keys(view.failed.is_some(), view.addresses.len(), t!("Esc - Hide    S - Stop the remote"));
+    let url = numbered(view.url(), view.chosen, view.addresses.len());
+    render_code_popup(f, area, t!("Remote control"), &view.code, [t!("Scan to drive fm84 from the phone").to_string(), url, status], &hint);
 }
 
 /// The keys under a code: Esc to close it once it can do no more, or to stop

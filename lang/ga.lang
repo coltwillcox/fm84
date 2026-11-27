@@ -2552,3 +2552,42 @@ msgstr Clóscríobh nó greamaigh, ansin seol trasna é
 
 msgid  Waiting for the phone…
 msgstr Ag fanacht leis an bhfón…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Cianrialtán
+
+msgid  A job is running
+msgstr Tá jab ar siúl
+
+msgid  A question is open on the screen
+msgstr Tá ceist oscailte ar an scáileán
+
+msgid  Back
+msgstr Siar
+
+msgid  Driven from {phone}
+msgstr Á stiúradh ó {phone}
+
+msgid  Editing {name}
+msgstr Ag eagarthóireacht {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Folaigh    S - Stop an cianrialtán
+
+msgid  fm84 remote
+msgstr Cianrialtán fm84
+
+msgid  Panel
+msgstr Painéal
+
+msgid  Remote control
+msgstr Cianrialú
+
+msgid  Scan to drive fm84 from the phone
+msgstr Scan chun fm84 a stiúradh ón bhfón
+
+msgid  Viewing {name}
+msgstr Ag féachaint ar {name}

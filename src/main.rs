@@ -22,6 +22,7 @@ mod opener;
 mod options;
 mod phone_clipboard;
 mod receive;
+mod remote;
 mod scroll_bar;
 mod search;
 mod share;
@@ -299,6 +300,9 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.poll_receive();
         app_state.poll_null_modem();
         app_state.poll_phone_clipboard();
+        for key in app_state.poll_remote() {
+            input::handle_remote_key(&mut app_state, key);
+        }
         app_state.image_cache.collect();
         send_cursor_shape(&app_state.options);
         render_ui(terminal, &mut app_state);

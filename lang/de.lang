@@ -2435,3 +2435,42 @@ msgstr Tippen oder einfügen, dann hinüberschicken
 
 msgid  Waiting for the phone…
 msgstr Warte auf das Handy…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Fernbedienung
+
+msgid  A job is running
+msgstr Ein Auftrag läuft
+
+msgid  A question is open on the screen
+msgstr Auf dem Bildschirm ist eine Frage offen
+
+msgid  Back
+msgstr Zurück
+
+msgid  Driven from {phone}
+msgstr Gesteuert von {phone}
+
+msgid  Editing {name}
+msgstr Bearbeite {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Ausblenden    S - Fernbedienung beenden
+
+msgid  fm84 remote
+msgstr fm84-Fernbedienung
+
+msgid  Panel
+msgstr Panel
+
+msgid  Remote control
+msgstr Fernbedienung
+
+msgid  Scan to drive fm84 from the phone
+msgstr Scannen, um fm84 vom Handy aus zu steuern
+
+msgid  Viewing {name}
+msgstr Ansicht von {name}

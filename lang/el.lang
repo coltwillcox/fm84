@@ -2435,3 +2435,42 @@ msgstr Γράψτε ή επικολλήστε και στείλτε το
 
 msgid  Waiting for the phone…
 msgstr Αναμονή για το κινητό…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Τηλεχειρισμός
+
+msgid  A job is running
+msgstr Εκτελείται εργασία
+
+msgid  A question is open on the screen
+msgstr Υπάρχει ανοιχτή ερώτηση στην οθόνη
+
+msgid  Back
+msgstr Πίσω
+
+msgid  Driven from {phone}
+msgstr Ελέγχεται από {phone}
+
+msgid  Editing {name}
+msgstr Επεξεργασία {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Απόκρυψη    S - Διακοπή τηλεχειρισμού
+
+msgid  fm84 remote
+msgstr Τηλεχειριστήριο fm84
+
+msgid  Panel
+msgstr Πάνελ
+
+msgid  Remote control
+msgstr Τηλεχειρισμός
+
+msgid  Scan to drive fm84 from the phone
+msgstr Σαρώστε για να ελέγχετε το fm84 από το κινητό
+
+msgid  Viewing {name}
+msgstr Προβολή {name}

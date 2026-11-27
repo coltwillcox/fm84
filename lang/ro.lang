@@ -2474,3 +2474,42 @@ msgstr Scrie sau lipește, apoi trimite
 
 msgid  Waiting for the phone…
 msgstr Se așteaptă telefonul…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Telecomandă
+
+msgid  A job is running
+msgstr O sarcină rulează
+
+msgid  A question is open on the screen
+msgstr Pe ecran este o întrebare deschisă
+
+msgid  Back
+msgstr Înapoi
+
+msgid  Driven from {phone}
+msgstr Controlat de la {phone}
+
+msgid  Editing {name}
+msgstr Se editează {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Ascunde    S - Oprește telecomanda
+
+msgid  fm84 remote
+msgstr Telecomandă fm84
+
+msgid  Panel
+msgstr Panou
+
+msgid  Remote control
+msgstr Telecomandă
+
+msgid  Scan to drive fm84 from the phone
+msgstr Scanează pentru a controla fm84 de pe telefon
+
+msgid  Viewing {name}
+msgstr Se vizualizează {name}

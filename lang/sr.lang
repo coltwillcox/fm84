@@ -2473,3 +2473,42 @@ msgstr Ukucaj ili nalepi, pa pošalji
 
 msgid  Waiting for the phone…
 msgstr Čekam telefon…
+
+# Remote control: Alt+W.
+
+msgctxt phone
+msgid   Remote
+msgstr  Daljinski
+
+msgid  A job is running
+msgstr Posao je u toku
+
+msgid  A question is open on the screen
+msgstr Na ekranu je otvoreno pitanje
+
+msgid  Back
+msgstr Nazad
+
+msgid  Driven from {phone}
+msgstr Upravlja se sa {phone}
+
+msgid  Editing {name}
+msgstr Uređivanje {name}
+
+msgid  Esc - Hide    S - Stop the remote
+msgstr Esc - Sakrij    S - Zaustavi daljinski
+
+msgid  fm84 remote
+msgstr Daljinski za fm84
+
+msgid  Panel
+msgstr Panel
+
+msgid  Remote control
+msgstr Daljinsko upravljanje
+
+msgid  Scan to drive fm84 from the phone
+msgstr Skeniraj da upravljaš fm84 sa telefona
+
+msgid  Viewing {name}
+msgstr Pregled {name}

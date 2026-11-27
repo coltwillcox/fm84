@@ -663,3 +663,85 @@ fn the_f_keys_act_on_the_tree_directory() {
     assert_eq!(app_state.error.take().as_deref(), Some("Not the top of the tree"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+W's phone: it is shown the panel around the cursor, a tap moves the
+/// cursor, and its keys go through as typed ones - Down a row, Enter into a
+/// directory, Backspace back out. Found, the code is put away.
+#[test]
+fn a_phone_drives_the_panel() {
+    use std::io::{Read, Write};
+    let dir = std::env::temp_dir().join(format!("fm84-remote-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("inner")).unwrap();
+    for name in ["a.txt", "b.txt", "c.txt"] {
+        std::fs::write(dir.join(name), "x").unwrap();
+    }
+    let mut app_state = AppState::new();
+    app_state.options = crate::options::Options::default();
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, dir.clone(), None);
+    let localhost = std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST);
+    let remote = crate::remote::serve(localhost).unwrap();
+    let url = remote.url(localhost);
+    let code = crate::share::qr(&url).unwrap();
+    app_state.remote = Some(Box::new(crate::app::RemoteView {
+        remote,
+        addresses: vec![localhost],
+        chosen: 0,
+        code,
+        phone: None,
+        failed: None,
+    }));
+    app_state.dialog = Some(Dialog::Remote);
+
+    let ask = |method: &str, path: &str, body: &str| {
+        let rest = url.strip_prefix("http://").unwrap();
+        let (host, base) = rest.split_at(rest.find('/').unwrap());
+        let mut stream = std::net::TcpStream::connect(host).unwrap();
+        stream.write_all(format!("{method} {base}{path} HTTP/1.1\r\nContent-Length: {}\r\n\r\n{body}", body.len()).as_bytes()).unwrap();
+        let mut all = String::new();
+        stream.read_to_string(&mut all).unwrap();
+        all.split_once("\r\n\r\n").map(|(_, body)| body.to_string()).unwrap_or_default()
+    };
+    // Each poll put through as the loop puts it, until the server's thread
+    // has passed on what it was sent.
+    let settle = |app_state: &mut AppState| {
+        for _ in 0..20 {
+            std::thread::sleep(std::time::Duration::from_millis(15));
+            for key in app_state.poll_remote() {
+                crate::input::handle_remote_key(app_state, key);
+            }
+        }
+    };
+    let cursor = |app_state: &AppState| {
+        let panel = app_state.panel(Side::Left);
+        panel.children[panel.state.selected().unwrap()].name_full.clone()
+    };
+
+    ask("GET", "/state", "");
+    settle(&mut app_state);
+    assert!(app_state.dialog.is_none(), "the code stayed up once the phone found it");
+    let shown = ask("GET", "/state", "");
+    assert!(shown.contains(r#""n":"a.txt""#) && shown.contains(r#""n":"inner","d":1"#), "{shown}");
+    assert!(shown.contains(&format!(r#""title":{}"#, crate::remote::json_string(&dir.display().to_string()))), "{shown}");
+
+    let row = |app_state: &AppState, name: &str| app_state.panel(Side::Left).children.iter().position(|item| item.name_full == name).unwrap();
+    ask("POST", "/pick", &row(&app_state, "a.txt").to_string());
+    settle(&mut app_state);
+    assert_eq!(cursor(&app_state), "a.txt");
+    ask("POST", "/key", "down");
+    settle(&mut app_state);
+    assert_ne!(cursor(&app_state), "a.txt");
+
+    ask("POST", "/pick", &row(&app_state, "inner").to_string());
+    ask("POST", "/key", "enter");
+    settle(&mut app_state);
+    assert_eq!(app_state.panel(Side::Left).dir, dir.join("inner"));
+    ask("POST", "/key", "backspace");
+    settle(&mut app_state);
+    assert_eq!(app_state.panel(Side::Left).dir, dir);
+
+    app_state.stop_remote();
+    assert!(app_state.remote.is_none());
+    std::fs::remove_dir_all(&dir).unwrap();
+}

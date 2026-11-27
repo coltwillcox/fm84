@@ -52,6 +52,7 @@ mod open_with;
 mod phone_clipboard;
 mod preview;
 mod receive;
+mod remote;
 mod selection;
 mod settings;
 mod share;
@@ -71,7 +72,7 @@ mod viewing;
 
 pub use self::{
     animation::*, archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_gutter::*, git_marks::*, git_stage::*, history::*,
-    info_column::*, jobs::*, listing::*, multi_rename::*, null_modem::*, open_with::*, phone_clipboard::*, preview::*, receive::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
+    info_column::*, jobs::*, listing::*, multi_rename::*, null_modem::*, open_with::*, phone_clipboard::*, preview::*, receive::*, remote::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -266,6 +267,9 @@ pub enum Dialog {
     Share(Box<ShareView>),
     /// Alt+Shift+Q: the active panel's directory, taking files a phone sends.
     Receive(Box<ReceiveView>),
+    /// Alt+W: the remote's code, for a phone to scan. The remote itself is
+    /// AppState::remote, and goes on with this put away.
+    Remote,
     /// Alt+V: the clipboard shared with a phone, both ways.
     PhoneClipboard(Box<ClipboardView>),
     /// Alt+Shift+N: the active panel's directory, taking files another fm84
@@ -365,6 +369,8 @@ pub struct AppState {
     pub stay_put: bool,
     /// What the last jobs did, the latest last, for Ctrl+Z.
     pub undo: Vec<Undo>,
+    /// Alt+W: a phone driving fm84, while it runs.
+    pub remote: Option<Box<RemoteView>>,
     /// Alt+B's mixtapes: baskets with names, kept across runs, one of them
     /// playing - the one Alt+B adds to.
     pub tapes: crate::options::Mixtapes,
@@ -785,6 +791,7 @@ impl AppState {
             quit_armed: false,
             stay_put: false,
             undo: Vec::new(),
+            remote: None,
             tapes: if cfg!(test) { crate::options::Mixtapes::default() } else { crate::options::Mixtapes::load() },
             jumps: if cfg!(test) { crate::options::Jumps::default() } else { crate::options::Jumps::load() },
             info_cache: HashMap::new(),

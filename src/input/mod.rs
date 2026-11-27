@@ -58,6 +58,15 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
     Ok(true)
 }
 
+/// A key from Alt+W's phone, as if typed. Never one that quits: the phone
+/// has no F10.
+pub fn handle_remote_key(app_state: &mut AppState, key: KeyEvent) {
+    if app_state.wake() {
+        return;
+    }
+    handle_key(app_state, key);
+}
+
 /// A key, to whatever is on top: a running job, then an error, then the
 /// dialog that is open, then the screen. Each answers only its own keys, so
 /// nothing a key is not meant for can act on it. False to quit.
@@ -175,6 +184,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         // Alt+Shift+Q takes files a phone sends, into the panel's directory.
         if in_panel && c == 'Q' {
             app_state.open_receive();
+        }
+        // Alt+W makes a phone fm84's remote, or shows its code again.
+        if in_panel && c == 'w' {
+            app_state.open_remote();
         }
         // Alt+V shares the clipboard with a phone, by a code to scan.
         if in_panel && c == 'v' {
@@ -437,6 +450,18 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Tab | KeyCode::BackTab => {
                 let forward = code == KeyCode::Tab;
                 if let Some(Dialog::Receive(view)) = &mut app_state.dialog {
+                    view.step_address(forward);
+                }
+            }
+            _ => {}
+        },
+        // Put away, the remote goes on; S stops it.
+        Some(Dialog::Remote) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Char('s' | 'S') => app_state.stop_remote(),
+            KeyCode::Tab | KeyCode::BackTab => {
+                let forward = code == KeyCode::Tab;
+                if let Some(view) = &mut app_state.remote {
                     view.step_address(forward);
                 }
             }
