@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.53.1** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.54.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -53,6 +53,18 @@
 <tr>
 <td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-9.png" width="380"><br><sub><b>F3 - Images</b><br>A JPEG as coloured ASCII, each character on its own colour. <code>F</code> switches Fit and Fill, <code>+</code>/<code>-</code> zoom, <code>X</code> cycles Image, Text and Hex.</sub></td>
 <td align="center" valign="top" width="50%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-main-10.png" width="380"><br><sub><b>F4 - Editor</b><br>Syntax highlighting, line numbers, selection and undo - editing fm84's own source.</sub></td>
+</tr>
+</table>
+
+<table align="center">
+<tr>
+<td colspan="4" align="center"><sub><b>📡 On the phone</b> - scan the code fm84 shows, and its page opens in the phone's browser, in fm84's theme and language. Nothing to install.</sub></td>
+</tr>
+<tr>
+<td align="center" valign="top" width="25%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-phone-0.png" width="180"><br><sub><b>Alt+W - Remote</b><br>The active panel's listing to tap, the cursor on amiga, and a pad of keys - for a terminal on a TV across the room.</sub></td>
+<td align="center" valign="top" width="25%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-phone-1.png" width="180"><br><sub><b>Alt+Shift+Q - Receive</b><br>Three pictures sent from the phone into the panel, each with its bar, each whole or not at all.</sub></td>
+<td align="center" valign="top" width="25%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-phone-2.png" width="180"><br><sub><b>Alt+V - Clipboard</b><br>Typed on the phone, to go onto fm84's clipboard or into a note in the panel's directory.</sub></td>
+<td align="center" valign="top" width="25%"><img src="https://raw.githubusercontent.com/coltwillcox/fm84/master/images/screen-phone-3.png" width="180"><br><sub><b>Alt+V - The other way</b><br>Three names copied in fm84 with Alt+C, brought to the phone with a tap.</sub></td>
 </tr>
 </table>
 
@@ -152,7 +164,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### ⚙️ Options (F11)
 - 🎨 **18 themes**, light ones included, and 23 languages built in
 - 🧩 **Columns, sorting, date and size formats, icons, square or rounded corners, the outer frame or none, cursor, terminal, external editor, confirmations** - saved to `~/.config/fm84/config` as plain `key = value`
-- 🕹️ **For fun** - an Outrun progress bar, rows that burst when deleted for good, Turbo neon with scanlines, animation - a sliding cursor, rows booting up, popups wiping open - a glow around the panel in use, a night drive when left alone, and arcade high scores in F1
+- 🕹️ **For fun** - an Outrun progress bar, rows that burst when deleted for good, Turbo neon with scanlines, animation - a sliding cursor, rows booting up, popups wiping open - a glow around the panel in use, a drive light that flickers while a job runs, a night drive when left alone, and arcade high scores in F1
 
 ---
 
@@ -208,7 +220,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.53.1
+fm84 --version          # fm84 0.54.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -304,5 +316,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.53.1 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.54.0 ▄▀▄▀▄▀</code>
 </p>

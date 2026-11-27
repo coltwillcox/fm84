@@ -6,6 +6,12 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.54.0] - 2026-11-27
+
+### ✨ Added
+- 💡 **Drive light** - an F11 option, **Drive light while a job runs**: a light before the clock in the top bar, as a floppy drive's - dark with nothing running, flickering green while a job reads or writes, steady green while it runs with nothing moving, and amber while it waits on a question. Off by default
+- 📱 **The phone in the README** - four screenshots of the pages a phone sees: the remote, the clipboard both ways, and files sent into fm84
+
 ## [0.53.1] - 2026-11-27
 
 ### 🛠️ Changed
