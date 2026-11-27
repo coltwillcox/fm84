@@ -34,6 +34,7 @@ pub enum OptionRow {
     ThemeBackground,
     IconStyle,
     Corners,
+    OuterFrame,
     Clock,
     Cursor,
     CursorBlink,
@@ -55,7 +56,7 @@ pub enum OptionRow {
     ImagePrefetch,
 }
 
-pub const OPTION_ROWS: [OptionRow; 48] = [
+pub const OPTION_ROWS: [OptionRow; 49] = [
     OptionRow::ShowHidden,
     OptionRow::SortKey,
     OptionRow::SortDirection,
@@ -85,6 +86,7 @@ pub const OPTION_ROWS: [OptionRow; 48] = [
     OptionRow::ThemeBackground,
     OptionRow::IconStyle,
     OptionRow::Corners,
+    OptionRow::OuterFrame,
     OptionRow::Clock,
     OptionRow::Cursor,
     OptionRow::CursorBlink,
@@ -138,6 +140,7 @@ impl OptionRow {
             OptionRow::ThemeBackground => t!("Background"),
             OptionRow::IconStyle => t!("Icons"),
             OptionRow::Corners => t!("Corners"),
+            OptionRow::OuterFrame => t!("Outer frame"),
             OptionRow::Clock => t!("Clock"),
             OptionRow::Cursor => t!("Cursor"),
             OptionRow::CursorBlink => t!("Cursor blinks"),
@@ -270,6 +273,7 @@ impl Options {
             }
             .to_string(),
             OptionRow::CursorBlink => on_off(self.cursor_blink),
+            OptionRow::OuterFrame => on_off(self.outer_frame),
             OptionRow::OutrunBar => on_off(self.outrun_bar),
             OptionRow::BurstDelete => on_off(self.burst_delete),
             OptionRow::Turbo => on_off(self.turbo),
@@ -388,6 +392,7 @@ impl Options {
                 self.cursor = step(&shapes, self.cursor, forward);
             }
             OptionRow::CursorBlink => self.cursor_blink = !self.cursor_blink,
+            OptionRow::OuterFrame => self.outer_frame = !self.outer_frame,
             OptionRow::OutrunBar => self.outrun_bar = !self.outrun_bar,
             OptionRow::BurstDelete => self.burst_delete = !self.burst_delete,
             OptionRow::Turbo => self.turbo = !self.turbo,

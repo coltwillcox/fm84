@@ -1565,6 +1565,51 @@ fn corners_can_be_rounded_everywhere() {
     crate::display::apply(&app_state.options);
 }
 
+/// F11's Outer frame off: no line left along the screen's edges, while what
+/// is written on them, the lines inside and a popup's own frame all stay.
+#[test]
+fn outer_frame_can_be_left_off() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    assert!(app_state.options.outer_frame);
+    let (width, height) = (100u16, 30u16);
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+    let mut screen = |app_state: &mut AppState| {
+        crate::display::apply(&app_state.options);
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer();
+        (0..height).map(|y| (0..width).map(|x| buffer[(x, y)].symbol().to_string()).collect::<String>()).collect::<Vec<_>>()
+    };
+    let edges = |rows: &[String]| -> String {
+        let column = |row: &String, x: usize| row.chars().nth(x).unwrap();
+        let mut edges: String = rows[0].chars().chain(rows[rows.len() - 1].chars()).collect();
+        edges.extend(rows.iter().flat_map(|row| [column(row, 0), column(row, width as usize - 1)]));
+        edges
+    };
+
+    let framed = screen(&mut app_state);
+    assert!(edges(&framed).contains('┌') && edges(&framed).contains('│'));
+
+    app_state.options.outer_frame = false;
+    let bare = screen(&mut app_state);
+    let left_on_edges = edges(&bare);
+    for line in ['┌', '┐', '└', '┘', '│', '├', '┤', '┬', '┴'] {
+        assert!(!left_on_edges.contains(line), "{line} left on the edge");
+    }
+    // Along the top and the bottom, not a dash: what is written there stays.
+    assert!(!bare[0].contains('─') && !bare[height as usize - 1].contains('─'));
+    assert!(bare[0].contains(TITLE) && bare[height as usize - 1].contains("F1"));
+    // The lines inside reach the side, the panels' divider as before.
+    assert!(bare[3].starts_with('─') && bare[3].ends_with('─') && bare[3].contains('┬'));
+    assert_eq!(bare[10].chars().filter(|&c| c == '│').count(), framed[10].chars().filter(|&c| c == '│').count() - 2);
+
+    // A popup keeps its frame.
+    app_state.dialog = Some(Dialog::Options { editing: None });
+    assert!(screen(&mut app_state).concat().contains('┌'));
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+}
+
 /// F11's Animation: a directory's rows coming up one after another, the
 /// cursor sliding to its row rather than jumping there, a popup wiping
 /// open, and what a copy made glowing - and none of it with it off.

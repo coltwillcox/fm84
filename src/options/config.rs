@@ -169,6 +169,7 @@ impl Options {
                     }
                 }
                 "cursor_blink" => options.cursor_blink = flag(options.cursor_blink),
+                "outer_frame" => options.outer_frame = flag(options.outer_frame),
                 "outrun_bar" => options.outrun_bar = flag(options.outrun_bar),
                 "burst_delete" => options.burst_delete = flag(options.burst_delete),
                 "turbo" => options.turbo = flag(options.turbo),
@@ -289,6 +290,8 @@ impl Options {
              icons = {}\n\
              # The corners of every box: square or rounded.\n\
              corners = {}\n\
+             # The line around the whole screen; false leaves its edges blank.\n\
+             outer_frame = {}\n\
              # 24, 12 or off.\n\
              clock = {}\n\
              # bar, block or underline is the terminal's cursor; classic a reversed cell.\n\
@@ -361,6 +364,7 @@ impl Options {
                 Corners::Square => "square",
                 Corners::Rounded => "rounded",
             },
+            self.outer_frame,
             clock,
             cursor,
             self.cursor_blink,

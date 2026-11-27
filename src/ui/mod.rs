@@ -266,6 +266,59 @@ fn scanlines(f: &mut ratatui::Frame<'_>, area: Rect) {
     }
 }
 
+/// The strokes of a light or rounded line character: up, down, left, right.
+/// None for anything else - text, and the scroll bars' thumbs, which are
+/// drawn in other lines and stay where they are.
+fn strokes(symbol: &str) -> Option<[bool; 4]> {
+    Some(match symbol {
+        "─" => [false, false, true, true],
+        "│" => [true, true, false, false],
+        "┌" | "╭" => [false, true, false, true],
+        "┐" | "╮" => [false, true, true, false],
+        "└" | "╰" => [true, false, false, true],
+        "┘" | "╯" => [true, false, true, false],
+        "├" => [true, true, false, true],
+        "┤" => [true, true, true, false],
+        "┬" => [false, true, true, true],
+        "┴" => [true, false, true, true],
+        "┼" => [true, true, true, true],
+        _ => return None,
+    })
+}
+
+/// F11's Outer frame off: the line around the screen taken out of `area`'s
+/// outermost cells, whatever drew it. Only the strokes running along the
+/// edge go - a line inside that met the frame, as the path bar's does with
+/// `├`, still runs out to the side - and whatever is written on the frame,
+/// the title, the clock, the F-keys, stays where it is.
+fn drop_outer_frame(f: &mut ratatui::Frame<'_>, area: Rect) {
+    if area.width < 2 || area.height < 2 {
+        return;
+    }
+    let (left, right, top, bottom) = (area.left(), area.right() - 1, area.top(), area.bottom() - 1);
+    let buffer = f.buffer_mut();
+    let ring = (left..=right).flat_map(|x| [(x, top), (x, bottom)]).chain((top + 1..bottom).flat_map(|y| [(left, y), (right, y)]));
+    for (x, y) in ring {
+        let cell = &mut buffer[(x, y)];
+        let Some([mut up, mut down, mut west, mut east]) = strokes(cell.symbol()) else {
+            continue;
+        };
+        if x == left || x == right {
+            (up, down) = (false, false);
+        }
+        if y == top || y == bottom {
+            (west, east) = (false, false);
+        }
+        cell.set_symbol(if west || east {
+            "─"
+        } else if up || down {
+            "│"
+        } else {
+            " "
+        });
+    }
+}
+
 /// Show the cursor where the frame marked it. A field's wins over the
 /// editor's, as a prompt over the editor is where the typing goes; and the
 /// editor's shows only with nothing over it, as a question such as Save
@@ -409,6 +462,10 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
         }
         render_fkey_bar(f, chunks_main[4], app_state, drawn);
         render_detail(f, chunks_main[4].inner(Margin { vertical: 0, horizontal: 2 }), app_state);
+        // Before the popups, which keep their own frames wherever they sit.
+        if !app_state.options.outer_frame {
+            drop_outer_frame(f, area);
+        }
 
         // The rename field, the prompt and the drive picker are drawn where
         // they sit, in the panel, the status bar and the drive strip - and so

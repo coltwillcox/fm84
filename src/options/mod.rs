@@ -313,6 +313,10 @@ pub struct Options {
     pub theme_background: bool,
     pub icon_style: IconStyle,
     pub corners: Corners,
+    /// The line around the whole screen. Off, its edges are left blank and
+    /// what is written along it - the title, the clock, the F-keys - stays;
+    /// the lines inside, between the panels and the bars, reach the side.
+    pub outer_frame: bool,
     pub clock: Clock,
     pub cursor: CursorShape,
     /// Whether the terminal's cursor blinks; nothing to Classic.
@@ -394,6 +398,7 @@ impl Default for Options {
             theme_background: true,
             icon_style: IconStyle::NerdFont,
             corners: Corners::Square,
+            outer_frame: true,
             clock: Clock::Hours24,
             cursor: CursorShape::Bar,
             cursor_blink: true,
