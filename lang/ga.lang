@@ -2591,3 +2591,23 @@ msgstr Scan chun fm84 a stiúradh ón bhfón
 
 msgid  Viewing {name}
 msgstr Ag féachaint ar {name}
+
+# F1: the phone and the network.
+
+msgid  Alt+Q - Share with a phone, by a QR code
+msgstr Alt+Q - Roinn le fón, trí chód QR
+
+msgid  Alt+Shift+Q takes files a phone sends
+msgstr Glacann Alt+Shift+Q le comhaid ó fhón
+
+msgid  Alt+V - The clipboard with a phone, both ways
+msgstr Alt+V - An ghearrthaisce le fón, an dá bhealach
+
+msgid  Alt+W - A phone as a remote; S in it stops
+msgstr Alt+W - Fón mar chianrialtán; stopann S ann é
+
+msgid  Alt+N - Send to another fm84 (null modem)
+msgstr Alt+N - Seol chuig fm84 eile (móideim nialasach)
+
+msgid  Alt+Shift+N listens for one to send here
+msgstr Éisteann Alt+Shift+N le go seolfar anseo

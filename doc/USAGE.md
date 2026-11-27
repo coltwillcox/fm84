@@ -66,6 +66,33 @@ Everything fm84 does, in full. The [README](../README.md) has the short version,
 - 🧹 **A clean-up list** - nothing is selected: what to let go of is picked one at a time, not one F8 away from all of it. A file with more than one name is there once
 - ⏱️ **Where the times are kept** - refused on a filesystem mounted `noatime`, which never updates when a file is read, so everything would look as old as it was made. `relatime`, the usual, keeps them close enough for years
 
+## 📱 Share with a Phone (Alt+Q)
+- 📷 **A code to scan** - **Alt+Q** serves what is chosen on the network, the address drawn as a QR code in black and white, as a camera reads best. A file goes as it is; several, or a directory, as one zip, written as it goes out. The address is on a port the system gives and a path made up for this share, which nobody can guess
+- 🔁 **Until Esc** - it goes on answering after the first download, as a phone's browser asks once to see what the file is and its download manager again to save it. The popup says who is downloading and how far it has got. **Tab** shows the code for another of the machine's addresses - its own network first, then a VPN's or a container's. A terminal too small for the code shows the address alone, to be typed in
+
+## 📥 Receive from a Phone (Alt+Shift+Q)
+- 📤 **Files from the phone** - **Alt+Shift+Q** shows a code that opens a page on the phone, in fm84's language and its theme's colours, drawn in pixels: **Choose files**, and each goes into the active panel's directory with a bar of how far it has got, a few at a time. The popup says what is coming and what has come
+- 🛡️ **Whole or not at all** - each file is written beside where it goes and put there once all of it is in, so one given up on halfway - the phone's screen locked, its Wi-Fi gone - leaves nothing. A name already taken is kept, and the new one goes beside it as `name (2).ext`; a path in a name cannot reach outside the directory; one the drive has no room for is refused before a byte is written
+- ↩️ **Undone** - **Esc** stops it, and **Ctrl+Z** then takes back what came, each file only as it came
+
+## 📋 Clipboard with a Phone (Alt+V)
+- ✍️ **A box to type or paste into** - **Alt+V** shows a code for a page with a text box and three buttons. **To fm84's clipboard** puts the text on fm84's clipboard, for Ctrl+V in the Editor, and on the terminal's as Ctrl+C's paths go (OSC 52). **Save as a file** writes it as `note.txt` in the active panel's directory, beside one already there as `note (2).txt`, never over it; Ctrl+Z after Esc takes it back. Text only, up to 1 MiB
+- 📲 **And back** - **Get fm84's clipboard** fills the box with the system's clipboard and copies it on the phone. It is read by the desktop's own program for it - `wl-paste` on Wayland, `xclip` or `xsel` on X11, `pbpaste` on macOS, `Get-Clipboard` on Windows - and where none is there or answers, over SSH say, or the clipboard holds a picture, it is what was last copied in fm84. A page not served over https may not write a phone's clipboard itself; the text is selected and copied the old way instead, or held down on to copy
+- 💬 **What happened** - the popup says the first line of what came, the name a note was saved under, or that the phone took the clipboard. **Esc** stops it
+
+## 🎮 Remote (Alt+W)
+- 📺 **For a terminal on a TV** - **Alt+W** shows a code for a page that drives fm84 from across the room: the active panel's directory, its entries around the cursor - directories in the title's colour, sizes beside files - and a pad of keys. A tap on an entry puts the cursor there, and a tap on the one it is on opens it, as a double click does
+- 🕹️ **The pad** - `▲` `▼` `◀` `▶` the arrows, `⇞` `⇟` PageUp and PageDown, `⇤` `⇥` Home and End, **OK** Enter, **Back** Backspace, **View** F3, **Panel** Tab, and **Esc**. They go to fm84 as keys typed would, so in the Viewer they scroll and page, and Esc closes it. No other key can be sent: nothing is deleted, renamed, typed or quit from the phone
+- 👀 **What it shows** - the page follows fm84 twice a second, and at once after each key: which file is in the Viewer or the Editor, and when a question, an error or a job on the screen is taking the keys, so Esc or OK can answer it from the couch
+- 🔌 **Running on** - the code goes once a phone has found it, and the remote goes on, **Remote** shown by the clock. **Alt+W** shows the code again; in it **Esc** puts it away, **S** stops the remote, **Tab** shows another address
+
+## 🔌 Null Modem (Alt+N, Alt+Shift+N)
+- 📡 **fm84 to fm84** - files sent from one machine's panel to another's on the same network, as LapLink sent them down a cable. **Alt+Shift+N** on the receiving machine listens, taking files into its active panel's directory; it can be found only while its popup is open, which says who it is to the others, its port, and what is coming. **Alt+N** on the sending machine lists the fm84s listening, found as they answer, and **Enter** sends what is chosen to the one picked
+- ✋ **Asked first** - the receiving end is asked before anything is written: who wants to send, how many files and how big. **Y** or **Enter** accepts, **N** or **Esc** refuses. F11's **Null modem asks first** turns that off, for anyone who finds it listening. One sender at a time, and a sender the drive has no room for is refused
+- 📋 **A job, as a copy is** - the sender's progress bar and Esc; what cannot be read asked about as a copy asks; and a name taken over there asked about here, with the size and date of the file in the way, as F11's **When destination exists** says - Refuse asks, as nothing over there can be looked at first. Directories go whole, with dates and permissions kept; links are left out
+- 🛡️ **Whole or not at all** - each file is written beside where it goes and put there once it is whole; a path that would climb out of the directory is refused. **Esc** stops the listening, and **Ctrl+Z** then takes back what came, but for what was written over
+- 🌐 **The network** - the fm84s find each other on UDP port 18484, by broadcast, over IPv4; a firewall needs to let that through, and the TCP port the popup shows. Nothing is encrypted
+
 ## 🗑️ The Trash (Alt+T)
 - 📂 **A folder of its own** - **Alt+T** opens the system's trash in the panel at `~/@trash`, which is not on the disk, gone into as an archive or a git commit is. Everything is listed by the name it had - two of one name told apart as `name (2)`, the latest keeping the name - and the Modified column says when it went. **Alt+T** again goes back where the panel was
 - 👀 **Looked into** - **F3** views a file, **F5** copies out, and a directory in the trash is gone into and copied out of as any is
@@ -247,6 +274,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - ♻️ **Delete to trash (F8)** - on, F8 moves to the trash; off, it deletes for good. Shift+F8 always deletes for good
 - ♻️ **When destination exists** - Ask about each file as the copy or move reaches it, Overwrite them all (directories merged), Keep both - each new file beside the one in its way, as `name (2).ext` - or Refuse a job with any name taken before it starts. Alt+P goes by it too, for an archive already at the name. A file never replaces a directory or the other way round, and nothing is copied onto itself
 - ✔️ **Verify copies** - read each copied file back from the disk and check it against the original, as under File Operations
+- 🔌 **Null modem asks first** - Alt+Shift+N asks before taking files from another fm84: who, how many and how big. Off, anyone who finds it listening may send. On by default
 - 💻 **Terminal (F9)** - any command, `{}` standing for the directory; left empty, one is picked for you
 - 📝 **Editor (F4)** - an external editor such as `nvim` or `hx`, which gets the terminal until it exits; `{}` stands for the file, which otherwise goes last. Left empty, the built-in editor opens
 - 📍 **Remember directories** - reopen both panels where they were when fm84 last quit
@@ -263,6 +291,7 @@ Grouped under four headings, in a popup no taller than the panels: the list scro
 - 🖌️ **Background** - the theme's own, or the terminal's for a transparent or custom one. A light theme needs its own: on a dark terminal its text would all but vanish
 - 🔣 **Icons** - Nerd Font, Nerd Font Mono (drops the padding a wide glyph needs, so icons stay centred), or Plain letters for a terminal without a Nerd Font
 - ⬜ **Corners** - square or rounded, on every box: the screen's frame, the panels, the viewer and editor, the space map and every popup
+- 🖼️ **Outer frame** - the line around the whole screen. Off, its edges are left blank and what is written on it - the title, the clock, the F-keys - stays where it is; the lines inside, between the panels and under the paths, run out to the side. Popups keep their frames. On by default
 - 🕐 **Clock** - 24-hour, 12-hour, or off
 - ▏ **Cursor** - in every field being typed into and in the editor: the terminal's own cursor as a **Bar**, a **Block** or an **Underline**, or **Classic**, the reversed cell fm84 drew before, for a terminal that cannot be told a shape (the Linux console). On exit the terminal gets its own shape back
 - ✨ **Cursor blinks** - on or off. How fast, and whether at all, is up to the terminal: kitty's `cursor_blink_interval 0` keeps it still whatever this says

@@ -2475,3 +2475,23 @@ msgstr Escanea para manejar fm84 desde el móvil
 
 msgid  Viewing {name}
 msgstr Viendo {name}
+
+# F1: the phone and the network.
+
+msgid  Alt+Q - Share with a phone, by a QR code
+msgstr Alt+Q - Compartir con un móvil, por código QR
+
+msgid  Alt+Shift+Q takes files a phone sends
+msgstr Alt+Mayús+Q recibe archivos de un móvil
+
+msgid  Alt+V - The clipboard with a phone, both ways
+msgstr Alt+V - El portapapeles con un móvil, en ambos sentidos
+
+msgid  Alt+W - A phone as a remote; S in it stops
+msgstr Alt+W - Un móvil como mando; S en él lo detiene
+
+msgid  Alt+N - Send to another fm84 (null modem)
+msgstr Alt+N - Enviar a otro fm84 (módem nulo)
+
+msgid  Alt+Shift+N listens for one to send here
+msgstr Alt+Mayús+N escucha para que otro envíe aquí

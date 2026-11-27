@@ -2475,3 +2475,23 @@ msgstr Olvassa be, és irányítsa az fm84-et a telefonról
 
 msgid  Viewing {name}
 msgstr Megtekintés: {name}
+
+# F1: the phone and the network.
+
+msgid  Alt+Q - Share with a phone, by a QR code
+msgstr Alt+Q - Megosztás telefonnal, QR-kóddal
+
+msgid  Alt+Shift+Q takes files a phone sends
+msgstr Alt+Shift+Q fogadja a telefon fájljait
+
+msgid  Alt+V - The clipboard with a phone, both ways
+msgstr Alt+V - A vágólap telefonnal, mindkét irányban
+
+msgid  Alt+W - A phone as a remote; S in it stops
+msgstr Alt+W - A telefon mint távirányító; benne S leállítja
+
+msgid  Alt+N - Send to another fm84 (null modem)
+msgstr Alt+N - Küldés egy másik fm84-nek (nullmodem)
+
+msgid  Alt+Shift+N listens for one to send here
+msgstr Alt+Shift+N figyel, hogy ide küldjenek

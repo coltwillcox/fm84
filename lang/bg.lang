@@ -2473,3 +2473,23 @@ msgstr Сканирайте, за да управлявате fm84 от теле
 
 msgid  Viewing {name}
 msgstr Преглед на {name}
+
+# F1: the phone and the network.
+
+msgid  Alt+Q - Share with a phone, by a QR code
+msgstr Alt+Q - Споделяне с телефон чрез QR код
+
+msgid  Alt+Shift+Q takes files a phone sends
+msgstr Alt+Shift+Q приема файлове от телефон
+
+msgid  Alt+V - The clipboard with a phone, both ways
+msgstr Alt+V - Клипбордът с телефон, в двете посоки
+
+msgid  Alt+W - A phone as a remote; S in it stops
+msgstr Alt+W - Телефонът като дистанционно; S в него спира
+
+msgid  Alt+N - Send to another fm84 (null modem)
+msgstr Alt+N - Изпращане към друг fm84 (нулев модем)
+
+msgid  Alt+Shift+N listens for one to send here
+msgstr Alt+Shift+N слуша, за да се изпраща тук

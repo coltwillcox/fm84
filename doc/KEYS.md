@@ -82,6 +82,12 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Alt+D` | Find duplicate files, fed to the panel with all but one of each selected |
 | `Alt+R` | Dossier: the directory summed up (`↑` `↓` scroll, `Esc` close) |
 | `Alt+Shift+G` | Ghost hunt: the files nobody has touched in two years, fed to the panel faded |
+| `Alt+Q` | Share what is chosen with a phone, by a QR code |
+| `Alt+Shift+Q` | Take files a phone sends, into the panel's directory |
+| `Alt+V` | The clipboard with a phone, both ways |
+| `Alt+W` | A phone as fm84's remote; again, its code |
+| `Alt+N` | Send what is chosen to another fm84 on the network (null modem) |
+| `Alt+Shift+N` | Listen for another fm84 to send into the panel's directory |
 | `Alt+T` | The trash as a folder; again to go back |
 | `Alt+G` | Git on what is chosen: `S` stage, `U` unstage, `D` discard changes (asks first), `C` compare with HEAD, `R` open a revision as a folder |
 
@@ -104,6 +110,18 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `F6` / `Enter` on a file | Put back where it came from |
 | `F8` | Delete for good, asked first |
 | `Alt+T` | Back where the panel was |
+
+## 📱 The phone and the network (Alt+Q, Alt+Shift+Q, Alt+V, Alt+W, Alt+N, Alt+Shift+N)
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | The code for another of the machine's addresses |
+| `Esc` | Stop sharing, receiving or listening; on Alt+W's code, put it away - the remote goes on |
+| `S` | On Alt+W's code, stop the remote |
+| `Y` / `Enter`, `N` / `Esc` | Accept / refuse another fm84 asking to send (Alt+Shift+N) |
+| `↑` / `↓`, `Enter` | Choose the fm84 to send to, and send (Alt+N) |
+
+On the phone, Alt+W's pad: `▲` `▼` `◀` `▶` the arrows, `⇞` / `⇟` PageUp / PageDown, `⇤` / `⇥` Home / End, `OK` Enter, `Back` Backspace, `View` F3, `Panel` Tab, and `Esc`. A tap on an entry puts the cursor there; a tap on the one it is on opens it.
 
 ## 🌳 Directory tree (Alt+F10)
 

@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-12" "fm84 0.52.0" "User Commands"
+.TH FM84 1 "2026-11-27" "fm84 0.53.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -262,6 +262,63 @@ that does not answer shows
 .B \[u2026]
 until it does, and holds nothing up.
 After a job, and Ctrl+R, what is open is read again.
+.SH PHONE AND NETWORK
+Each of these runs a small server of its own, on a port the system gives it
+and, for a phone, under a path made up for it that nobody can guess; its
+popup draws the address as a QR code.
+Tab shows the code for another of the machine's addresses; Esc stops it.
+Nothing sent is encrypted.
+.TP
+.B Alt+Q
+What is chosen, served for a phone to download: a file as it is, several or
+a directory as one zip written as it goes out.
+It goes on answering until Esc.
+.TP
+.B Alt+Shift+Q
+A page for the phone to choose files on, each sent into the panel's
+directory and put there once it is whole; a name taken is kept, and the new
+file goes beside it as
+.IR "name (2).ext" .
+Ctrl+Z after Esc takes back what came.
+.TP
+.B Alt+V
+A page with a text box: its text onto fm84's clipboard and the terminal's
+(OSC 52), or saved as
+.I note.txt
+in the panel's directory, never over one; and the system's clipboard back to
+the phone, read with
+.BR wl\-paste ,
+.BR xclip ,
+.BR xsel ,
+.B pbpaste
+or Get\-Clipboard, or fm84's own clipboard where none can read it.
+Text only, up to 1 MiB.
+.TP
+.B Alt+W
+The phone as a remote: the active panel's entries around the cursor, a tap
+to put the cursor on one and a tap on it to open it, and a pad of the
+arrows, PageUp, PageDown, Home, End, Enter, Backspace, Tab, Esc and F3, sent
+as keys typed are; no other key can be.
+The code goes once a phone finds it, and the remote goes on,
+.B Remote
+shown by the clock, until S in Alt+W's popup.
+.TP
+.B Alt+Shift+N
+Listen for another fm84 to send files into the panel's directory, found by
+broadcast on UDP port 18484 while the popup is open.
+Each sender is asked about first, Y to accept and N to refuse, unless
+.B Null modem asks first
+is off; one at a time.
+Files are put in place once whole, with their dates and permissions; a path
+that would leave the directory is refused.
+Ctrl+Z after Esc takes back what came, but for what was written over.
+.TP
+.B Alt+N
+The fm84s listening, to send what is chosen to one of them as a job, with
+the progress bar and Esc.
+A name taken over there is asked about here, as a copy asks, by
+.BR "When destination exists" ;
+links are left out.
 .SH LEAVING THE SHELL WHERE FM84 WAS LEFT
 A program cannot change the directory of the shell that started it, so
 quitting fm84 leaves the shell where it was.
@@ -544,6 +601,26 @@ drawn faded with a ghost beside them; nothing is selected.
 Refused on a filesystem mounted
 .BR noatime ,
 which keeps no access times.
+.TP
+.B Alt+Q
+Share what is chosen with a phone, by a QR code to scan.
+.TP
+.B Alt+Shift+Q
+Take files a phone sends into the panel's directory.
+.TP
+.B Alt+V
+The clipboard with a phone, both ways.
+.TP
+.B Alt+W
+A phone as fm84's remote; again, its code.
+.TP
+.B Alt+N
+Send what is chosen to another fm84 on the network.
+.TP
+.B Alt+Shift+N
+Listen for another fm84 to send into the panel's directory.
+See
+.BR "PHONE AND NETWORK" .
 .TP
 .B Alt+T
 The trash as a folder; again, back where the panel was.
@@ -1054,6 +1131,11 @@ draws a directory as
 on to start with; off, as its name alone.
 .B Corners
 are square or rounded, on every box fm84 draws.
+.B Outer frame
+off leaves the screen's edges blank, what is written on them staying and
+the lines inside running out to the side.
+.B Null modem asks first
+has Alt+Shift+N ask before taking files from another fm84; on to start with.
 E on the
 .B Theme
 row edits the

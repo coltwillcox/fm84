@@ -2512,3 +2512,23 @@ msgstr Skeniraj da upravljaš fm84 sa telefona
 
 msgid  Viewing {name}
 msgstr Pregled {name}
+
+# F1: the phone and the network.
+
+msgid  Alt+Q - Share with a phone, by a QR code
+msgstr Alt+Q - Deli sa telefonom, QR kodom
+
+msgid  Alt+Shift+Q takes files a phone sends
+msgstr Alt+Shift+Q prima datoteke sa telefona
+
+msgid  Alt+V - The clipboard with a phone, both ways
+msgstr Alt+V - Klipbord sa telefonom, u oba smera
+
+msgid  Alt+W - A phone as a remote; S in it stops
+msgstr Alt+W - Telefon kao daljinski; S u njemu ga zaustavlja
+
+msgid  Alt+N - Send to another fm84 (null modem)
+msgstr Alt+N - Pošalji drugom fm84 (nulti modem)
+
+msgid  Alt+Shift+N listens for one to send here
+msgstr Alt+Shift+N sluša da drugi pošalje ovamo

@@ -2473,3 +2473,23 @@ msgstr Scan om fm84 vanaf de telefoon te bedienen
 
 msgid  Viewing {name}
 msgstr {name} bekijken
+
+# F1: the phone and the network.
+
+msgid  Alt+Q - Share with a phone, by a QR code
+msgstr Alt+Q - Delen met een telefoon, via QR-code
+
+msgid  Alt+Shift+Q takes files a phone sends
+msgstr Alt+Shift+Q neemt bestanden van een telefoon aan
+
+msgid  Alt+V - The clipboard with a phone, both ways
+msgstr Alt+V - Het klembord met een telefoon, beide kanten op
+
+msgid  Alt+W - A phone as a remote; S in it stops
+msgstr Alt+W - Een telefoon als afstandsbediening; S erin stopt
+
+msgid  Alt+N - Send to another fm84 (null modem)
+msgstr Alt+N - Naar een andere fm84 sturen (nulmodem)
+
+msgid  Alt+Shift+N listens for one to send here
+msgstr Alt+Shift+N luistert of er een hierheen stuurt
