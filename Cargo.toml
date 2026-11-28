@@ -22,14 +22,14 @@ color-eyre = "0.6.3"
 crossterm = "0.29.0"
 flate2 = "1.1.10"
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
-lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "optimization", "xz", "encoder"] }
+lzma-rust2 = { version = "0.26.0", default-features = false, features = ["std", "optimization", "xz", "encoder"] }
 md-5 = "0.11.0"
 regex = { version = "1.12", default-features = false, features = ["std", "perf", "unicode"] }
-ratatui = "0.29.0"
+ratatui = "0.30.2"
 # Alt+Q's code for a phone to scan; the matrix only - no pictures, no SVG.
 qrcode = { version = "0.15.0", default-features = false, features = ["std"] }
 ruzstd = "0.9.1"
-sevenz-rust2 = { version = "0.24.1", default-features = false, features = ["bzip2", "ppmd", "deflate", "compress", "aes256"] }
+sevenz-rust2 = { version = "0.27.0", default-features = false, features = ["bzip2", "ppmd", "deflate", "compress", "aes256"] }
 sha2 = "0.11.1"
 syntect = "5.2"
 tar = { version = "0.4.46", default-features = false }
