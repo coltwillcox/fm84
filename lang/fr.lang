@@ -2292,7 +2292,7 @@ msgid  F6 or Enter puts back, F8 empties
 msgstr F6 ou Entrée remet, F8 vide
 
 msgid  Alt+Shift+G - Ghost hunt: untouched for years
-msgstr Alt+Shift+G - Chasse aux fantômes : intouchés depuis des années
+msgstr Alt+Maj+G - Chasse aux fantômes : intouchés depuis des années
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 arborescence, Entrée envoie l’autre panneau
@@ -2376,7 +2376,7 @@ msgid  Looking for fm84s listening…
 msgstr Recherche des fm84 à l'écoute…
 
 msgid  Alt+Shift+N on the other machine listens.
-msgstr Alt+Shift+N sur l'autre machine met à l'écoute.
+msgstr Alt+Maj+N sur l'autre machine met à l'écoute.
 
 msgid  Sending
 msgstr Envoi
@@ -2563,10 +2563,10 @@ msgid  Unlocking
 msgstr Déverrouillage
 
 msgid  Cannot lock
-msgstr Impossible de verrouiller
+msgstr Verrouillage impossible
 
 msgid  Cannot unlock
-msgstr Impossible de déverrouiller
+msgstr Déverrouillage impossible
 
 # The command palette.
 
@@ -2577,7 +2577,7 @@ msgid  Alt+L - Lock with a password, or unlock
 msgstr Alt+L - Verrouiller avec un mot de passe, ou déverrouiller
 
 msgid  Alt+Shift+B - The mixtapes
-msgstr Alt+Shift+B - Les mixtapes
+msgstr Alt+Maj+B - Les mixtapes
 
 msgid  Ctrl+U - Swap the panels
 msgstr Ctrl+U - Échanger les panneaux

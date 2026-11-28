@@ -2291,7 +2291,7 @@ msgid  F6 or Enter puts back, F8 empties
 msgstr F6 o Invio rimette, F8 svuota
 
 msgid  Alt+Shift+G - Ghost hunt: untouched for years
-msgstr Alt+Shift+G - Caccia ai fantasmi: intatti da anni
+msgstr Alt+Maiusc+G - Caccia ai fantasmi: intatti da anni
 
 msgid  Alt+F10 directory tree, Enter sends the other
 msgstr Alt+F10 albero delle cartelle, Invio manda l’altro
@@ -2375,7 +2375,7 @@ msgid  Looking for fm84s listening…
 msgstr Ricerca di fm84 in ascolto…
 
 msgid  Alt+Shift+N on the other machine listens.
-msgstr Alt+Shift+N sull'altra macchina si mette in ascolto.
+msgstr Alt+Maiusc+N sull'altra macchina si mette in ascolto.
 
 msgid  Sending
 msgstr Invio in corso
@@ -2576,7 +2576,7 @@ msgid  Alt+L - Lock with a password, or unlock
 msgstr Alt+L - Blocca con una password, o sblocca
 
 msgid  Alt+Shift+B - The mixtapes
-msgstr Alt+Shift+B - Le compilation
+msgstr Alt+Maiusc+B - Le compilation
 
 msgid  Ctrl+U - Swap the panels
 msgstr Ctrl+U - Scambia i pannelli

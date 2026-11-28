@@ -2601,10 +2601,10 @@ msgid  Unlocking
 msgstr Otključavanje
 
 msgid  Cannot lock
-msgstr Ne mogu zaključati
+msgstr Zaključavanje nije moguće
 
 msgid  Cannot unlock
-msgstr Ne mogu otključati
+msgstr Otključavanje nije moguće
 
 # The command palette.
 

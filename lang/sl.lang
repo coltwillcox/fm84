@@ -2641,10 +2641,10 @@ msgid  Unlocking
 msgstr Odklepanje
 
 msgid  Cannot lock
-msgstr Ni mogoče zakleniti
+msgstr Zaklepanje ni mogoče
 
 msgid  Cannot unlock
-msgstr Ni mogoče odkleniti
+msgstr Odklepanje ni mogoče
 
 # The command palette.
 
