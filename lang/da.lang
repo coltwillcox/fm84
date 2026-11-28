@@ -2624,3 +2624,17 @@ msgstr Skriv for at indsnævre    Op/Ned - Vælg    Enter - Kør    Esc - Luk
 
 msgid  No command matches
 msgstr Ingen kommando passer
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST-skærm ved start
+
+msgid  Memory Test:
+msgstr Hukommelsestest:
+
+msgid  Detecting drives...
+msgstr Finder drev...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL for SETUP, en anden tast springer over

@@ -177,6 +177,7 @@ impl Options {
                 "animation" => options.animation = flag(options.animation),
                 "focus_glow" => options.focus_glow = flag(options.focus_glow),
                 "drive_led" => options.drive_led = flag(options.drive_led),
+                "post_screen" => options.post_screen = flag(options.post_screen),
                 "night_drive" => options.night_drive_minutes = number(0..=1440).unwrap_or(options.night_drive_minutes),
                 "tab_width" => options.tab_width = number(1..=16).map_or(options.tab_width, |n| n as usize),
                 "line_numbers" => options.line_numbers = flag(options.line_numbers),
@@ -313,6 +314,8 @@ impl Options {
              focus_glow = {}\n\
              # A light in the top bar, flickering while a job reads or writes.\n\
              drive_led = {}\n\
+             # Start as a PC of '84 did: memory counted, drives found.\n\
+             post_screen = {}\n\
              # Left alone this many minutes, a drive down the neon grid until a\n\
              # key. 0 for never.\n\
              night_drive = {}\n\
@@ -381,6 +384,7 @@ impl Options {
             self.animation,
             self.focus_glow,
             self.drive_led,
+            self.post_screen,
             self.night_drive_minutes,
             self.tab_width,
             self.line_numbers,

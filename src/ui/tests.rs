@@ -2444,3 +2444,25 @@ fn the_palette_shows_commands_with_their_keys() {
     assert_eq!(buffer[(x, y as u16)].fg, super::style_key().fg.unwrap(), "the key in F1's colour");
     assert_eq!(buffer[(x, y as u16)].bg, crate::display::palette().selected_background, "the first chosen");
 }
+
+/// The POST screen covers the panels: the BIOS named top left, the logo
+/// top right, and how to skip it at the bottom.
+#[test]
+fn the_post_screen_covers_the_panels() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    app_state.start_post();
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer().clone();
+    let rows: Vec<String> = (0..40u16).map(|y| (0..120u16).map(|x| buffer[(x, y)].symbol().to_string()).collect()).collect();
+    assert!(rows[1].trim_start().starts_with("FM84 BIOS v"), "{:?}", rows[1]);
+    assert!(rows[1].trim_end().ends_with(super::help::LOGO[0]), "the logo at the right");
+    assert!(rows[38].contains("Press DEL to enter SETUP"));
+    assert!(!rows.iter().any(|row| row.contains("F10 Quit")), "no panels under it");
+    app_state.post = None;
+    render_ui(&mut terminal, &mut app_state);
+    let bottom: String = (0..120u16).map(|x| terminal.backend().buffer()[(x, 39)].symbol().to_string()).collect();
+    assert!(bottom.contains("F10 Quit"), "the panels back");
+}

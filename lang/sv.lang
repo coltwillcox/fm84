@@ -2625,3 +2625,17 @@ msgstr Skriv för att begränsa    Upp/Ner - Välj    Enter - Kör    Esc - Stä
 
 msgid  No command matches
 msgstr Inget kommando matchar
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST-skärm vid start
+
+msgid  Memory Test:
+msgstr Minnestest:
+
+msgid  Detecting drives...
+msgstr Söker enheter...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL för SETUP, annan tangent hoppar över

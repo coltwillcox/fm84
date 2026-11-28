@@ -51,6 +51,7 @@ mod null_modem;
 mod open_with;
 mod palette;
 mod phone_clipboard;
+mod post;
 mod preview;
 mod receive;
 mod remote;
@@ -73,7 +74,8 @@ mod viewing;
 
 pub use self::{
     animation::*, archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_gutter::*, git_marks::*, git_stage::*, history::*,
-    info_column::*, jobs::*, listing::*, multi_rename::*, null_modem::*, open_with::*, palette::*, phone_clipboard::*, preview::*, receive::*, remote::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
+    info_column::*, jobs::*, listing::*, multi_rename::*, null_modem::*, open_with::*, palette::*, phone_clipboard::*, post::*, preview::*, receive::*, remote::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*,
+    viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -431,6 +433,8 @@ pub struct AppState {
     pub last_input: Instant,
     /// When the night drive began, while the screen is given over to it.
     pub night_drive: Option<Instant>,
+    /// F11's POST screen, while it shows at the start.
+    pub post: Option<Box<Post>>,
 }
 
 #[derive(Debug, Clone)]
@@ -842,6 +846,7 @@ impl AppState {
             git_gutter: None,
             last_input: Instant::now(),
             night_drive: None,
+            post: None,
             scores: if cfg!(test) { crate::options::Scores::default() } else { crate::options::Scores::load() },
             drive_strips: [Strip::default(), Strip::default()],
         }

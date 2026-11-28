@@ -2624,3 +2624,17 @@ msgstr Typ om te verfijnen    Omhoog/Omlaag - Kiezen    Enter - Uitvoeren    Esc
 
 msgid  No command matches
 msgstr Geen opdracht komt overeen
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST-scherm bij het starten
+
+msgid  Memory Test:
+msgstr Geheugentest:
+
+msgid  Detecting drives...
+msgstr Stations zoeken...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL voor SETUP, elke andere toets slaat over

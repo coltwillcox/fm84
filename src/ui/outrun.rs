@@ -230,6 +230,45 @@ fn lines_of(cells: Vec<Vec<Cell>>) -> Vec<Line<'static>> {
         .collect()
 }
 
+/// F11's POST screen: what it says so far, top left as a BIOS writes,
+/// the logo top right where there is room, and the keys at the bottom.
+pub(super) fn render_post(f: &mut ratatui::Frame<'_>, area: Rect, post: &crate::app::Post) {
+    use crate::app::PostLine;
+    paint_background(f, area);
+    let body = Rect {
+        x: area.x + 2,
+        y: area.y + 1,
+        width: area.width.saturating_sub(4),
+        height: area.height.saturating_sub(3),
+    };
+    let lines: Vec<Line> = post
+        .lines(post.started.elapsed())
+        .into_iter()
+        .map(|line| match line {
+            PostLine::Head(text) => Line::from(Span::styled(text, style_title())),
+            PostLine::Body(text) => Line::from(Span::styled(text, style_file())),
+        })
+        .collect();
+    f.render_widget(Paragraph::new(lines), body);
+    let logo_width = super::help::LOGO[0].chars().count() as u16;
+    if body.width >= logo_width + 50 {
+        let at = Rect {
+            x: body.right() - logo_width,
+            y: body.y,
+            width: logo_width,
+            height: super::help::LOGO.len() as u16,
+        };
+        f.render_widget(Paragraph::new(super::help::LOGO.iter().map(|row| Line::from(Span::styled(*row, style_title()))).collect::<Vec<_>>()), at);
+    }
+    let hint = Rect {
+        x: body.x,
+        y: area.bottom().saturating_sub(2),
+        width: body.width,
+        height: 1,
+    };
+    f.render_widget(Paragraph::new(Line::from(Span::styled(t!("Press DEL to enter SETUP, any other key to skip"), style_key()))), hint);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

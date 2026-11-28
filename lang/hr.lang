@@ -2664,3 +2664,17 @@ msgstr Tipkaj za sužavanje    Gore/Dolje - Odaberi    Enter - Pokreni    Esc - 
 
 msgid  No command matches
 msgstr Nijedna naredba ne odgovara
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST zaslon pri pokretanju
+
+msgid  Memory Test:
+msgstr Test memorije:
+
+msgid  Detecting drives...
+msgstr Otkrivanje pogona...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL za SETUP, bilo koja druga tipka preskače

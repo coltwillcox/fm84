@@ -2625,3 +2625,17 @@ msgstr Πληκτρολογήστε για περιορισμό    Πάνω/Κά
 
 msgid  No command matches
 msgstr Καμία εντολή δεν ταιριάζει
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Οθόνη POST στην εκκίνηση
+
+msgid  Memory Test:
+msgstr Έλεγχος μνήμης:
+
+msgid  Detecting drives...
+msgstr Ανίχνευση μονάδων...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL για SETUP, οποιοδήποτε άλλο πλήκτρο παραλείπει

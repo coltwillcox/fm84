@@ -438,3 +438,26 @@ fn the_palette_runs_what_is_chosen() {
     }
     assert!(!press(&mut app_state, KeyCode::Enter), "F10 leaves");
 }
+
+/// The POST screen: Del goes to F11, as to SETUP; anything else only skips
+/// it, doing nothing more.
+#[test]
+fn del_on_the_post_screen_is_setup_and_anything_else_skips_it() {
+    use crossterm::event::Event;
+    let mut app_state = AppState::new();
+    app_state.start_post();
+    assert!(!crate::input::setup_from_post(&mut app_state, &Event::Key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE))));
+    assert!(app_state.post.is_some(), "left for wake to skip");
+    assert!(app_state.wake(), "skipped, and the key goes no further");
+    assert!(app_state.post.is_none());
+
+    app_state.start_post();
+    assert!(crate::input::setup_from_post(&mut app_state, &Event::Key(KeyEvent::new(KeyCode::Delete, KeyModifiers::NONE))));
+    assert!(app_state.post.is_none());
+    assert!(matches!(app_state.dialog, Some(Dialog::Options { .. })));
+
+    // Without the screen, Del is only Del.
+    app_state.dialog = None;
+    assert!(!crate::input::setup_from_post(&mut app_state, &Event::Key(KeyEvent::new(KeyCode::Delete, KeyModifiers::NONE))));
+    assert!(app_state.dialog.is_none());
+}

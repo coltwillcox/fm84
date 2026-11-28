@@ -2624,3 +2624,17 @@ msgstr Пишете за стесняване    Нагоре/Надолу - И�
 
 msgid  No command matches
 msgstr Няма съвпадаща команда
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST екран при стартиране
+
+msgid  Memory Test:
+msgstr Тест на паметта:
+
+msgid  Detecting drives...
+msgstr Откриване на устройства...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL за SETUP, всеки друг клавиш прескача

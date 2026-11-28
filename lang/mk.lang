@@ -2625,3 +2625,17 @@ msgstr Пишувај за стеснување    Горе/Долу - Избе�
 
 msgid  No command matches
 msgstr Ниту една наредба не одговара
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST екран при стартување
+
+msgid  Memory Test:
+msgstr Тест на меморијата:
+
+msgid  Detecting drives...
+msgstr Откривање на уреди...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL за SETUP, кое било друго копче прескокнува

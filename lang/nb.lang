@@ -2624,3 +2624,17 @@ msgstr Skriv for å avgrense    Opp/Ned - Velg    Enter - Kjør    Esc - Lukk
 
 msgid  No command matches
 msgstr Ingen kommando passer
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST-skjerm ved oppstart
+
+msgid  Memory Test:
+msgstr Minnetest:
+
+msgid  Detecting drives...
+msgstr Finner stasjoner...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL for SETUP, en annen tast hopper over

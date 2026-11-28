@@ -2664,3 +2664,17 @@ msgstr Tastați pentru a restrânge    Sus/Jos - Alege    Enter - Rulează    Es
 
 msgid  No command matches
 msgstr Nicio comandă nu se potrivește
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Ecran POST la pornire
+
+msgid  Memory Test:
+msgstr Test de memorie:
+
+msgid  Detecting drives...
+msgstr Se detectează unitățile...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL pentru SETUP, orice altă tastă sare

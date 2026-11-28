@@ -53,6 +53,7 @@ fn a_saved_file_reads_back_the_same() {
         animation: true,
         focus_glow: true,
         drive_led: true,
+        post_screen: true,
         night_drive_minutes: 5,
     };
     assert_eq!(Options::parse(&options.serialize()), options);

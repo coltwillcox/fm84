@@ -2625,3 +2625,17 @@ msgstr Daraltmak için yaz    Yukarı/Aşağı - Seç    Enter - Çalıştır   
 
 msgid  No command matches
 msgstr Eşleşen komut yok
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Başlangıçta POST ekranı
+
+msgid  Memory Test:
+msgstr Bellek testi:
+
+msgid  Detecting drives...
+msgstr Sürücüler algılanıyor...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr SETUP için DEL, başka bir tuş atlar

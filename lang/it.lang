@@ -2625,3 +2625,17 @@ msgstr Scrivi per restringere    Su/Giù - Scegli    Invio - Esegui    Esc - Chi
 
 msgid  No command matches
 msgstr Nessun comando corrisponde
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Schermata POST all'avvio
+
+msgid  Memory Test:
+msgstr Test della memoria:
+
+msgid  Detecting drives...
+msgstr Rilevamento unità...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr CANC per il SETUP, ogni altro tasto salta

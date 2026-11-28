@@ -2626,3 +2626,17 @@ msgstr Tapez pour filtrer    Haut/Bas - Choisir    Entrée - Lancer    Échap - 
 
 msgid  No command matches
 msgstr Aucune commande ne correspond
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Écran POST au démarrage
+
+msgid  Memory Test:
+msgstr Test mémoire :
+
+msgid  Detecting drives...
+msgstr Détection des lecteurs...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr SUPPR pour SETUP, toute autre touche passe

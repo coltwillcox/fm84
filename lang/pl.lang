@@ -2664,3 +2664,17 @@ msgstr Pisz, aby zawęzić    Góra/Dół - Wybierz    Enter - Uruchom    Esc - 
 
 msgid  No command matches
 msgstr Żadne polecenie nie pasuje
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Ekran POST przy starcie
+
+msgid  Memory Test:
+msgstr Test pamięci:
+
+msgid  Detecting drives...
+msgstr Wykrywanie napędów...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL - SETUP, inny klawisz pomija

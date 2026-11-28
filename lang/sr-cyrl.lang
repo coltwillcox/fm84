@@ -2663,3 +2663,17 @@ msgstr Куцај за сужење    Горе/Доле - Изабери    Ent
 
 msgid  No command matches
 msgstr Ниједна команда не одговара
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST екран при покретању
+
+msgid  Memory Test:
+msgstr Тест меморије:
+
+msgid  Detecting drives...
+msgstr Откривање уређаја...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL за SETUP, било који други тастер прескаче

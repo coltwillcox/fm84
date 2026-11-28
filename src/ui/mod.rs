@@ -407,6 +407,12 @@ fn draw_frame(f: &mut ratatui::Frame<'_>, app_state: &AppState, drawn: &mut Draw
             return settled;
         }
 
+        // The POST screen has the whole screen too, while fm84 starts.
+        if let Some(post) = &app_state.post {
+            render_post(f, area, post);
+            return settled;
+        }
+
         // The night drive has the whole screen, drawn as Turbo draws when
         // it is on; the panels are left as they were, for the next key.
         if let Some(started) = app_state.night_drive {

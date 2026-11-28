@@ -2742,3 +2742,17 @@ msgstr Clóscríobh chun cúngú    Suas/Síos - Roghnaigh    Enter - Rith    Es
 
 msgid  No command matches
 msgstr Níl aon ordú ag teacht leis
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Scáileán POST ag an tús
+
+msgid  Memory Test:
+msgstr Tástáil chuimhne:
+
+msgid  Detecting drives...
+msgstr Tiomántáin á mbrath...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL le haghaidh SETUP, aon eochair eile chun scipeáil

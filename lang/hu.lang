@@ -2626,3 +2626,17 @@ msgstr Gépelj a szűkítéshez    Fel/Le - Választás    Enter - Futtatás    
 
 msgid  No command matches
 msgstr Egy parancs sem illik
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST képernyő induláskor
+
+msgid  Memory Test:
+msgstr Memóriateszt:
+
+msgid  Detecting drives...
+msgstr Meghajtók keresése...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL a SETUP-hoz, bármely más billentyű átugorja

@@ -2704,3 +2704,17 @@ msgstr Tipkaj za zožitev    Gor/Dol - Izberi    Enter - Zaženi    Esc - Zapri
 
 msgid  No command matches
 msgstr Noben ukaz se ne ujema
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Zaslon POST ob zagonu
+
+msgid  Memory Test:
+msgstr Preizkus pomnilnika:
+
+msgid  Detecting drives...
+msgstr Iskanje pogonov...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL za SETUP, katera koli druga tipka preskoči

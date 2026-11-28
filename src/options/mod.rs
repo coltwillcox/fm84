@@ -340,6 +340,9 @@ pub struct Options {
     /// A light in the top bar, as a floppy drive's: flickering while a job
     /// reads or writes, amber while it waits on a question.
     pub drive_led: bool,
+    /// fm84 starts as a PC of '84 did: its memory counted, its drives
+    /// found, then the panels.
+    pub post_screen: bool,
     /// Left alone this many minutes, the panels give way to a drive down
     /// the Outrun grid until the next key. Zero, and they never do.
     pub night_drive_minutes: u64,
@@ -415,6 +418,7 @@ impl Default for Options {
             animation: false,
             focus_glow: false,
             drive_led: false,
+            post_screen: false,
             night_drive_minutes: 0,
             tab_width: 4,
             line_numbers: true,

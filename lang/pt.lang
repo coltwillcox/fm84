@@ -2625,3 +2625,17 @@ msgstr Digite para filtrar    Cima/Baixo - Escolher    Enter - Executar    Esc -
 
 msgid  No command matches
 msgstr Nenhum comando corresponde
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Tela POST ao iniciar
+
+msgid  Memory Test:
+msgstr Teste de memória:
+
+msgid  Detecting drives...
+msgstr Detectando unidades...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL para o SETUP, qualquer outra tecla pula

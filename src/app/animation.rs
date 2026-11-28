@@ -231,6 +231,10 @@ impl AppState {
         if self.flash.as_ref().is_some_and(|flash| flash.glow(now).is_none()) {
             self.flash = None;
         }
+        // The POST screen counts its memory up, a frame at a time.
+        if self.post.is_some() {
+            return FRAME;
+        }
         if self.options.animation && (self.flash.is_some() || self.drawn.motion.moving(now)) { FRAME } else { IDLE }
     }
 }

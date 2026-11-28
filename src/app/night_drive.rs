@@ -20,6 +20,7 @@ impl AppState {
     /// drive, and is to go no further.
     pub fn wake(&mut self) -> bool {
         self.last_input = Instant::now();
-        self.night_drive.take().is_some()
+        // The POST screen goes the same way.
+        self.post.take().is_some() | self.night_drive.take().is_some()
     }
 }

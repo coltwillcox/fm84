@@ -2664,3 +2664,17 @@ msgstr Píšte na zúženie    Hore/Dole - Vybrať    Enter - Spustiť    Esc - 
 
 msgid  No command matches
 msgstr Žiadny príkaz nezodpovedá
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr Obrazovka POST pri štarte
+
+msgid  Memory Test:
+msgstr Test pamäte:
+
+msgid  Detecting drives...
+msgstr Zisťovanie jednotiek...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL pre SETUP, iný kláves preskočí

@@ -2625,3 +2625,17 @@ msgstr Tippen zum Eingrenzen    Hoch/Runter - Wählen    Enter - Ausführen    E
 
 msgid  No command matches
 msgstr Kein Befehl passt
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST-Bildschirm beim Start
+
+msgid  Memory Test:
+msgstr Speichertest:
+
+msgid  Detecting drives...
+msgstr Laufwerke werden erkannt...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr ENTF für SETUP, jede andere Taste überspringt

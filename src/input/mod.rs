@@ -42,7 +42,11 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
         return Ok(true);
     }
     let event = event::read()?;
-    // Whatever wakes fm84 from the night drive does only that.
+    if setup_from_post(app_state, &event) {
+        return Ok(true);
+    }
+    // Whatever wakes fm84 from the night drive, or skips the POST screen,
+    // does only that.
     if matches!(event, Event::Key(_) | Event::Paste(_) | Event::Mouse(_)) && app_state.wake() {
         return Ok(true);
     }
@@ -56,6 +60,17 @@ pub fn handle_input(app_state: &mut AppState) -> Result<bool> {
         _ => {}
     }
     Ok(true)
+}
+
+/// Del on the POST screen goes to F11, as to SETUP. True when it did; any
+/// other key skips the screen, as it wakes from the night drive.
+fn setup_from_post(app_state: &mut AppState, event: &Event) -> bool {
+    let del = matches!(event, Event::Key(key) if key.code == KeyCode::Delete && key.kind != KeyEventKind::Release);
+    if !del || app_state.post.take().is_none() {
+        return false;
+    }
+    app_state.dialog = Some(Dialog::Options { editing: None });
+    true
 }
 
 /// A key from Alt+W's phone, as if typed. Never one that quits: the phone

@@ -2663,3 +2663,17 @@ msgstr Kucaj za suženje    Gore/Dole - Izaberi    Enter - Pokreni    Esc - Zatv
 
 msgid  No command matches
 msgstr Nijedna komanda ne odgovara
+
+# The POST screen.
+
+msgid  POST screen at the start
+msgstr POST ekran pri pokretanju
+
+msgid  Memory Test:
+msgstr Test memorije:
+
+msgid  Detecting drives...
+msgstr Otkrivanje uređaja...
+
+msgid  Press DEL to enter SETUP, any other key to skip
+msgstr DEL za SETUP, bilo koji drugi taster preskače

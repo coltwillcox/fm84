@@ -275,6 +275,9 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
 
     app_state.reload_panel(Side::Left, None);
     app_state.reload_panel(Side::Right, None);
+    if app_state.options.post_screen {
+        app_state.start_post();
+    }
 
     loop {
         // Both before the draw, so the frame shows the newest it could: a cursor
@@ -289,6 +292,7 @@ fn run(terminal: &mut Tui, left: Option<std::path::PathBuf>, right: Option<std::
         app_state.poll_explosion();
         app_state.poll_trees();
         app_state.poll_night_drive();
+        app_state.poll_post();
         app_state.poll_branch_switch();
         app_state.poll_find_files();
         app_state.poll_sync();
