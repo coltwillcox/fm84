@@ -2550,3 +2550,58 @@ msgstr PgUp
 
 msgid  PgDn
 msgstr PgDn
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Zamknout
+
+msgctxt job
+msgid   Unlock
+msgstr  Odemknout
+
+msgid  Locked to a key, not a password
+msgstr Zamčeno klíčem, ne heslem
+
+msgid  Not a file locked with age
+msgstr Není to soubor zamčený pomocí age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Nejdřív ho zkopírujte z archivu: co se zamyká, musí být na disku
+
+msgid  Type the password first
+msgstr Nejdřív zadejte heslo
+
+msgid  Lock with a password
+msgstr Zamknout heslem
+
+msgid  Unlock with its password
+msgstr Odemknout jeho heslem
+
+msgid  Into
+msgstr Do
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Šifrováno ve formátu age, adresář jako .tar
+
+msgid  Enter - Lock
+msgstr Enter - Zamknout
+
+msgid  Enter - Unlock
+msgstr Enter - Odemknout
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Pole
+
+msgid  Locking
+msgstr Zamykání
+
+msgid  Unlocking
+msgstr Odemykání
+
+msgid  Cannot lock
+msgstr Nelze zamknout
+
+msgid  Cannot unlock
+msgstr Nelze odemknout

@@ -2511,3 +2511,58 @@ msgstr PagSu
 
 msgid  PgDn
 msgstr PagGiù
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Blocca
+
+msgctxt job
+msgid   Unlock
+msgstr  Sblocca
+
+msgid  Locked to a key, not a password
+msgstr Bloccato con una chiave, non con una password
+
+msgid  Not a file locked with age
+msgstr Non è un file bloccato con age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Prima copialo fuori dall'archivio: ciò che si blocca deve essere sul disco
+
+msgid  Type the password first
+msgstr Prima scrivi la password
+
+msgid  Lock with a password
+msgstr Blocca con una password
+
+msgid  Unlock with its password
+msgstr Sblocca con la sua password
+
+msgid  Into
+msgstr In
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Cifrato nel formato age, una cartella come .tar
+
+msgid  Enter - Lock
+msgstr Invio - Blocca
+
+msgid  Enter - Unlock
+msgstr Invio - Sblocca
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Campo
+
+msgid  Locking
+msgstr Blocco in corso
+
+msgid  Unlocking
+msgstr Sblocco in corso
+
+msgid  Cannot lock
+msgstr Impossibile bloccare
+
+msgid  Cannot unlock
+msgstr Impossibile sbloccare

@@ -15,6 +15,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 mod delete;
 mod extract;
 mod listing;
+mod lock;
 mod mounts;
 mod owners;
 mod pack;
@@ -24,4 +25,4 @@ mod split;
 mod transfer;
 mod writing;
 
-pub use self::{delete::*, extract::*, listing::*, mounts::*, owners::*, pack::*, paths::*, repack::*, split::*, transfer::*, writing::*};
+pub use self::{delete::*, extract::*, listing::*, lock::*, mounts::*, owners::*, pack::*, paths::*, repack::*, split::*, transfer::*, writing::*};

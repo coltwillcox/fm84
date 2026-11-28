@@ -2382,3 +2382,45 @@ fn the_drive_light_sits_beside_the_clock() {
     assert_eq!(buffer[(x, 0)].fg, crate::display::palette().border, "dark with nothing running");
     assert_eq!(super::panels::drive_led_span(crate::app::DriveLed::Waiting).style.fg, Some(crate::display::drive_led_colors().1));
 }
+
+/// Alt+L's dialog: what is locked, where it goes, and the password as
+/// dots - never as typed. Opening a lock has no Again.
+#[test]
+fn the_lock_dialog_hides_the_password() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    let mut password = crate::app::TextInput::new();
+    password.set("hunter2".to_string());
+    let form = |unlock: bool, password: &crate::app::TextInput| crate::app::LockForm {
+        sources: vec![(std::path::PathBuf::from("/tmp/notes.txt"), false), (std::path::PathBuf::from("/tmp/photos"), true)],
+        unlock,
+        input: {
+            let mut input = crate::app::TextInput::new();
+            input.set("/media/stick".to_string());
+            input
+        },
+        focus: crate::app::LOCK_PASSWORD_ROW,
+        password: password.clone(),
+        again: password.clone(),
+    };
+    let screen = |app_state: &mut AppState| {
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+        render_ui(&mut terminal, app_state);
+        let buffer = terminal.backend().buffer().clone();
+        (0..40u16).map(|y| (0..120u16).map(|x| buffer[(x, y)].symbol().to_string()).collect::<String>()).collect::<Vec<_>>().join("\n")
+    };
+    app_state.dialog = Some(Dialog::Lock(Box::new(form(false, &password))));
+    let shown = screen(&mut app_state);
+    assert!(shown.contains("Lock with a password"));
+    assert!(shown.contains("notes.txt, photos/"));
+    assert!(shown.contains("/media/stick"));
+    assert!(shown.contains("Again:"));
+    assert!(!shown.contains("hunter2"), "the password shown as typed");
+
+    app_state.dialog = Some(Dialog::Lock(Box::new(form(true, &password))));
+    let shown = screen(&mut app_state);
+    assert!(shown.contains("Unlock with its password"));
+    assert!(!shown.contains("Again:"));
+    assert!(!shown.contains("hunter2"));
+}

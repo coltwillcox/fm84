@@ -2512,3 +2512,58 @@ msgstr RePág
 
 msgid  PgDn
 msgstr AvPág
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Bloquear
+
+msgctxt job
+msgid   Unlock
+msgstr  Desbloquear
+
+msgid  Locked to a key, not a password
+msgstr Bloqueado con una clave, no con una contraseña
+
+msgid  Not a file locked with age
+msgstr No es un archivo bloqueado con age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Cópialo fuera del archivo comprimido primero: lo que se bloquea debe estar en el disco
+
+msgid  Type the password first
+msgstr Escribe primero la contraseña
+
+msgid  Lock with a password
+msgstr Bloquear con una contraseña
+
+msgid  Unlock with its password
+msgstr Desbloquear con su contraseña
+
+msgid  Into
+msgstr En
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Cifrado en formato age, un directorio como .tar
+
+msgid  Enter - Lock
+msgstr Intro - Bloquear
+
+msgid  Enter - Unlock
+msgstr Intro - Desbloquear
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Campo
+
+msgid  Locking
+msgstr Bloqueando
+
+msgid  Unlocking
+msgstr Desbloqueando
+
+msgid  Cannot lock
+msgstr No se puede bloquear
+
+msgid  Cannot unlock
+msgstr No se puede desbloquear

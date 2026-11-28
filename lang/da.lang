@@ -2510,3 +2510,58 @@ msgstr PgUp
 
 msgid  PgDn
 msgstr PgDn
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Lås
+
+msgctxt job
+msgid   Unlock
+msgstr  Lås op
+
+msgid  Locked to a key, not a password
+msgstr Låst med en nøgle, ikke en adgangskode
+
+msgid  Not a file locked with age
+msgstr Ikke en fil låst med age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Kopiér den ud af arkivet først: det, der låses, skal ligge på disken
+
+msgid  Type the password first
+msgstr Skriv adgangskoden først
+
+msgid  Lock with a password
+msgstr Lås med en adgangskode
+
+msgid  Unlock with its password
+msgstr Lås op med dens adgangskode
+
+msgid  Into
+msgstr Til
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Krypteret i age-formatet, en mappe som en .tar
+
+msgid  Enter - Lock
+msgstr Enter - Lås
+
+msgid  Enter - Unlock
+msgstr Enter - Lås op
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Felt
+
+msgid  Locking
+msgstr Låser
+
+msgid  Unlocking
+msgstr Låser op
+
+msgid  Cannot lock
+msgstr Kan ikke låse
+
+msgid  Cannot unlock
+msgstr Kan ikke låse op

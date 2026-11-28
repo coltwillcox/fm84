@@ -2,7 +2,7 @@
 //! and Shift+F3, which picks two files to compare.
 
 use super::*;
-use crate::app::{PACK_LEVEL_ROW, PACK_MOVE_ROW, PACK_NAME_ROW, PACK_ROWS, PACK_SEPARATE_ROW, PackArchive, PackForm, PackHow};
+use crate::app::{LOCK_PASSWORD_ROW, LockForm, LockItem, PACK_LEVEL_ROW, PACK_MOVE_ROW, PACK_NAME_ROW, PACK_ROWS, PACK_SEPARATE_ROW, PackArchive, PackForm, PackHow};
 use crate::fs_ops::PackFormat;
 
 /// F2 on the entry under the cursor, typed into in place of its name - or,
@@ -685,6 +685,88 @@ pub(super) fn handle_pack_confirm(app_state: &mut AppState) {
     }
     let leave_out = (!leave_out.is_empty()).then_some(leave_out);
     app_state.start_pack(archives, PackHow { format, level, move_after, leave_out, password });
+}
+
+/// Alt+L: lock what is chosen with a password, or - every one of them a
+/// locked file - open it again. What comes of it goes in the other panel's
+/// directory, for a stick or a share; the cursor starts on the password.
+pub(super) fn open_lock(app_state: &mut AppState) {
+    let side = app_state.active_side;
+    if app_state.panel_archive(side).is_some() {
+        return app_state.display_error(t!("Copy it out of the archive first: what is locked has to be on the disk").to_string());
+    }
+    let sources = chosen_items(app_state);
+    if sources.is_empty() {
+        return;
+    }
+    let unlock = sources.iter().all(|(path, is_dir)| !is_dir && crate::fs_ops::is_locked(path));
+    let mut input = TextInput::new();
+    input.set(app_state.panel_dir(!side).to_string_lossy().into_owned());
+    app_state.dialog = Some(Dialog::Lock(Box::new(LockForm {
+        sources,
+        unlock,
+        input,
+        focus: LOCK_PASSWORD_ROW,
+        password: TextInput::new(),
+        again: TextInput::new(),
+    })));
+}
+
+/// Up or Down on Alt+L's dialog: the row before or after, going round.
+pub(super) fn move_lock_focus(app_state: &mut AppState, forward: bool) {
+    let Some(Dialog::Lock(form)) = &mut app_state.dialog else {
+        return;
+    };
+    let rows = form.rows();
+    form.focus = if forward { (form.focus + 1) % rows } else { (form.focus + rows - 1) % rows };
+}
+
+/// Enter on Alt+L's dialog. Each is named after what it came from: `.age`
+/// on the end of a file locked, `.tar.age` of a directory, and taken off
+/// one opened. A name already there is dealt with as Pack does, by F11's
+/// When destination exists - a lock is not asked about a file at a time.
+pub(super) fn handle_lock_confirm(app_state: &mut AppState) {
+    let Some(Dialog::Lock(form)) = app_state.dialog.take() else {
+        return;
+    };
+    let LockForm { sources, unlock, input, password, again, .. } = *form;
+    if password.text.is_empty() {
+        return app_state.display_error(t!("Type the password first").to_string());
+    }
+    if !unlock && password.text != again.text {
+        return app_state.display_error(t!("The two passwords are not the same").to_string());
+    }
+    let dir = typed_path(&input.text, &app_state.panel_dir(app_state.active_side));
+    if crate::archive::locate(&dir).is_some() {
+        return app_state.display_error(read_only().to_string());
+    }
+    if !dir.is_dir() {
+        return app_state.display_error(t!("No such directory: {path}", path = dir.display()));
+    }
+    let mut items: Vec<LockItem> = Vec::with_capacity(sources.len());
+    for (source, is_dir) in sources {
+        let name = if unlock { crate::fs_ops::unlocked_name(&source) } else { Some(crate::fs_ops::locked_name(&source, is_dir)) };
+        let Some(name) = name else {
+            continue;
+        };
+        let dest = dir.join(name);
+        let taken = |candidate: &Path| path_exists(candidate) || items.iter().any(|item| item.dest == candidate);
+        let (dest, replacing) = match dest.symlink_metadata() {
+            // Two with one name - `a` from two directories: the second numbered.
+            _ if items.iter().any(|item| item.dest == dest) => (crate::fs_ops::free_name_among(&dest, taken), false),
+            Ok(metadata) if metadata.is_dir() => return app_state.display_error(t!("{path} is a directory", path = dest.display())),
+            Ok(_) if is_same_entry(&source, &dest) => (crate::fs_ops::free_name_among(&dest, taken), false),
+            Ok(_) if app_state.options.on_existing == OnExisting::Overwrite => (dest, true),
+            Ok(_) if app_state.options.on_existing == OnExisting::KeepBoth => (crate::fs_ops::free_name_among(&dest, taken), false),
+            Ok(_) => return app_state.display_error(t!("Already exists: {path} - another name, or Overwrite or Keep both under F11", path = dest.display())),
+            Err(_) => (dest, false),
+        };
+        items.push(LockItem { source, is_dir, dest, replacing });
+    }
+    if items.is_empty() {
+        return;
+    }
+    app_state.start_lock(items, password.text, unlock);
 }
 
 /// Alt+H: the checksums of what is chosen - SHA-256 to start with - or, on

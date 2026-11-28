@@ -492,6 +492,8 @@ pub(super) fn render_transfer_popup(f: &mut ratatui::Frame<'_>, area: Rect, app_
             TransferKind::Tree => t!("Reading the tree"),
             TransferKind::Dossier => t!("Summing up"),
             TransferKind::Send => t!("Sending"),
+            TransferKind::Lock => t!("Locking"),
+            TransferKind::Unlock => t!("Unlocking"),
         }
     };
     let title = format!(" {title} ");
@@ -581,6 +583,8 @@ fn render_job_problem(f: &mut ratatui::Frame<'_>, area: Rect, kind: TransferKind
         TransferKind::Undo => t!("Cannot undo"),
         TransferKind::DirEdit => t!("Cannot apply the edits"),
         TransferKind::Send => t!("Cannot send"),
+        TransferKind::Lock => t!("Cannot lock"),
+        TransferKind::Unlock => t!("Cannot unlock"),
     };
     let title = format!(" {title} ");
     let popup_area = popup_rect(30, area);
@@ -1661,6 +1665,53 @@ pub(super) fn render_pack_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &c
             key_hints(&[kind.enter(), t!("Tab - Format"), t!("Esc - Cancel")].join("    ")),
         ],
     );
+}
+
+/// Alt+L: what is locked or opened, the directory it goes in, and the
+/// password - twice to lock - its characters drawn as dots.
+pub(super) fn render_lock_popup(f: &mut ratatui::Frame<'_>, area: Rect, form: &crate::app::LockForm) {
+    use crate::app::{LOCK_AGAIN_ROW, LOCK_INTO_ROW, LOCK_PASSWORD_ROW};
+    let popup_area = popup_rect(50, area);
+    let title = if form.unlock { t!("Unlock with its password") } else { t!("Lock with a password") };
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {title} "), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let width = popup_inner(popup_area).width as usize;
+    let names: Vec<String> = form.sources.iter().map(|(source, is_dir)| if *is_dir { format!("{}/", shown_name(source)) } else { shown_name(source) }).collect();
+    let labels = [t!("Into"), t!("Password"), t!("Again")];
+    let label_width = labels.iter().map(|label| display_width(label)).max().unwrap_or(0) + 2;
+    let room = width.saturating_sub(label_width);
+    let field = |label: &str, input: &TextInput, focus: usize, secret: bool| {
+        let shown = if secret { input.masked() } else { input.clone() };
+        let mut spans = vec![Span::styled(format!("{label}:{}", " ".repeat(label_width.saturating_sub(display_width(label) + 1))), style_columns())];
+        if form.focus == focus {
+            let typed = shown.cursor_spans_within(room, style_input(), style_input_cursor());
+            let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+            spans.extend(typed);
+            spans.push(Span::styled(" ".repeat(room.saturating_sub(typed_width)), style_input()));
+        } else {
+            spans.push(Span::styled(format!("{:<room$}", tail_of(&shown.text, room)), style_file()));
+        }
+        Line::from(spans)
+    };
+
+    let mut lines = vec![
+        Line::from(Span::styled(tail_of(&names.join(", "), width), style_title())),
+        Line::from(Span::styled(if form.unlock { String::new() } else { t!("Encrypted in the age format, a directory as a .tar").to_string() }, style_columns())),
+        field(labels[0], &form.input, LOCK_INTO_ROW, false),
+        field(labels[1], &form.password, LOCK_PASSWORD_ROW, true),
+    ];
+    if !form.unlock {
+        lines.push(field(labels[2], &form.again, LOCK_AGAIN_ROW, true));
+    }
+    let enter = if form.unlock { t!("Enter - Unlock") } else { t!("Enter - Lock") };
+    lines.push(key_hints(&[enter, t!("↑↓ - Field"), t!("Esc - Cancel")].join("    ")));
+    popup_body(f, popup_area, lines);
 }
 
 /// The password an encrypted archive is opened with, asked for as it is

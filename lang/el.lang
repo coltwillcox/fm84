@@ -2511,3 +2511,58 @@ msgstr PgUp
 
 msgid  PgDn
 msgstr PgDn
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Κλείδωμα
+
+msgctxt job
+msgid   Unlock
+msgstr  Ξεκλείδωμα
+
+msgid  Locked to a key, not a password
+msgstr Κλειδωμένο με κλειδί, όχι με κωδικό
+
+msgid  Not a file locked with age
+msgstr Δεν είναι αρχείο κλειδωμένο με age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Αντιγράψτε το πρώτα έξω από την αρχειοθήκη: ό,τι κλειδώνεται πρέπει να είναι στον δίσκο
+
+msgid  Type the password first
+msgstr Πληκτρολογήστε πρώτα τον κωδικό
+
+msgid  Lock with a password
+msgstr Κλείδωμα με κωδικό
+
+msgid  Unlock with its password
+msgstr Ξεκλείδωμα με τον κωδικό του
+
+msgid  Into
+msgstr Σε
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Κρυπτογραφημένο σε μορφή age, ένας κατάλογος ως .tar
+
+msgid  Enter - Lock
+msgstr Enter - Κλείδωμα
+
+msgid  Enter - Unlock
+msgstr Enter - Ξεκλείδωμα
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Πεδίο
+
+msgid  Locking
+msgstr Κλείδωμα
+
+msgid  Unlocking
+msgstr Ξεκλείδωμα
+
+msgid  Cannot lock
+msgstr Αδύνατο το κλείδωμα
+
+msgid  Cannot unlock
+msgstr Αδύνατο το ξεκλείδωμα

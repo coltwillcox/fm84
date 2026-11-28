@@ -802,3 +802,98 @@ fn the_tree_f_keys_inside_an_archive() {
     assert!(index.find(std::path::Path::new("keep/a.txt")).is_some());
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Alt+L locks into the other panel with a password typed the same twice,
+/// a directory as a `.tar.age`, and lands there; Ctrl+Z takes it back. On
+/// locked files alone it opens them, asking once, and a wrong password is
+/// a question the job can skip.
+#[test]
+fn alt_l_locks_and_opens_again() {
+    let dir = scratch("lock-keys");
+    let (here, out) = (dir.join("here"), dir.join("out"));
+    std::fs::create_dir_all(here.join("photos")).unwrap();
+    std::fs::write(here.join("photos/beach.txt"), "sand").unwrap();
+    std::fs::write(here.join("notes.txt"), "meet at eight").unwrap();
+    std::fs::create_dir_all(&out).unwrap();
+    let mut app_state = AppState::new();
+    app_state.open_dir(Side::Right, out.clone(), None);
+    app_state.active_side = Side::Left;
+    app_state.open_dir(Side::Left, here.clone(), Some("notes.txt".as_ref()));
+    let alt_l = |app_state: &mut AppState| handle_key(app_state, KeyEvent::new(KeyCode::Char('l'), KeyModifiers::ALT));
+
+    // Typed differently the second time, or not at all, it does not lock.
+    alt_l(&mut app_state);
+    assert!(matches!(&app_state.dialog, Some(Dialog::Lock(form)) if !form.unlock && form.input.text == out.to_string_lossy()));
+    type_in(&mut app_state, "pw");
+    press(&mut app_state, KeyCode::Down);
+    type_in(&mut app_state, "px");
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(app_state.error.as_deref(), Some("The two passwords are not the same"));
+    assert!(app_state.workers.job.is_none());
+    app_state.reset_error();
+    alt_l(&mut app_state);
+    press(&mut app_state, KeyCode::Enter);
+    assert_eq!(app_state.error.as_deref(), Some("Type the password first"));
+    app_state.reset_error();
+
+    // The file and the directory, chosen together.
+    app_state.toggle_selection_no_size();
+    app_state.panel_mut(Side::Left).state.select(None);
+    on(&mut app_state, "photos");
+    app_state.toggle_selection_no_size();
+    alt_l(&mut app_state);
+    type_in(&mut app_state, "pw");
+    press(&mut app_state, KeyCode::Tab);
+    type_in(&mut app_state, "pw");
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert!(out.join("notes.txt.age").is_file());
+    assert!(out.join("photos.tar.age").is_file());
+    assert!(here.join("notes.txt").is_file(), "what was locked stays");
+
+    // Ctrl+Z takes both away.
+    handle_key(&mut app_state, KeyEvent::new(KeyCode::Char('z'), KeyModifiers::CONTROL));
+    finish(&mut app_state);
+    assert!(!out.join("notes.txt.age").exists() && !out.join("photos.tar.age").exists());
+
+    // Locked once more, alone, it is landed on.
+    app_state.clear_active_selections();
+    on(&mut app_state, "notes.txt");
+    alt_l(&mut app_state);
+    type_in(&mut app_state, "pw");
+    press(&mut app_state, KeyCode::Down);
+    type_in(&mut app_state, "pw");
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    let landed = &app_state.right.children[app_state.right.state.selected().unwrap()];
+    assert_eq!(landed.name_full, "notes.txt.age");
+
+    // On it, Alt+L opens it - into the other panel, once, with no Again.
+    std::fs::remove_file(here.join("notes.txt")).unwrap();
+    app_state.active_side = Side::Right;
+    alt_l(&mut app_state);
+    assert!(matches!(&app_state.dialog, Some(Dialog::Lock(form)) if form.unlock && form.rows() == 2));
+    type_in(&mut app_state, "wrong");
+    press(&mut app_state, KeyCode::Enter);
+    let started = std::time::Instant::now();
+    while !app_state.workers.job.as_ref().is_some_and(|job| job.problem.is_some()) {
+        assert!(started.elapsed() < std::time::Duration::from_secs(10), "never asked");
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        app_state.poll_transfer();
+    }
+    assert_eq!(app_state.workers.job.as_ref().unwrap().problem.as_ref().unwrap().message, "Wrong password");
+    app_state.workers.job.as_mut().unwrap().answer(crate::app::Answer::Skip);
+    finish(&mut app_state);
+    assert!(!here.join("notes.txt").exists(), "nothing for a wrong one");
+
+    assert_eq!(app_state.error.as_deref(), Some("Unlock finished, 1 entry skipped"));
+    app_state.reset_error();
+    alt_l(&mut app_state);
+    type_in(&mut app_state, "pw");
+    press(&mut app_state, KeyCode::Enter);
+    finish(&mut app_state);
+    assert_eq!(app_state.error, None);
+    assert_eq!(std::fs::read_to_string(here.join("notes.txt")).unwrap(), "meet at eight");
+    std::fs::remove_dir_all(&dir).unwrap();
+}

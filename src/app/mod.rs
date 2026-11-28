@@ -156,6 +156,40 @@ impl PackForm {
     }
 }
 
+/// The rows of Alt+L's dialog, in the order Up and Down go through them.
+/// Opening a lock has no Again.
+pub const LOCK_INTO_ROW: usize = 0;
+pub const LOCK_PASSWORD_ROW: usize = 1;
+pub const LOCK_AGAIN_ROW: usize = 2;
+
+/// Alt+L: what is chosen locked with a password, or - every one of them a
+/// locked file - opened again; and the directory what comes of it goes in.
+pub struct LockForm {
+    pub sources: Vec<(PathBuf, bool)>,
+    pub unlock: bool,
+    pub input: TextInput,
+    /// Which row the keys go to.
+    pub focus: usize,
+    pub password: TextInput,
+    /// To lock, typed twice: a slip of the finger would lock it for good.
+    pub again: TextInput,
+}
+
+impl LockForm {
+    pub fn rows(&self) -> usize {
+        if self.unlock { LOCK_AGAIN_ROW } else { LOCK_AGAIN_ROW + 1 }
+    }
+
+    /// The field the keys type into: every row is one.
+    pub fn field_mut(&mut self) -> &mut TextInput {
+        match self.focus {
+            LOCK_INTO_ROW => &mut self.input,
+            LOCK_PASSWORD_ROW => &mut self.password,
+            _ => &mut self.again,
+        }
+    }
+}
+
 /// An encrypted archive's password, asked for before what reads it - going
 /// into it, copying out of it, writing into it - which goes ahead once it
 /// is given.
@@ -218,6 +252,8 @@ pub enum Dialog {
     Pack(Box<PackForm>),
     /// The password an encrypted archive needs, and what was being done.
     Password(Box<PasswordAsk>),
+    /// Alt+L: what is chosen to lock with a password, or to open again.
+    Lock(Box<LockForm>),
     /// Alt+H: checksums worked out, or a checksum file checked.
     Checksums(Box<ChecksumView>),
     /// Ctrl+E's plan, saved from the editor and waiting on Enter.
@@ -822,6 +858,7 @@ impl AppState {
         match self.dialog.as_mut()? {
             Dialog::Rename(input) | Dialog::Create { input, .. } | Dialog::Transfer { input, .. } | Dialog::Symlink { input, .. } | Dialog::Extract { input, .. } | Dialog::Prompt(_, input) => Some(input),
             Dialog::Pack(form) => form.field_mut(),
+            Dialog::Lock(form) => Some(form.field_mut()),
             Dialog::Password(ask) => Some(&mut ask.input),
             Dialog::Revision(list) => Some(&mut list.input),
             Dialog::Options { editing } => editing.as_mut(),

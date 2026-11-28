@@ -2512,3 +2512,58 @@ msgstr PgPréc
 
 msgid  PgDn
 msgstr PgSuiv
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Verrouiller
+
+msgctxt job
+msgid   Unlock
+msgstr  Déverrouiller
+
+msgid  Locked to a key, not a password
+msgstr Verrouillé par une clé, pas par un mot de passe
+
+msgid  Not a file locked with age
+msgstr Pas un fichier verrouillé avec age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Copiez-le d'abord hors de l'archive : ce qui est verrouillé doit être sur le disque
+
+msgid  Type the password first
+msgstr Saisissez d'abord le mot de passe
+
+msgid  Lock with a password
+msgstr Verrouiller avec un mot de passe
+
+msgid  Unlock with its password
+msgstr Déverrouiller avec son mot de passe
+
+msgid  Into
+msgstr Vers
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Chiffré au format age, un dossier en .tar
+
+msgid  Enter - Lock
+msgstr Entrée - Verrouiller
+
+msgid  Enter - Unlock
+msgstr Entrée - Déverrouiller
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Champ
+
+msgid  Locking
+msgstr Verrouillage
+
+msgid  Unlocking
+msgstr Déverrouillage
+
+msgid  Cannot lock
+msgstr Impossible de verrouiller
+
+msgid  Cannot unlock
+msgstr Impossible de déverrouiller

@@ -2512,3 +2512,58 @@ msgstr PgUp
 
 msgid  PgDn
 msgstr PgDn
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Zárolás
+
+msgctxt job
+msgid   Unlock
+msgstr  Feloldás
+
+msgid  Locked to a key, not a password
+msgstr Kulccsal zárolva, nem jelszóval
+
+msgid  Not a file locked with age
+msgstr Nem age-dzsel zárolt fájl
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Előbb másold ki az archívumból: amit zárolsz, annak a lemezen kell lennie
+
+msgid  Type the password first
+msgstr Előbb írd be a jelszót
+
+msgid  Lock with a password
+msgstr Zárolás jelszóval
+
+msgid  Unlock with its password
+msgstr Feloldás a jelszavával
+
+msgid  Into
+msgstr Ide
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Titkosítva age formátumban, a könyvtár .tar-ként
+
+msgid  Enter - Lock
+msgstr Enter - Zárolás
+
+msgid  Enter - Unlock
+msgstr Enter - Feloldás
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Mező
+
+msgid  Locking
+msgstr Zárolás
+
+msgid  Unlocking
+msgstr Feloldás
+
+msgid  Cannot lock
+msgstr Nem zárolható
+
+msgid  Cannot unlock
+msgstr Nem oldható fel

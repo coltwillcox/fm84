@@ -163,6 +163,10 @@ pub enum TransferKind {
     Tree,
     /// Alt+N: sent to another fm84 over the network.
     Send,
+    /// Alt+L: encrypted with a password, in the age format.
+    Lock,
+    /// Alt+L on locked files: opened again with their password.
+    Unlock,
 }
 
 impl TransferKind {
@@ -175,6 +179,8 @@ impl TransferKind {
             TransferKind::Trash => tc!("job", "Move to trash"),
             TransferKind::Extract => tc!("job", "Extract"),
             TransferKind::Pack => tc!("job", "Pack"),
+            TransferKind::Lock => tc!("job", "Lock"),
+            TransferKind::Unlock => tc!("job", "Unlock"),
             TransferKind::Update => tc!("job", "Update archive"),
             TransferKind::Checksum => tc!("job", "Checksum"),
             TransferKind::Sync => tc!("job", "Synchronize"),
@@ -720,6 +726,62 @@ fn run_pack(archives: Vec<PackArchive>, how: PackHow, mut progress: JobProgress<
     progress.finish(Ok(Transfer::Done));
 }
 
+/// One of what Alt+L locks or opens, where it goes, and whether that is
+/// written over.
+pub struct LockItem {
+    pub source: PathBuf,
+    pub is_dir: bool,
+    pub dest: PathBuf,
+    pub replacing: bool,
+}
+
+/// The worker thread behind Alt+L: what is locked walked first, for the
+/// bar's total, then each locked or opened in turn. One that fails - a
+/// wrong password among them - is asked about, and can be skipped.
+fn run_lock(items: Vec<LockItem>, password: String, unlock: bool, mut progress: JobProgress<'_>) {
+    let mut plans = Vec::with_capacity(items.len());
+    for item in &items {
+        let plan = if unlock {
+            std::fs::metadata(&item.source).map(|metadata| Some(crate::fs_ops::LockPlan::File { path: item.source.clone(), len: metadata.len() }))
+        } else {
+            crate::fs_ops::plan_lock(&item.source, item.is_dir, &item.dest, &mut progress)
+        };
+        match plan {
+            Ok(Some(plan)) => plans.push(plan),
+            Ok(None) => return progress.finish(Ok(Transfer::Cancelled)),
+            Err(error) => return progress.finish(Err(error)),
+        }
+    }
+    let _ = progress.updates.send(JobUpdate::Total(plans.iter().map(crate::fs_ops::LockPlan::bytes).sum()));
+    for (item, plan) in items.iter().zip(&plans) {
+        loop {
+            let outcome = if unlock {
+                crate::fs_ops::unlock(&item.source, plan.bytes(), &item.dest, &password, item.replacing, &mut progress)
+            } else {
+                crate::fs_ops::lock(plan, &item.dest, &password, item.replacing, &mut progress)
+            };
+            match outcome {
+                Ok(Transfer::Done) => {
+                    // Made where nothing was, it is Ctrl+Z's to take away.
+                    if !item.replacing
+                        && let Some(mark) = Mark::of(&item.dest, false)
+                    {
+                        progress.did(Done::Copied { to: item.dest.clone(), mark });
+                    }
+                    break;
+                }
+                Ok(outcome) => return progress.finish(Ok(outcome)),
+                Err(error) => match progress.failed(&item.source, &error) {
+                    Reply::Retry => {}
+                    Reply::Skip | Reply::Delete => break,
+                    Reply::Abort => return progress.finish(Err(error)),
+                },
+            }
+        }
+    }
+    progress.finish(Ok(Transfer::Done));
+}
+
 /// The worker thread behind writing into an archive: what changes is
 /// worked out first - what comes in walked, names already taken asked about
 /// - which gives the bar its total, and then the archive is written again.
@@ -986,6 +1048,20 @@ impl AppState {
         }
     }
 
+    /// Alt+L: lock each of `items` with `password`, or open each again. One
+    /// alone is landed on, in whichever panel shows where it went.
+    pub fn start_lock(&mut self, items: Vec<LockItem>, password: String, unlock: bool) {
+        let land = match &items[..] {
+            [item] => Some(item.dest.clone()),
+            _ => None,
+        };
+        let kind = if unlock { TransferKind::Unlock } else { TransferKind::Lock };
+        self.start_job(kind, Clashes::Ask, move |progress| run_lock(items, password, unlock, progress));
+        if let Some(job) = &mut self.workers.job {
+            job.after = land.map(AfterJob::Land);
+        }
+    }
+
     /// Copy entries out of `archive`, each its path inside and where it
     /// goes, then do `after` with what came out.
     pub fn start_extract(&mut self, archive: PathBuf, items: Vec<(PathBuf, PathBuf)>, clashes: Clashes, after: Option<AfterJob>) {
@@ -1102,7 +1178,7 @@ impl AppState {
         self.count_scores(&job, &result);
         // Whatever was done, the job finished or not.
         let undo_kind = match job.kind {
-            TransferKind::Copy | TransferKind::Join => Some(UndoKind::Copy),
+            TransferKind::Copy | TransferKind::Join | TransferKind::Lock | TransferKind::Unlock => Some(UndoKind::Copy),
             TransferKind::Move => Some(UndoKind::Move),
             TransferKind::Trash => Some(UndoKind::Trash),
             TransferKind::DirEdit => Some(UndoKind::Edit),

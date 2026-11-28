@@ -2510,3 +2510,58 @@ msgstr PgUp
 
 msgid  PgDn
 msgstr PgDn
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Vergrendelen
+
+msgctxt job
+msgid   Unlock
+msgstr  Ontgrendelen
+
+msgid  Locked to a key, not a password
+msgstr Vergrendeld met een sleutel, niet met een wachtwoord
+
+msgid  Not a file locked with age
+msgstr Geen bestand vergrendeld met age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Haal het eerst uit het archief: wat wordt vergrendeld moet op de schijf staan
+
+msgid  Type the password first
+msgstr Typ eerst het wachtwoord
+
+msgid  Lock with a password
+msgstr Vergrendelen met een wachtwoord
+
+msgid  Unlock with its password
+msgstr Ontgrendelen met zijn wachtwoord
+
+msgid  Into
+msgstr Naar
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Versleuteld in het age-formaat, een map als .tar
+
+msgid  Enter - Lock
+msgstr Enter - Vergrendelen
+
+msgid  Enter - Unlock
+msgstr Enter - Ontgrendelen
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Veld
+
+msgid  Locking
+msgstr Vergrendelen
+
+msgid  Unlocking
+msgstr Ontgrendelen
+
+msgid  Cannot lock
+msgstr Kan niet vergrendelen
+
+msgid  Cannot unlock
+msgstr Kan niet ontgrendelen

@@ -2549,3 +2549,58 @@ msgstr PgUp
 
 msgid  PgDn
 msgstr PgDn
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Закључај
+
+msgctxt job
+msgid   Unlock
+msgstr  Откључај
+
+msgid  Locked to a key, not a password
+msgstr Закључано кључем, не лозинком
+
+msgid  Not a file locked with age
+msgstr Није датотека закључана са age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Прво је копирај из архиве: оно што се закључава мора да буде на диску
+
+msgid  Type the password first
+msgstr Прво укуцај лозинку
+
+msgid  Lock with a password
+msgstr Закључај лозинком
+
+msgid  Unlock with its password
+msgstr Откључај њеном лозинком
+
+msgid  Into
+msgstr У
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Шифровано у формату age, директоријум као .tar
+
+msgid  Enter - Lock
+msgstr Enter - Закључај
+
+msgid  Enter - Unlock
+msgstr Enter - Откључај
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Поље
+
+msgid  Locking
+msgstr Закључавање
+
+msgid  Unlocking
+msgstr Откључавање
+
+msgid  Cannot lock
+msgstr Не могу да закључам
+
+msgid  Cannot unlock
+msgstr Не могу да откључам

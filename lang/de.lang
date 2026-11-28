@@ -2511,3 +2511,58 @@ msgstr Bild↑
 
 msgid  PgDn
 msgstr Bild↓
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Sperren
+
+msgctxt job
+msgid   Unlock
+msgstr  Entsperren
+
+msgid  Locked to a key, not a password
+msgstr Mit einem Schlüssel gesperrt, nicht mit einem Passwort
+
+msgid  Not a file locked with age
+msgstr Keine mit age gesperrte Datei
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Erst aus dem Archiv kopieren: was gesperrt wird, muss auf der Platte liegen
+
+msgid  Type the password first
+msgstr Erst das Passwort eingeben
+
+msgid  Lock with a password
+msgstr Mit einem Passwort sperren
+
+msgid  Unlock with its password
+msgstr Mit seinem Passwort entsperren
+
+msgid  Into
+msgstr Nach
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Verschlüsselt im age-Format, ein Verzeichnis als .tar
+
+msgid  Enter - Lock
+msgstr Enter - Sperren
+
+msgid  Enter - Unlock
+msgstr Enter - Entsperren
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Feld
+
+msgid  Locking
+msgstr Sperren
+
+msgid  Unlocking
+msgstr Entsperren
+
+msgid  Cannot lock
+msgstr Kann nicht sperren
+
+msgid  Cannot unlock
+msgstr Kann nicht entsperren

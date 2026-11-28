@@ -189,6 +189,10 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
         if in_panel && c == 'w' {
             app_state.open_remote();
         }
+        // Alt+L locks what is chosen with a password, or opens it again.
+        if in_panel && c == 'l' {
+            open_lock(app_state);
+        }
         // Alt+V shares the clipboard with a phone, by a code to scan.
         if in_panel && c == 'v' {
             app_state.open_phone_clipboard();
@@ -546,6 +550,14 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
             KeyCode::Char(' ') | KeyCode::Right => change_pack_option(app_state, true),
             KeyCode::Left => change_pack_option(app_state, false),
             _ => {}
+        },
+        // Every row is a field: Up, Down and Tab go between them.
+        Some(Dialog::Lock(_)) => match code {
+            KeyCode::Enter => handle_lock_confirm(app_state),
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Up | KeyCode::BackTab => move_lock_focus(app_state, false),
+            KeyCode::Down | KeyCode::Tab => move_lock_focus(app_state, true),
+            _ => edit_text(app_state, code),
         },
         Some(Dialog::Password(_)) => match code {
             KeyCode::Enter => app_state.confirm_password(),

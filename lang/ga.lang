@@ -2628,3 +2628,58 @@ msgstr PgUp
 
 msgid  PgDn
 msgstr PgDn
+
+# Alt+L: the floppy lock.
+
+msgctxt job
+msgid   Lock
+msgstr  Glasáil
+
+msgctxt job
+msgid   Unlock
+msgstr  Díghlasáil
+
+msgid  Locked to a key, not a password
+msgstr Glasáilte le heochair, ní le pasfhocal
+
+msgid  Not a file locked with age
+msgstr Ní comhad é atá glasáilte le age
+
+msgid  Copy it out of the archive first: what is locked has to be on the disk
+msgstr Cóipeáil amach as an gcartlann é ar dtús: caithfidh an rud a ghlasáiltear a bheith ar an diosca
+
+msgid  Type the password first
+msgstr Clóscríobh an pasfhocal ar dtús
+
+msgid  Lock with a password
+msgstr Glasáil le pasfhocal
+
+msgid  Unlock with its password
+msgstr Díghlasáil lena phasfhocal
+
+msgid  Into
+msgstr Isteach i
+
+msgid  Encrypted in the age format, a directory as a .tar
+msgstr Criptithe san fhormáid age, comhadlann mar .tar
+
+msgid  Enter - Lock
+msgstr Enter - Glasáil
+
+msgid  Enter - Unlock
+msgstr Enter - Díghlasáil
+
+msgid  ↑↓ - Field
+msgstr ↑↓ - Réimse
+
+msgid  Locking
+msgstr Á ghlasáil
+
+msgid  Unlocking
+msgstr Á dhíghlasáil
+
+msgid  Cannot lock
+msgstr Ní féidir glasáil
+
+msgid  Cannot unlock
+msgstr Ní féidir díghlasáil
