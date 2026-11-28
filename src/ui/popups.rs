@@ -1412,6 +1412,59 @@ pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list:
     f.render_widget(Paragraph::new(lines), inner);
 }
 
+/// Ctrl+Shift+P: the field, and under it every command it lets through,
+/// each as F1 says it - its keys in F1's colour - the one chosen lit.
+pub(super) fn render_palette_popup(f: &mut ratatui::Frame<'_>, area: Rect, view: &crate::app::PaletteView) {
+    let popup_area = popup_rect(60, area);
+    let popup_block = Block::default()
+        .title(Line::from(Span::styled(format!(" {} ", t!("Command palette")), style_title())).centered())
+        .borders(Borders::ALL)
+        .border_type(crate::display::border_type())
+        .style(style_border());
+    clear(f, popup_area);
+    f.render_widget(popup_block, popup_area);
+
+    let inner = popup_area.inner(Margin { vertical: 1, horizontal: 2 });
+    let width = inner.width as usize;
+    // The field and a blank row above the list; a blank row and the keys
+    // under it.
+    let hints = hint_rows(&[t!("Type to narrow    Up/Down - Choose    Enter - Run    Esc - Close")], width);
+    let rows = (inner.height as usize).saturating_sub(3 + hints.len());
+
+    let label = format!("{} ", t!("Filter:"));
+    let label_width = display_width(&label);
+    let typed = view.input.cursor_spans_within(width.saturating_sub(label_width), style_input(), style_input_cursor());
+    let mut field = vec![Span::styled(label, style_columns())];
+    let typed_width: usize = typed.iter().map(|span| display_width(&span.content)).sum();
+    field.extend(typed);
+    field.push(Span::styled(" ".repeat(width.saturating_sub(label_width + typed_width)), style_input()));
+    let mut lines = vec![Line::from(field), Line::from("")];
+
+    if view.shown.is_empty() {
+        lines.push(Line::from(Span::styled(t!("No command matches"), style_file())));
+    }
+    let first = if rows > 0 && view.index >= rows { view.index + 1 - rows } else { 0 };
+    for (number, command) in view.shown().enumerate().skip(first).take(rows) {
+        let chosen = number == view.index;
+        let lit = |style: Style| if chosen { style.bg(palette().selected_background) } else { style };
+        // As F1 sets a key's line in, so its keys are told apart the same.
+        let text = format!("   {}", tail_of(command.text, width.saturating_sub(2)));
+        let mut spans: Vec<Span> = Vec::new();
+        for (run, is_key) in super::help::key_runs(&text) {
+            let run = if spans.is_empty() && run.trim().is_empty() { " ".to_string() } else { run };
+            spans.push(Span::styled(run, lit(if is_key { style_key() } else { style_file() })));
+        }
+        let used: usize = spans.iter().map(|span| display_width(&span.content)).sum();
+        spans.push(Span::styled(" ".repeat(width.saturating_sub(used)), lit(style_file())));
+        lines.push(Line::from(spans));
+    }
+    while lines.len() < rows + 3 {
+        lines.push(Line::from(""));
+    }
+    lines.extend(hints);
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
 /// The branches of the repository a panel is in, the one checked out marked,
 /// to change to another. Gives back each row drawn and the branch on it, for
 /// a click to find.

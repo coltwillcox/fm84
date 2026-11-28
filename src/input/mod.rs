@@ -304,6 +304,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             // Ctrl+O opens what is under the cursor as the system would, as
             // Shift+Enter does where the terminal can send it.
             'o' if in_panel => open_cursor_externally(app_state),
+            // Ctrl+Shift+P, the command palette, as in editors. Where the
+            // terminal cannot tell it from Ctrl+P, that is it too.
+            'p' | 'P' if in_panel => app_state.open_palette(),
             // Ctrl+D, Total Commander's directory hotlist; again closes it.
             'd' if in_panel => app_state.open_bookmarks(),
             'd' if app_state.error.is_none() && matches!(app_state.dialog, Some(Dialog::Bookmarks { .. })) => app_state.dialog = None,
@@ -762,6 +765,26 @@ fn dialog_key(app_state: &mut AppState, key: KeyEvent) -> bool {
                 }
             }
             _ => {}
+        },
+        // Typing narrows the list, the arrows go up and down it, and Enter
+        // presses the key of the one chosen - as if typed, so it does just
+        // what the key does.
+        Some(Dialog::Palette(_)) => match code {
+            KeyCode::Esc => app_state.dialog = None,
+            KeyCode::Enter => {
+                if let Some(key) = app_state.take_palette_key() {
+                    return handle_key(app_state, key);
+                }
+            }
+            KeyCode::Up => app_state.move_palette_cursor(-1),
+            KeyCode::Down => app_state.move_palette_cursor(1),
+            KeyCode::PageUp => app_state.move_palette_cursor(-10),
+            KeyCode::PageDown => app_state.move_palette_cursor(10),
+            KeyCode::Char(_) | KeyCode::Backspace | KeyCode::Delete => {
+                edit_text(app_state, code);
+                app_state.palette_typed();
+            }
+            _ => edit_text(app_state, code),
         },
         // Typing narrows the list; the arrows go up and down it.
         Some(Dialog::History(_)) => {

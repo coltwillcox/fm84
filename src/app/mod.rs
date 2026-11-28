@@ -49,6 +49,7 @@ mod multi_rename;
 mod night_drive;
 mod null_modem;
 mod open_with;
+mod palette;
 mod phone_clipboard;
 mod preview;
 mod receive;
@@ -72,7 +73,7 @@ mod viewing;
 
 pub use self::{
     animation::*, archives::*, attribute_form::*, basket::*, branches::*, dir_edit::*, dossier::*, duplicates::*, editing::*, explosion::*, filter::*, find_files::*, flat::*, ghosts::*, git_gutter::*, git_marks::*, git_stage::*, history::*,
-    info_column::*, jobs::*, listing::*, multi_rename::*, null_modem::*, open_with::*, phone_clipboard::*, preview::*, receive::*, remote::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
+    info_column::*, jobs::*, listing::*, multi_rename::*, null_modem::*, open_with::*, palette::*, phone_clipboard::*, preview::*, receive::*, remote::*, selection::*, share::*, sync::*, tabs::*, text_input::*, tree::*, undo::*, user_menu::*, viewing::*,
 };
 
 /// What the prompt in the status bar is asking for: in the viewer or the
@@ -254,6 +255,8 @@ pub enum Dialog {
     Password(Box<PasswordAsk>),
     /// Alt+L: what is chosen to lock with a password, or to open again.
     Lock(Box<LockForm>),
+    /// Ctrl+Shift+P: every action with its key, narrowed as words are typed.
+    Palette(Box<PaletteView>),
     /// Alt+H: checksums worked out, or a checksum file checked.
     Checksums(Box<ChecksumView>),
     /// Ctrl+E's plan, saved from the editor and waiting on Enter.
@@ -863,6 +866,7 @@ impl AppState {
             Dialog::Revision(list) => Some(&mut list.input),
             Dialog::Options { editing } => editing.as_mut(),
             Dialog::History(list) => Some(&mut list.input),
+            Dialog::Palette(view) => Some(&mut view.input),
             Dialog::Mixtapes(list) => list.naming.as_mut().map(|naming| &mut naming.input),
             Dialog::Attributes(form) => form.fields.get_mut(form.focus).map(|field| &mut field.input),
             Dialog::MultiRename(rename) => rename.fields.get_mut(rename.focus),

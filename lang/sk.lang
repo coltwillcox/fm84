@@ -2605,3 +2605,62 @@ msgstr Nedá sa zamknúť
 
 msgid  Cannot unlock
 msgstr Nedá sa odomknúť
+
+# The command palette.
+
+msgid  Alt+F9 - Extract a whole archive
+msgstr Alt+F9 - Rozbaliť celý archív
+
+msgid  Alt+L - Lock with a password, or unlock
+msgstr Alt+L - Zamknúť heslom, alebo odomknúť
+
+msgid  Alt+Shift+B - The mixtapes
+msgstr Alt+Shift+B - Mixtapy
+
+msgid  Ctrl+U - Swap the panels
+msgstr Ctrl+U - Prehodiť panely
+
+msgid  Alt+I - The same directory in the other panel
+msgstr Alt+I - Rovnaký priečinok v druhom paneli
+
+msgid  Ctrl+T - New tab
+msgstr Ctrl+T - Nová karta
+
+msgid  Ctrl+W - Close tab
+msgstr Ctrl+W - Zavrieť kartu
+
+msgid  + - Select by pattern
+msgstr + - Vybrať podľa vzoru
+
+msgid  - - Deselect by pattern
+msgstr - - Zrušiť výber podľa vzoru
+
+msgid  * - Invert the selection
+msgstr * - Obrátiť výber
+
+msgid  Ctrl+C - Copy the paths
+msgstr Ctrl+C - Kopírovať cesty
+
+msgid  Alt+C - Copy the names
+msgstr Alt+C - Kopírovať názvy
+
+msgid  Ctrl+F3 - Sort by name
+msgstr Ctrl+F3 - Zoradiť podľa názvu
+
+msgid  Ctrl+F4 - Sort by extension
+msgstr Ctrl+F4 - Zoradiť podľa prípony
+
+msgid  Ctrl+F5 - Sort by date
+msgstr Ctrl+F5 - Zoradiť podľa dátumu
+
+msgid  Ctrl+F6 - Sort by size
+msgstr Ctrl+F6 - Zoradiť podľa veľkosti
+
+msgid  Command palette
+msgstr Paleta príkazov
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Run    Esc - Close
+msgstr Píšte na zúženie    Hore/Dole - Vybrať    Enter - Spustiť    Esc - Zavrieť
+
+msgid  No command matches
+msgstr Žiadny príkaz nezodpovedá

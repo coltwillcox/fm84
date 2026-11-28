@@ -382,3 +382,59 @@ fn down_after_end_in_a_popup_list_stays_at_the_end() {
     assert_eq!(view.scroll, usize::MAX);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+/// Ctrl+Shift+P - or Ctrl+P, as most terminals send it - opens the palette;
+/// words typed narrow it, the arrows choose, and Enter presses the key of
+/// the one chosen, as if typed. Esc puts it away.
+#[test]
+fn the_palette_runs_what_is_chosen() {
+    let mut app_state = AppState::new();
+    let ctrl = |app_state: &mut AppState, c: char, shift: bool| {
+        let modifiers = if shift { KeyModifiers::CONTROL | KeyModifiers::SHIFT } else { KeyModifiers::CONTROL };
+        handle_key(app_state, KeyEvent::new(KeyCode::Char(c), modifiers))
+    };
+    let shown = |app_state: &AppState| match &app_state.dialog {
+        Some(Dialog::Palette(view)) => view.shown().map(|command| command.text).collect::<Vec<_>>(),
+        _ => panic!("no palette"),
+    };
+    ctrl(&mut app_state, 'P', true);
+    assert!(shown(&app_state).len() > 50, "everything, to start");
+    for c in "sort".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    assert_eq!(shown(&app_state), ["Ctrl+F3 - Sort by name", "Ctrl+F4 - Sort by extension", "Ctrl+F5 - Sort by date", "Ctrl+F6 - Sort by size"]);
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Down);
+    press(&mut app_state, KeyCode::Down);
+    assert!(press(&mut app_state, KeyCode::Enter));
+    assert!(app_state.dialog.is_none());
+    assert_eq!(app_state.options.sort_key, crate::options::SortKey::Size, "the last, the cursor held to the end");
+
+    // Nothing matching, Enter does nothing and the palette stays.
+    ctrl(&mut app_state, 'p', false);
+    for c in "zzzz".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    assert!(shown(&app_state).is_empty());
+    press(&mut app_state, KeyCode::Enter);
+    assert!(matches!(app_state.dialog, Some(Dialog::Palette(_))));
+    press(&mut app_state, KeyCode::Esc);
+    assert!(app_state.dialog.is_none());
+
+    // A dialog of its own, opened as its key opens it.
+    ctrl(&mut app_state, 'p', false);
+    for c in "options".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    press(&mut app_state, KeyCode::Enter);
+    assert!(matches!(app_state.dialog, Some(Dialog::Options { .. })));
+    app_state.dialog = None;
+
+    // And quitting, said back as its key says it.
+    ctrl(&mut app_state, 'p', false);
+    for c in "f10 quit".chars() {
+        press(&mut app_state, KeyCode::Char(c));
+    }
+    assert!(!press(&mut app_state, KeyCode::Enter), "F10 leaves");
+}

@@ -2566,3 +2566,62 @@ msgstr Αδύνατο το κλείδωμα
 
 msgid  Cannot unlock
 msgstr Αδύνατο το ξεκλείδωμα
+
+# The command palette.
+
+msgid  Alt+F9 - Extract a whole archive
+msgstr Alt+F9 - Αποσυμπίεση ολόκληρης αρχειοθήκης
+
+msgid  Alt+L - Lock with a password, or unlock
+msgstr Alt+L - Κλείδωμα με κωδικό ή ξεκλείδωμα
+
+msgid  Alt+Shift+B - The mixtapes
+msgstr Alt+Shift+B - Οι κασέτες
+
+msgid  Ctrl+U - Swap the panels
+msgstr Ctrl+U - Εναλλαγή των πάνελ
+
+msgid  Alt+I - The same directory in the other panel
+msgstr Alt+I - Ο ίδιος φάκελος στο άλλο πάνελ
+
+msgid  Ctrl+T - New tab
+msgstr Ctrl+T - Νέα καρτέλα
+
+msgid  Ctrl+W - Close tab
+msgstr Ctrl+W - Κλείσιμο καρτέλας
+
+msgid  + - Select by pattern
+msgstr + - Επιλογή με μοτίβο
+
+msgid  - - Deselect by pattern
+msgstr - - Αποεπιλογή με μοτίβο
+
+msgid  * - Invert the selection
+msgstr * - Αντιστροφή επιλογής
+
+msgid  Ctrl+C - Copy the paths
+msgstr Ctrl+C - Αντιγραφή διαδρομών
+
+msgid  Alt+C - Copy the names
+msgstr Alt+C - Αντιγραφή ονομάτων
+
+msgid  Ctrl+F3 - Sort by name
+msgstr Ctrl+F3 - Ταξινόμηση κατά όνομα
+
+msgid  Ctrl+F4 - Sort by extension
+msgstr Ctrl+F4 - Ταξινόμηση κατά επέκταση
+
+msgid  Ctrl+F5 - Sort by date
+msgstr Ctrl+F5 - Ταξινόμηση κατά ημερομηνία
+
+msgid  Ctrl+F6 - Sort by size
+msgstr Ctrl+F6 - Ταξινόμηση κατά μέγεθος
+
+msgid  Command palette
+msgstr Παλέτα εντολών
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Run    Esc - Close
+msgstr Πληκτρολογήστε για περιορισμό    Πάνω/Κάτω - Επιλογή    Enter - Εκτέλεση    Esc - Κλείσιμο
+
+msgid  No command matches
+msgstr Καμία εντολή δεν ταιριάζει

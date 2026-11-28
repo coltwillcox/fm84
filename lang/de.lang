@@ -2566,3 +2566,62 @@ msgstr Kann nicht sperren
 
 msgid  Cannot unlock
 msgstr Kann nicht entsperren
+
+# The command palette.
+
+msgid  Alt+F9 - Extract a whole archive
+msgstr Alt+F9 - Ein ganzes Archiv entpacken
+
+msgid  Alt+L - Lock with a password, or unlock
+msgstr Alt+L - Mit einem Passwort sperren oder entsperren
+
+msgid  Alt+Shift+B - The mixtapes
+msgstr Alt+Shift+B - Die Mixtapes
+
+msgid  Ctrl+U - Swap the panels
+msgstr Strg+U - Panels tauschen
+
+msgid  Alt+I - The same directory in the other panel
+msgstr Alt+I - Dasselbe Verzeichnis im anderen Panel
+
+msgid  Ctrl+T - New tab
+msgstr Strg+T - Neuer Tab
+
+msgid  Ctrl+W - Close tab
+msgstr Strg+W - Tab schließen
+
+msgid  + - Select by pattern
+msgstr + - Nach Muster auswählen
+
+msgid  - - Deselect by pattern
+msgstr - - Nach Muster abwählen
+
+msgid  * - Invert the selection
+msgstr * - Auswahl umkehren
+
+msgid  Ctrl+C - Copy the paths
+msgstr Strg+C - Pfade kopieren
+
+msgid  Alt+C - Copy the names
+msgstr Alt+C - Namen kopieren
+
+msgid  Ctrl+F3 - Sort by name
+msgstr Strg+F3 - Nach Name sortieren
+
+msgid  Ctrl+F4 - Sort by extension
+msgstr Strg+F4 - Nach Erweiterung sortieren
+
+msgid  Ctrl+F5 - Sort by date
+msgstr Strg+F5 - Nach Datum sortieren
+
+msgid  Ctrl+F6 - Sort by size
+msgstr Strg+F6 - Nach Größe sortieren
+
+msgid  Command palette
+msgstr Befehlspalette
+
+msgid  Type to narrow    Up/Down - Choose    Enter - Run    Esc - Close
+msgstr Tippen zum Eingrenzen    Hoch/Runter - Wählen    Enter - Ausführen    Esc - Schließen
+
+msgid  No command matches
+msgstr Kein Befehl passt

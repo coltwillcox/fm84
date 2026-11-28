@@ -2424,3 +2424,23 @@ fn the_lock_dialog_hides_the_password() {
     assert!(!shown.contains("Again:"));
     assert!(!shown.contains("hunter2"));
 }
+
+/// The command palette: the field, the commands as F1 says them with their
+/// keys in F1's key colour, and the one chosen lit.
+#[test]
+fn the_palette_shows_commands_with_their_keys() {
+    let mut app_state = AppState::new();
+    app_state.options = Options::default();
+    crate::display::apply(&app_state.options);
+    app_state.open_palette();
+    let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+    render_ui(&mut terminal, &mut app_state);
+    let buffer = terminal.backend().buffer().clone();
+    let rows: Vec<String> = (0..40u16).map(|y| (0..120u16).map(|x| buffer[(x, y)].symbol().to_string()).collect()).collect();
+    assert!(rows.iter().any(|row| row.contains("Command palette")));
+    let (y, row) = rows.iter().enumerate().find(|(_, row)| row.contains("F1 - This help")).expect("the first command");
+    let x = row.find("F1 - This help").unwrap();
+    let x = row[..x].chars().count() as u16;
+    assert_eq!(buffer[(x, y as u16)].fg, super::style_key().fg.unwrap(), "the key in F1's colour");
+    assert_eq!(buffer[(x, y as u16)].bg, crate::display::palette().selected_background, "the first chosen");
+}
