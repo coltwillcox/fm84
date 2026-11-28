@@ -2678,3 +2678,8 @@ msgstr Zisťovanie jednotiek...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL pre SETUP, iný kláves preskočí
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Paleta príkazov

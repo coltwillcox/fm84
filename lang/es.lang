@@ -2640,3 +2640,8 @@ msgstr Detectando unidades...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr SUPR para SETUP, cualquier otra tecla omite
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Paleta de comandos

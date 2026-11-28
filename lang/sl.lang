@@ -2718,3 +2718,8 @@ msgstr Iskanje pogonov...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL za SETUP, katera koli druga tipka preskoči
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Paleta ukazov

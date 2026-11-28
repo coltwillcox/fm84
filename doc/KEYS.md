@@ -18,6 +18,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Ctrl+U` | Swap the panels |
 | `Alt+I` | Same directory in the other panel |
 | `Ctrl+L` | Go to a path (`Tab` completes a name; or click the path) |
+| `Ctrl+P` / `Ctrl+Shift+P` | Command palette: every action with its key, narrowed by words typed (`Enter` runs it) |
 | `Alt+←` / `Alt+→` | Back / forward through where the tab has been |
 | `Alt+↓` | Every directory visited, across the tabs (type to narrow, `Enter` go) |
 | `Alt+J` | Jump to a directory gone to before, most used lately first (type a few letters, `Enter` go) |
@@ -77,6 +78,7 @@ Every key, by where it works. [USAGE.md](USAGE.md) says what each does in full; 
 | `Alt+S` | Synchronize the panels' directories (`→` `←` copy, `Del` delete, `Space` leave, `>` `<` mirror, `R` reset, `Enter` run) |
 | `Alt+F9` / `Ctrl+F9` | Extract the whole of an archive |
 | `Alt+P` | Pack what is chosen into an archive (`Tab` changes the format; `↑` `↓` the level, one archive for each, delete what went in, leave out, password, and `Space` / `←` `→` change them) |
+| `Alt+L` | Lock what is chosen with a password, in the age format, or open `.age` files again (`↑` `↓` / `Tab` between the directory and the password) |
 | `Alt+H` | Checksums of what is chosen (`Tab` / `Shift+Tab` the algorithm, `C` copies, `Enter` writes), or check a checksum file |
 | `Alt+M` | User menu: run commands of your own (`E` edits them) |
 | `Alt+D` | Find duplicate files, fed to the panel with all but one of each selected |
@@ -166,6 +168,23 @@ On the phone, Alt+W's pad: `▲` `▼` `◀` `▶` the arrows, `PgUp` / `PgDn`, 
 | `←` | Change it the other way |
 | `E` | On Info, edit the commands; on Theme, the file colours |
 | `Esc` / `F11` | Close |
+
+## 🎛️ Command palette (Ctrl+P)
+
+| Key | Action |
+|-----|--------|
+| Type | Narrow to the actions with every word typed |
+| `↑` / `↓` | Move |
+| `PageUp` / `PageDown` | Ten at a time |
+| `Enter` | Run the one chosen, as its key would |
+| `Esc` | Close |
+
+## 💾 POST screen
+
+| Key | Action |
+|-----|--------|
+| `Del` | Go to the options, as to SETUP |
+| Any other key, or a click | Skip to the panels |
 
 ## ⏳ While a job runs
 

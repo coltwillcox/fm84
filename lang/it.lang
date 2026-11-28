@@ -2639,3 +2639,8 @@ msgstr Rilevamento unità...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr CANC per il SETUP, ogni altro tasto salta
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Tavolozza dei comandi

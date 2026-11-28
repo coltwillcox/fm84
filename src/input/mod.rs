@@ -319,8 +319,9 @@ fn handle_chord(app_state: &mut AppState, c: char, modifiers: KeyModifiers) {
             // Ctrl+O opens what is under the cursor as the system would, as
             // Shift+Enter does where the terminal can send it.
             'o' if in_panel => open_cursor_externally(app_state),
-            // Ctrl+Shift+P, the command palette, as in editors. Where the
-            // terminal cannot tell it from Ctrl+P, that is it too.
+            // Ctrl+P, the command palette; Ctrl+Shift+P too, as in editors,
+            // where the terminal passes it on - kitty, WezTerm and Windows
+            // Terminal keep it for themselves.
             'p' | 'P' if in_panel => app_state.open_palette(),
             // Ctrl+D, Total Commander's directory hotlist; again closes it.
             'd' if in_panel => app_state.open_bookmarks(),

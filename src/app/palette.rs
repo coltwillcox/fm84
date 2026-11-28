@@ -1,4 +1,4 @@
-//! Ctrl+Shift+P, the command palette: every action of the panels with its
+//! Ctrl+P, the command palette: every action of the panels with its
 //! key, narrowed as words are typed, and Enter runs the one chosen - by
 //! pressing its key, so it does just what the key does and nothing here
 //! can fall out of step with it.

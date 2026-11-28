@@ -2639,3 +2639,8 @@ msgstr Söker enheter...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL för SETUP, annan tangent hoppar över
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Kommandopalett

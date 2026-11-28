@@ -2638,3 +2638,8 @@ msgstr Откриване на устройства...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL за SETUP, всеки друг клавиш прескача
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Палитра с команди

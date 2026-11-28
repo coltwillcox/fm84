@@ -2678,3 +2678,8 @@ msgstr Se detectează unitățile...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL pentru SETUP, orice altă tastă sare
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Paleta de comenzi

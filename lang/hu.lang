@@ -2640,3 +2640,8 @@ msgstr Meghajtók keresése...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL a SETUP-hoz, bármely más billentyű átugorja
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Parancspaletta

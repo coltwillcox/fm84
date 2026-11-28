@@ -6,6 +6,20 @@ All notable changes to FM84 will be documented in this file.
 
 ---
 
+## [0.55.0] - 2026-11-28
+
+### ✨ Added
+- 🔒 **Floppy lock** - **Alt+L** encrypts what is chosen with a password, in the age format - the files `age -p` and rage make, so either opens fm84's and fm84 opens theirs. A file becomes `name.age`, a directory `name.tar.age`, a tar of itself, in the other panel's directory or wherever the dialog is told; the password is typed twice. On `.age` files alone it opens them instead, `.age` taken off the name, a directory's coming out as the `.tar` it went in as, for Enter to go into. A job with the bar and Esc, each file written beside where it goes and put there once whole; a wrong password, or a file locked to a key, is asked about and can be skipped, with nothing written; a name already there goes by **When destination exists**; Ctrl+Z takes back what was made. What was locked stays where it was
+- 🎛️ **Command palette** - **Ctrl+P** lists every action of the panels with its key, as F1 says it, in the language shown. Words typed narrow it, in any order and any case unless one has a capital; **Enter** presses the key of the one chosen, so it does just what the key does. **Ctrl+Shift+P** as well, where the terminal passes it on - kitty, WezTerm and Windows Terminal keep it for themselves
+- 💾 **POST screen** - an F11 option, **POST screen at the start**: fm84 starts as a PC of '84 did, the memory counted up to what the machine has, then "Detecting drives..." listing the mounts one by one with their sizes - none asked of a network mount, which could hold the start up - and then the panels, in about three seconds. Any key or click skips it; **Del** goes to F11, as SETUP. Off by default
+
+### 🛠️ Changed
+- 📦 **Dependencies brought up to date** - ratatui 0.30, sevenz-rust2 0.27 and lzma-rust2 0.26 among them, with no change to how anything looks or works
+
+### 🐛 Fixed
+- ⌨️ **Shift's name in four languages** - German, Spanish, French and Italian write Shift as their keyboards print it, Umschalt, Mayús, Maj and Maiusc, and three of their keys said it in English: Alt+Shift+G, Alt+Shift+N's hint and Alt+Shift+B
+- 💬 **Lock's job in five languages** - what is said when a lock cannot be made, or while it is, follows how each says it of a copy, in German, French, Croatian, Slovenian and Dutch
+
 ## [0.54.0] - 2026-11-27
 
 ### ✨ Added

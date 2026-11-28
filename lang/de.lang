@@ -2639,3 +2639,8 @@ msgstr Laufwerke werden erkannt...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr ENTF für SETUP, jede andere Taste überspringt
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Strg+P - Befehlspalette

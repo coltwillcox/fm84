@@ -2639,3 +2639,8 @@ msgstr Sürücüler algılanıyor...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr SETUP için DEL, başka bir tuş atlar
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Komut paleti

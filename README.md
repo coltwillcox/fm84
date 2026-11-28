@@ -15,7 +15,7 @@
 
 💜 *A synthwave-infused dual-pane TUI file manager, forged in Rust* 💜
 
-**Version 0.54.0** ▀▄▀▄ *Neon Dreams Edition*
+**Version 0.55.0** ▀▄▀▄ *Neon Dreams Edition*
 
 </div>
 
@@ -85,6 +85,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### 🗂️ Navigation
 - 📁 **Dual panes** with **tabs** in each (Ctrl+T, Ctrl+W, Alt+1…9), swapped with Ctrl+U, synced with Alt+I
 - 🧭 **Go anywhere** - Ctrl+L types a path with Tab completion, Alt+←/→ back and forward, Alt+↓ every directory visited, Ctrl+D bookmarks
+- 🎛️ **Command palette** - Ctrl+P lists every action with its key; a few words narrow it, Enter runs the one chosen
 - 🦘 **Alt+J jump** - a few letters of any directory gone to before, in any run, the most used lately first, as zoxide ranks them
 - 💿 **Drive strip** - click a mount, or Alt+F1 / Alt+F2; removable and optical media get their own icons
 - 🚀 **Open with** - Shift+Enter or Ctrl+O as the system would, Alt+O to pick a program, your own per extension in `open`
@@ -113,6 +114,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 - 🏷️ **Multi-rename** - F2 on a selection, by `[N]`, `[E]`, `[C]` patterns with find, replace and case - and `[Exif:date]`, `[Tag:artist]`, `[Pdf:title]` from inside the files
 - 🔗 **Links** - Alt+F5 symbolic, Tab in its dialog for hard
 - 🔐 **Attributes** - Alt+A for permissions, owner, group and time
+- 🔒 **Floppy lock** - Alt+L encrypts what is chosen with a password in the age format, safe to share or carry on a stick; on `.age` files it opens them
 - #️⃣ **Checksums** - Alt+H for SHA-256, SHA-512 and MD5, or check a `SHA256SUMS`
 - ⚖️ **Compare** - Shift+F2 selects what differs between panels, `=` diffs two files side by side
 - 🔄 **Synchronize** - Alt+S plans a two-way sync, row by row, before anything runs
@@ -164,7 +166,7 @@ Built with 💜 in **Rust** using **Ratatui** + **Crossterm**.
 ### ⚙️ Options (F11)
 - 🎨 **18 themes**, light ones included, and 23 languages built in
 - 🧩 **Columns, sorting, date and size formats, icons, square or rounded corners, the outer frame or none, cursor, terminal, external editor, confirmations** - saved to `~/.config/fm84/config` as plain `key = value`
-- 🕹️ **For fun** - an Outrun progress bar, rows that burst when deleted for good, Turbo neon with scanlines, animation - a sliding cursor, rows booting up, popups wiping open - a glow around the panel in use, a drive light that flickers while a job runs, a night drive when left alone, and arcade high scores in F1
+- 🕹️ **For fun** - an Outrun progress bar, rows that burst when deleted for good, Turbo neon with scanlines, animation - a sliding cursor, rows booting up, popups wiping open - a glow around the panel in use, a drive light that flickers while a job runs, a BIOS-style POST screen at the start, a night drive when left alone, and arcade high scores in F1
 
 ---
 
@@ -185,6 +187,7 @@ The everyday ones - [KEYS.md](https://github.com/coltwillcox/fm84/blob/master/do
 | `F9` / `F10` | Terminal / quit |
 | `F11` / `F12` | Options / preview |
 | `Ctrl+L` | Go to a path |
+| `Ctrl+P` | Command palette: every action, by name |
 | `Ctrl+S` / `Alt+F7` | Filter / find files |
 | `Ctrl+T` / `Ctrl+W` | New / close tab |
 
@@ -220,7 +223,7 @@ fm84 ~/Music /mnt       # left in ~/Music, right in /mnt
 fm84 --shell-init bash  # print cd84 for bash (or zsh, fish, powershell)
 fm84 --choosedir FILE   # on quitting, write the active panel's directory to FILE
 fm84 --help             # usage, and where the config lives
-fm84 --version          # fm84 0.54.0
+fm84 --version          # fm84 0.55.0
 ```
 
 📖 `man ./doc/fm84.1` reads the manual page from a checkout; the release archives carry `fm84.1` beside the binary, for `/usr/local/share/man/man1`.
@@ -270,6 +273,7 @@ tar -xzf fm84-v*.tar.gz
 - ⌨️ **crossterm** - Terminal magic
 - 🎨 **syntect** - Syntax highlighting
 - 🖼️ **image** - Decoding pictures for the Viewer
+- 🔒 **age** - Encryption for the floppy lock
 - 🕐 **chrono** - Time vibes
 
 ---
@@ -316,5 +320,5 @@ Released under the [MIT License](https://github.com/coltwillcox/fm84/blob/master
 <p align="center">
   <strong>💜 FM84 💜</strong><br>
   <em>Where every file operation feels like a synth drop</em><br>
-  <code>▀▄▀▄▀▄ v0.54.0 ▄▀▄▀▄▀</code>
+  <code>▀▄▀▄▀▄ v0.55.0 ▄▀▄▀▄▀</code>
 </p>

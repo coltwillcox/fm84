@@ -1412,7 +1412,7 @@ pub(super) fn render_history_popup(f: &mut ratatui::Frame<'_>, area: Rect, list:
     f.render_widget(Paragraph::new(lines), inner);
 }
 
-/// Ctrl+Shift+P: the field, and under it every command it lets through,
+/// Ctrl+P: the field, and under it every command it lets through,
 /// each as F1 says it - its keys in F1's colour - the one chosen lit.
 pub(super) fn render_palette_popup(f: &mut ratatui::Frame<'_>, area: Rect, view: &crate::app::PaletteView) {
     let popup_area = popup_rect(60, area);

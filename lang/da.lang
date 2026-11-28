@@ -2638,3 +2638,8 @@ msgstr Finder drev...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL for SETUP, en anden tast springer over
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Kommandopalet

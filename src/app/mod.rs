@@ -257,7 +257,7 @@ pub enum Dialog {
     Password(Box<PasswordAsk>),
     /// Alt+L: what is chosen to lock with a password, or to open again.
     Lock(Box<LockForm>),
-    /// Ctrl+Shift+P: every action with its key, narrowed as words are typed.
+    /// Ctrl+P: every action with its key, narrowed as words are typed.
     Palette(Box<PaletteView>),
     /// Alt+H: checksums worked out, or a checksum file checked.
     Checksums(Box<ChecksumView>),

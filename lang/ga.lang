@@ -2756,3 +2756,8 @@ msgstr Tiomántáin á mbrath...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL le haghaidh SETUP, aon eochair eile chun scipeáil
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Pailéad orduithe

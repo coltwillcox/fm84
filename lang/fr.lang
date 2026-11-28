@@ -2640,3 +2640,8 @@ msgstr Détection des lecteurs...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr SUPPR pour SETUP, toute autre touche passe
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Palette de commandes

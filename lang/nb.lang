@@ -2638,3 +2638,8 @@ msgstr Finner stasjoner...
 
 msgid  Press DEL to enter SETUP, any other key to skip
 msgstr DEL for SETUP, en annen tast hopper over
+
+# F1: the command palette.
+
+msgid  Ctrl+P - Command palette
+msgstr Ctrl+P - Kommandopalett

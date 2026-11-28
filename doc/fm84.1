@@ -1,5 +1,5 @@
 .\" Manual page for fm84. View with: man ./doc/fm84.1
-.TH FM84 1 "2026-11-27" "fm84 0.54.0" "User Commands"
+.TH FM84 1 "2026-11-28" "fm84 0.55.0" "User Commands"
 .SH NAME
 fm84 \- a synthwave dual\-pane TUI file manager
 .SH SYNOPSIS
@@ -417,6 +417,14 @@ is the home directory, and a path not starting with
 .B /
 is taken from the panel.
 A file is landed on, in the directory it is in.
+.TP
+.B Ctrl+P Ctrl+Shift+P
+The command palette: every action of the panels with its key, as F1 says it.
+Words typed narrow it, in any order; in lower case they match either case.
+Up, Down, PageUp and PageDown choose, and Enter presses the key of the one
+chosen, so it does just what the key does.
+Ctrl+Shift+P works where the terminal passes it on; kitty, WezTerm and
+Windows Terminal keep it for themselves.
 .TP
 .B Alt+Left Alt+Right
 Back and forward through the directories the tab has been in, landing on
@@ -895,6 +903,27 @@ what to leave out and a password - and Space, Left and Right change them.
 See
 .BR ARCHIVES .
 .TP
+.B Alt+L
+The floppy lock: encrypt what is chosen with a password, typed twice, in the
+age format, as
+.B age \-p
+and rage do.
+A file becomes
+.IR name .age
+and a directory
+.IR name .tar.age,
+a tar of itself, in the other panel's directory or wherever the dialog is
+told; Up, Down and Tab go between the fields.
+On
+.I .age
+files alone it opens them instead, the ending taken off, asking the password
+once.
+A job with the progress bar and Esc, each file put in place once whole; a
+wrong password is asked about and can be skipped, with nothing written.
+A name already there goes by
+.BR "When destination exists" ;
+Ctrl+Z takes back what was made, and what was locked stays.
+.TP
 .B F10
 Quit.
 Twice while a copy, move or delete runs; asks first about unsaved edits.
@@ -1148,7 +1177,8 @@ file.
 .BR Turbo ,
 .BR Animation ,
 .BR "Glow around the active panel" ,
-.B Drive light while a job runs
+.BR "Drive light while a job runs" ,
+.B POST screen at the start
 and
 .B Night drive when left alone
 are for fun, all off to start with: a job drawn as a car driving towards the
@@ -1158,7 +1188,10 @@ rows coming up one after another, popups wiped open from the middle and the
 rows a copy made glowing a moment; the lines around the panel in use lit and
 the other dimmed; a light before the clock, as a floppy drive's, flickering
 green while a job reads or writes, steady while it runs with nothing moving
-and amber while it waits on a question; and, left alone on the panels for the minutes it says, the
+and amber while it waits on a question; at the start, the memory counted
+and the drives found as a PC of '84 did, for about three seconds, any key
+skipping it and Del going to these options; and, left alone on the panels for
+the minutes it says, the
 screen given to a drive down the neon grid until the next key or touch of the
 mouse, which does nothing else.
 .B Language
